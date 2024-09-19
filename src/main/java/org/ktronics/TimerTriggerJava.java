@@ -15,7 +15,7 @@ public class TimerTriggerJava {
     /**
      * This function will be invoked periodically according to the specified schedule.
      */
-    @FunctionName("authTokenFunction")
+    @FunctionName("powerPlantMonitor")
     public void run(
             @TimerTrigger(name = "authTokenTrigger", schedule = "0 0 0 * * *") String timerInfo,
             final ExecutionContext context

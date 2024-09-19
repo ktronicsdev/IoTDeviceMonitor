@@ -39,7 +39,7 @@ public class PowerCheckService {
     }
 
     // Helper function to extract plant IDs from the JSON response
-    private List<String> getPlantIdsFromResponse(String response, ExecutionContext context) {
+    List<String> getPlantIdsFromResponse(String response, ExecutionContext context) {
         List<String> plantIds = new ArrayList<>();
 
         try {
