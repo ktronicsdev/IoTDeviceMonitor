@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * Azure Functions with Timer trigger.
  */
-public class TimerTriggerJava {
+public class IoTDeviceMonitor {
     /**
      * This function will be invoked periodically according to the specified schedule.
      */

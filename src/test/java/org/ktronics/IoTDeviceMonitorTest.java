@@ -19,7 +19,7 @@ import static org.mockito.Mockito.*;
 /**
  * Unit tests for the TimerTriggerJava class.
  */
-public class TimerTriggerJavaTest {
+public class IoTDeviceMonitorTest {
 
     @Mock
     private CredentialService credentialService;
@@ -31,7 +31,7 @@ public class TimerTriggerJavaTest {
     private ExecutionContext context;
 
     @InjectMocks
-    private TimerTriggerJava timerTriggerJava;
+    private IoTDeviceMonitor ioTDeviceMonitor;
 
     @BeforeEach
     public void setup() {
@@ -50,7 +50,7 @@ public class TimerTriggerJavaTest {
         when(credentialService.getCredentials()).thenReturn(credentials);
 
         // Act
-        timerTriggerJava.run("0 0 0 * * *", context);
+        ioTDeviceMonitor.run("0 0 0 * * *", context);
 
         // Assert
         verify(credentialService, times(1)).getCredentials();
@@ -69,7 +69,7 @@ public class TimerTriggerJavaTest {
         when(credentialService.getCredentials()).thenReturn(credentials);
 
         // Act
-        timerTriggerJava.run("0 0 0 * * *", context);
+        ioTDeviceMonitor.run("0 0 0 * * *", context);
 
         // Assert
         verify(credentialService, times(1)).getCredentials();
