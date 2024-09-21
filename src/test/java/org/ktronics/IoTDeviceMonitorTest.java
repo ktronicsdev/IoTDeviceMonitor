@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import com.microsoft.azure.functions.ExecutionContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.ktronics.models.Credential;
-import org.ktronics.services.CredentialService;
+import org.ktronics.services.DatabaseService;
 import org.ktronics.services.PowerCheckService;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
 public class IoTDeviceMonitorTest {
 
     @Mock
-    private CredentialService credentialService;
+    private DatabaseService databaseService;
 
     @Mock
     private PowerCheckService powerCheckService;
@@ -43,17 +43,17 @@ public class IoTDeviceMonitorTest {
         // Arrange
         when(context.getLogger()).thenReturn(mock(java.util.logging.Logger.class));
 
-        Credential shineMonitorCredential = new Credential("ShineMonitor", "user1", "token123");
-        Credential otherCredential = new Credential("OtherService", "user2", "token456");
+        Credential shineMonitorCredential = new Credential(1, "user1", "token123", "ShineMonitor");
+        Credential otherCredential = new Credential(2, "user2", "token456", "OtherService");
         List<Credential> credentials = Arrays.asList(shineMonitorCredential, otherCredential);
 
-        when(credentialService.getCredentials()).thenReturn(credentials);
+        when(databaseService.getCredentials()).thenReturn(credentials);
 
         // Act
         ioTDeviceMonitor.run("0 0 0 * * *", context);
 
         // Assert
-        verify(credentialService, times(1)).getCredentials();
+        verify(databaseService, times(1)).getCredentials();
         verify(powerCheckService, times(1)).checkPowerStationsForUser(shineMonitorCredential, context);
         verify(powerCheckService, times(0)).checkPowerStationsForUser(otherCredential, context);
     }
@@ -63,16 +63,16 @@ public class IoTDeviceMonitorTest {
         // Arrange
         when(context.getLogger()).thenReturn(mock(java.util.logging.Logger.class));
 
-        Credential otherCredential = new Credential("OtherService", "user2", "token456");
+        Credential otherCredential = new Credential(1, "user2", "token456", "OtherService");
         List<Credential> credentials = Arrays.asList(otherCredential);
 
-        when(credentialService.getCredentials()).thenReturn(credentials);
+        when(databaseService.getCredentials()).thenReturn(credentials);
 
         // Act
         ioTDeviceMonitor.run("0 0 0 * * *", context);
 
         // Assert
-        verify(credentialService, times(1)).getCredentials();
+        verify(databaseService, times(1)).getCredentials();
         verify(powerCheckService, times(0)).checkPowerStationsForUser(any(Credential.class), eq(context));
     }
 }

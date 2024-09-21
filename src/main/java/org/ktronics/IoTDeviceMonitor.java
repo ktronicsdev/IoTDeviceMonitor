@@ -3,7 +3,7 @@ package org.ktronics;
 import com.microsoft.azure.functions.annotation.*;
 import com.microsoft.azure.functions.*;
 import org.ktronics.models.Credential;
-import org.ktronics.services.CredentialService;
+import org.ktronics.services.DatabaseService;
 import org.ktronics.services.PowerCheckService;
 
 import java.util.List;
@@ -17,22 +17,18 @@ public class IoTDeviceMonitor {
      */
     @FunctionName("powerPlantMonitor")
     public void run(
-            @TimerTrigger(name = "authTokenTrigger", schedule = "0 0 0 * * *") String timerInfo,
+            @TimerTrigger(name = "authTokenTrigger", schedule = "0 35 19 * * *") String timerInfo,
             final ExecutionContext context
     ) {
         context.getLogger().info("Azure Function triggered: " + timerInfo);
 
-        // Initialize services
-        CredentialService credentialService = new CredentialService();
+        DatabaseService databaseService = new DatabaseService();
         PowerCheckService powerCheckService = new PowerCheckService();
 
-        // Step 1: Get the list of credentials from the database
-        List<Credential> credentials = credentialService.getCredentials();
+        List<Credential> credentials = databaseService.getCredentials();
 
-        // Step 2: Process each credential if it's for ShineMonitor
         credentials.forEach(credential -> {
             if ("ShineMonitor".equals(credential.getType())) {
-                // Step 3: Check power output and perform the required actions
                 powerCheckService.checkPowerStationsForUser(credential, context);
             }
         });

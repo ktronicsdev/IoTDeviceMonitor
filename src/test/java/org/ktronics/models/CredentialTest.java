@@ -11,7 +11,7 @@ public class CredentialTest {
     @BeforeEach
     public void setUp() {
         // Initialize the Credential object before each test
-        credential = new Credential("testUser", "testPass", "ShineMonitor");
+        credential = new Credential(1,"testUser", "testPass", "ShineMonitor");
     }
 
     @Test
