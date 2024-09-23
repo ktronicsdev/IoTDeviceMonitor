@@ -5,34 +5,44 @@ import org.ktronics.models.Credential;
 
 import org.ktronics.models.PowerPlant;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class PowerCheckService {
 
-    private ShineMonitorService shineMonitorService = new ShineMonitorService();
-    private DatabaseService databaseService = new DatabaseService();
+    private final ShineMonitorService shineMonitorService = new ShineMonitorService();
+    private final DatabaseService databaseService = new DatabaseService();
+    private static final Integer numberOfDaysToCheckAvailability = System.getenv("DAYS_TO_CHECK_AVAILABILITY") != null ? Integer.parseInt(System.getenv("DAYS_TO_CHECK_AVAILABILITY")) : 3;
 
-    public void checkPowerStationsForUser(Credential credential, ExecutionContext context) {
+    public List<String> checkPowerStationsForUser(Credential credential) {
         try {
             var authToken = shineMonitorService.getShineMonitorToken(credential.getUsername(), credential.getPassword());
-            var plantIds = shineMonitorService.getPowerStations(authToken.getSecret(), authToken.getToken());
+            var powerPlants = shineMonitorService.getPowerStations(authToken.getSecret(), authToken.getToken());
+            List<String> output = new ArrayList<>();
 
-            for (String plantId : plantIds) {
-                String status;
-                Integer mailSent;
-                var totalOutput = shineMonitorService.getPowerOutputForPlantFor3Days(authToken.getSecret(), authToken.getToken(), plantId);
-                if (totalOutput < 1) {
-                    PowerPlant powerPlant = new PowerPlant(credential.getUserId(), plantId, "DOWN", 0);
-                    databaseService.updatePowerPlantStatus(powerPlant);
-                    context.getLogger().info("Power plant (" + plantId + ") is down");
-                }
-                else {
-                    PowerPlant powerPlant = new PowerPlant(credential.getUserId(), plantId, "UP", 0);
-                    databaseService.updatePowerPlantStatus(powerPlant);
-                    context.getLogger().info("Power plant (" + plantId + ") is up");
-                }
+            for (PowerPlant powerPlant : powerPlants) {
+                var differencePercentage = shineMonitorService.getPowerOutputDifferencePercentage(authToken.getSecret(), authToken.getToken(), powerPlant.getPowerPlantId(), numberOfDaysToCheckAvailability);
+            if (differencePercentage < -10.0) {
+                powerPlant.setUserId(credential.getUserId());
+                powerPlant.setIsAbnormal(1);
+                powerPlant.setAbnormalPercentage(Math.abs(differencePercentage));
+                powerPlant.setIsMailSent(0);
+                databaseService.updatePowerPlantStatus(powerPlant);
+                output.add("Power plant (" + powerPlant.getPowerPlantId() + ") is Abnormal with a " + Math.abs(differencePercentage) + "% drop in output.");
+            } else {
+                powerPlant.setUserId(credential.getUserId());
+                powerPlant.setIsAbnormal(0);
+                powerPlant.setAbnormalPercentage(0.00);
+                powerPlant.setIsMailSent(0);
+                databaseService.updatePowerPlantStatus(powerPlant);
+                output.add("Power plant (" + powerPlant.getPowerPlantId() + ") is up.");
             }
+            }
+
+            return output;
         }
         catch (Exception e) {
-            context.getLogger().severe("Error checking Power Stations for user: " + credential.getUsername() + ". Error: " + e.getMessage());
+            throw new RuntimeException("Error checking Power Stations for user: " + credential.getUsername() + ". Error: " + e.getMessage());
         }
     }
 }

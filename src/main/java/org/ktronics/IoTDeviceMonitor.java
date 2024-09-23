@@ -17,7 +17,7 @@ public class IoTDeviceMonitor {
      */
     @FunctionName("powerPlantMonitor")
     public void run(
-            @TimerTrigger(name = "authTokenTrigger", schedule = "0 35 19 * * *") String timerInfo,
+            @TimerTrigger(name = "powerPlantMonitorTimerTrigger", schedule = "%TIMER_SCHEDULE%") String timerInfo,
             final ExecutionContext context
     ) {
         context.getLogger().info("Azure Function triggered: " + timerInfo);
@@ -29,7 +29,10 @@ public class IoTDeviceMonitor {
 
         credentials.forEach(credential -> {
             if ("ShineMonitor".equals(credential.getType())) {
-                powerCheckService.checkPowerStationsForUser(credential, context);
+                var shineMonitorStatus = powerCheckService.checkPowerStationsForUser(credential);
+                for (String status : shineMonitorStatus) {
+                    context.getLogger().info(status);
+                }
             }
         });
     }

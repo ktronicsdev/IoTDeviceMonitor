@@ -3,6 +3,7 @@ package org.ktronics.services;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.ktronics.models.AuthToken;
+import org.ktronics.models.PowerPlant;
 import org.ktronics.utils.SignatureUtil;
 
 import java.net.HttpURLConnection;
@@ -49,7 +50,7 @@ public class ShineMonitorService {
         }
     }
 
-    public List<String> getPowerStations(String secret, String token) throws Exception {
+    public List<PowerPlant> getPowerStations(String secret, String token) throws Exception {
         var salt = System.currentTimeMillis() + "";
         var action = "&action=queryPlants";
         var sign = SignatureUtil.generateSignatureQuery(salt, secret, token, action);
@@ -64,7 +65,7 @@ public class ShineMonitorService {
         var response = in.readLine();
         in.close();
 
-        var plantIds = new ArrayList<String>();
+        var powerPlants = new ArrayList<PowerPlant>();
 
         try {
             var jsonResponse = new JSONObject(response);
@@ -73,9 +74,10 @@ public class ShineMonitorService {
                 for (var i = 0; i < plantsArray.length(); i++) {
                     var plant = plantsArray.getJSONObject(i);
                     var plantId = String.valueOf(plant.getInt("pid"));
-                    plantIds.add(plantId);
+                    var plantName = plant.getString("name");
+                    powerPlants.add(new PowerPlant(plantId, plantName));
                 }
-                return plantIds;
+                return powerPlants;
             } else {
                 throw new Exception("Error getting plant IDs from response: " + response);
             }
@@ -98,6 +100,28 @@ public class ShineMonitorService {
         }
 
         return totalOutput;
+    }
+
+    public Double getPowerOutputDifferencePercentage(String secret, String token, String plantId, Integer numberOfDays) throws Exception {
+        var today = LocalDate.now();
+        var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        var todayOutput = getPowerOutputForDay(secret, token, plantId, today.format(formatter));
+        var previousOutput = 0.0;
+
+        for (var i = 1; i <= numberOfDays; i++) {
+            var date = today.minusDays(i);
+            var formattedDate = date.format(formatter);
+            var dailyOutput = getPowerOutputForDay(secret, token, plantId, formattedDate);
+            previousOutput += dailyOutput;
+        }
+
+        var averageOutput = previousOutput / numberOfDays;
+
+        if (averageOutput == 0.0) {
+            return todayOutput == 0.0 ? -100.0 : 100.0;
+        }
+
+        return (todayOutput - averageOutput) / averageOutput * 100;
     }
 
     Double getPowerOutputForDay(String secret, String token, String plantId, String date) throws Exception {

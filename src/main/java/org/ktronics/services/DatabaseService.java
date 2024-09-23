@@ -9,7 +9,7 @@ import java.util.List;
 
 public class DatabaseService {
 
-    private String connectionString = System.getenv("JDBC_DATABASE_URL");
+    private final String connectionString = System.getenv("JDBC_DATABASE_URL");
 
     public List<Credential> getCredentials() {
         var credentials = new ArrayList<Credential>();
@@ -39,28 +39,34 @@ public class DatabaseService {
 
             //Using MERGE statement to update the record if the plant and user exists. Otherwise add it to the db.
             var query = "MERGE PowerPlants AS target " +
-                    "USING (SELECT ? AS userId, ? AS powerPlantId) AS source " +
+                    "USING (SELECT ? AS userId, ? AS powerPlantId, ? AS powerPlantName) AS source " +
                     "ON (target.userId = source.userId AND target.powerPlantId = source.powerPlantId) " +
                     "WHEN MATCHED THEN " +
-                    "    UPDATE SET status = ?, mailSent = ? " +
+                    "    UPDATE SET isAbnormal = ?, abnormalPercentage = ?, isMailSent = ?, powerPlantName = ? " +
                     "WHEN NOT MATCHED THEN " +
-                    "    INSERT (userId, powerPlantId, status, mailSent) " +
-                    "    VALUES (?, ?, ?, ?);";
+                    "    INSERT (userId, powerPlantId, isAbnormal, abnormalPercentage, isMailSent, powerPlantName) " +
+                    "    VALUES (?, ?, ?, ?, ?, ?);";
 
             var statement = connection.prepareStatement(query);
 
             statement.setInt(1, powerPlant.getUserId());
             statement.setString(2, powerPlant.getPowerPlantId());
-            statement.setString(3, powerPlant.getStatus());
-            statement.setInt(4, powerPlant.getMailSent());
+            statement.setString(3, powerPlant.getPowerPlantName());
+            statement.setInt(4, powerPlant.getIsAbnormal());
+            statement.setDouble(5, powerPlant.getAbnormalPercentage());
+            statement.setInt(6, powerPlant.getIsMailSent());
+            statement.setString(7, powerPlant.getPowerPlantName());
 
-            statement.setInt(5, powerPlant.getUserId());
-            statement.setString(6, powerPlant.getPowerPlantId());
-            statement.setString(7, powerPlant.getStatus());
-            statement.setInt(8, powerPlant.getMailSent());
+            statement.setInt(8, powerPlant.getUserId());
+            statement.setString(9, powerPlant.getPowerPlantId());
+            statement.setInt(10, powerPlant.getIsAbnormal());
+            statement.setDouble(11, powerPlant.getAbnormalPercentage());
+            statement.setInt(12, powerPlant.getIsMailSent());
+            statement.setString(13, powerPlant.getPowerPlantName());
 
             statement.executeUpdate();
             connection.close();
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
