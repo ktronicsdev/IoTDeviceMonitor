@@ -18,7 +18,15 @@ git clone https://github.com/ktronicsdev/SolarPannelDownNotificationSender
 
 Before proceeding, make sure you have [Azure Functions Core Tools](https://docs.microsoft.com/azure/azure-functions/functions-run-local) installed on your machine.
 
-3. **Run the script:**
+3. **Build and Run locally:**
+
+```bash
+./run.bat
+```
+
+or
+
+3. **Build and Run the docker containor:**
 
 ```bash
 ./run.bat
