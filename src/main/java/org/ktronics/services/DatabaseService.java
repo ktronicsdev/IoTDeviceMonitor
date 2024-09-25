@@ -2,10 +2,8 @@ package org.ktronics.services;
 
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Updates;
 import org.bson.Document;
 import org.ktronics.models.Credential;
 import org.ktronics.models.PowerPlant;
