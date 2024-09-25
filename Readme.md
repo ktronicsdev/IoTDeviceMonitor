@@ -11,7 +11,7 @@ This repository contains an **Azure Functions** project that will get a set of c
 1. **Clone the repository:**
 
 ```bash
-git clone https://github.com/ktronicsdev/SolarPannelDownNotificationSender
+git clone https://github.com/ktronicsdev/IoTDeviceMonitor
 ```
 
 2. **Ensure that Azure Functions Core Tools are installed:**

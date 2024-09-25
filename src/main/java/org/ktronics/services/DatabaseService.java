@@ -1,75 +1,78 @@
 package org.ktronics.services;
 
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Updates;
+import org.bson.Document;
 import org.ktronics.models.Credential;
 import org.ktronics.models.PowerPlant;
-
-import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class DatabaseService {
 
-    private final String connectionString = System.getenv("JDBC_DATABASE_URL");
+    private final String connectionString = System.getenv("MONGODB_CONNECTION_URL");
+    private final MongoClient mongoClient;
+    private final MongoDatabase database;
+
+    public DatabaseService() {
+        mongoClient = MongoClients.create(connectionString);
+        database = mongoClient.getDatabase("iot-device-monitor");
+    }
 
     public List<Credential> getCredentials() {
         var credentials = new ArrayList<Credential>();
+        var collection = database.getCollection("Credentials");
 
+        var cursor = collection.find().iterator();
         try {
-            var connection = DriverManager.getConnection(connectionString);
-            var statement = connection.createStatement();
-            var resultSet = statement.executeQuery("SELECT userId, username, password, type FROM Credentials");
-
-            while (resultSet.next()) {
-                var userId = resultSet.getInt("userId");
-                var username = resultSet.getString("username");
-                var password = resultSet.getString("password");
-                var type = resultSet.getString("type");
+            while (cursor.hasNext()) {
+                var doc = cursor.next();
+                var userId = doc.getInteger("userId");
+                var username = doc.getString("username");
+                var password = doc.getString("password");
+                var type = doc.getString("type");
                 credentials.add(new Credential(userId, username, password, type));
             }
-            connection.close();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            cursor.close();
         }
         return credentials;
     }
 
     public void updatePowerPlantStatus(PowerPlant powerPlant) {
         try {
-            var connection = DriverManager.getConnection(connectionString);
+            var collection = database.getCollection("PowerPlants");
 
-            //Using MERGE statement to update the record if the plant and user exists. Otherwise add it to the db.
-            var query = "MERGE PowerPlants AS target " +
-                    "USING (SELECT ? AS userId, ? AS powerPlantId, ? AS powerPlantName) AS source " +
-                    "ON (target.userId = source.userId AND target.powerPlantId = source.powerPlantId) " +
-                    "WHEN MATCHED THEN " +
-                    "    UPDATE SET isAbnormal = ?, abnormalPercentage = ?, isMailSent = ?, powerPlantName = ? " +
-                    "WHEN NOT MATCHED THEN " +
-                    "    INSERT (userId, powerPlantId, isAbnormal, abnormalPercentage, isMailSent, powerPlantName) " +
-                    "    VALUES (?, ?, ?, ?, ?, ?);";
+            var filter = Filters.and(
+                    Filters.eq("userId", powerPlant.getUserId()),
+                    Filters.eq("powerPlantId", powerPlant.getPowerPlantId())
+            );
 
-            var statement = connection.prepareStatement(query);
+            var update = new Document("$set", new Document("isAbnormal", powerPlant.getIsAbnormal())
+                    .append("abnormalPercentage", powerPlant.getAbnormalPercentage())
+                    .append("isMailSent", powerPlant.getIsMailSent())
+                    .append("powerPlantName", powerPlant.getPowerPlantName()));
 
-            statement.setInt(1, powerPlant.getUserId());
-            statement.setString(2, powerPlant.getPowerPlantId());
-            statement.setString(3, powerPlant.getPowerPlantName());
-            statement.setInt(4, powerPlant.getIsAbnormal());
-            statement.setDouble(5, powerPlant.getAbnormalPercentage());
-            statement.setInt(6, powerPlant.getIsMailSent());
-            statement.setString(7, powerPlant.getPowerPlantName());
+            var result = collection.updateOne(filter, update);
 
-            statement.setInt(8, powerPlant.getUserId());
-            statement.setString(9, powerPlant.getPowerPlantId());
-            statement.setInt(10, powerPlant.getIsAbnormal());
-            statement.setDouble(11, powerPlant.getAbnormalPercentage());
-            statement.setInt(12, powerPlant.getIsMailSent());
-            statement.setString(13, powerPlant.getPowerPlantName());
-
-            statement.executeUpdate();
-            connection.close();
-
-        } catch (SQLException e) {
+            if (result.getMatchedCount() == 0) {
+                // Insert if no matching document found
+                var doc = new Document("userId", powerPlant.getUserId())
+                        .append("powerPlantId", powerPlant.getPowerPlantId())
+                        .append("isAbnormal", powerPlant.getIsAbnormal())
+                        .append("abnormalPercentage", powerPlant.getAbnormalPercentage())
+                        .append("isMailSent", powerPlant.getIsMailSent())
+                        .append("powerPlantName", powerPlant.getPowerPlantName());
+                collection.insertOne(doc);
+            }
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
-
 }
