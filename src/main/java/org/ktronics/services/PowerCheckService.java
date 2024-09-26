@@ -1,6 +1,5 @@
 package org.ktronics.services;
 
-import com.microsoft.azure.functions.ExecutionContext;
 import org.ktronics.models.Credential;
 
 import org.ktronics.models.PowerPlant;
@@ -22,23 +21,22 @@ public class PowerCheckService {
 
             for (PowerPlant powerPlant : powerPlants) {
                 var differencePercentage = shineMonitorService.getPowerOutputDifferencePercentage(authToken.getSecret(), authToken.getToken(), powerPlant.getPowerPlantId(), numberOfDaysToCheckAvailability);
-            if (differencePercentage < -10.0) {
-                powerPlant.setUserId(credential.getUserId());
-                powerPlant.setIsAbnormal(1);
-                powerPlant.setAbnormalPercentage(Math.abs(differencePercentage));
-                powerPlant.setIsMailSent(0);
-                databaseService.updatePowerPlantStatus(powerPlant);
-                output.add("Power plant (" + powerPlant.getPowerPlantId() + ") is Abnormal with a " + Math.abs(differencePercentage) + "% drop in output.");
-            } else {
-                powerPlant.setUserId(credential.getUserId());
-                powerPlant.setIsAbnormal(0);
-                powerPlant.setAbnormalPercentage(0.00);
-                powerPlant.setIsMailSent(0);
-                databaseService.updatePowerPlantStatus(powerPlant);
-                output.add("Power plant (" + powerPlant.getPowerPlantId() + ") is up.");
+                if (differencePercentage < -10.0) {
+                    powerPlant.setCredentialId(credential.getId());
+                    powerPlant.setIsAbnormal(1);
+                    powerPlant.setAbnormalPercentage(Math.abs(differencePercentage));
+                    powerPlant.setIsMailSent(0);
+                    databaseService.updatePowerPlantStatus(powerPlant);
+                    output.add("Power plant (" + powerPlant.getPowerPlantId() + ") is Abnormal with a " + Math.abs(differencePercentage) + "% drop in output.");
+                } else {
+                    powerPlant.setCredentialId(credential.getId());
+                    powerPlant.setIsAbnormal(0);
+                    powerPlant.setAbnormalPercentage(0.00);
+                    powerPlant.setIsMailSent(0);
+                    databaseService.updatePowerPlantStatus(powerPlant);
+                    output.add("Power plant (" + powerPlant.getPowerPlantId() + ") is up.");
+                }
             }
-            }
-
             return output;
         }
         catch (Exception e) {

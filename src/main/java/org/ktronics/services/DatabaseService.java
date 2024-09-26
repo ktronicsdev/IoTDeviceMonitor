@@ -1,76 +1,76 @@
 package org.ktronics.services;
 
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Filters;
-import org.bson.Document;
+import com.azure.cosmos.*;
+import com.azure.cosmos.models.*;
+import com.azure.cosmos.util.CosmosPagedIterable;
 import org.ktronics.models.Credential;
 import org.ktronics.models.PowerPlant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class DatabaseService {
 
-    private final String connectionString = System.getenv("MONGODB_CONNECTION_URL");
-    private final MongoClient mongoClient;
-    private final MongoDatabase database;
+    private final String endpoint = System.getenv("COSMOS_ENDPOINT");
+    private final String key = System.getenv("COSMOS_KEY");
+    private final CosmosClient client;
+    private final CosmosContainer credentialsContainer;
+    private final CosmosContainer powerPlantsContainer;
 
     public DatabaseService() {
-        mongoClient = MongoClients.create(connectionString);
-        database = mongoClient.getDatabase("iot-device-monitor");
+        CosmosClientBuilder clientBuilder = new CosmosClientBuilder()
+                .endpoint(endpoint)
+                .key(key)
+                .consistencyLevel(ConsistencyLevel.EVENTUAL);
+
+        client = clientBuilder.buildClient();
+
+        CosmosDatabase database = client.getDatabase("iot-device-monitor");
+        credentialsContainer = database.getContainer("Credentials");
+        powerPlantsContainer = database.getContainer("PowerPlants");
     }
 
     public List<Credential> getCredentials() {
+        System.out.println("Fetching credentials from database");
         var credentials = new ArrayList<Credential>();
-        var collection = database.getCollection("Credentials");
+        var sqlQuery = "SELECT * FROM c";
+        var queryOptions = new CosmosQueryRequestOptions();
 
-        var cursor = collection.find().iterator();
-        try {
-            while (cursor.hasNext()) {
-                var doc = cursor.next();
-                var userId = doc.getInteger("userId");
-                var username = doc.getString("username");
-                var password = doc.getString("password");
-                var type = doc.getString("type");
-                credentials.add(new Credential(userId, username, password, type));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            cursor.close();
-        }
+        CosmosPagedIterable<Credential> items = credentialsContainer.queryItems(sqlQuery, queryOptions, Credential.class);
+        System.out.println("Items" + items.toString());
+        items.forEach(credentials::add);
+
         return credentials;
     }
 
     public void updatePowerPlantStatus(PowerPlant powerPlant) {
-        try {
-            var collection = database.getCollection("PowerPlants");
+        var partitionKey = new PartitionKey(powerPlant.getCredentialId());
 
-            var filter = Filters.and(
-                    Filters.eq("userId", powerPlant.getUserId()),
-                    Filters.eq("powerPlantId", powerPlant.getPowerPlantId())
-            );
+        // Check if the power plant exists based on powerPlantId
+        PowerPlant existing = getPowerPlantByPowerPlantId(powerPlant.getPowerPlantId(), partitionKey);
 
-            var update = new Document("$set", new Document("isAbnormal", powerPlant.getIsAbnormal())
-                    .append("abnormalPercentage", powerPlant.getAbnormalPercentage())
-                    .append("isMailSent", powerPlant.getIsMailSent())
-                    .append("powerPlantName", powerPlant.getPowerPlantName()));
+        if (existing != null) {
+            // Update existing power plant information
+            existing.setIsAbnormal(powerPlant.getIsAbnormal());
+            existing.setAbnormalPercentage(powerPlant.getAbnormalPercentage());
+            existing.setIsMailSent(powerPlant.getIsMailSent());
 
-            var result = collection.updateOne(filter, update);
-
-            if (result.getMatchedCount() == 0) {
-                // Insert if no matching document found
-                var doc = new Document("userId", powerPlant.getUserId())
-                        .append("powerPlantId", powerPlant.getPowerPlantId())
-                        .append("isAbnormal", powerPlant.getIsAbnormal())
-                        .append("abnormalPercentage", powerPlant.getAbnormalPercentage())
-                        .append("isMailSent", powerPlant.getIsMailSent())
-                        .append("powerPlantName", powerPlant.getPowerPlantName());
-                collection.insertOne(doc);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+            powerPlantsContainer.replaceItem(existing, existing.getId(), partitionKey, new CosmosItemRequestOptions());
+        } else {
+            // Create new power plant if it doesn't exist
+            powerPlantsContainer.createItem(powerPlant, partitionKey, new CosmosItemRequestOptions());
         }
+    }
+
+    private PowerPlant getPowerPlantByPowerPlantId(String powerPlantId, PartitionKey partitionKey) {
+        String query = "SELECT * FROM c WHERE c.powerPlantId = @powerPlantId";
+        SqlParameter powerPlantParam = new SqlParameter("@powerPlantId", powerPlantId);
+        SqlQuerySpec querySpec = new SqlQuerySpec(query, Collections.singletonList(powerPlantParam));
+
+        CosmosPagedIterable<PowerPlant> iterable = powerPlantsContainer.queryItems(querySpec, new CosmosQueryRequestOptions(), PowerPlant.class);
+        for (PowerPlant plant : iterable) {
+            return plant;
+        }
+        return null;
     }
 }

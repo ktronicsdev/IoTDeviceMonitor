@@ -2,6 +2,7 @@ package org.ktronics;
 
 import com.microsoft.azure.functions.annotation.*;
 import com.microsoft.azure.functions.*;
+import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.ktronics.models.Credential;
 import org.ktronics.monitoring.FunctionMonitoring;
@@ -15,8 +16,8 @@ public class IoTDeviceMonitor {
 
     private final FunctionMonitoring monitoring;
 
-    public IoTDeviceMonitor(PrometheusMeterRegistry registry) {
-        this.monitoring = new FunctionMonitoring(registry);
+    public IoTDeviceMonitor() {
+        this.monitoring = new FunctionMonitoring(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT));
     }
 
     @FunctionName("powerPlantMonitor")
