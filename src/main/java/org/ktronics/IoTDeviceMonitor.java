@@ -6,7 +6,7 @@ import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.ktronics.models.Credential;
 import org.ktronics.monitoring.FunctionMonitoring;
-import org.ktronics.services.DatabaseService;
+import org.ktronics.services.MongoDatabaseService;
 import org.ktronics.services.PowerCheckService;
 
 import java.util.List;
@@ -26,8 +26,9 @@ public class IoTDeviceMonitor {
             final ExecutionContext context
     ) {
         context.getLogger().info("Azure Function triggered: " + timerInfo);
+
         PowerCheckService powerCheckService = new PowerCheckService();
-        List<Credential> credentials = new DatabaseService().getCredentials();
+        List<Credential> credentials = new MongoDatabaseService().getCredentials();
 
         try {
             credentials.forEach(credential -> {
@@ -35,7 +36,7 @@ public class IoTDeviceMonitor {
                     // TODO : move the shine monitor check to abnormal detector instead of IoT monitor
                     var shineMonitorStatus = powerCheckService.checkPowerStationsForUser(credential);
                     for (var status : shineMonitorStatus) {
-                        context.getLogger().debug(status);
+                        context.getLogger().info(status);
                     }
                 }
             });
@@ -43,11 +44,11 @@ public class IoTDeviceMonitor {
         }
         catch (Exception e) {
             monitoring.onFailure();
-             // TODO : Please log faliur occured time since u logged triggered time 
-            context.getLogger().severe("Error occurred: " + e.getMessage(), time occured ??);
+             // TODO : Please log faliur occured time since u logged triggered time
+//            context.getLogger().severe("Error occurred: " + e.getMessage(), time occured ??);
         }
 
-        // TODO : Please log completed time since u logged triggered time 
+        // TODO : Please log completed time since u logged triggered time
         // context.getLogger().info("Azure Function completed: " + ???);
     }
 
