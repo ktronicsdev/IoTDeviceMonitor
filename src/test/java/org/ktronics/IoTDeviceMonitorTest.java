@@ -3,7 +3,6 @@ package org.ktronics;
 import org.junit.jupiter.api.Test;
 
 import com.microsoft.azure.functions.ExecutionContext;
-import org.ktronics.services.DatabaseService;
 import org.ktronics.services.PowerCheckService;
 
 import java.util.logging.Logger;
