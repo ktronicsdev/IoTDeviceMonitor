@@ -4,7 +4,7 @@
 
 ## Description
 
-This repository contains an **Azure Functions** project that will get a set of credentials from a database, and notify the user when the solar production abnormalities.
+This repository contains an **Azure Functions** project that will get a set of credentials from a database, and notify the user when the IoT device abnormalities.
 
 ## How to Run
 
