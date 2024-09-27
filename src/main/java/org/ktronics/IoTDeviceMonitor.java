@@ -26,18 +26,16 @@ public class IoTDeviceMonitor {
             final ExecutionContext context
     ) {
         context.getLogger().info("Azure Function triggered: " + timerInfo);
-
-        DatabaseService databaseService = new DatabaseService();
         PowerCheckService powerCheckService = new PowerCheckService();
-
-        List<Credential> credentials = databaseService.getCredentials();
+        List<Credential> credentials = new DatabaseService().getCredentials();
 
         try {
             credentials.forEach(credential -> {
                 if ("ShineMonitor".equals(credential.getType())) {
+                    // TODO : move the shine monitor check to abnormal detector instead of IoT monitor
                     var shineMonitorStatus = powerCheckService.checkPowerStationsForUser(credential);
-                    for (String status : shineMonitorStatus) {
-                        context.getLogger().info(status);
+                    for (var status : shineMonitorStatus) {
+                        context.getLogger().debug(status);
                     }
                 }
             });
@@ -45,16 +43,20 @@ public class IoTDeviceMonitor {
         }
         catch (Exception e) {
             monitoring.onFailure();
-            context.getLogger().severe("Error occurred: " + e.getMessage());
+             // TODO : Please log faliur occured time since u logged triggered time 
+            context.getLogger().severe("Error occurred: " + e.getMessage(), time occured ??);
         }
+
+        // TODO : Please log completed time since u logged triggered time 
+        // context.getLogger().info("Azure Function completed: " + ???);
     }
 
+    // TODO : pull this to super class
     @FunctionName("getMetrics")
     public HttpResponseMessage getMetrics(
             @HttpTrigger(name = "getMetrics", methods = {HttpMethod.GET}, route = "metrics") HttpRequestMessage<Optional<String>> request,
             final ExecutionContext context
     ) {
-        String metrics = monitoring.getMetrics();
-        return request.createResponseBuilder(HttpStatus.OK).body(metrics).build();
+        return request.createResponseBuilder(HttpStatus.OK).body(monitoring.getMetrics()).build();
     }
 }
