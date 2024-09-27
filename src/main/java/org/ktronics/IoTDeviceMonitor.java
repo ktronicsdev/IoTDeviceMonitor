@@ -7,6 +7,7 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.ktronics.models.Credential;
 import org.ktronics.monitoring.FunctionMonitoring;
 import org.ktronics.services.DatabaseService;
+import org.ktronics.services.MongoDatabaseService;
 import org.ktronics.services.PowerCheckService;
 
 import java.util.List;
@@ -27,7 +28,7 @@ public class IoTDeviceMonitor {
     ) {
         context.getLogger().info("Azure Function triggered: " + timerInfo);
 
-        DatabaseService databaseService = new DatabaseService();
+        DatabaseService databaseService = new MongoDatabaseService();
         PowerCheckService powerCheckService = new PowerCheckService();
 
         List<Credential> credentials = databaseService.getCredentials();

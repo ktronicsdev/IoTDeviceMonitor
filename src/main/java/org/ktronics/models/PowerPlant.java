@@ -1,19 +1,15 @@
 package org.ktronics.models;
 
-import java.util.UUID;
-
 public final class PowerPlant {
-    private String id;
-    private String credentialId;
-    private String powerPlantId;
-    private String powerPlantName;
+    private Integer userId;
+    private final String powerPlantId;
+    private final String powerPlantName;
     private Integer isAbnormal;
     private Double abnormalPercentage;
     private Integer isMailSent;
 
-    public PowerPlant(String id, String credentialId, String powerPlantId, String powerPlantName, Integer isAbnormal, Double abnormalPercentage, Integer isMailSent) {
-        this.id = (id == null) ? UUID.randomUUID().toString() : id;
-        this.credentialId = credentialId;
+    public PowerPlant(Integer userId, String powerPlantId, String powerPlantName, Integer isAbnormal, Double abnormalPercentage, Integer isMailSent) {
+        this.userId = userId;
         this.powerPlantId = powerPlantId;
         this.powerPlantName = powerPlantName;
         this.isAbnormal = isAbnormal;
@@ -21,19 +17,8 @@ public final class PowerPlant {
         this.isMailSent = isMailSent;
     }
 
-    public PowerPlant() {
-        this.id = UUID.randomUUID().toString();
-        this.credentialId = null;
-        this.powerPlantId = null; // or provide default
-        this.powerPlantName = null; // or provide default
-        this.isAbnormal = null;
-        this.abnormalPercentage = null;
-        this.isMailSent = null;
-    }
-
     public PowerPlant(String powerPlantId, String powerPlantName) {
-        this.id = UUID.randomUUID().toString();
-        this.credentialId = null;
+        this.userId = null;
         this.powerPlantId = powerPlantId;
         this.powerPlantName = powerPlantName;
         this.isAbnormal = null;
@@ -41,12 +26,8 @@ public final class PowerPlant {
         this.isMailSent = null;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public String getCredentialId() {
-        return credentialId;
+    public Integer getUserId() {
+        return userId;
     }
 
     public String getPowerPlantId() {
@@ -69,20 +50,8 @@ public final class PowerPlant {
         return isMailSent;
     }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public void setCredentialId(String credentialId) {
-        this.credentialId = credentialId;
-    }
-
-    public void setPowerPlantId(String powerPlantId) {
-        this.powerPlantId = powerPlantId;
-    }
-
-    public void setPowerPlantName(String powerPlantName) {
-        this.powerPlantName = powerPlantName;
+    public void setUserId(Integer userId) {
+        this.userId = userId;
     }
 
     public void setAbnormalPercentage(Double abnormalPercentage) {
