@@ -10,7 +10,7 @@ import java.util.List;
 public class PowerCheckService {
 
     private final ShineMonitorService shineMonitorService = new ShineMonitorService();
-    private final DatabaseService databaseService = new DatabaseService();
+    private final DatabaseService databaseService = new MongoDatabaseService();
     private static final Integer numberOfDaysToCheckAvailability = System.getenv("DAYS_TO_CHECK_AVAILABILITY") != null ? Integer.parseInt(System.getenv("DAYS_TO_CHECK_AVAILABILITY")) : 3;
 
     public List<String> checkPowerStationsForUser(Credential credential) {
@@ -22,14 +22,14 @@ public class PowerCheckService {
             for (PowerPlant powerPlant : powerPlants) {
                 var differencePercentage = shineMonitorService.getPowerOutputDifferencePercentage(authToken.getSecret(), authToken.getToken(), powerPlant.getPowerPlantId(), numberOfDaysToCheckAvailability);
                 if (differencePercentage < -10.0) {
-                    powerPlant.setCredentialId(credential.getId());
+                    powerPlant.setUserId(credential.getUserId());
                     powerPlant.setIsAbnormal(1);
                     powerPlant.setAbnormalPercentage(Math.abs(differencePercentage));
                     powerPlant.setIsMailSent(0);
                     databaseService.updatePowerPlantStatus(powerPlant);
                     output.add("Power plant (" + powerPlant.getPowerPlantId() + ") is Abnormal with a " + Math.abs(differencePercentage) + "% drop in output.");
                 } else {
-                    powerPlant.setCredentialId(credential.getId());
+                    powerPlant.setUserId(credential.getUserId());
                     powerPlant.setIsAbnormal(0);
                     powerPlant.setAbnormalPercentage(0.00);
                     powerPlant.setIsMailSent(0);
