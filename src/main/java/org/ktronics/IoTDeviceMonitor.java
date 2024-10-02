@@ -4,6 +4,8 @@ import com.microsoft.azure.functions.annotation.*;
 import com.microsoft.azure.functions.*;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
+import org.ktronics.config.ConfigurationLoader;
+import org.ktronics.config.ConfigurationManager;
 import org.ktronics.models.Credential;
 import org.ktronics.monitoring.FunctionMonitoring;
 import org.ktronics.services.DatabaseService;
@@ -16,6 +18,8 @@ import java.util.Optional;
 public class IoTDeviceMonitor {
 
     private final FunctionMonitoring monitoring;
+
+    private ConfigurationManager configManager = new ConfigurationManager(new ConfigurationLoader());
 
     public IoTDeviceMonitor() {
         this.monitoring = new FunctionMonitoring(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT));
