@@ -8,7 +8,10 @@ import org.ktronics.config.ConfigurationLoader;
 import org.ktronics.config.ConfigurationManager;
 import org.ktronics.models.Credential;
 import org.ktronics.monitoring.FunctionMonitoring;
+<<<<<<< HEAD
 import org.ktronics.services.DatabaseService;
+=======
+>>>>>>> 707a10f3d13be20ba674ea7e19db0fb46f385d42
 import org.ktronics.services.MongoDatabaseService;
 import org.ktronics.services.PowerCheckService;
 
@@ -32,16 +35,19 @@ public class IoTDeviceMonitor {
     ) {
         context.getLogger().info("Azure Function triggered: " + timerInfo);
 
+<<<<<<< HEAD
         DatabaseService databaseService = new MongoDatabaseService();
+=======
+>>>>>>> 707a10f3d13be20ba674ea7e19db0fb46f385d42
         PowerCheckService powerCheckService = new PowerCheckService();
-
-        List<Credential> credentials = databaseService.getCredentials();
+        List<Credential> credentials = new MongoDatabaseService().getCredentials();
 
         try {
             credentials.forEach(credential -> {
                 if ("ShineMonitor".equals(credential.getType())) {
+                    // TODO : move the shine monitor check to abnormal detector instead of IoT monitor
                     var shineMonitorStatus = powerCheckService.checkPowerStationsForUser(credential);
-                    for (String status : shineMonitorStatus) {
+                    for (var status : shineMonitorStatus) {
                         context.getLogger().info(status);
                     }
                 }
@@ -50,16 +56,20 @@ public class IoTDeviceMonitor {
         }
         catch (Exception e) {
             monitoring.onFailure();
-            context.getLogger().severe("Error occurred: " + e.getMessage());
+             // TODO : Please log faliur occured time since u logged triggered time
+//            context.getLogger().severe("Error occurred: " + e.getMessage(), time occured ??);
         }
+
+        // TODO : Please log completed time since u logged triggered time
+        // context.getLogger().info("Azure Function completed: " + ???);
     }
 
+    // TODO : pull this to super class
     @FunctionName("getMetrics")
     public HttpResponseMessage getMetrics(
             @HttpTrigger(name = "getMetrics", methods = {HttpMethod.GET}, route = "metrics") HttpRequestMessage<Optional<String>> request,
             final ExecutionContext context
     ) {
-        String metrics = monitoring.getMetrics();
-        return request.createResponseBuilder(HttpStatus.OK).body(metrics).build();
+        return request.createResponseBuilder(HttpStatus.OK).body(monitoring.getMetrics()).build();
     }
 }
