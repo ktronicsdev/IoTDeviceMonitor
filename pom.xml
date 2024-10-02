@@ -128,10 +128,24 @@
                     <!-- refers https://github.com/microsoft/azure-maven-plugins/wiki/Azure-Functions:-Configuration-Details for all valid configurations for application insights-->
                     <!-- <disableAppInsights></disableAppInsights> -->
                     <runtime>
-                        <!-- runtime os, could be windows, linux or docker-->
+                        <!--
+                        Since we need support autoscaling for azure function if we deploy on docker we need another container orchestration
+                        to support autoscaling stratergy. Hence to reduce complexcity we deploy the function directly on azure function to
+                        use azure manage services instead.
+                        But for local intergration tests we use docker for functionality only (TODO : we can not test autoscaling localy)
+
+                        TODO : move all containers to linux for better resource managment
+                        -->
                         <os>windows</os>
                         <javaVersion>17</javaVersion>
                         <!-- for docker function, please set the following parameters -->
+
+                        <!--
+                        TODO : make sure we use same runtime of 17 or same consistent runtime pls
+                        please use property here instead of hardcoding java.version
+                        -->
+                        <javaVersion>17</javaVersion>
+                        <!-- if we want to run this as a docker only, please set the following parameters -->
                         <!-- <image>[hub-user/]repo-name[:tag]</image> -->
                         <!-- <serverId></serverId> -->
                         <!-- <registryUrl></registryUrl>  -->
