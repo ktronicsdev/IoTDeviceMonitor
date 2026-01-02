@@ -1,9 +1,16 @@
 name: ShineMonitor Daily Monitor
 
 on:
+  # 2x daily scheduled runs
   schedule:
     - cron: "30 4 * * *"
     - cron: "30 16 * * *"
+
+  # build verification email on every push
+  push:
+    branches:
+      - main
+
   workflow_dispatch: {}
 
 permissions:
@@ -13,9 +20,21 @@ jobs:
   run:
     runs-on: ubuntu-latest
 
+    env:
+      ALERT_TO: ktronicssolar@gmail.com
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASS: ${{ secrets.SMTP_PASS }}
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
       - name: Create credentials.json from GitHub Secrets
         shell: bash
@@ -40,8 +59,6 @@ jobs:
         run: |
           set -e
           mkdir -p data
-
-          # Keep last 3 full months (UTC)
           keep0=$(date -u +%Y-%m)
           keep1=$(date -u -d "$(date -u +%Y-%m-01) -1 month" +%Y-%m)
           keep2=$(date -u -d "$(date -u +%Y-%m-01) -2 month" +%Y-%m)
@@ -53,12 +70,67 @@ jobs:
             ! -name "*-${keep3}.csv" \
             -delete
 
-      - name: Commit updated data folder
+      - name: Run anomaly detection
+        id: anomaly
+        shell: bash
+        run: |
+          set +e
+          python3 check_anomaly.py --data-dir data --out-dir alerts --state-file state/alerts_state.json
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Send anomaly email (only when alerts exist)
+        if: steps.anomaly.outputs.exit_code == '2'
+        shell: bash
+        run: |
+          set -e
+          subject="ShineMonitor ALERTS - ${{ github.repository }} - ${{ github.run_id }}"
+          body="$(cat alerts/alerts.txt)"
+          EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 scripts/send_email.py
+
+      - name: Commit updated data + alert state
         shell: bash
         run: |
           set -e
           git config user.name "shinemonitor-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/*.csv || true
-          git commit -m "Update ShineMonitor data" || exit 0
+
+          git add data/*.csv 2>/dev/null || true
+          git add alerts/* 2>/dev/null || true
+          git add state/* 2>/dev/null || true
+
+          git commit -m "Update ShineMonitor data & alerts" || exit 0
           git push
+
+      # ✅ Build verification email on every push (success)
+      - name: Send build verification email (push + success)
+        if: github.event_name == 'push' && success()
+        shell: bash
+        run: |
+          set -e
+          subject="✅ Build OK - ${{ github.repository }} @ ${{ github.sha }}"
+          body="Workflow: ${{ github.workflow }}
+          Status: SUCCESS
+          Repo: ${{ github.repository }}
+          Branch: ${{ github.ref_name }}
+          Commit: ${{ github.sha }}
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          "
+          EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 scripts/send_email.py
+
+      # ✅ Build verification email on every push (failure)
+      - name: Send build verification email (push + failure)
+        if: github.event_name == 'push' && failure()
+        shell: bash
+        run: |
+          set -e
+          subject="❌ Build FAILED - ${{ github.repository }} @ ${{ github.sha }}"
+          body="Workflow: ${{ github.workflow }}
+          Status: FAILURE
+          Repo: ${{ github.repository }}
+          Branch: ${{ github.ref_name }}
+          Commit: ${{ github.sha }}
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          "
+          EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 scripts/send_email.py
