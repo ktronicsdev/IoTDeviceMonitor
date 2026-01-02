@@ -67,17 +67,21 @@ jobs:
 
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      - name: Run yearly fetch (current year)
+      - name: Run yearly fetch (last year + current year)
         shell: bash
         run: |
           set -e
           chmod +x src/main/java/org/ktronics/scripts/check_shinemonitor_yearly.sh
 
+          LAST_YEAR=$(date -u -d "$(date -u +%Y-01-01) -1 day" +%Y)
           CURRENT_YEAR=$(date -u +%Y)
 
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📅 FETCHING YEARLY DATA: $CURRENT_YEAR"
+          echo "📅 FETCHING YEARLY DATA: $LAST_YEAR & $CURRENT_YEAR"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          src/main/java/org/ktronics/scripts/check_shinemonitor_yearly.sh \
+            src/main/java/org/ktronics/config/credentials.json "$LAST_YEAR" 2>&1 | grep -E "(Account:|Plant:|Year total|Yearly CSV|DONE)" || true
 
           src/main/java/org/ktronics/scripts/check_shinemonitor_yearly.sh \
             src/main/java/org/ktronics/config/credentials.json "$CURRENT_YEAR" 2>&1 | grep -E "(Account:|Plant:|Year total|Yearly CSV|DONE)" || true
