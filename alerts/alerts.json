@@ -1,19 +1,16 @@
 {
-  "generated_at": "2026-01-02T16:29:14.035054Z",
-  "alerts": [
+  "generated_at": "2026-01-02T16:47:05.186994Z",
+  "alerts": [],
+  "suppressed": [
     {
-      "severity": "RED",
       "plant_key": "anuradha-gajanayaka-plant",
-      "today": "2026-01-02",
-      "baseline_avg_kwh_per_day": 6.1714,
-      "threshold_kwh_per_day": 1.2343,
-      "rule": "< 20.0% baseline for 3 consecutive days",
+      "reason": "suppressed: 0 kWh for 3 days and red already sent",
       "window": [
         "2025-12-31",
         "2026-01-01",
         "2026-01-02"
       ],
-      "details": [
+      "zero_run": [
         {
           "date": "2025-12-31",
           "kwh": 0.0
@@ -29,18 +26,14 @@
       ]
     },
     {
-      "severity": "RED",
       "plant_key": "gayan-imh-imbulgoda-3kw",
-      "today": "2026-01-02",
-      "baseline_avg_kwh_per_day": 4.3643,
-      "threshold_kwh_per_day": 0.8729,
-      "rule": "< 20.0% baseline for 3 consecutive days",
+      "reason": "suppressed: 0 kWh for 3 days and red already sent",
       "window": [
         "2025-12-31",
         "2026-01-01",
         "2026-01-02"
       ],
-      "details": [
+      "zero_run": [
         {
           "date": "2025-12-31",
           "kwh": 0.0
@@ -56,18 +49,14 @@
       ]
     },
     {
-      "severity": "RED",
       "plant_key": "jeremy-jeremy-plant",
-      "today": "2026-01-02",
-      "baseline_avg_kwh_per_day": 8.0714,
-      "threshold_kwh_per_day": 1.6143,
-      "rule": "< 20.0% baseline for 3 consecutive days",
+      "reason": "suppressed: 0 kWh for 3 days and red already sent",
       "window": [
         "2025-12-31",
         "2026-01-01",
         "2026-01-02"
       ],
-      "details": [
+      "zero_run": [
         {
           "date": "2025-12-31",
           "kwh": 0.0
@@ -83,18 +72,14 @@
       ]
     },
     {
-      "severity": "RED",
       "plant_key": "kasun-kasun",
-      "today": "2026-01-02",
-      "baseline_avg_kwh_per_day": 10.4071,
-      "threshold_kwh_per_day": 2.0814,
-      "rule": "< 20.0% baseline for 3 consecutive days",
+      "reason": "suppressed: 0 kWh for 3 days and red already sent",
       "window": [
         "2025-12-31",
         "2026-01-01",
         "2026-01-02"
       ],
-      "details": [
+      "zero_run": [
         {
           "date": "2025-12-31",
           "kwh": 0.0
@@ -110,18 +95,14 @@
       ]
     },
     {
-      "severity": "RED",
       "plant_key": "muadh-muadh-solar",
-      "today": "2026-01-02",
-      "baseline_avg_kwh_per_day": 2.5786,
-      "threshold_kwh_per_day": 0.5157,
-      "rule": "< 20.0% baseline for 3 consecutive days",
+      "reason": "suppressed: 0 kWh for 3 days and red already sent",
       "window": [
         "2025-12-31",
         "2026-01-01",
         "2026-01-02"
       ],
-      "details": [
+      "zero_run": [
         {
           "date": "2025-12-31",
           "kwh": 0.0
@@ -137,18 +118,14 @@
       ]
     },
     {
-      "severity": "RED",
       "plant_key": "namila-waragoda-namila-plant",
-      "today": "2026-01-02",
-      "baseline_avg_kwh_per_day": 10.4786,
-      "threshold_kwh_per_day": 2.0957,
-      "rule": "< 20.0% baseline for 3 consecutive days",
+      "reason": "suppressed: 0 kWh for 3 days and red already sent",
       "window": [
         "2025-12-31",
         "2026-01-01",
         "2026-01-02"
       ],
-      "details": [
+      "zero_run": [
         {
           "date": "2025-12-31",
           "kwh": 0.0
@@ -164,18 +141,14 @@
       ]
     },
     {
-      "severity": "RED",
       "plant_key": "ravi-botheju-plant",
-      "today": "2026-01-02",
-      "baseline_avg_kwh_per_day": 3.1643,
-      "threshold_kwh_per_day": 0.6329,
-      "rule": "< 20.0% baseline for 3 consecutive days",
+      "reason": "suppressed: 0 kWh for 3 days and red already sent",
       "window": [
         "2025-12-31",
         "2026-01-01",
         "2026-01-02"
       ],
-      "details": [
+      "zero_run": [
         {
           "date": "2025-12-31",
           "kwh": 0.0
@@ -191,18 +164,14 @@
       ]
     },
     {
-      "severity": "RED",
       "plant_key": "sohan-must-pv1800-3024-pro",
-      "today": "2026-01-02",
-      "baseline_avg_kwh_per_day": 7.3929,
-      "threshold_kwh_per_day": 1.4786,
-      "rule": "< 20.0% baseline for 3 consecutive days",
+      "reason": "suppressed: 0 kWh for 3 days and red already sent",
       "window": [
         "2025-12-31",
         "2026-01-01",
         "2026-01-02"
       ],
-      "details": [
+      "zero_run": [
         {
           "date": "2025-12-31",
           "kwh": 0.0
@@ -218,18 +187,14 @@
       ]
     },
     {
-      "severity": "RED",
       "plant_key": "troy-troy-hybrid-3kw",
-      "today": "2026-01-02",
-      "baseline_avg_kwh_per_day": 11.05,
-      "threshold_kwh_per_day": 2.21,
-      "rule": "< 20.0% baseline for 3 consecutive days",
+      "reason": "suppressed: 0 kWh for 3 days and red already sent",
       "window": [
         "2025-12-31",
         "2026-01-01",
         "2026-01-02"
       ],
-      "details": [
+      "zero_run": [
         {
           "date": "2025-12-31",
           "kwh": 0.0
@@ -245,18 +210,14 @@
       ]
     },
     {
-      "severity": "RED",
       "plant_key": "upulatheja-3kw-pro-kadawath",
-      "today": "2026-01-02",
-      "baseline_avg_kwh_per_day": 3.9,
-      "threshold_kwh_per_day": 0.78,
-      "rule": "< 20.0% baseline for 3 consecutive days",
+      "reason": "suppressed: 0 kWh for 3 days and red already sent",
       "window": [
         "2025-12-31",
         "2026-01-01",
         "2026-01-02"
       ],
-      "details": [
+      "zero_run": [
         {
           "date": "2025-12-31",
           "kwh": 0.0
@@ -272,6 +233,5 @@
       ]
     }
   ],
-  "suppressed": [],
   "ignored": []
 }

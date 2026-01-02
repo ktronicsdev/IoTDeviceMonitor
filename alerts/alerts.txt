@@ -1,92 +1,13 @@
-ALERTS: 10 plant(s) Date=2026-01-02
-
-[RED] anuradha-gajanayaka-plant
-  Rule: < 20.0% baseline for 3 consecutive days
-  Baseline avg/day: 6.1714 kWh
-  Threshold/day  : 1.2343 kWh
-  Days:
-    2025-12-31: 0.0 kWh
-    2026-01-01: 0.0 kWh
-    2026-01-02: 0.0 kWh
-
-[RED] gayan-imh-imbulgoda-3kw
-  Rule: < 20.0% baseline for 3 consecutive days
-  Baseline avg/day: 4.3643 kWh
-  Threshold/day  : 0.8729 kWh
-  Days:
-    2025-12-31: 0.0 kWh
-    2026-01-01: 0.0 kWh
-    2026-01-02: 0.0 kWh
-
-[RED] jeremy-jeremy-plant
-  Rule: < 20.0% baseline for 3 consecutive days
-  Baseline avg/day: 8.0714 kWh
-  Threshold/day  : 1.6143 kWh
-  Days:
-    2025-12-31: 0.0 kWh
-    2026-01-01: 0.0 kWh
-    2026-01-02: 0.0 kWh
-
-[RED] kasun-kasun
-  Rule: < 20.0% baseline for 3 consecutive days
-  Baseline avg/day: 10.4071 kWh
-  Threshold/day  : 2.0814 kWh
-  Days:
-    2025-12-31: 0.0 kWh
-    2026-01-01: 0.0 kWh
-    2026-01-02: 0.0 kWh
-
-[RED] muadh-muadh-solar
-  Rule: < 20.0% baseline for 3 consecutive days
-  Baseline avg/day: 2.5786 kWh
-  Threshold/day  : 0.5157 kWh
-  Days:
-    2025-12-31: 0.0 kWh
-    2026-01-01: 0.0 kWh
-    2026-01-02: 0.0 kWh
-
-[RED] namila-waragoda-namila-plant
-  Rule: < 20.0% baseline for 3 consecutive days
-  Baseline avg/day: 10.4786 kWh
-  Threshold/day  : 2.0957 kWh
-  Days:
-    2025-12-31: 0.0 kWh
-    2026-01-01: 0.0 kWh
-    2026-01-02: 0.0 kWh
-
-[RED] ravi-botheju-plant
-  Rule: < 20.0% baseline for 3 consecutive days
-  Baseline avg/day: 3.1643 kWh
-  Threshold/day  : 0.6329 kWh
-  Days:
-    2025-12-31: 0.0 kWh
-    2026-01-01: 0.0 kWh
-    2026-01-02: 0.0 kWh
-
-[RED] sohan-must-pv1800-3024-pro
-  Rule: < 20.0% baseline for 3 consecutive days
-  Baseline avg/day: 7.3929 kWh
-  Threshold/day  : 1.4786 kWh
-  Days:
-    2025-12-31: 0.0 kWh
-    2026-01-01: 0.0 kWh
-    2026-01-02: 0.0 kWh
-
-[RED] troy-troy-hybrid-3kw
-  Rule: < 20.0% baseline for 3 consecutive days
-  Baseline avg/day: 11.05 kWh
-  Threshold/day  : 2.21 kWh
-  Days:
-    2025-12-31: 0.0 kWh
-    2026-01-01: 0.0 kWh
-    2026-01-02: 0.0 kWh
-
-[RED] upulatheja-3kw-pro-kadawath
-  Rule: < 20.0% baseline for 3 consecutive days
-  Baseline avg/day: 3.9 kWh
-  Threshold/day  : 0.78 kWh
-  Days:
-    2025-12-31: 0.0 kWh
-    2026-01-01: 0.0 kWh
-    2026-01-02: 0.0 kWh
+No alerts. Plants=11 Date=2026-01-02
+SUPPRESSED:
+  - anuradha-gajanayaka-plant (suppressed: 0 kWh for 3 days and red already sent)
+  - gayan-imh-imbulgoda-3kw (suppressed: 0 kWh for 3 days and red already sent)
+  - jeremy-jeremy-plant (suppressed: 0 kWh for 3 days and red already sent)
+  - kasun-kasun (suppressed: 0 kWh for 3 days and red already sent)
+  - muadh-muadh-solar (suppressed: 0 kWh for 3 days and red already sent)
+  - namila-waragoda-namila-plant (suppressed: 0 kWh for 3 days and red already sent)
+  - ravi-botheju-plant (suppressed: 0 kWh for 3 days and red already sent)
+  - sohan-must-pv1800-3024-pro (suppressed: 0 kWh for 3 days and red already sent)
+  - troy-troy-hybrid-3kw (suppressed: 0 kWh for 3 days and red already sent)
+  - upulatheja-3kw-pro-kadawath (suppressed: 0 kWh for 3 days and red already sent)
 
