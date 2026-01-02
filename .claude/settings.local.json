@@ -10,7 +10,8 @@
       "Bash(git pull:*)",
       "Bash(python3:*)",
       "Bash(cat:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(ls:*)"
     ]
   }
 }
