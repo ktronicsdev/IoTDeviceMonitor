@@ -38,3 +38,7 @@ local.settings.json
 bin/
 obj/
 src/main/java/org/ktronics/config/credentials.json
+
+# skip local data
+
+src/main/java/org/ktronics/scripts/data

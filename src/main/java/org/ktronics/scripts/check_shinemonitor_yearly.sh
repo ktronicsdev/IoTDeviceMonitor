@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-API_URL="http://api.shinemonitor.com/public/"
+# Source common configuration and functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/shinemonitor_common.sh"
 
 # 1st arg = credentials.json (required)
 CREDS="${1:?Usage: $0 <credentials.json> [YYYY]}"
@@ -11,31 +13,6 @@ YEAR="${2:-$(date -u -d "$(date -u +%Y-01-01) -1 day" +%Y)}"
 
 need() { command -v "$1" >/dev/null 2>&1 || { echo "Missing: $1"; exit 2; }; }
 need curl sha1sum awk sed grep tr date mkdir
-
-sha1hex() { printf "%s" "$1" | sha1sum | awk '{print $1}'; }
-salt_ms() { date +%s%3N; }
-
-urlencode() {
-  local s="${1:-}" out="" i c
-  for ((i=0; i<${#s}; i++)); do
-    c="${s:i:1}"
-    case "$c" in
-      [a-zA-Z0-9._~-]) out+="$c" ;;
-      *) printf -v out '%s%%%02X' "$out" "'$c" ;;
-    esac
-  done
-  printf '%s' "$out"
-}
-
-json_blob_get_first() {
-  local key="$1"
-  sed -nE "s/.*\"$key\"[[:space:]]*:[[:space:]]*\"?([^\",}]+)\"?.*/\1/p" | head -n 1
-}
-
-json_obj_get_str() {
-  local key="$1"
-  sed -nE "s/.*\"$key\"[[:space:]]*:[[:space:]]*\"([^\"]*)\".*/\1/p" | head -n 1
-}
 
 company_key="$(sed -nE 's/.*"company_key"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' "$CREDS" | head -n 1)"
 [[ -z "$company_key" ]] && { echo "ERROR: company_key missing"; exit 2; }

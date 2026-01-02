@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-API_URL="${API_URL:-http://api.shinemonitor.com/public/}"
+# Source common configuration and functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/shinemonitor_common.sh"
+
+# Script-specific configuration
 CREDS="${1:-config/credentials.json}"
 DATE_TO_TEST="${DATE_TO_TEST:-$(date -u -d "yesterday" +%F)}"
 TEST_PLANTS="${TEST_PLANTS:-1}"
@@ -15,19 +19,10 @@ need sed
 need grep
 need date
 
-sha1hex() { printf "%s" "$1" | sha1sum | awk '{print $1}'; }
-salt_ms() { date +%s%3N; }
-
 # Extract first match of a JSON string field: "key":"value"
 json_get_first() {
   local key="$1"
   sed -nE "s/.*\"$key\"[[:space:]]*:[[:space:]]*\"([^\"]*)\".*/\1/p" "$CREDS" | head -n 1
-}
-
-# Extract field from a JSON blob (single-line or multi-line string piped in)
-json_blob_get_first() {
-  local key="$1"
-  sed -nE "s/.*\"$key\"[[:space:]]*:[[:space:]]*\"?([^\",}]+)\"?.*/\1/p" | head -n 1
 }
 
 company_key="$(json_get_first company_key)"

@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-API_URL="http://api.shinemonitor.com/public/"
+# Source common configuration and functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/shinemonitor_common.sh"
 
 USERNAME="$1"
 PASSWORD="$2"
 COMPANY_KEY="$3"
-
-sha1hex() { printf "%s" "$1" | sha1sum | awk '{print $1}'; }
-salt_ms() { date +%s%3N; }
 
 # ---- AUTH ----
 salt="$(salt_ms)"

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash:*)",
+      "Bash(chmod:*)",
+      "Bash(./debug_api_response.sh:*)",
+      "Bash(./check_shinemonitor_monthly.sh:*)",
+      "Bash(rm:*)",
+      "Bash(grep:*)"
+    ]
+  }
+}
