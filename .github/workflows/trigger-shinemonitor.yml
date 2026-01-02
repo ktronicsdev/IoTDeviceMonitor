@@ -46,13 +46,23 @@ jobs:
           EOF
           chmod 600 src/main/java/org/ktronics/config/credentials.json
 
-      - name: Run monthly fetch (default = last month)
+      - name: Run monthly fetch (last month + current month)
         shell: bash
         run: |
           set -e
           chmod +x src/main/java/org/ktronics/scripts/check_shinemonitor_monthly.sh
+
+          # Fetch last month's data
+          LAST_MONTH=$(date -u -d "$(date -u +%Y-%m-01) -1 day" +%Y-%m)
+          echo "Fetching data for $LAST_MONTH (last month)..."
           src/main/java/org/ktronics/scripts/check_shinemonitor_monthly.sh \
-            src/main/java/org/ktronics/config/credentials.json
+            src/main/java/org/ktronics/config/credentials.json "$LAST_MONTH"
+
+          # Fetch current month's data
+          CURRENT_MONTH=$(date -u +%Y-%m)
+          echo "Fetching data for $CURRENT_MONTH (current month)..."
+          src/main/java/org/ktronics/scripts/check_shinemonitor_monthly.sh \
+            src/main/java/org/ktronics/config/credentials.json "$CURRENT_MONTH"
 
       - name: Keep only last 3 months of data
         shell: bash
