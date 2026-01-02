@@ -52,17 +52,20 @@ jobs:
           set -e
           chmod +x src/main/java/org/ktronics/scripts/check_shinemonitor_monthly.sh
 
-          # Fetch last month's data
           LAST_MONTH=$(date -u -d "$(date -u +%Y-%m-01) -1 day" +%Y-%m)
-          echo "Fetching data for $LAST_MONTH (last month)..."
-          src/main/java/org/ktronics/scripts/check_shinemonitor_monthly.sh \
-            src/main/java/org/ktronics/config/credentials.json "$LAST_MONTH"
-
-          # Fetch current month's data
           CURRENT_MONTH=$(date -u +%Y-%m)
-          echo "Fetching data for $CURRENT_MONTH (current month)..."
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 FETCHING DATA: $LAST_MONTH & $CURRENT_MONTH"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
           src/main/java/org/ktronics/scripts/check_shinemonitor_monthly.sh \
-            src/main/java/org/ktronics/config/credentials.json "$CURRENT_MONTH"
+            src/main/java/org/ktronics/config/credentials.json "$LAST_MONTH" 2>&1 | grep -E "(Account:|Plant:|Month total|Daily CSV|DONE)" || true
+
+          src/main/java/org/ktronics/scripts/check_shinemonitor_monthly.sh \
+            src/main/java/org/ktronics/config/credentials.json "$CURRENT_MONTH" 2>&1 | grep -E "(Account:|Plant:|Month total|Daily CSV|DONE)" || true
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Keep only last 4 months of data (current + 3 previous)
         shell: bash
@@ -85,20 +88,34 @@ jobs:
         id: anomaly
         shell: bash
         run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🔍 ANOMALY DETECTION"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           set +e
-          python3 src/main/java/org/ktronics/scripts/check_anomaly.py --data-dir data --out-dir alerts --state-file state/alerts_state.json
+          python3 src/main/java/org/ktronics/scripts/check_anomaly.py --data-dir data --out-dir alerts --state-file state/alerts_state.json 2>&1
           code=$?
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          if [ $code -eq 2 ]; then
+            echo "⚠️  ALERTS FOUND - Email will be sent"
+          else
+            echo "✅ No alerts detected"
+          fi
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           exit 0
 
       - name: Send anomaly email (only when alerts exist)
         if: steps.anomaly.outputs.exit_code == '2'
         shell: bash
         run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📧 SENDING ALERT EMAIL"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           set -e
           subject="ShineMonitor ALERTS - ${{ github.repository }} - ${{ github.run_id }}"
           body="$(cat alerts/alerts.txt)"
-          EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 src/main/java/org/ktronics/scripts/send_email.py
+          EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 src/main/java/org/ktronics/scripts/send_email.py 2>&1
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Commit updated data + alert state
         shell: bash
