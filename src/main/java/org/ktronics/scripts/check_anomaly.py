@@ -281,38 +281,119 @@ def main() -> int:
     (out_dir / "alerts.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
 
     lines: List[str] = []
+
+    # --- Header with prominent status ---
+    lines.append("=" * 80)
+    lines.append("║" + " " * 78 + "║")
     if not alerts:
-        lines.append(f"No alerts. Plants={len(plants_daily)} Date={today}")
+        lines.append("║" + "✓ ALL SYSTEMS OPERATIONAL".center(78) + "║")
+        lines.append("║" + " " * 78 + "║")
+        lines.append("║" + f"Status: NO ALERTS DETECTED".center(78) + "║")
     else:
-        lines.append(f"ALERTS: {len(alerts)} plant(s) Date={today}")
-        lines.append("")
+        lines.append("║" + "⚠ ATTENTION REQUIRED ⚠".center(78) + "║")
+        lines.append("║" + " " * 78 + "║")
+        red_count = sum(1 for a in alerts if a["severity"] == "RED")
+        orange_count = sum(1 for a in alerts if a["severity"] == "ORANGE")
+        status_line = f"Status: {red_count} CRITICAL, {orange_count} WARNING"
+        lines.append("║" + status_line.center(78) + "║")
+
+    lines.append("║" + " " * 78 + "║")
+    lines.append("║" + f"Date: {today}  |  Total Plants Monitored: {len(plants_daily)}".center(78) + "║")
+    lines.append("║" + " " * 78 + "║")
+    lines.append("=" * 80)
+    lines.append("")
+
+    # --- Summary Section ---
+    if alerts:
+        lines.append("┌─ ALERT SUMMARY " + "─" * 62 + "┐")
+        lines.append("│")
+
         for a in alerts:
-            lines.append(f"[{a['severity']}] {a['plant_key']}")
-            lines.append(f"  Rule: {a['rule']}")
+            severity_symbol = "🔴" if a["severity"] == "RED" else "🟠"
+            lines.append(f"│ {severity_symbol} [{a['severity']}] {a['plant_key']}")
+            lines.append("│")
             if a["severity"] == "RED":
-                lines.append(f"  Baseline avg/day: {a['baseline_avg_kwh_per_day']} kWh")
-                lines.append(f"  Threshold/day  : {a['threshold_kwh_per_day']} kWh")
-                lines.append("  Days:")
-                for r in a["details"]:
-                    lines.append(f"    {r['date']}: {r['kwh']} kWh")
+                baseline = a['baseline_avg_kwh_per_day']
+                latest_kwh = a['details'][-1]['kwh'] if a['details'] else 0
+                drop_pct = ((baseline - latest_kwh) / baseline * 100) if baseline > 0 else 0
+                lines.append(f"│   Issue: Production dropped {drop_pct:.1f}% below normal")
+                lines.append(f"│   Normal: {baseline:.2f} kWh/day  →  Current: {latest_kwh:.2f} kWh/day")
+                lines.append(f"│   Rule: {a['rule']}")
             else:
-                lines.append(f"  Baseline avg/month: {a['baseline_avg_kwh_per_month']} kWh")
-                lines.append(f"  Threshold/month   : {a['threshold_kwh_per_month']} kWh")
-                lines.append("  Months:")
-                for r in a["details"]:
-                    lines.append(f"    {r['month']}: {r['kwh']} kWh")
-            lines.append("")
+                baseline = a['baseline_avg_kwh_per_month']
+                latest_kwh = a['details'][-1]['kwh'] if a['details'] else 0
+                drop_pct = ((baseline - latest_kwh) / baseline * 100) if baseline > 0 else 0
+                lines.append(f"│   Issue: Production dropped {drop_pct:.1f}% below normal")
+                lines.append(f"│   Normal: {baseline:.2f} kWh/month  →  Current: {latest_kwh:.2f} kWh/month")
+                lines.append(f"│   Rule: {a['rule']}")
+            lines.append("│")
 
-    if ignored:
-        lines.append("IGNORED:")
-        for x in ignored:
-            lines.append(f"  - {x['plant_key']} ({x['reason']})")
+        lines.append("└" + "─" * 78 + "┘")
         lines.append("")
 
-    if suppressed:
-        lines.append("SUPPRESSED:")
-        for x in suppressed:
-            lines.append(f"  - {x['plant_key']} ({x['reason']})")
+        # --- Recommended Actions ---
+        lines.append("┌─ RECOMMENDED ACTIONS " + "─" * 56 + "┐")
+        lines.append("│")
+        for a in alerts:
+            if a["severity"] == "RED":
+                lines.append(f"│ {a['plant_key']}:")
+                lines.append("│   1. Check inverter status and error codes")
+                lines.append("│   2. Verify grid connection and breaker status")
+                lines.append("│   3. Inspect panels for shading or physical damage")
+                lines.append("│   4. Contact maintenance team if issue persists")
+            else:
+                lines.append(f"│ {a['plant_key']}:")
+                lines.append("│   1. Review monthly production trends")
+                lines.append("│   2. Check for seasonal factors (weather, shading)")
+                lines.append("│   3. Schedule maintenance inspection")
+        lines.append("│")
+        lines.append("└" + "─" * 78 + "┘")
+        lines.append("")
+
+        # --- Detailed Breakdown ---
+        lines.append("┌─ DETAILED BREAKDOWN " + "─" * 57 + "┐")
+        lines.append("│")
+        for a in alerts:
+            lines.append(f"│ [{a['severity']}] {a['plant_key']}")
+            lines.append("│")
+            if a["severity"] == "RED":
+                lines.append(f"│   Baseline (avg/day): {a['baseline_avg_kwh_per_day']:.4f} kWh")
+                lines.append(f"│   Alert Threshold: < {a['threshold_kwh_per_day']:.4f} kWh/day")
+                lines.append("│   Recent Production:")
+                for r in a["details"]:
+                    pct = (r['kwh'] / a['baseline_avg_kwh_per_day'] * 100) if a['baseline_avg_kwh_per_day'] > 0 else 0
+                    lines.append(f"│     {r['date']}: {r['kwh']:.4f} kWh ({pct:.1f}% of baseline)")
+            else:
+                lines.append(f"│   Baseline (avg/month): {a['baseline_avg_kwh_per_month']:.4f} kWh")
+                lines.append(f"│   Alert Threshold: < {a['threshold_kwh_per_month']:.4f} kWh/month")
+                lines.append("│   Recent Months:")
+                for r in a["details"]:
+                    pct = (r['kwh'] / a['baseline_avg_kwh_per_month'] * 100) if a['baseline_avg_kwh_per_month'] > 0 else 0
+                    lines.append(f"│     {r['month']}: {r['kwh']:.4f} kWh ({pct:.1f}% of baseline)")
+            lines.append("│")
+        lines.append("└" + "─" * 78 + "┘")
+        lines.append("")
+
+    # --- Suppressed/Ignored Section ---
+    if suppressed or ignored:
+        lines.append("┌─ ADDITIONAL INFORMATION " + "─" * 52 + "┐")
+        lines.append("│")
+
+        if ignored:
+            lines.append("│ IGNORED PLANTS (No production for extended period):")
+            for x in ignored:
+                lines.append(f"│   • {x['plant_key']}")
+                lines.append(f"│     Reason: {x['reason']}")
+            lines.append("│")
+
+        if suppressed:
+            lines.append("│ SUPPRESSED ALERTS (Already notified, zero production continues):")
+            for x in suppressed:
+                lines.append(f"│   • {x['plant_key']}")
+                lines.append(f"│     Reason: {x['reason']}")
+            lines.append("│")
+
+        lines.append("└" + "─" * 78 + "┘")
         lines.append("")
 
     (out_dir / "alerts.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
