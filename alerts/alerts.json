@@ -1,48 +1,34 @@
 {
-  "generated_at": "2026-01-02T18:35:57.725173Z",
-  "alerts": [
-    {
-      "severity": "RED",
-      "plant_key": "ganishka-ganishka-home-3kw",
-      "today": "2026-01-02",
-      "baseline_avg_kwh_per_day": 2.9071,
-      "threshold_kwh_per_day": 0.5814,
-      "rule": "< 20.0% baseline for 3 consecutive days",
-      "window": [
-        "2025-12-31",
-        "2026-01-01",
-        "2026-01-02"
-      ],
-      "details": [
-        {
-          "date": "2025-12-31",
-          "kwh": 0.0
-        },
-        {
-          "date": "2026-01-01",
-          "kwh": 0.0
-        },
-        {
-          "date": "2026-01-02",
-          "kwh": 0.0
-        }
-      ]
-    }
-  ],
+  "generated_at": "2026-01-02T19:01:54.449002Z",
+  "alerts": [],
   "suppressed": [],
   "ignored": [
     {
       "plant_key": "abeetha-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2025-12"
+        "2026-01"
+      ]
+    },
+    {
+      "plant_key": "chamila-chamila-119h",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-01"
+      ]
+    },
+    {
+      "plant_key": "chandika-plant",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-01"
       ]
     },
     {
       "plant_key": "samurdi-kohuwala",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2025-12"
+        "2026-01"
       ]
     }
   ]
