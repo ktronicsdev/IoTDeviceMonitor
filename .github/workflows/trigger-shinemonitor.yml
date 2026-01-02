@@ -75,7 +75,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          python3 src/main/java/org/ktronics/check_anomaly.py --data-dir data --out-dir alerts --state-file state/alerts_state.json
+          python3 src/main/java/org/ktronics/scripts/check_anomaly.py --data-dir data --out-dir alerts --state-file state/alerts_state.json
           code=$?
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
           exit 0
