@@ -117,7 +117,7 @@ jobs:
           Commit: ${{ github.sha }}
           Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           "
-          EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 scripts/send_email.py
+          EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 src/main/java/org/ktronics/scripts/send_email.py
 
       # ✅ Build verification email on every push (failure)
       - name: Send build verification email (push + failure)
@@ -133,4 +133,4 @@ jobs:
           Commit: ${{ github.sha }}
           Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           "
-          EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 scripts/send_email.py
+          EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 src/main/java/org/ktronics/scripts/send_email.py
