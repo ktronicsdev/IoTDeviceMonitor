@@ -4,7 +4,17 @@
 ║                                                                              ║
 ║                          Status: NO ALERTS DETECTED                          ║
 ║                                                                              ║
-║               Date: 2026-01-02  |  Total Plants Monitored: 11                ║
+║               Date: 2026-01-02  |  Total Plants Monitored: 19                ║
 ║                                                                              ║
 ================================================================================
+
+┌─ ADDITIONAL INFORMATION ────────────────────────────────────────────────────┐
+│
+│ IGNORED PLANTS (No production for extended period):
+│   • abeetha-plant
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│   • samurdi-kohuwala
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│
+└──────────────────────────────────────────────────────────────────────────────┘
 

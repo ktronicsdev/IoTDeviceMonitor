@@ -1,6 +1,21 @@
 {
-  "generated_at": "2026-01-02T17:24:15.222410Z",
+  "generated_at": "2026-01-02T17:39:52.943389Z",
   "alerts": [],
   "suppressed": [],
-  "ignored": []
+  "ignored": [
+    {
+      "plant_key": "abeetha-plant",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2025-12"
+      ]
+    },
+    {
+      "plant_key": "samurdi-kohuwala",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2025-12"
+      ]
+    }
+  ]
 }
