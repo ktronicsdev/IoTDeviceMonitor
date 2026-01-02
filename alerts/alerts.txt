@@ -1,13 +1,1 @@
 No alerts. Plants=11 Date=2026-01-02
-SUPPRESSED:
-  - anuradha-gajanayaka-plant (suppressed: 0 kWh for 3 days and red already sent)
-  - gayan-imh-imbulgoda-3kw (suppressed: 0 kWh for 3 days and red already sent)
-  - jeremy-jeremy-plant (suppressed: 0 kWh for 3 days and red already sent)
-  - kasun-kasun (suppressed: 0 kWh for 3 days and red already sent)
-  - muadh-muadh-solar (suppressed: 0 kWh for 3 days and red already sent)
-  - namila-waragoda-namila-plant (suppressed: 0 kWh for 3 days and red already sent)
-  - ravi-botheju-plant (suppressed: 0 kWh for 3 days and red already sent)
-  - sohan-must-pv1800-3024-pro (suppressed: 0 kWh for 3 days and red already sent)
-  - troy-troy-hybrid-3kw (suppressed: 0 kWh for 3 days and red already sent)
-  - upulatheja-3kw-pro-kadawath (suppressed: 0 kWh for 3 days and red already sent)
-
