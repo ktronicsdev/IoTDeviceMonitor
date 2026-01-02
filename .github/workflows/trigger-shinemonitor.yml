@@ -75,7 +75,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          python3 check_anomaly.py --data-dir data --out-dir alerts --state-file state/alerts_state.json
+          python3 src/main/java/org/ktronics/check_anomaly.py --data-dir data --out-dir alerts --state-file state/alerts_state.json
           code=$?
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
           exit 0
@@ -87,7 +87,7 @@ jobs:
           set -e
           subject="ShineMonitor ALERTS - ${{ github.repository }} - ${{ github.run_id }}"
           body="$(cat alerts/alerts.txt)"
-          EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 scripts/send_email.py
+          EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 src/main/java/org/ktronics/scripts/send_email.py
 
       - name: Commit updated data + alert state
         shell: bash
