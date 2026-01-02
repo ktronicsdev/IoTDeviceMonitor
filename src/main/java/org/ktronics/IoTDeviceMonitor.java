@@ -8,10 +8,7 @@ import org.ktronics.config.ConfigurationLoader;
 import org.ktronics.config.ConfigurationManager;
 import org.ktronics.models.Credential;
 import org.ktronics.monitoring.FunctionMonitoring;
-<<<<<<< HEAD
 import org.ktronics.services.DatabaseService;
-=======
->>>>>>> 707a10f3d13be20ba674ea7e19db0fb46f385d42
 import org.ktronics.services.MongoDatabaseService;
 import org.ktronics.services.PowerCheckService;
 
@@ -35,10 +32,7 @@ public class IoTDeviceMonitor {
     ) {
         context.getLogger().info("Azure Function triggered: " + timerInfo);
 
-<<<<<<< HEAD
         DatabaseService databaseService = new MongoDatabaseService();
-=======
->>>>>>> 707a10f3d13be20ba674ea7e19db0fb46f385d42
         PowerCheckService powerCheckService = new PowerCheckService();
         List<Credential> credentials = new MongoDatabaseService().getCredentials();
 
@@ -57,7 +51,7 @@ public class IoTDeviceMonitor {
         catch (Exception e) {
             monitoring.onFailure();
              // TODO : Please log faliur occured time since u logged triggered time
-//            context.getLogger().severe("Error occurred: " + e.getMessage(), time occured ??);
+             // context.getLogger().severe("Error occurred: " + e.getMessage(), time occured ??);
         }
 
         // TODO : Please log completed time since u logged triggered time

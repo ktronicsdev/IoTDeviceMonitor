@@ -32,4 +32,5 @@ or
 ./run.bat
 ```
 
+4. Added Scripts for verification on source scripts directory
 ---
