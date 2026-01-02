@@ -1,0 +1,64 @@
+name: ShineMonitor Daily Monitor
+
+on:
+  schedule:
+    - cron: "30 4 * * *"
+    - cron: "30 16 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Create credentials.json from GitHub Secrets
+        shell: bash
+        run: |
+          set -e
+          mkdir -p src/main/java/org/ktronics/config
+          cat <<'EOF' > src/main/java/org/ktronics/config/credentials.json
+          ${{ secrets.SHINEMONITOR_CREDENTIALS_JSON }}
+          EOF
+          chmod 600 src/main/java/org/ktronics/config/credentials.json
+
+      - name: Run monthly fetch (default = last month)
+        shell: bash
+        run: |
+          set -e
+          chmod +x src/main/java/org/ktronics/scripts/check_shinemonitor_monthly.sh
+          src/main/java/org/ktronics/scripts/check_shinemonitor_monthly.sh \
+            src/main/java/org/ktronics/config/credentials.json
+
+      - name: Keep only last 3 months of data
+        shell: bash
+        run: |
+          set -e
+          mkdir -p data
+
+          # Keep last 3 full months (UTC)
+          keep0=$(date -u +%Y-%m)
+          keep1=$(date -u -d "$(date -u +%Y-%m-01) -1 month" +%Y-%m)
+          keep2=$(date -u -d "$(date -u +%Y-%m-01) -2 month" +%Y-%m)
+          keep3=$(date -u -d "$(date -u +%Y-%m-01) -3 month" +%Y-%m)
+
+          find data -type f -name "*.csv" \
+            ! -name "*-${keep1}.csv" \
+            ! -name "*-${keep2}.csv" \
+            ! -name "*-${keep3}.csv" \
+            -delete
+
+      - name: Commit updated data folder
+        shell: bash
+        run: |
+          set -e
+          git config user.name "shinemonitor-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/*.csv || true
+          git commit -m "Update ShineMonitor data" || exit 0
+          git push
