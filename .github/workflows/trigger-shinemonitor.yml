@@ -64,7 +64,7 @@ jobs:
           src/main/java/org/ktronics/scripts/check_shinemonitor_monthly.sh \
             src/main/java/org/ktronics/config/credentials.json "$CURRENT_MONTH"
 
-      - name: Keep only last 3 months of data
+      - name: Keep only last 4 months of data (current + 3 previous)
         shell: bash
         run: |
           set -e
@@ -75,6 +75,7 @@ jobs:
           keep3=$(date -u -d "$(date -u +%Y-%m-01) -3 month" +%Y-%m)
 
           find data -type f -name "*.csv" \
+            ! -name "*-${keep0}.csv" \
             ! -name "*-${keep1}.csv" \
             ! -name "*-${keep2}.csv" \
             ! -name "*-${keep3}.csv" \
