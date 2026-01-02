@@ -56,7 +56,7 @@ jobs:
           CURRENT_MONTH=$(date -u +%Y-%m)
 
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📊 FETCHING DATA: $LAST_MONTH & $CURRENT_MONTH"
+          echo "📊 FETCHING MONTHLY DATA: $LAST_MONTH & $CURRENT_MONTH"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
           src/main/java/org/ktronics/scripts/check_shinemonitor_monthly.sh \
@@ -64,6 +64,23 @@ jobs:
 
           src/main/java/org/ktronics/scripts/check_shinemonitor_monthly.sh \
             src/main/java/org/ktronics/config/credentials.json "$CURRENT_MONTH" 2>&1 | grep -E "(Account:|Plant:|Month total|Daily CSV|DONE)" || true
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: Run yearly fetch (current year)
+        shell: bash
+        run: |
+          set -e
+          chmod +x src/main/java/org/ktronics/scripts/check_shinemonitor_yearly.sh
+
+          CURRENT_YEAR=$(date -u +%Y)
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📅 FETCHING YEARLY DATA: $CURRENT_YEAR"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          src/main/java/org/ktronics/scripts/check_shinemonitor_yearly.sh \
+            src/main/java/org/ktronics/config/credentials.json "$CURRENT_YEAR" 2>&1 | grep -E "(Account:|Plant:|Year total|Yearly CSV|DONE)" || true
 
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
