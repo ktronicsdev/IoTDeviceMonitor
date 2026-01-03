@@ -7,6 +7,9 @@ from email.message import EmailMessage
 def convert_text_to_html(text_body):
     """Convert plain text alert body to formatted HTML."""
 
+    # Check if this is a build verification email (simple format)
+    is_build_email = "Workflow:" in text_body and "Status:" in text_body and "Commit:" in text_body
+
     # Check if this is an "all systems operational" message
     is_operational = "ALL SYSTEMS OPERATIONAL" in text_body
 
@@ -134,6 +137,37 @@ def convert_text_to_html(text_body):
 
     # Parse the text to extract key information
     lines = text_body.split('\n')
+
+    # Handle build verification emails with simple format
+    if is_build_email:
+        is_success = "Status: SUCCESS" in text_body
+        html += '    <div class="container">\n'
+        if is_success:
+            html += '        <div class="header success">\n'
+            html += '            <h1>✅ Build Successful</h1>\n'
+        else:
+            html += '        <div class="header alert">\n'
+            html += '            <h1>❌ Build Failed</h1>\n'
+
+        html += '        </div>\n'
+        html += '        <div class="content">\n'
+        html += '            <div class="section info">\n'
+
+        for line in lines:
+            line = line.strip()
+            if line and line != "":
+                html += f'                <p style="margin: 5px 0;">{line}</p>\n'
+
+        html += '            </div>\n'
+        html += '        </div>\n'
+        html += '        <div class="footer">\n'
+        html += '            ShineMonitor IoT Device Monitoring System<br>\n'
+        html += '            Automated solar panel monitoring with intelligent anomaly detection\n'
+        html += '        </div>\n'
+        html += '    </div>\n'
+        html += '</body>\n'
+        html += '</html>\n'
+        return html
 
     # Determine header type and extract status
     if is_operational:
