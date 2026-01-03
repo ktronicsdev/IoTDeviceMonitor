@@ -1,10 +1,14 @@
 name: ShineMonitor Daily Monitor
 
 on:
-  # 2x daily scheduled runs
+  # 6x daily scheduled runs (every 4 hours)
   schedule:
-    - cron: "30 4 * * *"
+    - cron: "30 0 * * *"
+    - cron: "30 6 * * *"
+    - cron: "30 8 * * *"
+    - cron: "30 12 * * *"
     - cron: "30 16 * * *"
+    - cron: "30 20 * * *"
 
   # build verification email on every push
   push:
@@ -132,16 +136,21 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           exit 0
 
-      - name: Send anomaly email (only when alerts exist)
-        if: steps.anomaly.outputs.exit_code == '2'
+      - name: Send status email (alerts or operational)
         shell: bash
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📧 SENDING ALERT EMAIL"
+          echo "📧 SENDING STATUS EMAIL"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           set -e
-          subject="ShineMonitor ALERTS - ${{ github.repository }} - ${{ github.run_id }}"
           body="$(cat alerts/alerts.txt)"
+
+          if [ "${{ steps.anomaly.outputs.exit_code }}" == "2" ]; then
+            subject="ShineMonitor ALERTS - ${{ github.repository }} - ${{ github.run_id }}"
+          else
+            subject="ShineMonitor Status: ALL SYSTEMS OPERATIONAL - ${{ github.repository }} - ${{ github.run_id }}"
+          fi
+
           EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 src/main/java/org/ktronics/scripts/send_email.py 2>&1
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
