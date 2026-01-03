@@ -88,21 +88,28 @@ jobs:
 
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      - name: Keep only last 4 months of data (current + 3 previous)
+      - name: Keep only last 4 months + 2 years of data
         shell: bash
         run: |
           set -e
           mkdir -p data
+          # Monthly files to keep (current + 3 previous months)
           keep0=$(date -u +%Y-%m)
           keep1=$(date -u -d "$(date -u +%Y-%m-01) -1 month" +%Y-%m)
           keep2=$(date -u -d "$(date -u +%Y-%m-01) -2 month" +%Y-%m)
           keep3=$(date -u -d "$(date -u +%Y-%m-01) -3 month" +%Y-%m)
+
+          # Yearly files to keep (current + last year)
+          year0=$(date -u +%Y)
+          year1=$(date -u -d "$(date -u +%Y-01-01) -1 day" +%Y)
 
           find data -type f -name "*.csv" \
             ! -name "*-${keep0}.csv" \
             ! -name "*-${keep1}.csv" \
             ! -name "*-${keep2}.csv" \
             ! -name "*-${keep3}.csv" \
+            ! -name "*-${year0}.csv" \
+            ! -name "*-${year1}.csv" \
             -delete
 
       - name: Run anomaly detection
