@@ -29,6 +29,7 @@ hs_err_pid*
 .project
 .classpath
 .vscode/
+.claude/
 
 # macOS
 .DS_Store
