@@ -5,6 +5,7 @@ import argparse
 import csv
 import json
 import re
+import sys
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -398,15 +399,133 @@ def main() -> int:
 
     (out_dir / "alerts.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-    # --- Update state: record red sent plants for suppression ---
-    st_red = state.get("red_sent", {})
-    for a in alerts:
-        if a.get("severity") == "RED":
-            st_red[ a["plant_key"] ] = {
-                "last_sent": datetime.utcnow().isoformat() + "Z",
-                "rule": a.get("rule"),
+    # --- 3-Day Auto-Ignore Rule for Admin Alerts ---
+    # Track when alerts were first seen and how many times sent
+    # Auto-ignore after 3 consecutive days to prevent alert fatigue
+    auto_ignore_days = 3
+    today_date = today
+    all_generated_alerts = list(alerts)  # Keep copy of all generated alerts for cleanup
+    alerts_to_send = []
+    auto_ignored = []
+
+    for a in all_generated_alerts:
+        plant_key = a["plant_key"]
+        severity = a["severity"]
+        alert_key = f"{plant_key}:{severity}"
+
+        # Initialize state for this alert if not exists
+        if alert_key not in state:
+            state[alert_key] = {
+                "first_seen": str(today_date),
+                "last_sent": None,
+                "send_count": 0,
+                "ignored_date": None
             }
-    state["red_sent"] = st_red
+
+        alert_state = state[alert_key]
+        first_seen = date.fromisoformat(alert_state['first_seen'])
+        days_active = (today_date - first_seen).days
+
+        # Auto-ignore rule: if alert active for >= auto_ignore_days, skip it
+        if days_active >= auto_ignore_days and not alert_state.get('ignored_date'):
+            alert_state['ignored_date'] = str(today_date)
+            auto_ignored.append({
+                "plant_key": plant_key,
+                "severity": severity,
+                "days_active": days_active,
+                "first_seen": str(first_seen),
+                "reason": f"Auto-ignored after {auto_ignore_days} days"
+            })
+            continue
+
+        # If already ignored, skip
+        if alert_state.get('ignored_date'):
+            continue
+
+        # Update state and add to alerts_to_send
+        alert_state['last_sent'] = str(today_date)
+        alert_state['send_count'] += 1
+        alerts_to_send.append(a)
+
+    # Replace alerts with filtered list (only alerts not auto-ignored)
+    alerts = alerts_to_send
+
+    # Update result with auto-ignored alerts
+    if auto_ignored:
+        result["auto_ignored"] = auto_ignored
+
+    # --- Cleanup: Reset state when alert is resolved ---
+    # If a plant no longer has an alert, remove its state entry
+    current_alert_keys = {f"{a['plant_key']}:{a['severity']}" for a in all_generated_alerts}
+    all_alert_keys = [k for k in list(state.keys()) if k != "red_sent"]  # Keep old red_sent for compatibility
+    for alert_key in all_alert_keys:
+        if alert_key not in current_alert_keys and ":" in alert_key:
+            # Alert resolved, remove from state
+            del state[alert_key]
+
+    # --- Generate Customer-Specific Alerts ---
+    # Load credentials to map plants to customers
+    credentials_path = Path("src/main/java/org/ktronics/config/credentials.json")
+    customer_alerts_output = {}
+
+    if credentials_path.exists():
+        try:
+            with open(credentials_path, 'r') as f:
+                credentials_data = json.load(f)
+
+            # Build plant-to-customer mapping
+            plant_to_customer = {}
+            for account in credentials_data.get('accounts', []):
+                customer_label = account.get('label', '')
+                customer_email = account.get('email')
+                if customer_label:
+                    # Normalize for matching
+                    normalized = re.sub(r'[^a-z0-9]', '', customer_label.lower())
+                    plant_to_customer[normalized] = {
+                        'label': customer_label,
+                        'email': customer_email
+                    }
+
+            # Map alerts to customers
+            customer_alerts_map = {}
+            for alert in alerts:  # Only alerts being sent (not auto-ignored)
+                plant_key = alert['plant_key']
+                severity = alert['severity']
+
+                # Try to match plant to customer
+                plant_normalized = re.sub(r'[^a-z0-9]', '', plant_key.lower())
+                matched_customer = None
+
+                for customer_norm, customer_info in plant_to_customer.items():
+                    if customer_norm in plant_normalized or plant_normalized.startswith(customer_norm[:6]):
+                        matched_customer = customer_info
+                        break
+
+                if matched_customer and matched_customer['email']:
+                    customer_label = matched_customer['label']
+                    if customer_label not in customer_alerts_map:
+                        customer_alerts_map[customer_label] = {
+                            'email': matched_customer['email'],
+                            'alerts': []
+                        }
+
+                    customer_alerts_map[customer_label]['alerts'].append({
+                        'plant': plant_key,
+                        'level': severity,
+                        'issue': alert.get('rule', 'Production anomaly detected'),
+                        'normal': alert.get('baseline_avg_kwh_per_day') or alert.get('baseline_avg_kwh_per_month', 0),
+                        'current': alert['details'][-1] if alert.get('details') else {}
+                    })
+
+            customer_alerts_output = {'customer_alerts': customer_alerts_map}
+
+            # Write customer alerts JSON
+            customer_alerts_file = out_dir / "customer_alerts.json"
+            customer_alerts_file.write_text(json.dumps(customer_alerts_output, indent=2), encoding="utf-8")
+
+        except Exception as e:
+            print(f"Warning: Could not generate customer alerts: {e}", file=sys.stderr)
+
     write_state(state_path, state)
 
     # Exit code: 2 means "alerts found" (handy for workflow conditional)

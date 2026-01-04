@@ -3,12 +3,12 @@ name: ShineMonitor Daily Monitor
 on:
   # 6x daily scheduled runs (every 4 hours)
   schedule:
-    - cron: "30 0 * * *"
+    - cron: "30 2 * * *"
     - cron: "30 6 * * *"
-    - cron: "30 8 * * *"
-    - cron: "30 12 * * *"
-    - cron: "30 16 * * *"
-    - cron: "30 20 * * *"
+    - cron: "30 10 * * *"
+    - cron: "30 14 * * *"
+    - cron: "30 18 * * *"
+    - cron: "30 22 * * *"
 
   # build verification email on every push
   push:
@@ -116,31 +116,32 @@ jobs:
             ! -name "*-${year1}.csv" \
             -delete
 
-      - name: Run anomaly detection
+      - name: Run anomaly detection & generate customer alerts
         id: anomaly
         shell: bash
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🔍 ANOMALY DETECTION"
+          echo "🔍 ANOMALY DETECTION & CUSTOMER ALERT GENERATION"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           set +e
+          mkdir -p state
           python3 src/main/java/org/ktronics/scripts/check_anomaly.py --data-dir data --out-dir alerts --state-file state/alerts_state.json 2>&1
           code=$?
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           if [ $code -eq 2 ]; then
-            echo "⚠️  ALERTS FOUND - Email will be sent"
+            echo "⚠️  ALERTS FOUND - Emails will be sent"
           else
             echo "✅ No alerts detected"
           fi
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           exit 0
 
-      - name: Send status email (alerts or operational)
+      - name: Send system-wide status email to admin
         shell: bash
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📧 SENDING STATUS EMAIL"
+          echo "📧 SENDING SYSTEM-WIDE STATUS EMAIL TO ADMIN"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           set -e
           body="$(cat alerts/alerts.txt)"
@@ -152,6 +153,24 @@ jobs:
           fi
 
           EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 src/main/java/org/ktronics/scripts/send_email.py 2>&1
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: Send customer-specific alert emails
+        if: steps.anomaly.outputs.exit_code == '2'
+        shell: bash
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📧 SENDING CUSTOMER-SPECIFIC ALERT EMAILS"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          set -e
+
+          # Check if customer alerts file exists and has content
+          if [ -f alerts/customer_alerts.json ] && [ -s alerts/customer_alerts.json ]; then
+            python3 src/main/java/org/ktronics/scripts/send_customer_emails.py \
+              --customer-alerts alerts/customer_alerts.json 2>&1
+          else
+            echo "No customer alerts to send (all customers may be auto-ignored or have no email addresses)"
+          fi
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Commit updated data + alert state

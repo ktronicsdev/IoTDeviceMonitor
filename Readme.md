@@ -9,11 +9,13 @@ Automated monitoring system for ShineMonitor solar panel installations with inte
 **Features:**
 
 - 🔄 Automated data collection from 20+ solar plants
-- 📊 Daily and monthly production tracking
+- 📊 Daily, monthly, and yearly production tracking
 - 🚨 Smart anomaly detection with RED/ORANGE severity levels
-- 📧 Email alerts with actionable recommendations
+- 📧 Personalized email alerts for individual customers
+- 📅 Weekly progress reports sent to customers
+- 🔕 3-day auto-ignore rule for persistent alerts
 - 📈 Historical data retention and trending
-- ⏰ Scheduled monitoring (2x daily via GitHub Actions)
+- ⏰ Scheduled monitoring (6x daily via GitHub Actions)
 
 ## Architecture
 
@@ -41,13 +43,20 @@ Create `src/main/java/org/ktronics/config/credentials.json`:
   "company_key": "your_company_key",
   "accounts": [
     {
-      "label": "Plant Name",
-      "username": "your_username",
-      "password": "your_password"
+      "label": "Customer Name",
+      "username": "customer_username",
+      "password": "customer_password",
+      "email": "customer@example.com"
     }
   ]
 }
 ```
+
+**Note**: The `email` field is optional. Customers with email addresses will receive:
+
+- Weekly progress reports (every Sunday)
+- Personalized alert notifications
+- Auto-ignored alerts after 3 consecutive days
 
 ### 3. Run data collection manually
 
@@ -69,9 +78,67 @@ python3 src/main/java/org/ktronics/scripts/check_anomaly.py \
 cat alerts/alerts.txt
 ```
 
+## Customer Email System
+
+Customers with email addresses in `credentials.json` receive two types of emails:
+
+### 1. Customer-Specific Alert Emails (6x daily with main monitoring)
+
+When anomalies are detected in the main monitoring workflow (runs 6x daily), **both admin and customers** receive alert emails with a 3-day auto-ignore rule:
+
+**3-Day Auto-Ignore Rule** (applies to both admin and customer alerts):
+
+- **Day 0** (first detection): Alert email sent
+- **Day 1**: Reminder email sent
+- **Day 2**: Final alert email sent
+- **Day 3+**: Alert auto-ignored, **NO emails sent** until issue resolved
+
+This prevents alert fatigue while ensuring proper notification.
+
+**Email Recipients**:
+
+- **Admin**: Receives system-wide alerts for all plants at <ktronicssolar@gmail.com>
+- **Customers**: Receive alerts only for their own plants (if email address configured in credentials.json)
+
+### 2. Weekly Progress Reports
+
+**Schedule**: Every Sunday at 18:00 UTC
+
+Customers receive personalized weekly reports including:
+
+- **Weekly Production Summary**: Total kWh for the past 7 days
+- **Monthly Progress**: Current month's production
+- **Yearly Totals**: Year-to-date production
+- **Plant-by-Plant Breakdown**: Individual performance for each solar installation
+- **Active Alerts**: Any ongoing issues (if applicable)
+
+### Customer Alert Tracking
+
+The system automatically:
+
+- Maps plants to customers based on naming patterns
+- Tracks alert duration per customer
+- Sends only relevant alerts to affected customers
+- Maintains state between workflow runs
+
+**Plant-to-Customer Mapping Example**:
+
+- Customer label: `"Lahiru Ryan"`
+- Matches plants: `lahiru-ryan-*`, `lahiruryan-*`, etc.
+
 ## GitHub Actions Setup
 
-The system runs automatically via GitHub Actions twice daily (4:30 AM & 4:30 PM UTC).
+The system runs automatically via GitHub Actions:
+
+- **Main Monitoring**: 6x daily (every 4 hours)
+  - Detects anomalies across all plants
+  - Sends system-wide status to <ktronicssolar@gmail.com>
+  - Tracks customer-specific alerts (3-day auto-ignore)
+  - Sends customer-specific alert emails to individual customers
+
+- **Weekly Reports**: Every Sunday at 18:00 UTC
+  - Sends personalized reports to customers with email addresses
+  - No system notifications (silent operation)
 
 ### Required Secrets
 
@@ -108,19 +175,29 @@ Default thresholds in `check_anomaly.py`:
 ```text
 .
 ├── .github/workflows/
-│   └── trigger-shinemonitor.yml    # Automated workflow
+│   ├── trigger-shinemonitor.yml       # Main monitoring (6x daily)
+│   └── trigger-customer-reports.yml   # Weekly reports (Sunday)
 ├── src/main/java/org/ktronics/
 │   ├── config/
-│   │   └── credentials.json        # API credentials (gitignored)
+│   │   └── credentials.json           # API credentials (gitignored)
 │   └── scripts/
-│       ├── shinemonitor_common.sh  # Shared configuration
+│       ├── shinemonitor_common.sh     # Shared configuration
 │       ├── check_shinemonitor_monthly.sh  # Fetch monthly data
 │       ├── check_shinemonitor_yearly.sh   # Fetch yearly data
-│       ├── check_anomaly.py        # Anomaly detection
-│       └── send_email.py           # Email notifications
-├── data/                           # CSV time-series data
-├── alerts/                         # Generated alert reports
-└── state/                          # Alert state tracking
+│       ├── check_anomaly.py           # Anomaly detection + customer alert generation
+│       ├── email_utils.py             # Shared email utilities
+│       ├── generate_weekly_report.py  # Weekly report generation
+│       ├── send_customer_emails.py    # Customer email sending (alerts & reports)
+│       └── send_email.py              # System-wide email notifications
+├── data/                              # CSV time-series data
+├── alerts/                            # Generated alert reports
+│   ├── alerts.json                    # System-wide alerts
+│   ├── alerts.txt                     # Formatted alert report
+│   └── customer_alerts.json           # Customer-specific alerts
+├── reports/                           # Weekly customer reports
+│   └── archive/                       # Report archives (last 4 weeks)
+└── state/                             # State tracking
+    └── alerts_state.json              # Unified alert state (admin & customer 3-day auto-ignore)
 ```
 
 ## Alert Format
@@ -147,6 +224,76 @@ Alerts are formatted with clear visual indicators:
 │   4. Contact maintenance team if issue persists
 └──────────────────────────────────────────────────────
 ```
+
+## Testing Customer Features
+
+### Test Weekly Report Generation Locally
+
+```bash
+# Generate reports for all customers
+python3 src/main/java/org/ktronics/scripts/generate_weekly_report.py \
+  --credentials src/main/java/org/ktronics/config/credentials.json \
+  --data-dir data \
+  --output-dir reports
+
+# View generated reports
+ls -la reports/
+cat reports/weekly_report_*.txt
+```
+
+### Test Customer Alert Tracking
+
+```bash
+# Process customer alerts
+python3 src/main/java/org/ktronics/scripts/track_customer_alerts.py \
+  --alerts alerts/alerts.json \
+  --credentials src/main/java/org/ktronics/config/credentials.json \
+  --state-file state/customer_alerts_state.json \
+  --auto-ignore-days 3 \
+  --output alerts/customer_alerts.json
+
+# View customer alerts
+cat alerts/customer_alerts.json
+```
+
+### Test Email Sending (Manual)
+
+```bash
+# Set SMTP credentials
+export SMTP_HOST=smtp.gmail.com
+export SMTP_PORT=587
+export SMTP_USER=your-email@gmail.com
+export SMTP_PASS=your-app-password
+
+# Send test weekly reports
+python3 src/main/java/org/ktronics/scripts/send_customer_emails.py \
+  --reports-dir reports
+```
+
+## Troubleshooting
+
+### No Weekly Emails Received
+
+1. Check customer has `email` field in credentials.json
+2. Verify SMTP credentials in GitHub Secrets
+3. Check workflow logs for errors
+4. Verify plant naming matches customer label (case-insensitive)
+
+### Alerts Not Auto-Ignoring
+
+1. Check `state/customer_alerts_state.json` file
+2. Verify `auto-ignore-days` is set to 3
+3. Check main workflow includes customer alert tracking step
+4. Review workflow logs for tracking step
+
+### Plants Not Matching Customers
+
+The system uses fuzzy matching based on customer labels:
+
+- Customer: "Lahiru Ryan" → matches: `lahiru-ryan-*`, `lahiruryan-*`
+- Customer: "Gayan-IMH" → matches: `gayan-imh-*`, `gayanim-*`
+
+Ensure plant file names contain recognizable parts of the customer label.
 
 ## Contributing
 

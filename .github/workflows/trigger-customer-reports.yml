@@ -1,0 +1,96 @@
+name: Weekly Customer Reports
+
+on:
+  # Weekly on Sunday at 02:20 UTC
+  schedule:
+    - cron: "0 04 * * 0"
+
+  # build verification email on every push
+  push:
+    branches:
+      - main
+
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  generate-and-send-reports:
+    runs-on: ubuntu-latest
+
+    env:
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASS: ${{ secrets.SMTP_PASS }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Create credentials.json from GitHub Secrets
+        shell: bash
+        run: |
+          set -e
+          mkdir -p src/main/java/org/ktronics/config
+          cat <<'EOF' > src/main/java/org/ktronics/config/credentials.json
+          ${{ secrets.SHINEMONITOR_CREDENTIALS_JSON }}
+          EOF
+          chmod 600 src/main/java/org/ktronics/config/credentials.json
+
+      - name: Generate weekly reports for all customers
+        shell: bash
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 GENERATING WEEKLY CUSTOMER REPORTS"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          set -e
+          mkdir -p reports state
+
+          python3 src/main/java/org/ktronics/scripts/generate_weekly_report.py \
+            --credentials src/main/java/org/ktronics/config/credentials.json \
+            --data-dir data \
+            --alerts-state state/customer_alerts_state.json \
+            --output-dir reports
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: Send weekly reports to customers
+        shell: bash
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📧 SENDING WEEKLY REPORTS TO CUSTOMERS"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          set -e
+
+          python3 src/main/java/org/ktronics/scripts/send_customer_emails.py \
+            --reports-dir reports
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: Commit report archives
+        shell: bash
+        run: |
+          set -e
+          git config user.name "shinemonitor-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          # Archive reports (optional - keep last 4 weeks)
+          mkdir -p reports/archive
+          timestamp=$(date -u +%Y-%m-%d)
+          tar -czf "reports/archive/weekly-reports-${timestamp}.tar.gz" reports/*.txt reports/*.json 2>/dev/null || true
+
+          # Clean old archives (keep last 4 weeks)
+          find reports/archive -name "weekly-reports-*.tar.gz" -mtime +28 -delete 2>/dev/null || true
+
+          git add reports/archive/* 2>/dev/null || true
+          git add state/customer_alerts_state.json 2>/dev/null || true
+
+          git commit -m "Archive weekly customer reports ${timestamp}" || exit 0
+          git push
