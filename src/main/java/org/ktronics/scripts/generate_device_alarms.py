@@ -381,7 +381,7 @@ def main():
 
     # Create customer-specific device alarms JSON
     if alarms_to_send:
-        credentials_file = Path(__file__).parent.parent.parent / 'config' / 'credentials.json'
+        credentials_file = Path(__file__).parent.parent.parent.parent / 'config' / 'credentials.json'
         customer_device_alarms = create_customer_device_alarms(
             alarms_to_send,
             state,
