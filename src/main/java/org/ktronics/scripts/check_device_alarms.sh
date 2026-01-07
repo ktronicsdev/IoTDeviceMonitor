@@ -54,17 +54,17 @@ fi
 
 echo "✓ Authenticated successfully (token: ${token:0:8}...)"
 
-# Step 2: Fetch UNHANDLED alarms
-echo "[2/3] Fetching UNHANDLED device alarms..."
+# Step 2: Fetch ALL alarms (TESTING MODE - normally status=0 for UNHANDLED only)
+echo "[2/3] Fetching ALL device alarms (TESTING MODE)..."
 salt=$(salt_ms)
 sign=$(sha1hex "${token}${salt}${secret}")
 
-# API parameters for UNHANDLED alarms only
-# status=0 means UNHANDLED
-# date parameter is empty to get all unhandled alarms regardless of date
+# API parameters for ALL alarms (TESTING MODE)
+# status=0 means UNHANDLED, status=1 means HANDLED
+# For testing, we fetch ALL alarms (no status filter) to test email feature
 alarms_response=$(curl -s -X POST "$ALARMS_API" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "sign=${sign}&salt=${salt}&token=${token}&status=0&date=")
+  -d "sign=${sign}&salt=${salt}&token=${token}&date=")
 
 err=$(echo "$alarms_response" | json_blob_get_first "err")
 
@@ -85,9 +85,9 @@ echo "$alarms_response" > "$OUTPUT_FILE"
 alarm_count=$(echo "$alarms_response" | grep -o '"dat":\[' | wc -l)
 
 if [ "$alarm_count" -gt 0 ]; then
-  echo "✓ Found UNHANDLED alarms - saved to ${OUTPUT_FILE}"
+  echo "✓ Found alarms (TESTING MODE - includes HANDLED) - saved to ${OUTPUT_FILE}"
 else
-  echo "✓ No UNHANDLED alarms found"
+  echo "✓ No alarms found"
 fi
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
