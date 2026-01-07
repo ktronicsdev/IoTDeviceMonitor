@@ -34,6 +34,8 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 
 # Step 1: Login to get token & secret
 echo "[1/3] Authenticating..."
+echo "  Username: ${USERNAME}"
+echo "  Company Key: ${COMPANY_KEY:0:8}..."
 salt=$(salt_ms)
 pw_sha1=$(sha1hex "${PASSWORD}")
 sign=$(sha1hex "${USERNAME}${pw_sha1}${salt}")
