@@ -81,11 +81,16 @@ mkdir -p "$(dirname "$OUTPUT_FILE")"
 # Save raw JSON response
 echo "$alarms_response" > "$OUTPUT_FILE"
 
-# Count alarms in response (look for "dat" array)
-alarm_count=$(echo "$alarms_response" | grep -o '"dat":\[' | wc -l)
-
-if [ "$alarm_count" -gt 0 ]; then
-  echo "✓ Found alarms (TESTING MODE - includes HANDLED) - saved to ${OUTPUT_FILE}"
+# Count alarms in response
+# API returns either: {"dat":[]} (no alarms) or {"dat":{"warning":[...]}} (with alarms)
+if echo "$alarms_response" | grep -q '"warning":\['; then
+  # Extract alarm count from "total" field if present
+  total=$(echo "$alarms_response" | grep -o '"total":[0-9]*' | head -1 | cut -d':' -f2)
+  if [ -n "$total" ]; then
+    echo "✓ Found ${total} alarms (TESTING MODE - includes HANDLED) - saved to ${OUTPUT_FILE}"
+  else
+    echo "✓ Found alarms (TESTING MODE - includes HANDLED) - saved to ${OUTPUT_FILE}"
+  fi
 else
   echo "✓ No alarms found"
 fi

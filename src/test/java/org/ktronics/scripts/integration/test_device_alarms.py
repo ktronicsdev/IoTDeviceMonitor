@@ -141,6 +141,55 @@ class TestDeviceAlarmSystem:
         assert 'customer1' in customer_labels
         assert 'customer2' in customer_labels
 
+    def test_parse_alarm_files_api_warning_format(self, test_alarms_dir):
+        """Parse alarm files with actual API response format (dat.warning structure)"""
+        # Actual API response format: {"err":"0","dat":{"total":37,"warning":[...]}}
+        alarm_file = test_alarms_dir / "Gayan-IMH-alarms.json"
+
+        api_response = {
+            "err": "0",
+            "dat": {
+                "total": 2,
+                "page": 0,
+                "pagesize": 1,
+                "warning": [
+                    {
+                        "pId": "12345",
+                        "pName": "Gayan-IMH-Imbulgoda-3KW",
+                        "devId": "DEV001",
+                        "devName": "Inverter 1",
+                        "warnId": "W001",
+                        "warnMsg": "Grid voltage too high",
+                        "warnTime": "2026-01-07 10:30:00",
+                        "status": 0
+                    },
+                    {
+                        "pId": "12345",
+                        "pName": "Gayan-IMH-Imbulgoda-3KW",
+                        "devId": "DEV002",
+                        "devName": "Inverter 2",
+                        "warnId": "W002",
+                        "warnMsg": "Temperature warning",
+                        "warnTime": "2026-01-07 11:00:00",
+                        "status": 0
+                    }
+                ]
+            }
+        }
+
+        with open(alarm_file, 'w') as f:
+            json.dump(api_response, f)
+
+        # Parse alarms
+        all_alarms = parse_alarm_files(test_alarms_dir)
+
+        # Verify correct parsing
+        assert len(all_alarms) == 2
+        assert all_alarms[0]['customer_label'] == 'Gayan-IMH'
+        assert all_alarms[0]['warnMsg'] == 'Grid voltage too high'
+        assert all_alarms[1]['warnMsg'] == 'Temperature warning'
+        assert all_alarms[0]['pName'] == 'Gayan-IMH-Imbulgoda-3KW'
+
     def test_create_alarm_key_unique(self):
         """Verify alarm keys are unique per plant/device/warning"""
         alarm1 = {

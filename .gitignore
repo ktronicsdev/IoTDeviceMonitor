@@ -43,5 +43,6 @@ bin/
 obj/
 src/main/java/org/ktronics/config/credentials.json
 src/main/java/org/ktronics/scripts/data
+src/main/java/org/ktronics/scripts/alarms
 
 __pycache__

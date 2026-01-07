@@ -48,9 +48,23 @@ def parse_alarm_files(alarms_dir):
             # Extract customer label from filename (e.g., "customer-alarms.json" -> "customer")
             customer_label = alarm_file.stem.replace('-alarms', '')
 
-            # Extract alarms from "dat" array
-            if 'dat' in data and isinstance(data['dat'], list):
-                for alarm in data['dat']:
+            # Extract alarms from "dat" field
+            # API response structure: {"err":"0","dat":{"total":37,"warning":[...]}}
+            # OR when no alarms: {"err":"0","dat":[]}
+            if 'dat' in data:
+                dat = data['dat']
+
+                # Handle both response formats:
+                # 1. Array format (no alarms): {"dat": []}
+                # 2. Object format (with alarms): {"dat": {"total": N, "warning": [...]}}
+                if isinstance(dat, list):
+                    alarm_list = dat
+                elif isinstance(dat, dict) and 'warning' in dat:
+                    alarm_list = dat['warning']
+                else:
+                    alarm_list = []
+
+                for alarm in alarm_list:
                     alarm['customer_label'] = customer_label
                     all_alarms.append(alarm)
 
