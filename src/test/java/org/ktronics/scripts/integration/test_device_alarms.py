@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent.parent.parent / "main" / "java" / "org" / "ktronics" / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-from process_device_alarms import (
+from generate_device_alarms import (
     parse_alarm_files,
     create_alarm_key,
     filter_alarms_to_send,

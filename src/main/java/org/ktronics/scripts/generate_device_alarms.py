@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Process device alarms from ShineMonitor API and send admin notifications.
+Generate device alarm notifications from ShineMonitor API data.
 
 Each UNHANDLED alarm is sent 3 times (every 4 hours), then auto-ignored.
 Tracks sent alarms in state file to prevent duplicate notifications.
 
 Usage:
-    python3 process_device_alarms.py --alarms-dir DIR --state-file FILE --output-file FILE
+    python3 generate_device_alarms.py --alarms-dir DIR --state-file FILE --output-file FILE
 """
 
 import os

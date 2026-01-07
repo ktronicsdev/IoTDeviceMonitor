@@ -165,7 +165,7 @@ jobs:
           set +e
           mkdir -p state alarms
 
-          python3 src/main/java/org/ktronics/scripts/process_device_alarms.py \
+          python3 src/main/java/org/ktronics/scripts/generate_device_alarms.py \
             --alarms-dir alarms \
             --state-file state/device_alarms_state.json \
             --output-file alarms/device_alarms.txt 2>&1
