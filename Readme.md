@@ -55,14 +55,14 @@ Create `src/main/java/org/ktronics/config/credentials.json`:
 **Note**: The `email` field is optional. Customers with email addresses will receive:
 
 - Weekly progress reports (every Sunday)
-- Personalized alert notifications
-- Auto-ignored alerts after 3 consecutive days
+- Personalized Auto-ignored alert notifications for after 3 consecutive days harvesting lost > 20% (for 3 days)
+- Personalized Auto-ignored alert notifications for alarams (2 times a day)
 
 ### 3. Run data collection manually
 
 ```bash
 # Fetch monthly data
-./src/main/java/org/ktronics/scripts/check_shinemonitor_monthly.sh \
+sh ./src/main/java/org/ktronics/scripts/check_shinemonitor_monthly.sh \
   src/main/java/org/ktronics/config/credentials.json 2025-12
 
 # Run anomaly detection
@@ -70,6 +70,9 @@ python3 src/main/java/org/ktronics/scripts/check_anomaly.py \
   --data-dir data \
   --out-dir alerts \
   --state-file state/alerts_state.json
+
+# Run alaram detection
+sh  ./check_device_alarms.sh "customer_username" "customer_password" "bnrl_frRFjEz8Mkn" "alarms/customer_alerts.json"
 ```
 
 ### 4. View alerts
