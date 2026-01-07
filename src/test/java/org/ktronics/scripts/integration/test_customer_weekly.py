@@ -256,6 +256,160 @@ class TestCustomerWeeklyReports:
         assert accounts[0]['label'] == "Test Customer"
         assert accounts[0]['email'] == "customer@example.com"
 
+    def test_previous_month_comparison(self, test_data_dir):
+        """
+        NEW FEATURE TEST: Previous month comparison
+        Verify that previous month totals are read and calculated correctly
+        """
+        plant_name = "test-plant"
+
+        # Create current month data (January 2026)
+        current_data = [(f'2026-01-{day:02d}', 10.0) for day in range(1, 32)]
+        self.create_monthly_csv(test_data_dir, plant_name, '2026-01', current_data)
+
+        # Create previous month data (December 2025)
+        prev_data = [(f'2025-12-{day:02d}', 8.0) for day in range(1, 32)]
+        self.create_monthly_csv(test_data_dir, plant_name, '2025-12', prev_data)
+
+        plants = [test_data_dir / f"{plant_name}-2026-01.csv"]
+        summary = get_weekly_summary(plants, test_data_dir)
+
+        # Verify previous month total
+        expected_prev_monthly = 8.0 * 31  # 31 days × 8.0 kWh
+        assert summary['total_prev_monthly'] == pytest.approx(expected_prev_monthly, 0.01)
+        assert summary['total_prev_monthly'] == pytest.approx(248.0, 0.01)
+
+        # Verify current month total
+        expected_current_monthly = 10.0 * 31  # 31 days × 10.0 kWh
+        assert summary['total_monthly'] == pytest.approx(expected_current_monthly, 0.01)
+
+        # Verify month-over-month change
+        expected_change = expected_current_monthly - expected_prev_monthly
+        assert expected_change == pytest.approx(62.0, 0.01)
+
+    def test_previous_year_comparison(self, test_data_dir):
+        """
+        NEW FEATURE TEST: Previous year comparison
+        Verify that previous year totals are read and calculated correctly
+        """
+        plant_name = "test-plant"
+
+        # Create current year data (2026)
+        current_year_data = [
+            ('2026-01', 310.0),
+            ('2026-02', 320.0),
+            ('2026-03', 330.0),
+        ]
+        self.create_yearly_csv(test_data_dir, plant_name, '2026', current_year_data)
+
+        # Create previous year data (2025)
+        prev_year_data = [
+            ('2025-01', 250.0),
+            ('2025-02', 260.0),
+            ('2025-03', 270.0),
+            ('2025-04', 280.0),
+            ('2025-05', 290.0),
+            ('2025-06', 300.0),
+            ('2025-07', 310.0),
+            ('2025-08', 320.0),
+            ('2025-09', 330.0),
+            ('2025-10', 340.0),
+            ('2025-11', 350.0),
+            ('2025-12', 360.0),
+        ]
+        self.create_yearly_csv(test_data_dir, plant_name, '2025', prev_year_data)
+
+        # Create minimal monthly file for current month
+        self.create_monthly_csv(test_data_dir, plant_name, '2026-01', [('2026-01-01', 10.0)])
+
+        plants = [test_data_dir / f"{plant_name}-2026-01.csv"]
+        summary = get_weekly_summary(plants, test_data_dir)
+
+        # Verify previous year total (sum of all 12 months)
+        expected_prev_yearly = sum(kwh for _, kwh in prev_year_data)
+        assert summary['total_prev_yearly'] == pytest.approx(expected_prev_yearly, 0.01)
+        assert summary['total_prev_yearly'] == pytest.approx(3660.0, 0.01)
+
+        # Verify current year total
+        expected_current_yearly = sum(kwh for _, kwh in current_year_data)
+        assert summary['total_yearly'] == pytest.approx(expected_current_yearly, 0.01)
+
+    def test_format_email_with_previous_period_comparisons(self, test_data_dir):
+        """
+        NEW FEATURE TEST: Email formatting with previous month/year comparisons
+        Verify email includes comparison data with change indicators
+        """
+        summary = {
+            'week_start': '2026-01-01',
+            'week_end': '2026-01-07',
+            'current_month': '2026-01',
+            'prev_month': '2025-12',
+            'current_year': '2026',
+            'prev_year': '2025',
+            'total_weekly': 72.0,
+            'total_monthly': 310.0,
+            'total_prev_monthly': 248.0,
+            'total_yearly': 960.0,
+            'total_prev_yearly': 3660.0,
+            'plants': [
+                {
+                    'name': 'test-plant',
+                    'weekly_kwh': 72.0,
+                    'daily_average': 10.29,
+                    'monthly_kwh': 310.0,
+                    'yearly_kwh': 960.0
+                }
+            ]
+        }
+
+        email_body = format_weekly_email("Test Customer", summary, [])
+
+        # Verify email contains current month
+        assert "This Month (2026-01)" in email_body
+        assert "310.00 kWh" in email_body
+
+        # Verify email contains previous month
+        assert "Last Month (2025-12)" in email_body
+        assert "248.00 kWh" in email_body
+
+        # Verify month-over-month change (positive)
+        assert "Month Change:" in email_body
+        assert "+62.00 kWh" in email_body
+
+        # Verify email contains current year
+        assert "This Year (2026)" in email_body
+        assert "960.00 kWh" in email_body
+
+        # Verify email contains previous year
+        assert "Last Year (2025)" in email_body
+        assert "3660.00 kWh" in email_body
+
+        # Verify year-over-year change (negative)
+        assert "Year Change:" in email_body
+        assert "-2700.00 kWh" in email_body
+
+    def test_missing_previous_period_files_handled_gracefully(self, test_data_dir):
+        """
+        EDGE CASE TEST: Missing previous month/year files should not crash
+        Should default to 0 for missing previous periods
+        """
+        plant_name = "test-plant"
+
+        # Create only current month data (no previous month/year files)
+        current_data = [(f'2026-01-{day:02d}', 10.0) for day in range(1, 8)]
+        self.create_monthly_csv(test_data_dir, plant_name, '2026-01', current_data)
+
+        plants = [test_data_dir / f"{plant_name}-2026-01.csv"]
+        summary = get_weekly_summary(plants, test_data_dir)
+
+        # Should not crash and should default to 0
+        assert summary['total_prev_monthly'] == 0.0
+        assert summary['total_prev_yearly'] == 0.0
+
+        # Current totals should still work
+        assert summary['total_monthly'] > 0
+        assert summary['total_weekly'] > 0
+
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
