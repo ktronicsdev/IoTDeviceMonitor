@@ -96,7 +96,7 @@ def get_weekly_summary(plants, data_dir):
                     for row in reader:
                         row_date = datetime.strptime(row['date'], '%Y-%m-%d')
                         if week_ago <= row_date <= today:
-                            energy = float(row['energy_kwh'])
+                            energy = float(row['kwh'])
                             plant_data['weekly_kwh'] += energy
                             daily_values.append(energy)
 
@@ -106,7 +106,7 @@ def get_weekly_summary(plants, data_dir):
                     # Get monthly total
                     f.seek(0)
                     next(reader)  # Skip header again
-                    plant_data['monthly_kwh'] = sum(float(row['energy_kwh']) for row in reader)
+                    plant_data['monthly_kwh'] = sum(float(row['kwh']) for row in reader)
             except Exception as e:
                 print(f"Error reading {monthly_file}: {e}", file=sys.stderr)
 
@@ -115,7 +115,7 @@ def get_weekly_summary(plants, data_dir):
             try:
                 with open(yearly_file, 'r') as f:
                     reader = csv.DictReader(f)
-                    plant_data['yearly_kwh'] = sum(float(row['total_kwh']) for row in reader)
+                    plant_data['yearly_kwh'] = sum(float(row['kwh']) for row in reader)
             except Exception as e:
                 print(f"Error reading {yearly_file}: {e}", file=sys.stderr)
 
