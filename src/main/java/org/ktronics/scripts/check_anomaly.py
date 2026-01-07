@@ -148,12 +148,12 @@ def main() -> int:
     ap.add_argument("--state-file", default="state/alerts_state.json")
 
     # Daily rules
-    ap.add_argument("--red-pct", type=float, default=20.0, help="Red: < this % of baseline")
+    ap.add_argument("--red-pct", type=float, default=20.0, help="Red: < this %% of baseline")
     ap.add_argument("--red-days", type=int, default=3, help="Red: consecutive days")
     ap.add_argument("--daily-baseline-days", type=int, default=14, help="Daily baseline lookback days")
 
     # Monthly rules
-    ap.add_argument("--orange-pct", type=float, default=40.0, help="Orange: < this % of baseline")
+    ap.add_argument("--orange-pct", type=float, default=40.0, help="Orange: < this %% of baseline")
     ap.add_argument("--orange-months", type=int, default=3, help="Orange: consecutive months")
     ap.add_argument("--monthly-baseline-months", type=int, default=6, help="Monthly baseline lookback months")
 

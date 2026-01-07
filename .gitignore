@@ -34,12 +34,13 @@ hs_err_pid*
 # macOS
 .DS_Store
 
+
 # Azure Functions
 local.settings.json
+
 bin/
 obj/
 src/main/java/org/ktronics/config/credentials.json
-
-# skip local data
-
 src/main/java/org/ktronics/scripts/data
+
+__pycache__
