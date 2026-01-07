@@ -103,10 +103,15 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
     customer_summaries.sort(key=lambda x: x['weekly'], reverse=True)
 
     for i, customer_data in enumerate(customer_summaries, 1):
+        month_change = customer_data['monthly'] - customer_data['prev_monthly']
+        year_change = customer_data['yearly'] - customer_data['prev_yearly']
+
         email_body += f"""│ {i}. {customer_data['customer']:<40}
 │    Email: {customer_data['email']:<45}
 │    Plants: {customer_data['plants_count']:<3}
-│    Weekly:  {customer_data['weekly']:>8.2f} kWh  |  Monthly: {customer_data['monthly']:>8.2f} kWh  |  Yearly: {customer_data['yearly']:>10.2f} kWh
+│    Weekly:      {customer_data['weekly']:>8.2f} kWh
+│    This Month:  {customer_data['monthly']:>8.2f} kWh  |  Last Month: {customer_data['prev_monthly']:>8.2f} kWh  |  Change: {month_change:>+8.2f} kWh
+│    This Year:   {customer_data['yearly']:>8.2f} kWh  |  Last Year:  {customer_data['prev_yearly']:>8.2f} kWh  |  Change: {year_change:>+8.2f} kWh
 │
 """
 
