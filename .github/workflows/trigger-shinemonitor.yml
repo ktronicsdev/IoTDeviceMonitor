@@ -199,6 +199,40 @@ jobs:
           EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 src/main/java/org/ktronics/scripts/send_email.py 2>&1
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
+      - name: Send customer-specific device alarm emails
+        if: steps.device_alarms.outputs.exit_code == '2'
+        shell: bash
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          # On scheduled runs: Send to ALL customers
+          # On push/manual runs: Send ONLY to test customer (Gayan-IMH)
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "📧 SENDING CUSTOMER-SPECIFIC DEVICE ALARMS TO ALL CUSTOMERS (Scheduled Run)"
+          else
+            echo "📧 SENDING CUSTOMER-SPECIFIC DEVICE ALARMS TO TEST CUSTOMER ONLY: Gayan-IMH (Push/Manual Run)"
+          fi
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          set -e
+
+          # Check if customer device alarms file exists and has content
+          if [ -f alarms/customer_device_alarms.json ] && [ -s alarms/customer_device_alarms.json ]; then
+            if [ "${{ github.event_name }}" = "schedule" ]; then
+              # Scheduled run: Send to all customers
+              python3 src/main/java/org/ktronics/scripts/send_customer_emails.py \
+                --customer-device-alarms alarms/customer_device_alarms.json 2>&1
+            else
+              # Push/manual run: Send only to test customer
+              python3 src/main/java/org/ktronics/scripts/send_customer_emails.py \
+                --customer-device-alarms alarms/customer_device_alarms.json \
+                --test-customer-only 2>&1
+            fi
+          else
+            echo "No customer device alarms to send (file missing or empty)"
+          fi
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
       - name: Send system-wide status email to admin
         shell: bash
         run: |

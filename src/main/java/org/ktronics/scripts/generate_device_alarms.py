@@ -12,6 +12,7 @@ Usage:
 import os
 import sys
 import json
+import re
 import argparse
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -237,6 +238,96 @@ def update_alarm_state(state, alarms_to_send):
     return state
 
 
+def load_customer_mapping(credentials_file):
+    """Load plant-to-customer mapping from credentials.json.
+
+    Returns dict: {normalized_customer: {'label': str, 'email': str}}
+    """
+    with open(credentials_file, 'r', encoding='utf-8') as f:
+        creds = json.load(f)
+
+    customer_map = {}
+    for account in creds.get('accounts', []):
+        label = account.get('label', '')
+        email = account.get('email', '')
+
+        if not label:
+            continue
+
+        # Normalize: "Gayan-Home-3KW" → "gayanhome3kw"
+        normalized = re.sub(r'[^a-z0-9]', '', label.lower())
+        customer_map[normalized] = {
+            'label': label,
+            'email': email
+        }
+
+    return customer_map
+
+
+def create_customer_device_alarms(alarms_to_send, state, credentials_file):
+    """Map alarms to customers and create customer_device_alarms.json structure.
+
+    Args:
+        alarms_to_send: List of alarm dicts that should be sent
+        state: Current alarm state dict
+        credentials_file: Path to credentials.json
+
+    Returns:
+        dict: {customer_label: {'email': str, 'alarms': [...]}}
+    """
+    customer_map = load_customer_mapping(credentials_file)
+    customer_alarms = {}
+
+    for item in alarms_to_send:
+        alarm = item['alarm']
+        alarm_key = item['alarm_key']
+
+        plant_name = alarm.get('pName', '')
+        plant_id = alarm.get('pId', '')
+
+        # Normalize plant name for matching
+        plant_normalized = re.sub(r'[^a-z0-9]', '', plant_name.lower())
+
+        # Find matching customer
+        matched_customer = None
+        for customer_norm, customer_info in customer_map.items():
+            # Match if customer name in plant name OR plant starts with customer (6+ chars)
+            if customer_norm in plant_normalized or \
+               (len(customer_norm) >= 6 and plant_normalized.startswith(customer_norm[:6])):
+                matched_customer = customer_info
+                break
+
+        if not matched_customer:
+            continue
+
+        customer_label = matched_customer['label']
+        customer_email = matched_customer['email']
+
+        if not customer_email:
+            continue
+
+        # Initialize customer entry if not exists
+        if customer_label not in customer_alarms:
+            customer_alarms[customer_label] = {
+                'email': customer_email,
+                'alarms': []
+            }
+
+        # Get send count from state
+        send_count = item['send_count'] + 1  # +1 because we're about to send
+
+        # Add alarm to customer's list
+        customer_alarms[customer_label]['alarms'].append({
+            'plant': plant_name,
+            'device': alarm.get('devName', 'Unknown Device'),
+            'message': alarm.get('warnMsg', 'No message'),
+            'time': alarm.get('warnTime', 'Unknown time'),
+            'send_count': send_count
+        })
+
+    return customer_alarms
+
+
 def main():
     parser = argparse.ArgumentParser(description='Process device alarms and send notifications')
     parser.add_argument('--alarms-dir', required=True, help='Directory containing alarm JSON files')
@@ -273,6 +364,31 @@ def main():
     with open(args.output_file, 'w', encoding='utf-8') as f:
         f.write(email_body)
     print(f"✓ Email written to {args.output_file}")
+
+    # Create customer-specific device alarms JSON
+    if alarms_to_send:
+        credentials_file = Path(__file__).parent.parent.parent / 'config' / 'credentials.json'
+        customer_device_alarms = create_customer_device_alarms(
+            alarms_to_send,
+            state,
+            credentials_file
+        )
+
+        # Write customer device alarms JSON
+        customer_alarms_file = Path(args.output_file).parent / 'customer_device_alarms.json'
+        output_data = {'customer_device_alarms': customer_device_alarms}
+
+        with open(customer_alarms_file, 'w', encoding='utf-8') as f:
+            json.dump(output_data, f, indent=2)
+
+        print(f"✓ Customer device alarms written to {customer_alarms_file}")
+        print(f"  Customers with device alarms: {len(customer_device_alarms)}")
+    else:
+        # No alarms - create empty customer alarms file
+        customer_alarms_file = Path(args.output_file).parent / 'customer_device_alarms.json'
+        with open(customer_alarms_file, 'w', encoding='utf-8') as f:
+            json.dump({'customer_device_alarms': {}}, f, indent=2)
+        print(f"✓ Empty customer device alarms file created")
 
     # Update state
     print("[5/5] Updating alarm state...")

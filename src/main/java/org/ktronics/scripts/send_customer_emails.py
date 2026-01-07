@@ -296,12 +296,128 @@ def send_weekly_reports(reports_dir):
     return sent_count, failed_count
 
 
+def format_customer_device_alarm_email(customer, alarms):
+    """Format device alarm email for a specific customer.
+
+    Args:
+        customer: Customer name/label
+        alarms: List of alarm dicts for this customer
+
+    Returns:
+        str: Formatted email body
+    """
+    lines = []
+    lines.append("=" * 80)
+    lines.append(f"DEVICE ALARMS FOR: {customer}")
+    lines.append("=" * 80)
+    lines.append("")
+
+    if not alarms:
+        lines.append("All devices are operating normally.")
+        lines.append("")
+        lines.append("=" * 80)
+        return "\n".join(lines)
+
+    lines.append(f"⚠️  {len(alarms)} DEVICE ALARM(S) DETECTED")
+    lines.append("")
+    lines.append("The following devices require attention:")
+    lines.append("")
+
+    for i, alarm in enumerate(alarms, 1):
+        lines.append(f"ALARM #{i}")
+        lines.append(f"  Plant:    {alarm['plant']}")
+        lines.append(f"  Device:   {alarm['device']}")
+        lines.append(f"  Issue:    {alarm['message']}")
+        lines.append(f"  Time:     {alarm['time']}")
+        lines.append(f"  Status:   Send #{alarm['send_count']}/3")
+        lines.append("")
+
+    lines.append("RECOMMENDED ACTIONS:")
+    lines.append("  1. Check device status in ShineMonitor portal")
+    lines.append("  2. Verify physical device operation")
+    lines.append("  3. Contact support if issue persists")
+    lines.append("")
+
+    if any(alarm['send_count'] >= 3 for alarm in alarms):
+        lines.append("⚠️  Some alarms have been sent 3 times and will be auto-ignored.")
+        lines.append("")
+
+    lines.append("=" * 80)
+    return "\n".join(lines)
+
+
+def send_customer_device_alarms(customer_device_alarms_file, test_customer_only=False):
+    """Send device alarm emails to customers based on customer_device_alarms.json.
+
+    Args:
+        customer_device_alarms_file: Path to customer_device_alarms.json
+        test_customer_only: If True, only send to Gayan-IMH (test customer)
+
+    Returns:
+        tuple: (sent_count, failed_count)
+    """
+    if not Path(customer_device_alarms_file).exists():
+        print(f"Customer device alarms file not found: {customer_device_alarms_file}")
+        return 0, 0
+
+    with open(customer_device_alarms_file, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    customer_device_alarms = data.get('customer_device_alarms', {})
+
+    if not customer_device_alarms:
+        print("No customer device alarms to send")
+        return 0, 0
+
+    sent = 0
+    failed = 0
+
+    for customer, customer_data in customer_device_alarms.items():
+        # Filter for test customer only if flag is set
+        if test_customer_only:
+            if customer.lower() != 'gayan-imh':
+                print(f"Skipping {customer}: Not test customer (test-customer-only mode)")
+                continue
+
+        email = customer_data.get('email')
+        alarms = customer_data.get('alarms', [])
+
+        if not email:
+            print(f"Skipping {customer}: No email address")
+            continue
+
+        if not alarms:
+            print(f"Skipping {customer}: No device alarms")
+            continue
+
+        # Format email
+        subject = f"🔔 Device Alarm Alert - {customer}"
+        body = format_customer_device_alarm_email(customer, alarms)
+
+        # Send email
+        try:
+            if send_email(email, subject, body):
+                print(f"✓ Sent device alarm email to {customer} ({email})")
+                sent += 1
+            else:
+                print(f"✗ Failed to send device alarm email to {customer} ({email})")
+                failed += 1
+        except Exception as e:
+            print(f"✗ Failed to send device alarm email to {customer} ({email}): {e}")
+            failed += 1
+
+    return sent, failed
+
+
 def main():
     import argparse
 
     parser = argparse.ArgumentParser(description='Send customer emails (alerts or weekly reports)')
     parser.add_argument('--reports-dir', help='Directory containing weekly reports (for weekly reports)')
     parser.add_argument('--customer-alerts', help='Path to customer_alerts.json (for alert emails)')
+    parser.add_argument('--customer-device-alarms', help='Path to customer_device_alarms.json file')
+    parser.add_argument('--test-customer-only', action='store_true',
+                        help='Only send to test customer (Gayan-IMH) - for testing on push/manual runs')
 
     args = parser.parse_args()
 
@@ -328,8 +444,21 @@ def main():
         total_failed += failed
         print(f"\nWeekly reports sent: {sent}, failed: {failed}")
 
-    if not args.customer_alerts and not args.reports_dir:
-        print("Error: Must specify either --customer-alerts or --reports-dir", file=sys.stderr)
+    # Send customer device alarms if provided
+    if args.customer_device_alarms:
+        print("\n" + "=" * 80)
+        print("SENDING CUSTOMER DEVICE ALARM EMAILS")
+        print("=" * 80)
+        sent, failed = send_customer_device_alarms(
+            args.customer_device_alarms,
+            args.test_customer_only
+        )
+        total_sent += sent
+        total_failed += failed
+        print(f"Customer device alarms sent: {sent}, failed: {failed}")
+
+    if not args.customer_alerts and not args.reports_dir and not args.customer_device_alarms:
+        print("Error: Must specify --customer-alerts, --reports-dir, or --customer-device-alarms", file=sys.stderr)
         return 1
 
     print("=" * 80)
