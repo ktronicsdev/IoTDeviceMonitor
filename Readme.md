@@ -228,7 +228,31 @@ Alerts are formatted with clear visual indicators:
 └──────────────────────────────────────────────────────
 ```
 
-## Testing Customer Features
+## Testing
+
+### Integration Test Suite
+
+The project includes comprehensive integration tests covering all business logic.
+
+#### Test Coverage: 46 tests
+
+- ✅ **UC1 (Admin Alerts): 15/15 PASSED (100%)**
+- ✅ **UC2 (Customer Weekly): 11/11 PASSED (100%)**
+- ✅ **UC3 (Device Alarms): 12/12 PASSED (100%)**
+- ⏭️ **API Tests: 8/8 SKIPPED on Windows** (run in GitHub Actions/Linux)
+
+```bash
+# Run all tests
+cd src/test/java/org/ktronics/scripts
+py -m pytest integration/ -v
+
+# Run specific test suite
+py -m pytest integration/test_admin_alerts.py -v      # UC1: Admin alerts
+py -m pytest integration/test_customer_weekly.py -v   # UC2: Customer reports
+py -m pytest integration/test_device_alarms.py -v     # UC3: Device alarms
+```
+
+See [src/test/java/org/ktronics/scripts/README.md](src/test/java/org/ktronics/scripts/README.md) for detailed test documentation.
 
 ### Test Weekly Report Generation Locally
 

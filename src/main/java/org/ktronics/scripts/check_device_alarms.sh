@@ -55,6 +55,15 @@ alarms_response=$(shinemonitor_api_call "webQueryPlantsWarning" "date=")
 err=$(echo "$alarms_response" | json_blob_get_first "err")
 
 if [ "$err" != "0" ]; then
+  # Error 264 = ERR_NOT_FOUND_DEVICE_WARNING = No alarms found (not an actual error)
+  if [ "$err" = "264" ]; then
+    echo "✓ No device alarms found (err: 264 = ERR_NOT_FOUND_DEVICE_WARNING)"
+    # Create empty response with no alarms
+    echo '{"err":"0","dat":[]}' > "$OUTPUT_FILE"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    exit 0
+  fi
+
   echo "❌ Failed to fetch alarms (err: ${err})"
   echo "Response: ${alarms_response}"
   exit 1

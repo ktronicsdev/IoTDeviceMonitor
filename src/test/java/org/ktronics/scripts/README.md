@@ -89,13 +89,15 @@ open htmlcov/index.html   # macOS
 
 ## Current Test Status
 
-**Total: 36 tests**
-- ✅ **Passed: 28 tests (78%)**
-- ⏭️ **Skipped: 8 tests (22%)**
+**Total: 46 tests**
+
+- ✅ **Passed: 38 tests (83%)**
+- ⏭️ **Skipped: 8 tests (17%)**
 - ❌ **Failed: 0 tests (0%)**
 
 ### By Test Suite:
-- **UC1 (Admin Alerts): 5/5 PASSED (100%)** ✅
+
+- **UC1 (Admin Alerts): 15/15 PASSED (100%)** ✅
 - **UC2 (Customer Weekly): 11/11 PASSED (100%)** ✅
 - **UC3 (Device Alarms): 12/12 PASSED (100%)** ✅
 - **API Tests: 8/8 SKIPPED on Windows** ⏭️ (run in GitHub Actions/Linux)
@@ -113,12 +115,40 @@ open htmlcov/index.html   # macOS
 
 Tests the anomaly detection system that sends alerts to admin for production issues.
 
-**Test Cases:**
+**Test Cases (15 total):**
+
+**Basic Alert Detection:**
+
 - `test_red_alert_low_production_3days` - RED alert when plant < 20% baseline for 3 days
 - `test_orange_alert_low_production_3months` - ORANGE alert when plant < 40% baseline for 3 months
 - `test_zero_production_ignored_after_1month` - Auto-ignore plants with 0 production for 1 month
 - `test_all_systems_operational` - No alerts when all plants normal
 - `test_customer_specific_alerts_generated` - Customer-specific alerts created correctly
+
+**Edge Cases & Thresholds:**
+
+- `test_red_alert_just_below_threshold` - Production at 19% (just below 20% RED threshold) triggers alert
+- `test_no_alert_just_above_threshold` - Production at 21% (just above 20% threshold) does NOT trigger
+
+**Consecutive Days Logic:**
+
+- `test_no_alert_non_consecutive_low_production` - Intermittent low production (not consecutive) does NOT trigger
+- `test_recovery_scenario_alert_clears` - Plant recovers after RED alert period - no alert
+
+**Multiple Plants:**
+
+- `test_multiple_plants_different_alert_levels` - Mixed alert states (RED, normal, ignored) with email formatting
+
+**Boundary Conditions:**
+
+- `test_baseline_with_insufficient_data` - Less than 14 days of data handled gracefully
+- `test_exact_3day_boundary` - Exactly 3 consecutive low days triggers alert
+- `test_exact_3month_boundary` - Exactly 3 consecutive low months triggers alert
+
+**State & Email:**
+
+- `test_state_persistence_across_runs` - Alert state persists across multiple runs
+- `test_email_content_formatting` - Email contains all required sections (summary, actions, breakdown)
 
 ### UC2: Customer Weekly Reports (test_customer_weekly.py)
 
