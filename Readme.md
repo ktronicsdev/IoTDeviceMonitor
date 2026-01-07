@@ -64,15 +64,19 @@ Create `src/main/java/org/ktronics/config/credentials.json`:
 # Fetch monthly data
 sh ./src/main/java/org/ktronics/scripts/check_shinemonitor_monthly.sh \
   src/main/java/org/ktronics/config/credentials.json 2025-12
+```
 
+```bash
 # Run anomaly detection
-python3 src/main/java/org/ktronics/scripts/check_anomaly.py \
+py -m src/main/java/org/ktronics/scripts/check_anomaly.py \
   --data-dir data \
   --out-dir alerts \
   --state-file state/alerts_state.json
+```
 
+```bash
 # Run alaram detection
-sh  ./check_device_alarms.sh "customer_username" "customer_password" "bnrl_frRFjEz8Mkn" "alarms/customer_alerts.json"
+sh  ./src/main/java/org/ktronics/scripts/check_device_alarms.sh "Ganishkawa" "123456" "bnrl_frRFjEz8Mkn" "alarms/customer_alerts.json"
 ```
 
 ### 4. View alerts

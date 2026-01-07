@@ -53,7 +53,7 @@ shinemonitor_auth_source() {
 
   login_response=$(curl -s -X POST "${API_URL}?action=authSource" \
     -H "Content-Type: application/x-www-form-urlencoded" \
-    -d "usr=${username}&company-key=${company_key}&pwd=${pw_sha1}&sign=${sign}&salt=${salt}")
+    -d "usr=$(urlencode "${username}")&company-key=${company_key}&pwd=${pw_sha1}&sign=${sign}&salt=${salt}")
 
   token=$(echo "$login_response" | json_blob_get_first "token")
   secret=$(echo "$login_response" | json_blob_get_first "secret")
@@ -85,10 +85,10 @@ shinemonitor_auth_email() {
 
   salt=$(salt_ms)
   pw_sha1=$(sha1hex "$password")
-  tail="&action=authEmail&usr=${username}&company-key=${company_key}"
+  tail="&action=authEmail&usr=$(urlencode "${username}")&company-key=${company_key}"
   sign=$(sha1hex "${salt}${pw_sha1}${tail}")
 
-  auth_url="${API_URL}?sign=${sign}&salt=${salt}&action=authEmail&usr=${username}&company-key=${company_key}"
+  auth_url="${API_URL}?sign=${sign}&salt=${salt}&action=authEmail&usr=$(urlencode "${username}")&company-key=${company_key}"
   auth_resp=$(curl -sS --max-time 25 "$auth_url" 2>/dev/null || true)
 
   if [ -z "$auth_resp" ]; then

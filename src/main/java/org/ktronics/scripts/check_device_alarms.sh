@@ -52,6 +52,11 @@ echo "[2/3] Fetching ALL device alarms (TESTING MODE)..."
 # For testing, we fetch ALL alarms (no status filter) to test email feature
 alarms_response=$(shinemonitor_api_call "webQueryPlantsWarning" "date=")
 
+# DEBUG: Show raw API response to diagnose failures
+echo "DEBUG: Raw API response:"
+echo "$alarms_response"
+echo ""
+
 err=$(echo "$alarms_response" | json_blob_get_first "err")
 
 if [ "$err" != "0" ]; then
