@@ -148,17 +148,7 @@ jobs:
           mkdir -p alarms
 
           # Parse credentials and fetch alarms for each account
-          python3 << 'PYEOF' | while IFS='|' read -r label username password company_key; do
-          import sys, json
-          with open('src/main/java/org/ktronics/config/credentials.json') as f:
-              data = json.load(f)
-          company_key = data['company_key']
-          for account in data['accounts']:
-              label = account['label']
-              username = account['username']
-              password = account['password']
-              print(f'{label}|{username}|{password}|{company_key}')
-          PYEOF
+          python3 -c 'import sys, json; data = json.load(open("src/main/java/org/ktronics/config/credentials.json")); company_key = data["company_key"]; [print(f"{acc[\"label\"]}|{acc[\"username\"]}|{acc[\"password\"]}|{company_key}") for acc in data["accounts"]]' | while IFS='|' read -r label username password company_key; do
             echo "Checking alarms for: $label"
             src/main/java/org/ktronics/scripts/check_device_alarms.sh \
               "$username" "$password" "$company_key" "alarms/${label}-alarms.json" || true
