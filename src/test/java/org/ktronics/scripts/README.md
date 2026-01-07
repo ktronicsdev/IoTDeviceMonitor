@@ -9,7 +9,8 @@ src/test/java/org/ktronics/scripts/
 ├── integration/
 │   ├── test_admin_alerts.py          # UC1: Admin production alerts
 │   ├── test_customer_weekly.py       # UC2: Customer weekly reports
-│   ├── test_device_alarms.py         # UC3: Device alarm alerts (TODO)
+│   ├── test_device_alarms.py         # UC3: Device alarm alerts
+│   ├── test_shinemonitor_api.py      # ShineMonitor API integration tests
 │   └── fixtures/                     # Test data and expected outputs
 ├── unit/                             # Unit tests (TODO)
 ├── pytest.ini                        # Pytest configuration
@@ -84,7 +85,37 @@ Tests the weekly report generation and email delivery to customers.
 
 ### UC3: Device Alarm Alerts (test_device_alarms.py)
 
-**TODO:** Tests for device alarm detection and notification system.
+Tests the device alarm monitoring and notification system.
+
+**Test Cases:**
+- `test_parse_alarm_files_single_customer` - Parse alarms from single customer JSON
+- `test_parse_alarm_files_multiple_customers` - Parse alarms from multiple customers
+- `test_create_alarm_key_unique` - Verify alarm keys are unique per plant/device/warning
+- `test_filter_alarms_first_send` - First time seeing alarm - should send
+- `test_filter_alarms_max_sends_reached` - Alarm sent 3 times - should NOT send
+- `test_filter_alarms_4hour_interval` - Alarm sent 2 hours ago - should NOT send (4-hour interval)
+- `test_filter_alarms_4hour_interval_passed` - Alarm sent 5 hours ago - should send (2nd time)
+- `test_format_email_no_alarms` - Format email when no alarms (all clear)
+- `test_format_email_with_alarms` - Format email with device alarms
+- `test_update_alarm_state_increment_send_count` - Update state after sending - increment send count
+- `test_update_alarm_state_auto_ignore_after_3_sends` - Update state after 3rd send - auto-ignore
+- `test_state_persistence` - Alarm state save and load
+
+### ShineMonitor API Tests (test_shinemonitor_api.py)
+
+Tests the ShineMonitor API authentication and shared functions.
+
+**Test Cases:**
+- `test_auth_email_function` - Test shinemonitor_auth_email() authentication
+- `test_query_plants_api` - Test queryPlants API call
+- `test_query_month_energy_api` - Test queryPlantEnergyMonth API call
+- `test_query_year_energy_api` - Test queryPlantEnergyYear API call
+- `test_query_plants_warning_api` - Test webQueryPlantsWarning API call (device alarms)
+- `test_check_device_alarms_script` - Test check_device_alarms.sh end-to-end
+- `test_check_monthly_script` - Test check_shinemonitor_monthly.sh
+- `test_check_yearly_script` - Test check_shinemonitor_yearly.sh
+
+**Note:** These tests require valid credentials in `src/main/java/org/ktronics/config/credentials.json` and will make real API calls.
 
 ## Fixtures
 
