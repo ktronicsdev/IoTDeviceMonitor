@@ -57,7 +57,7 @@ py -m pytest integration/test_customer_weekly.py -v
 ```
 
 ```bash
-# UC3: Device Alarms (12 tests) ✅ 100% PASS RATE
+# UC3: Device Alarms (24 tests) ✅ 100% PASS RATE
 py -m pytest integration/test_device_alarms.py -v
 ```
 
@@ -89,17 +89,17 @@ open htmlcov/index.html   # macOS
 
 ## Current Test Status
 
-**Total: 46 tests**
+**Total: 58 tests**
 
-- ✅ **Passed: 38 tests (83%)**
-- ⏭️ **Skipped: 8 tests (17%)**
+- ✅ **Passed: 50 tests (86%)**
+- ⏭️ **Skipped: 8 tests (14%)**
 - ❌ **Failed: 0 tests (0%)**
 
 ### By Test Suite:
 
 - **UC1 (Admin Alerts): 15/15 PASSED (100%)** ✅
 - **UC2 (Customer Weekly): 11/11 PASSED (100%)** ✅
-- **UC3 (Device Alarms): 12/12 PASSED (100%)** ✅
+- **UC3 (Device Alarms): 24/24 PASSED (100%)** ✅
 - **API Tests: 8/8 SKIPPED on Windows** ⏭️ (run in GitHub Actions/Linux)
 
 ### Notes on Skipped Tests:
@@ -169,9 +169,12 @@ Tests the weekly report generation and email delivery to customers.
 
 ### UC3: Device Alarm Alerts (test_device_alarms.py)
 
-Tests the device alarm monitoring and notification system.
+Tests the device alarm monitoring and notification system (admin + customer notifications).
 
-**Test Cases:**
+**Test Cases (24 total):**
+
+**Admin Device Alarms (12 tests):**
+
 - `test_parse_alarm_files_single_customer` - Parse alarms from single customer JSON
 - `test_parse_alarm_files_multiple_customers` - Parse alarms from multiple customers
 - `test_create_alarm_key_unique` - Verify alarm keys are unique per plant/device/warning
@@ -179,11 +182,29 @@ Tests the device alarm monitoring and notification system.
 - `test_filter_alarms_max_sends_reached` - Alarm sent 3 times - should NOT send
 - `test_filter_alarms_4hour_interval` - Alarm sent 2 hours ago - should NOT send (4-hour interval)
 - `test_filter_alarms_4hour_interval_passed` - Alarm sent 5 hours ago - should send (2nd time)
-- `test_format_email_no_alarms` - Format email when no alarms (all clear)
-- `test_format_email_with_alarms` - Format email with device alarms
+- `test_format_email_no_alarms` - Format admin email when no alarms (all clear)
+- `test_format_email_with_alarms` - Format admin email with device alarms
 - `test_update_alarm_state_increment_send_count` - Update state after sending - increment send count
 - `test_update_alarm_state_auto_ignore_after_3_sends` - Update state after 3rd send - auto-ignore
 - `test_state_persistence` - Alarm state save and load
+
+**Customer Device Alarms (10 tests):**
+
+- `test_load_customer_mapping` - Load plant-to-customer mapping from credentials.json
+- `test_create_customer_device_alarms_single_customer` - Map alarms to single customer (Gayan-IMH)
+- `test_create_customer_device_alarms_multiple_customers` - Map alarms to multiple customers
+- `test_create_customer_device_alarms_skip_no_email` - Skip customers with no email address
+- `test_format_customer_device_alarm_email_with_alarms` - Format customer email with device alarms
+- `test_format_customer_device_alarm_email_no_alarms` - Format customer email when no alarms
+- `test_format_customer_device_alarm_email_max_sends_warning` - Email warning when alarm reaches 3 sends
+- `test_send_customer_device_alarms_file_not_found` - Handle missing customer_device_alarms.json
+- `test_send_customer_device_alarms_empty_file` - Handle empty customer_device_alarms.json
+- `test_send_customer_device_alarms_test_customer_only_mode` - Test-customer-only mode filters for Gayan-IMH
+
+**Manual API Verification (2 tests):**
+
+- `test_manual_api_fetch_ganishkawa` - Documents successful manual API test for Ganishkawa
+- `test_manual_api_fetch_namila` - Documents successful manual API test for Namila-Waragoda
 
 ### ShineMonitor API Tests (test_shinemonitor_api.py)
 
