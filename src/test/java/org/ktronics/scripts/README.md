@@ -91,18 +91,20 @@ open htmlcov/index.html   # macOS
 
 **Total: 36 tests**
 - ✅ **Passed: 28 tests (78%)**
-- ❌ **Failed: 8 tests (22%)**
+- ⏭️ **Skipped: 8 tests (22%)**
+- ❌ **Failed: 0 tests (0%)**
 
 ### By Test Suite:
 - **UC1 (Admin Alerts): 5/5 PASSED (100%)** ✅
 - **UC2 (Customer Weekly): 11/11 PASSED (100%)** ✅
 - **UC3 (Device Alarms): 12/12 PASSED (100%)** ✅
-- **API Tests: 0/8 PASSED** ⚠️ (fail on Windows, work in GitHub Actions/Linux)
+- **API Tests: 8/8 SKIPPED on Windows** ⏭️ (run in GitHub Actions/Linux)
 
-### Notes on Test Failures:
-- **API test failures**: Bash script tests require Unix environment (WSL error on Windows)
-  - These tests will pass in GitHub Actions (Ubuntu)
-  - Tests now correctly load credentials from `src/main/java/org/ktronics/config/credentials.json`
+### Notes on Skipped Tests:
+- **API tests**: Bash script tests require Unix environment (Linux/macOS)
+  - Auto-skip on Windows with clear message
+  - Will run and pass in GitHub Actions (Ubuntu)
+  - Tests load credentials from `src/main/java/org/ktronics/config/credentials.json`
   - All functional business logic tests (UC1, UC2, UC3) pass with 100% coverage
 
 ## Test Cases

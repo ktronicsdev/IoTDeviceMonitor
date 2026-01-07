@@ -8,6 +8,7 @@ import pytest
 import subprocess
 import json
 import tempfile
+import platform
 from pathlib import Path
 
 # Test configuration
@@ -43,6 +44,10 @@ class TestShineMonitorAPI:
 
     def run_bash_script(self, script_content):
         """Execute bash script and return output"""
+        # Skip on Windows - these tests require Unix environment
+        if platform.system() == 'Windows':
+            pytest.skip("Bash script tests require Unix environment (Linux/macOS). Run in GitHub Actions.")
+
         result = subprocess.run(
             ['bash', '-c', script_content],
             capture_output=True,
