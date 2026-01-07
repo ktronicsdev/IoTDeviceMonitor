@@ -32,6 +32,8 @@ def generate_admin_summary(credentials_file, data_dir, output_file):
     total_weekly = 0
     total_monthly = 0
     total_yearly = 0
+    total_prev_monthly = 0
+    total_prev_yearly = 0
     total_plants = 0
 
     for customer in accounts:
@@ -52,12 +54,16 @@ def generate_admin_summary(credentials_file, data_dir, output_file):
             'plants_count': len(summary['plants']),
             'weekly': summary['total_weekly'],
             'monthly': summary['total_monthly'],
-            'yearly': summary['total_yearly']
+            'yearly': summary['total_yearly'],
+            'prev_monthly': summary['total_prev_monthly'],
+            'prev_yearly': summary['total_prev_yearly']
         })
 
         total_weekly += summary['total_weekly']
         total_monthly += summary['total_monthly']
         total_yearly += summary['total_yearly']
+        total_prev_monthly += summary['total_prev_monthly']
+        total_prev_yearly += summary['total_prev_yearly']
         total_plants += len(summary['plants'])
 
     # Format admin email
@@ -77,9 +83,15 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
 │ Total Plants:    {total_plants}
 │
 │ PRODUCTION TOTALS (ALL CUSTOMERS):
-│   • Weekly Total:   {total_weekly:>10.2f} kWh
-│   • Monthly Total:  {total_monthly:>10.2f} kWh
-│   • Yearly Total:   {total_yearly:>10.2f} kWh
+│   • Weekly Total:          {total_weekly:>10.2f} kWh
+│
+│   • This Month Total:      {total_monthly:>10.2f} kWh
+│   • Previous Month Total:  {total_prev_monthly:>10.2f} kWh
+│   • Month-over-Month:      {total_monthly - total_prev_monthly:>+10.2f} kWh
+│
+│   • This Year Total:       {total_yearly:>10.2f} kWh
+│   • Previous Year Total:   {total_prev_yearly:>10.2f} kWh
+│   • Year-over-Year:        {total_yearly - total_prev_yearly:>+10.2f} kWh
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 

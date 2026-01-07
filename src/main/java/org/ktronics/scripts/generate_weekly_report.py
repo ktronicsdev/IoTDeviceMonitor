@@ -68,25 +68,40 @@ def get_weekly_summary(plant_base_names, data_dir):
     today = datetime.now()
     week_ago = today - timedelta(days=7)
 
+    # Calculate previous month/year for comparisons
+    first_of_month = today.replace(day=1)
+    prev_month = first_of_month - timedelta(days=1)
+    prev_year = today.year - 1
+
     summary = {
         'plants': [],
         'total_weekly': 0,
         'total_monthly': 0,
         'total_yearly': 0,
+        'total_prev_monthly': 0,
+        'total_prev_yearly': 0,
         'week_start': week_ago.strftime('%Y-%m-%d'),
-        'week_end': today.strftime('%Y-%m-%d')
+        'week_end': today.strftime('%Y-%m-%d'),
+        'current_month': today.strftime('%Y-%m'),
+        'prev_month': prev_month.strftime('%Y-%m'),
+        'current_year': str(today.year),
+        'prev_year': str(prev_year)
     }
 
     for plant_name in plant_base_names:
         # Read monthly CSV for recent data (current month)
         monthly_file = data_dir / f"{plant_name}-{today.strftime('%Y-%m')}.csv"
         yearly_file = data_dir / f"{plant_name}-{today.year}.csv"
+        prev_monthly_file = data_dir / f"{plant_name}-{prev_month.strftime('%Y-%m')}.csv"
+        prev_yearly_file = data_dir / f"{plant_name}-{prev_year}.csv"
 
         plant_data = {
             'name': plant_name,
             'weekly_kwh': 0,
             'monthly_kwh': 0,
             'yearly_kwh': 0,
+            'prev_monthly_kwh': 0,
+            'prev_yearly_kwh': 0,
             'daily_average': 0
         }
 
@@ -122,10 +137,30 @@ def get_weekly_summary(plant_base_names, data_dir):
             except Exception as e:
                 print(f"Error reading {yearly_file}: {e}", file=sys.stderr)
 
+        # Get previous month total
+        if prev_monthly_file.exists():
+            try:
+                with open(prev_monthly_file, 'r') as f:
+                    reader = csv.DictReader(f)
+                    plant_data['prev_monthly_kwh'] = sum(float(row['kwh']) for row in reader)
+            except Exception as e:
+                print(f"Error reading {prev_monthly_file}: {e}", file=sys.stderr)
+
+        # Get previous year total
+        if prev_yearly_file.exists():
+            try:
+                with open(prev_yearly_file, 'r') as f:
+                    reader = csv.DictReader(f)
+                    plant_data['prev_yearly_kwh'] = sum(float(row['kwh']) for row in reader)
+            except Exception as e:
+                print(f"Error reading {prev_yearly_file}: {e}", file=sys.stderr)
+
         summary['plants'].append(plant_data)
         summary['total_weekly'] += plant_data['weekly_kwh']
         summary['total_monthly'] += plant_data['monthly_kwh']
         summary['total_yearly'] += plant_data['yearly_kwh']
+        summary['total_prev_monthly'] += plant_data['prev_monthly_kwh']
+        summary['total_prev_yearly'] += plant_data['prev_yearly_kwh']
 
     return summary
 
@@ -145,9 +180,15 @@ Report Period: {summary['week_start']} to {summary['week_end']}
 
 ┌─ PRODUCTION SUMMARY ────────────────────────────────────────────────────────┐
 │
-│ Weekly Total:   {summary['total_weekly']:.2f} kWh
-│ Monthly Total:  {summary['total_monthly']:.2f} kWh
-│ Yearly Total:   {summary['total_yearly']:.2f} kWh
+│ Weekly Total:   {summary['total_weekly']:>10.2f} kWh
+│
+│ This Month ({summary['current_month']}):  {summary['total_monthly']:>10.2f} kWh
+│ Last Month ({summary['prev_month']}):  {summary['total_prev_monthly']:>10.2f} kWh
+│ Month Change:     {summary['total_monthly'] - summary['total_prev_monthly']:>+10.2f} kWh
+│
+│ This Year ({summary['current_year']}):      {summary['total_yearly']:>10.2f} kWh
+│ Last Year ({summary['prev_year']}):      {summary['total_prev_yearly']:>10.2f} kWh
+│ Year Change:      {summary['total_yearly'] - summary['total_prev_yearly']:>+10.2f} kWh
 │
 │ Number of Plants: {len(summary['plants'])}
 │
