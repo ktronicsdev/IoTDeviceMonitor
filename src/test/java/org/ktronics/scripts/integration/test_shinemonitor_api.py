@@ -11,8 +11,12 @@ import tempfile
 from pathlib import Path
 
 # Test configuration
-SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent.parent.parent / "main" / "java" / "org" / "ktronics" / "scripts"
-CREDS_FILE = SCRIPTS_DIR.parent / "config" / "credentials.json"
+# Navigate from test file to project root, then to main source credentials
+# Test file: src/test/java/org/ktronics/scripts/integration/test_shinemonitor_api.py
+# Go up to project root (IOT directory)
+PROJECT_ROOT = Path(__file__).resolve().parents[7]  # Project root
+SCRIPTS_DIR = PROJECT_ROOT / "src" / "main" / "java" / "org" / "ktronics" / "scripts"
+CREDS_FILE = PROJECT_ROOT / "src" / "main" / "java" / "org" / "ktronics" / "config" / "credentials.json"
 
 def load_test_credentials():
     """Load credentials for testing"""
