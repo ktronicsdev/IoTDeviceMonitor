@@ -40,25 +40,28 @@ py -m pip install pytest-cov
 # Navigate to test directory
 cd src/test/java/org/ktronics/scripts
 
-# Run all tests
-py -m pytest integration/ -v
-
-# Run tests with verbose output
+# Run all tests with verbose output
 py -m pytest integration/ -v --tb=short
 ```
 
 ### Run Specific Test Suites
 
 ```bash
-# UC1: Admin Production Alerts (5 tests)
+# UC1: Admin Production Alerts (5 tests) ✅ 100% PASS RATE
 py -m pytest integration/test_admin_alerts.py -v
+```
 
-# UC2: Customer Weekly Reports (11 tests)
+```bash
+# UC2: Customer Weekly Reports (11 tests) ✅ 100% PASS RATE
 py -m pytest integration/test_customer_weekly.py -v
+```
 
+```bash
 # UC3: Device Alarms (12 tests) ✅ 100% PASS RATE
 py -m pytest integration/test_device_alarms.py -v
+```
 
+```bash
 # API Tests (8 tests - require bash/Unix environment)
 py -m pytest integration/test_shinemonitor_api.py -v
 ```
@@ -87,20 +90,20 @@ open htmlcov/index.html   # macOS
 ## Current Test Status
 
 **Total: 36 tests**
-- ✅ **Passed: 20 tests (56%)**
-- ❌ **Failed: 16 tests (44%)**
+- ✅ **Passed: 28 tests (78%)**
+- ❌ **Failed: 8 tests (22%)**
 
 ### By Test Suite:
 - **UC1 (Admin Alerts): 5/5 PASSED (100%)** ✅
-- **UC2 (Customer Weekly): 4/11 PASSED (36%)** ⚠️
+- **UC2 (Customer Weekly): 11/11 PASSED (100%)** ✅
 - **UC3 (Device Alarms): 12/12 PASSED (100%)** ✅
 - **API Tests: 0/8 PASSED** ⚠️ (fail on Windows, work in GitHub Actions/Linux)
 
 ### Notes on Test Failures:
-- **UC2 failures**: Pre-existing issues with `get_weekly_summary()` data handling
 - **API test failures**: Bash script tests require Unix environment (WSL error on Windows)
   - These tests will pass in GitHub Actions (Ubuntu)
   - Tests now correctly load credentials from `src/main/java/org/ktronics/config/credentials.json`
+  - All functional business logic tests (UC1, UC2, UC3) pass with 100% coverage
 
 ## Test Cases
 
@@ -127,6 +130,10 @@ Tests the weekly report generation and email delivery to customers.
 - `test_multiple_plants_per_customer` - Customer with multiple plants gets combined report
 - `test_format_weekly_email_no_alerts` - Format weekly email correctly
 - `test_load_credentials` - Load customer credentials from JSON
+- `test_previous_month_comparison` - Verify previous month totals are read correctly
+- `test_previous_year_comparison` - Verify previous year totals are read correctly
+- `test_format_email_with_previous_period_comparisons` - Email formatting with comparison data
+- `test_missing_previous_period_files_handled_gracefully` - Missing previous period files default to 0
 
 ### UC3: Device Alarm Alerts (test_device_alarms.py)
 
