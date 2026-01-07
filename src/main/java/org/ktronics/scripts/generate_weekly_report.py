@@ -19,19 +19,24 @@ def load_credentials(creds_file):
     return data['accounts']
 
 def get_customer_plants(data_dir, customer_label):
-    """Find all CSV files belonging to a customer based on label matching."""
-    plants = []
+    """Find unique plant base names for a customer (without year/month suffixes)."""
+    import re
     data_path = Path(data_dir)
+    plant_names = set()
 
     # Normalize customer label for matching
     normalized_label = customer_label.lower().replace(' ', '-').replace('_', '-')
 
+    # Pattern to match: plantname-YYYY-MM.csv or plantname-YYYY.csv
+    # We want to extract just the plantname part
     for csv_file in data_path.glob('*.csv'):
         filename = csv_file.stem.lower()
         if normalized_label in filename:
-            plants.append(csv_file)
+            # Remove year/month suffixes: -YYYY-MM or -YYYY
+            base_name = re.sub(r'-\d{4}(-\d{2})?$', '', csv_file.stem)
+            plant_names.add(base_name)
 
-    return plants
+    return sorted(list(plant_names))
 
 def parse_csv_data(csv_file):
     """Parse CSV file and extract production data."""
@@ -58,7 +63,7 @@ def parse_csv_data(csv_file):
 
     return data
 
-def get_weekly_summary(plants, data_dir):
+def get_weekly_summary(plant_base_names, data_dir):
     """Generate weekly summary for customer's plants."""
     today = datetime.now()
     week_ago = today - timedelta(days=7)
@@ -72,10 +77,8 @@ def get_weekly_summary(plants, data_dir):
         'week_end': today.strftime('%Y-%m-%d')
     }
 
-    for plant_file in plants:
-        plant_name = plant_file.stem
-
-        # Read monthly CSV for recent data
+    for plant_name in plant_base_names:
+        # Read monthly CSV for recent data (current month)
         monthly_file = data_dir / f"{plant_name}-{today.strftime('%Y-%m')}.csv"
         yearly_file = data_dir / f"{plant_name}-{today.year}.csv"
 
@@ -150,20 +153,7 @@ Report Period: {summary['week_start']} to {summary['week_end']}
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
-┌─ PLANT-BY-PLANT BREAKDOWN ──────────────────────────────────────────────────┐
-│
 """
-
-    for plant in summary['plants']:
-        email_body += f"""│ Plant: {plant['name']}
-│   • Weekly Production:  {plant['weekly_kwh']:.2f} kWh
-│   • Daily Average:      {plant['daily_average']:.2f} kWh/day
-│   • Monthly Total:      {plant['monthly_kwh']:.2f} kWh
-│   • Yearly Total:       {plant['yearly_kwh']:.2f} kWh
-│
-"""
-
-    email_body += "└──────────────────────────────────────────────────────────────────────────────┘\n\n"
 
     # Add alerts section if any
     if alerts_for_customer:
