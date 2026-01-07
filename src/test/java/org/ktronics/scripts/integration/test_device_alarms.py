@@ -190,6 +190,61 @@ class TestDeviceAlarmSystem:
         assert all_alarms[1]['warnMsg'] == 'Temperature warning'
         assert all_alarms[0]['pName'] == 'Gayan-IMH-Imbulgoda-3KW'
 
+    def test_parse_alarm_files_detects_warnings_in_response(self, test_alarms_dir):
+        """REGRESSION TEST: Verify alarm detection works with dat.warning structure
+
+        This test prevents regression of the bug where check_device_alarms.sh
+        looked for dat:[ but API returns dat:warning:[...]
+
+        Bug history: Script used grep -o 'dat:\\[' which failed to detect alarms
+        in the actual API response format, causing "No alarms found" when alarms
+        existed. This led to zero emails being sent.
+        """
+        # Create alarm file with actual API response structure
+        alarm_file = test_alarms_dir / "test-customer-alarms.json"
+
+        # Simulate exact API response format with warning array
+        api_response = {
+            "err": "0",
+            "desc": "ERR_NONE",
+            "dat": {
+                "total": 37,  # This is the count check_device_alarms.sh should extract
+                "page": 0,
+                "pagesize": 1,
+                "warning": [
+                    {
+                        "pId": "12345",
+                        "pName": "Test Plant",
+                        "devId": "DEV001",
+                        "devName": "Test Device",
+                        "warnId": "W001",
+                        "warnMsg": "Test warning",
+                        "warnTime": "2026-01-07 12:00:00",
+                        "status": 0
+                    }
+                ]
+            }
+        }
+
+        with open(alarm_file, 'w') as f:
+            json.dump(api_response, f)
+
+        # Verify parse_alarm_files correctly extracts alarms from dat.warning
+        all_alarms = parse_alarm_files(test_alarms_dir)
+
+        # Should find 1 alarm from the "warning" array
+        assert len(all_alarms) == 1
+        assert all_alarms[0]['warnMsg'] == 'Test warning'
+
+        # Verify the response contains warning array (what grep should look for)
+        with open(alarm_file, 'r') as f:
+            content = f.read()
+            # check_device_alarms.sh looks for "warning":[ pattern (with or without space)
+            assert '"warning"' in content and '[' in content, "API response must contain warning array"
+            assert '"dat"' in content and '{' in content, "API response has dat as object"
+            # Old broken format would have been "dat":[] (array directly)
+            assert not ('"dat": []' in content or '"dat":[]' in content), "Old format should not be present"
+
     def test_create_alarm_key_unique(self):
         """Verify alarm keys are unique per plant/device/warning"""
         alarm1 = {

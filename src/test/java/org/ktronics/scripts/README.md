@@ -57,7 +57,7 @@ py -m pytest integration/test_customer_weekly.py -v
 ```
 
 ```bash
-# UC3: Device Alarms (24 tests) ✅ 100% PASS RATE
+# UC3: Device Alarms (26 tests) ✅ 100% PASS RATE
 py -m pytest integration/test_device_alarms.py -v
 ```
 
@@ -89,17 +89,17 @@ open htmlcov/index.html   # macOS
 
 ## Current Test Status
 
-**Total: 59 tests**
+**Total: 60 tests**
 
-- ✅ **Passed: 51 tests (86%)**
-- ⏭️ **Skipped: 8 tests (14%)**
+- ✅ **Passed: 52 tests (87%)**
+- ⏭️ **Skipped: 8 tests (13%)**
 - ❌ **Failed: 0 tests (0%)**
 
 ### By Test Suite:
 
 - **UC1 (Admin Alerts): 15/15 PASSED (100%)** ✅
 - **UC2 (Customer Weekly): 11/11 PASSED (100%)** ✅
-- **UC3 (Device Alarms): 25/25 PASSED (100%)** ✅
+- **UC3 (Device Alarms): 26/26 PASSED (100%)** ✅
 - **API Tests: 8/8 SKIPPED on Windows** ⏭️ (run in GitHub Actions/Linux)
 
 ### Notes on Skipped Tests:
@@ -171,13 +171,14 @@ Tests the weekly report generation and email delivery to customers.
 
 Tests the device alarm monitoring and notification system (admin + customer notifications).
 
-**Test Cases (25 total):**
+**Test Cases (26 total):**
 
-**Admin Device Alarms (13 tests):**
+**Admin Device Alarms (14 tests):**
 
 - `test_parse_alarm_files_single_customer` - Parse alarms from single customer JSON
 - `test_parse_alarm_files_multiple_customers` - Parse alarms from multiple customers
 - `test_parse_alarm_files_api_warning_format` - Parse alarms with actual API response format (dat.warning structure)
+- `test_parse_alarm_files_detects_warnings_in_response` - **REGRESSION TEST** for alarm detection bug (dat.warning format)
 - `test_create_alarm_key_unique` - Verify alarm keys are unique per plant/device/warning
 - `test_filter_alarms_first_send` - First time seeing alarm - should send
 - `test_filter_alarms_max_sends_reached` - Alarm sent 3 times - should NOT send
