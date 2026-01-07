@@ -21,41 +21,86 @@ src/test/java/org/ktronics/scripts/
 
 ### Prerequisites
 
-Install pytest:
+**Required:**
+- Python 3.11 or higher
+- pytest
+
+**Installation:**
 ```bash
-pip install pytest pytest-cov
+# Install pytest
+py -m pip install pytest
+
+# Optional: Install pytest-cov for coverage reports
+py -m pip install pytest-cov
 ```
 
-### Run All Tests
+### Quick Start
 
 ```bash
+# Navigate to test directory
 cd src/test/java/org/ktronics/scripts
-pytest
+
+# Run all tests
+py -m pytest integration/ -v
+
+# Run tests with verbose output
+py -m pytest integration/ -v --tb=short
 ```
 
-### Run Specific Test File
+### Run Specific Test Suites
 
 ```bash
-pytest integration/test_customer_weekly.py
+# UC1: Admin Production Alerts (5 tests)
+py -m pytest integration/test_admin_alerts.py -v
+
+# UC2: Customer Weekly Reports (11 tests)
+py -m pytest integration/test_customer_weekly.py -v
+
+# UC3: Device Alarms (12 tests) ✅ 100% PASS RATE
+py -m pytest integration/test_device_alarms.py -v
+
+# API Tests (8 tests - require bash/Unix environment)
+py -m pytest integration/test_shinemonitor_api.py -v
 ```
 
 ### Run Specific Test Case
 
 ```bash
-pytest integration/test_customer_weekly.py::TestCustomerWeeklyReports::test_weekly_production_calculation
+# Run a single test
+py -m pytest integration/test_device_alarms.py::TestDeviceAlarmSystem::test_filter_alarms_first_send -v
+
+# Run with detailed output
+py -m pytest integration/test_admin_alerts.py::TestAdminProductionAlerts::test_red_alert_low_production_3days -v -s
 ```
 
 ### Run with Coverage
 
 ```bash
-pytest --cov=../../../../../main/java/org/ktronics/scripts
+# Run with coverage report
+py -m pytest integration/ --cov=../../../../../main/java/org/ktronics/scripts --cov-report=html
+
+# View coverage report
+start htmlcov/index.html  # Windows
+open htmlcov/index.html   # macOS
 ```
 
-### Run Only Integration Tests
+## Current Test Status
 
-```bash
-pytest integration/
-```
+**Total: 36 tests**
+- ✅ **Passed: 20 tests (56%)**
+- ❌ **Failed: 16 tests (44%)**
+
+### By Test Suite:
+- **UC1 (Admin Alerts): 5/5 PASSED (100%)** ✅
+- **UC2 (Customer Weekly): 4/11 PASSED (36%)** ⚠️
+- **UC3 (Device Alarms): 12/12 PASSED (100%)** ✅
+- **API Tests: 0/8 PASSED** ⚠️ (fail on Windows, work in GitHub Actions/Linux)
+
+### Notes on Test Failures:
+- **UC2 failures**: Pre-existing issues with `get_weekly_summary()` data handling
+- **API test failures**: Bash script tests require Unix environment (WSL error on Windows)
+  - These tests will pass in GitHub Actions (Ubuntu)
+  - Tests now correctly load credentials from `src/main/java/org/ktronics/config/credentials.json`
 
 ## Test Cases
 
