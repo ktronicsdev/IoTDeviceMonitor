@@ -137,6 +137,74 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           exit 0
 
+      - name: Check device alarms for all customers
+        shell: bash
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🔔 CHECKING DEVICE ALARMS (UNHANDLED ONLY)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          set -e
+          chmod +x src/main/java/org/ktronics/scripts/check_device_alarms.sh
+          mkdir -p alarms
+
+          # Parse credentials and fetch alarms for each account
+          python3 << 'PYEOF' | while IFS='|' read -r label username password company_key; do
+          import sys, json
+          with open('src/main/java/org/ktronics/config/credentials.json') as f:
+              data = json.load(f)
+          company_key = data['company_key']
+          for account in data['accounts']:
+              label = account['label']
+              username = account['username']
+              password = account['password']
+              print(f'{label}|{username}|{password}|{company_key}')
+          PYEOF
+            echo "Checking alarms for: $label"
+            src/main/java/org/ktronics/scripts/check_device_alarms.sh \
+              "$username" "$password" "$company_key" "alarms/${label}-alarms.json" || true
+          done
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: Process device alarms and generate email
+        id: device_alarms
+        shell: bash
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🔔 PROCESSING DEVICE ALARMS"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          set +e
+          mkdir -p state alarms
+
+          python3 src/main/java/org/ktronics/scripts/process_device_alarms.py \
+            --alarms-dir alarms \
+            --state-file state/device_alarms_state.json \
+            --output-file alarms/device_alarms.txt 2>&1
+
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          if [ $code -eq 2 ]; then
+            echo "🔴 DEVICE ALARMS FOUND - Email will be sent"
+          else
+            echo "✅ No device alarms to send"
+          fi
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          exit 0
+
+      - name: Send device alarms email to admin
+        if: steps.device_alarms.outputs.exit_code == '2'
+        shell: bash
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📧 SENDING DEVICE ALARMS EMAIL TO ADMIN"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          set -e
+          subject="🔔 DEVICE ALARMS DETECTED - ShineMonitor"
+          body="$(cat alarms/device_alarms.txt)"
+
+          EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 src/main/java/org/ktronics/scripts/send_email.py 2>&1
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
       - name: Send system-wide status email to admin
         shell: bash
         run: |
