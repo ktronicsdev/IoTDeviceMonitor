@@ -133,20 +133,21 @@ shinemonitor_api_call() {
     return 1
   fi
 
-  local salt sign api_response
+  local salt sign action_string api_response
 
   salt=$(salt_ms)
-  sign=$(sha1hex "${SM_TOKEN}${salt}${SM_SECRET}")
 
+  # Build the action string that will be included in the signature
   if [ -n "$extra_params" ]; then
-    api_response=$(curl -s -X POST "${API_URL}?action=${action}" \
-      -H "Content-Type: application/x-www-form-urlencoded" \
-      -d "sign=${sign}&salt=${salt}&token=${SM_TOKEN}&${extra_params}")
+    action_string="&action=${action}&${extra_params}"
   else
-    api_response=$(curl -s -X POST "${API_URL}?action=${action}" \
-      -H "Content-Type: application/x-www-form-urlencoded" \
-      -d "sign=${sign}&salt=${salt}&token=${SM_TOKEN}")
+    action_string="&action=${action}"
   fi
+
+  # Signature order: salt, secret, token, action_string
+  sign=$(sha1hex "${salt}${SM_SECRET}${SM_TOKEN}${action_string}")
+
+  api_response=$(curl -sS --max-time 25 "${API_URL}?sign=${sign}&salt=${salt}&token=${SM_TOKEN}${action_string}" 2>/dev/null || true)
 
   echo "$api_response"
 }

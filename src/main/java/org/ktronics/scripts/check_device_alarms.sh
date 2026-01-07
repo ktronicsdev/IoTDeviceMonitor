@@ -33,7 +33,7 @@ echo "[1/3] Authenticating..."
 echo "  Username: ${USERNAME}"
 echo "  Company Key: ${COMPANY_KEY:0:8}..."
 
-if ! shinemonitor_auth_source "${USERNAME}" "${PASSWORD}" "${COMPANY_KEY}"; then
+if ! shinemonitor_auth_email "${USERNAME}" "${PASSWORD}" "${COMPANY_KEY}"; then
   exit 1
 fi
 
