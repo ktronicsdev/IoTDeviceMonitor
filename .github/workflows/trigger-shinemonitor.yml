@@ -151,7 +151,7 @@ jobs:
           python3 -c 'import sys, json; data = json.load(open("src/main/java/org/ktronics/config/credentials.json")); company_key = data["company_key"]; [print("{}|{}|{}|{}".format(acc.get("label"), acc.get("username"), acc.get("password"), company_key)) for acc in data["accounts"]]' | while IFS='|' read -r label username password company_key; do
             echo "Checking alarms for: $label"
             src/main/java/org/ktronics/scripts/check_device_alarms.sh \
-              "$username" "$password" "$company_key" "alarms/${label}-alarms.json" || true
+              "$username" "$password" "$company_key" "alarms/${label}-alarms.json"
           done
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
