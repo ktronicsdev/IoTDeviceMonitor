@@ -28,13 +28,18 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "🔔 CHECKING DEVICE ALARMS FOR: ${USERNAME}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# Step 1: Authenticate using shared function
+# Step 1: Authenticate using shared function (try both methods)
 echo "[1/3] Authenticating..."
 echo "  Username: ${USERNAME}"
 echo "  Company Key: ${COMPANY_KEY:0:8}..."
 
+# Try authEmail first (GET method - faster)
 if ! shinemonitor_auth_email "${USERNAME}" "${PASSWORD}" "${COMPANY_KEY}"; then
-  exit 1
+  echo "  → Retrying with authSource (POST method)..."
+  if ! shinemonitor_auth_source "${USERNAME}" "${PASSWORD}" "${COMPANY_KEY}"; then
+    echo "❌ Both authentication methods failed"
+    exit 1
+  fi
 fi
 
 echo "✓ Authenticated successfully (token: ${SM_TOKEN:0:8}...)"
