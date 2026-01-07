@@ -47,7 +47,7 @@ py -m pytest integration/ -v --tb=short
 ### Run Specific Test Suites
 
 ```bash
-# UC1: Admin Production Alerts (5 tests) ✅ 100% PASS RATE
+# UC1: Admin Production Alerts (15 tests) ✅ 100% PASS RATE
 py -m pytest integration/test_admin_alerts.py -v
 ```
 
