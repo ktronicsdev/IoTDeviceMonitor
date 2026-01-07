@@ -76,7 +76,7 @@ year_resp=$(shinemonitor_api_call "queryYearEnergy" "pId=${plant_id}&year=${year
 
 ---
 
-### 3. check_shinemonitor.sh
+### 3. check_shinemonitor_daily.sh
 **Current duplication:**
 - Lines 58-88: authEmail authentication logic
 - Lines 92-96: queryPlants API call
@@ -197,7 +197,7 @@ plants_resp=$(shinemonitor_api_call "queryPlants" "")
 3. check_shinemonitor_yearly.sh - Used by production workflows
 
 **Priority 2 (Medium Impact):**
-4. check_shinemonitor.sh - Used for testing/verification
+4. check_shinemonitor_daily.sh - Used for testing/verification
 5. check_shinemonitor_query-plants.sh - Utility script
 
 ---
