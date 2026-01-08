@@ -18,6 +18,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from collections import defaultdict
 
+from config import CREDENTIALS_PATH
+
 
 def load_alarm_state(state_file):
     """Load alarm notification state from JSON file."""
@@ -381,7 +383,7 @@ def main():
 
     # Create customer-specific device alarms JSON
     if alarms_to_send:
-        credentials_file = Path("src/main/java/org/ktronics/config/credentials.json")
+        credentials_file = CREDENTIALS_PATH
         customer_device_alarms = create_customer_device_alarms(
             alarms_to_send,
             state,

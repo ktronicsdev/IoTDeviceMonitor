@@ -12,6 +12,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from collections import defaultdict
 
+from config import CREDENTIALS_PATH
+
 def load_credentials(creds_file):
     """Load customer credentials and email addresses."""
     with open(creds_file, 'r') as f:
@@ -233,7 +235,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description='Generate weekly customer reports')
-    parser.add_argument('--credentials', required=True, help='Path to credentials.json')
+    parser.add_argument('--credentials', default=str(CREDENTIALS_PATH), help='Path to credentials.json')
     parser.add_argument('--data-dir', default='data', help='Directory containing CSV files')
     parser.add_argument('--alerts-state', default='state/customer_alerts_state.json', help='Customer alerts state file')
     parser.add_argument('--output-dir', default='reports', help='Output directory for reports')

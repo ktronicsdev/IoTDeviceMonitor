@@ -3,10 +3,11 @@ set -euo pipefail
 
 # Source common configuration and functions
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/common_config.sh"
 source "$SCRIPT_DIR/shinemonitor_common.sh"
 
 # Script-specific configuration
-CREDS="${1:-config/credentials.json}"
+CREDS="${1:-$CREDENTIALS_FILE}"
 DATE_TO_TEST="${DATE_TO_TEST:-$(date -u -d "yesterday" +%F)}"
 TEST_PLANTS="${TEST_PLANTS:-1}"
 TEST_ENERGY="${TEST_ENERGY:-1}"

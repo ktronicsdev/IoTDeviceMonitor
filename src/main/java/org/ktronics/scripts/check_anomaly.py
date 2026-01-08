@@ -11,6 +11,8 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 
+from config import CREDENTIALS_PATH
+
 
 # Matches: <anything>-YYYY-MM.csv  (your monthly output files)
 CSV_PATTERN = re.compile(r"^(?P<plant_key>.+)-(?P<ym>\d{4}-\d{2})\.csv$")
@@ -465,7 +467,7 @@ def main() -> int:
 
     # --- Generate Customer-Specific Alerts ---
     # Load credentials to map plants to customers
-    credentials_path = Path("src/main/java/org/ktronics/config/credentials.json")
+    credentials_path = CREDENTIALS_PATH
     customer_alerts_output = {}
 
     if credentials_path.exists():

@@ -3,10 +3,11 @@ set -euo pipefail
 
 # Source common configuration and functions
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/common_config.sh"
 source "$SCRIPT_DIR/shinemonitor_common.sh"
 
-# 1st arg = credentials.json (required)
-CREDS="${1:?Usage: $0 <credentials.json> [YYYY]}"
+# 1st arg = credentials.json (optional, defaults to central config)
+CREDS="${1:-$CREDENTIALS_FILE}"
 
 # 2nd arg = year (optional), default = LAST YEAR (UTC)
 YEAR="${2:-$(date -u -d "$(date -u +%Y-01-01) -1 day" +%Y)}"

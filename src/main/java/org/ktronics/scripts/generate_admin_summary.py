@@ -13,6 +13,8 @@ from pathlib import Path
 from collections import defaultdict
 import re
 
+from config import CREDENTIALS_PATH
+
 # Reuse functions from generate_weekly_report
 sys.path.insert(0, str(Path(__file__).parent))
 from generate_weekly_report import load_credentials, get_customer_plants, get_weekly_summary
@@ -168,7 +170,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description='Generate admin summary of all customers')
-    parser.add_argument('--credentials', required=True, help='Path to credentials.json')
+    parser.add_argument('--credentials', default=str(CREDENTIALS_PATH), help='Path to credentials.json')
     parser.add_argument('--data-dir', default='data', help='Directory containing CSV files')
     parser.add_argument('--output', default='reports/admin_summary.txt', help='Output file path')
 
