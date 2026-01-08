@@ -10,6 +10,7 @@ src/test/java/org/ktronics/scripts/
 │   ├── test_admin_alerts.py          # UC1: Admin production alerts
 │   ├── test_customer_weekly.py       # UC2: Customer weekly reports
 │   ├── test_device_alarms.py         # UC3: Device alarm alerts
+│   ├── test_centralized_config.py    # BVT: Centralized config verification
 │   ├── test_shinemonitor_api.py      # ShineMonitor API integration tests
 │   └── fixtures/                     # Test data and expected outputs
 ├── unit/                             # Unit tests (TODO)
@@ -62,6 +63,11 @@ py -m pytest integration/test_device_alarms.py -v
 ```
 
 ```bash
+# BVT: Centralized Config (14 tests) ✅ 100% PASS RATE
+py -m pytest integration/test_centralized_config.py -v
+```
+
+```bash
 # API Tests (8 tests - require bash/Unix environment)
 py -m pytest integration/test_shinemonitor_api.py -v
 ```
@@ -89,10 +95,10 @@ open htmlcov/index.html   # macOS
 
 ## Current Test Status
 
-**Total: 60 tests**
+**Total: 74 tests**
 
-- ✅ **Passed: 52 tests (87%)**
-- ⏭️ **Skipped: 8 tests (13%)**
+- ✅ **Passed: 66 tests (89%)**
+- ⏭️ **Skipped: 8 tests (11%)**
 - ❌ **Failed: 0 tests (0%)**
 
 ### By Test Suite:
@@ -100,6 +106,7 @@ open htmlcov/index.html   # macOS
 - **UC1 (Admin Alerts): 15/15 PASSED (100%)** ✅
 - **UC2 (Customer Weekly): 11/11 PASSED (100%)** ✅
 - **UC3 (Device Alarms): 26/26 PASSED (100%)** ✅
+- **BVT (Centralized Config): 14/14 PASSED (100%)** ✅
 - **API Tests: 8/8 SKIPPED on Windows** ⏭️ (run in GitHub Actions/Linux)
 
 ### Notes on Skipped Tests:
@@ -232,9 +239,49 @@ Test fixtures are located in `integration/fixtures/`:
 - `test_credentials.json` - Test credentials
 - Expected output files for validation
 
+### BVT (Build Verification Tests)
+
+**Purpose**: Verify centralized configuration system and prevent regressions
+
+**Test Coverage** (14 tests):
+
+**Configuration Module Tests:**
+
+- `test_config_module_exists` - Verify config.py exists and is importable
+- `test_credentials_path_defined` - CREDENTIALS_PATH constant is defined
+- `test_credentials_path_value` - Path points to correct location
+- `test_bash_common_config_exists` - common_config.sh exists for bash scripts
+
+**Script Integration Tests:**
+
+- `test_check_anomaly_uses_centralized_config` - UC1 uses centralized config
+- `test_generate_device_alarms_uses_centralized_config` - UC3 uses centralized config
+- `test_generate_weekly_report_uses_centralized_config` - UC2 uses centralized config
+- `test_generate_admin_summary_uses_centralized_config` - Admin summary uses centralized config
+- `test_bash_scripts_source_common_config` - Bash scripts source common_config.sh
+- `test_test_files_use_centralized_config` - Test files use centralized config
+
+**Regression Prevention Tests:**
+
+- `test_no_hardcoded_credentials_paths_in_scripts` - No hardcoded paths in scripts
+- `test_single_source_of_truth` - Only config modules define path
+
+**Production Verification Tests:**
+
+- `test_credentials_file_exists` - credentials.json exists at configured path
+- `test_credentials_file_is_valid_json` - credentials.json is valid JSON
+
+**Why BVT Tests Matter:**
+
+- Catches regressions where scripts might revert to hardcoded paths
+- Ensures all scripts follow KISS/DRY principles
+- Validates centralized configuration system integrity
+- Runs fast (<1 second) - suitable for pre-commit hooks
+
 ## Notes
 
 - Tests use temporary directories to avoid affecting production data
 - State files are isolated per test
 - Tests mock datetime where necessary for reproducibility
 - All tests clean up after themselves
+- BVT tests run on every test suite execution to catch config regressions early
