@@ -9,15 +9,18 @@ import subprocess
 import json
 import tempfile
 import platform
+import sys
 from pathlib import Path
 
-# Test configuration
-# Navigate from test file to project root, then to main source credentials
-# Test file: src/test/java/org/ktronics/scripts/integration/test_shinemonitor_api.py
-# Go up to project root (IOT directory)
-PROJECT_ROOT = Path(__file__).resolve().parents[7]  # Project root
+# Add scripts directory to path to import centralized config
+PROJECT_ROOT = Path(__file__).resolve().parents[7]
 SCRIPTS_DIR = PROJECT_ROOT / "src" / "main" / "java" / "org" / "ktronics" / "scripts"
-CREDS_FILE = PROJECT_ROOT / "src" / "main" / "java" / "org" / "ktronics" / "config" / "credentials.json"
+sys.path.insert(0, str(SCRIPTS_DIR))
+
+from config import CREDENTIALS_PATH
+
+# Use centralized credentials path
+CREDS_FILE = PROJECT_ROOT / CREDENTIALS_PATH
 
 def load_test_credentials():
     """Load credentials for testing"""
