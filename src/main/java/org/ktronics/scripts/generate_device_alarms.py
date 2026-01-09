@@ -299,8 +299,9 @@ def create_customer_device_alarms(alarms_to_send, state, credentials_file):
         alarm = item['alarm']
         alarm_key = item['alarm_key']
 
-        plant_name = alarm.get('pName', '')
-        plant_id = alarm.get('pId', '')
+        # API returns 'plant' not 'pName', and 'pid' not 'pId'
+        plant_name = alarm.get('plant', alarm.get('pName', ''))
+        plant_id = alarm.get('pid', alarm.get('pId', ''))
 
         # Normalize plant name for matching
         plant_normalized = re.sub(r'[^a-z0-9]', '', plant_name.lower())
@@ -334,11 +335,12 @@ def create_customer_device_alarms(alarms_to_send, state, credentials_file):
         send_count = item['send_count'] + 1  # +1 because we're about to send
 
         # Add alarm to customer's list
+        # API field mappings: alias=device name, desc=warning message, gts=warning time
         customer_alarms[customer_label]['alarms'].append({
             'plant': plant_name,
-            'device': alarm.get('devName', 'Unknown Device'),
-            'message': alarm.get('warnMsg', 'No message'),
-            'time': alarm.get('warnTime', 'Unknown time'),
+            'device': alarm.get('alias', alarm.get('devName', 'Unknown Device')),
+            'message': alarm.get('desc', alarm.get('warnMsg', 'No message')),
+            'time': alarm.get('gts', alarm.get('warnTime', 'Unknown time')),
             'send_count': send_count
         })
 
