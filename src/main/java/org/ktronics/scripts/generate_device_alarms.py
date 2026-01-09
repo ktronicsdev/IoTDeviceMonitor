@@ -78,12 +78,13 @@ def parse_alarm_files(alarms_dir):
 
 def create_alarm_key(alarm):
     """Create unique key for alarm to track in state."""
-    # Use combination of plant ID, device ID, and warning ID
-    plant_id = alarm.get('pId', 'unknown')
-    device_id = alarm.get('devId', 'unknown')
-    warning_id = alarm.get('warnId', 'unknown')
+    # Use combination of plant ID, device serial number, and warning ID
+    # API returns: pid (plant ID), pn or sn (device serial), id (warning ID)
+    plant_id = alarm.get('pid', alarm.get('pId', 'unknown'))
+    device_sn = alarm.get('pn', alarm.get('sn', alarm.get('devId', 'unknown')))
+    warning_id = alarm.get('id', alarm.get('warnId', 'unknown'))
 
-    return f"{plant_id}:{device_id}:{warning_id}"
+    return f"{plant_id}:{device_sn}:{warning_id}"
 
 
 def filter_alarms_to_send(alarms, state, max_sends=3):
