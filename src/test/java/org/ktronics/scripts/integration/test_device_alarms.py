@@ -65,27 +65,41 @@ class TestDeviceAlarmSystem:
         return alarm_file
 
     def test_parse_alarm_files_single_customer(self, test_alarms_dir):
-        """Parse alarm files from single customer"""
+        """Parse alarm files from single customer
+
+        Uses ACTUAL ShineMonitor API field names:
+        - pid (not pId) - plant ID
+        - plant (not pName) - plant name
+        - pn (not devId) - device serial number
+        - alias (not devName) - device alias/name
+        - id (not warnId) - warning ID
+        - desc (not warnMsg) - warning description
+        - gts (not warnTime) - warning timestamp
+        """
         alarms_data = [
             {
-                "pId": "12345",
-                "pName": "Test Plant 1",
-                "devId": "DEV001",
-                "devName": "Inverter 1",
-                "warnId": "W001",
-                "warnMsg": "Grid voltage too high",
-                "warnTime": "2026-01-07 10:30:00",
-                "status": 0  # UNHANDLED
+                "id": "abc123def456",
+                "pid": 12345,
+                "plant": "Test Plant 1",
+                "pn": "D70000210151320902",
+                "sn": "FFFFFFFF",
+                "alias": "Inverter 1",
+                "desc": "Grid voltage too high",
+                "gts": "2026-01-07 10:30:00",
+                "status": False,  # UNHANDLED (API uses boolean)
+                "handle": False
             },
             {
-                "pId": "12345",
-                "pName": "Test Plant 1",
-                "devId": "DEV002",
-                "devName": "Inverter 2",
-                "warnId": "W002",
-                "warnMsg": "Temperature warning",
-                "warnTime": "2026-01-07 11:00:00",
-                "status": 0  # UNHANDLED
+                "id": "xyz789ghi012",
+                "pid": 12345,
+                "plant": "Test Plant 1",
+                "pn": "D70000210151320903",
+                "sn": "FFFFFFFF",
+                "alias": "Inverter 2",
+                "desc": "Temperature warning",
+                "gts": "2026-01-07 11:00:00",
+                "status": False,
+                "handle": False
             }
         ]
 
@@ -96,36 +110,36 @@ class TestDeviceAlarmSystem:
 
         assert len(all_alarms) == 2
         assert all_alarms[0]['customer_label'] == 'customer1'
-        assert all_alarms[0]['warnMsg'] == 'Grid voltage too high'
-        assert all_alarms[1]['warnMsg'] == 'Temperature warning'
+        assert all_alarms[0]['desc'] == 'Grid voltage too high'
+        assert all_alarms[1]['desc'] == 'Temperature warning'
 
     def test_parse_alarm_files_multiple_customers(self, test_alarms_dir):
-        """Parse alarm files from multiple customers"""
+        """Parse alarm files from multiple customers - uses actual API field names"""
         # Customer 1 alarms
         customer1_alarms = [
             {
-                "pId": "12345",
-                "pName": "Plant A",
-                "devId": "DEV001",
-                "devName": "Inverter A1",
-                "warnId": "W001",
-                "warnMsg": "Grid voltage too high",
-                "warnTime": "2026-01-07 10:30:00",
-                "status": 0
+                "id": "alarm001",
+                "pid": 12345,
+                "plant": "Plant A",
+                "pn": "D70000210151320901",
+                "alias": "Inverter A1",
+                "desc": "Grid voltage too high",
+                "gts": "2026-01-07 10:30:00",
+                "status": False
             }
         ]
 
         # Customer 2 alarms
         customer2_alarms = [
             {
-                "pId": "67890",
-                "pName": "Plant B",
-                "devId": "DEV002",
-                "devName": "Inverter B1",
-                "warnId": "W002",
-                "warnMsg": "Low production",
-                "warnTime": "2026-01-07 11:00:00",
-                "status": 0
+                "id": "alarm002",
+                "pid": 67890,
+                "plant": "Plant B",
+                "pn": "D70000210151320902",
+                "alias": "Inverter B1",
+                "desc": "Low production",
+                "gts": "2026-01-07 11:00:00",
+                "status": False
             }
         ]
 
@@ -246,23 +260,29 @@ class TestDeviceAlarmSystem:
             assert not ('"dat": []' in content or '"dat":[]' in content), "Old format should not be present"
 
     def test_create_alarm_key_unique(self):
-        """Verify alarm keys are unique per plant/device/warning"""
+        """Verify alarm keys are unique per plant/device/warning
+
+        Uses ACTUAL ShineMonitor API field names:
+        - pid (not pId) - plant ID
+        - pn (not devId) - device serial number
+        - id (not warnId) - warning ID
+        """
         alarm1 = {
-            "pId": "12345",
-            "devId": "DEV001",
-            "warnId": "W001"
+            "pid": 12345,
+            "pn": "D70000210151320901",
+            "id": "abc123def456"
         }
 
         alarm2 = {
-            "pId": "12345",
-            "devId": "DEV002",  # Different device
-            "warnId": "W001"
+            "pid": 12345,
+            "pn": "D70000210151320902",  # Different device
+            "id": "abc123def456"
         }
 
         alarm3 = {
-            "pId": "67890",  # Different plant
-            "devId": "DEV001",
-            "warnId": "W001"
+            "pid": 67890,  # Different plant
+            "pn": "D70000210151320901",
+            "id": "abc123def456"
         }
 
         key1 = create_alarm_key(alarm1)
@@ -278,16 +298,21 @@ class TestDeviceAlarmSystem:
         assert key1 == create_alarm_key(alarm1)
 
     def test_filter_alarms_first_send(self, test_alarms_dir, test_state_file):
-        """NEW FEATURE TEST: First time seeing alarm - should send"""
+        """NEW FEATURE TEST: First time seeing alarm - should send
+
+        Uses ACTUAL ShineMonitor API field names:
+        - pid, plant, pn, alias, id, desc, gts
+        """
         alarms = [
             {
-                "pId": "12345",
-                "devId": "DEV001",
-                "warnId": "W001",
-                "pName": "Test Plant",
-                "devName": "Inverter 1",
-                "warnMsg": "Grid voltage too high",
-                "warnTime": "2026-01-07 10:30:00"
+                "pid": 12345,
+                "pn": "D70000210151320901",
+                "id": "abc123def456",
+                "plant": "Test Plant",
+                "alias": "Inverter 1",
+                "desc": "Grid voltage too high",
+                "gts": "2026-01-07 10:30:00",
+                "status": False
             }
         ]
 
@@ -298,15 +323,19 @@ class TestDeviceAlarmSystem:
         assert alarms_to_send[0]['send_count'] == 0  # First send
 
     def test_filter_alarms_max_sends_reached(self, test_alarms_dir, test_state_file):
-        """NEW FEATURE TEST: Alarm already sent 3 times - should NOT send"""
+        """NEW FEATURE TEST: Alarm already sent 3 times - should NOT send
+
+        Uses ACTUAL ShineMonitor API field names.
+        """
         alarm = {
-            "pId": "12345",
-            "devId": "DEV001",
-            "warnId": "W001",
-            "pName": "Test Plant",
-            "devName": "Inverter 1",
-            "warnMsg": "Grid voltage too high",
-            "warnTime": "2026-01-07 10:30:00"
+            "pid": 12345,
+            "pn": "D70000210151320901",
+            "id": "abc123def456",
+            "plant": "Test Plant",
+            "alias": "Inverter 1",
+            "desc": "Grid voltage too high",
+            "gts": "2026-01-07 10:30:00",
+            "status": False
         }
 
         alarm_key = create_alarm_key(alarm)
@@ -327,15 +356,19 @@ class TestDeviceAlarmSystem:
         assert state[alarm_key]['ignored'] == True  # Should be auto-ignored
 
     def test_filter_alarms_4hour_interval(self, test_alarms_dir, test_state_file):
-        """NEW FEATURE TEST: Alarm sent 2 hours ago - should NOT send (4-hour interval)"""
+        """NEW FEATURE TEST: Alarm sent 2 hours ago - should NOT send (4-hour interval)
+
+        Uses ACTUAL ShineMonitor API field names.
+        """
         alarm = {
-            "pId": "12345",
-            "devId": "DEV001",
-            "warnId": "W001",
-            "pName": "Test Plant",
-            "devName": "Inverter 1",
-            "warnMsg": "Grid voltage too high",
-            "warnTime": "2026-01-07 10:30:00"
+            "pid": 12345,
+            "pn": "D70000210151320901",
+            "id": "abc123def456",
+            "plant": "Test Plant",
+            "alias": "Inverter 1",
+            "desc": "Grid voltage too high",
+            "gts": "2026-01-07 10:30:00",
+            "status": False
         }
 
         alarm_key = create_alarm_key(alarm)
@@ -355,15 +388,19 @@ class TestDeviceAlarmSystem:
         assert len(alarms_to_send) == 0  # Should NOT send (too soon)
 
     def test_filter_alarms_4hour_interval_passed(self, test_alarms_dir, test_state_file):
-        """NEW FEATURE TEST: Alarm sent 5 hours ago - should send (4-hour interval passed)"""
+        """NEW FEATURE TEST: Alarm sent 5 hours ago - should send (4-hour interval passed)
+
+        Uses ACTUAL ShineMonitor API field names.
+        """
         alarm = {
-            "pId": "12345",
-            "devId": "DEV001",
-            "warnId": "W001",
-            "pName": "Test Plant",
-            "devName": "Inverter 1",
-            "warnMsg": "Grid voltage too high",
-            "warnTime": "2026-01-07 10:30:00"
+            "pid": 12345,
+            "pn": "D70000210151320901",
+            "id": "abc123def456",
+            "plant": "Test Plant",
+            "alias": "Inverter 1",
+            "desc": "Grid voltage too high",
+            "gts": "2026-01-07 10:30:00",
+            "status": False
         }
 
         alarm_key = create_alarm_key(alarm)
@@ -392,28 +429,32 @@ class TestDeviceAlarmSystem:
         assert "No UNHANDLED device alarms detected" in email_body
 
     def test_format_email_with_alarms(self):
-        """Format email with device alarms"""
+        """Format email with device alarms
+
+        Uses ACTUAL ShineMonitor API field names (plant, alias, desc, gts).
+        The format_device_alarms_email function handles both old and new field names.
+        """
         alarms_to_send = [
             {
                 'alarm': {
-                    'pName': 'Test Plant A',
-                    'devName': 'Inverter 1',
-                    'warnMsg': 'Grid voltage too high',
-                    'warnTime': '2026-01-07 10:30:00',
+                    'plant': 'Test Plant A',
+                    'alias': 'Inverter 1',
+                    'desc': 'Grid voltage too high',
+                    'gts': '2026-01-07 10:30:00',
                     'customer_label': 'customer1'
                 },
-                'alarm_key': '12345:DEV001:W001',
+                'alarm_key': '12345:D70000210151320901:abc123',
                 'send_count': 0  # First send
             },
             {
                 'alarm': {
-                    'pName': 'Test Plant B',
-                    'devName': 'Inverter 2',
-                    'warnMsg': 'Temperature warning',
-                    'warnTime': '2026-01-07 11:00:00',
+                    'plant': 'Test Plant B',
+                    'alias': 'Inverter 2',
+                    'desc': 'Temperature warning',
+                    'gts': '2026-01-07 11:00:00',
                     'customer_label': 'customer2'
                 },
-                'alarm_key': '67890:DEV002:W002',
+                'alarm_key': '67890:D70000210151320902:xyz789',
                 'send_count': 1  # Second send
             }
         ]
@@ -440,17 +481,65 @@ class TestDeviceAlarmSystem:
         assert "Temperature warning" in email_body
         assert "Send #2/3" in email_body  # Second send
 
+    def test_format_email_no_unknown_values_with_api_fields(self):
+        """REGRESSION TEST: Email must NOT show 'Unknown Plant' when using actual API field names
+
+        BUG HISTORY (2026-01-10):
+        - Admin email showed "Unknown Plant", "Unknown Device", "No message", "Unknown time"
+        - Root cause: format_device_alarms_email() only checked old field names (pName, devName, warnMsg, warnTime)
+        - Actual API returns: plant, alias, desc, gts
+        - Fix: Check both old and new field names with fallback
+
+        This test prevents regression by verifying:
+        1. Actual API field names are correctly extracted
+        2. Email does NOT contain default "Unknown" values
+        """
+        # Use EXACT field names from actual ShineMonitor API response
+        alarms_to_send = [
+            {
+                'alarm': {
+                    'pid': 1053849,
+                    'plant': 'Namila-Waragoda-Plant',
+                    'pn': 'D70000210151320902',
+                    'alias': '4.96kw pv with 10kw pack',
+                    'desc': 'Solar charger stops due to low battery',
+                    'gts': '2025-12-18 19:40:44',
+                    'status': False,
+                    'customer_label': 'Namila-Waragoda'
+                },
+                'alarm_key': '1053849:D70000210151320902:69440b6afb7cce56c47629dc',
+                'send_count': 0
+            }
+        ]
+
+        email_body = format_device_alarms_email(alarms_to_send)
+
+        # CRITICAL: Must NOT contain default/unknown values
+        assert "Unknown Plant" not in email_body, "BUG: format_device_alarms_email not reading 'plant' field"
+        assert "Unknown Device" not in email_body, "BUG: format_device_alarms_email not reading 'alias' field"
+        assert "No message" not in email_body, "BUG: format_device_alarms_email not reading 'desc' field"
+        assert "Unknown time" not in email_body, "BUG: format_device_alarms_email not reading 'gts' field"
+
+        # Verify actual values ARE in email
+        assert "Namila-Waragoda-Plant" in email_body
+        assert "4.96kw pv with 10kw pack" in email_body
+        assert "Solar charger stops due to low battery" in email_body
+        assert "2025-12-18 19:40:44" in email_body
+
     def test_update_alarm_state_increment_send_count(self):
-        """Update state after sending alarms - increment send count"""
-        alarm_key = "12345:DEV001:W001"
+        """Update state after sending alarms - increment send count
+
+        Uses ACTUAL ShineMonitor API field names.
+        """
+        alarm_key = "12345:D70000210151320901:abc123def456"
 
         alarms_to_send = [
             {
                 'alarm': {
-                    'pName': 'Test Plant',
-                    'devName': 'Inverter 1',
-                    'warnMsg': 'Test alarm',
-                    'warnTime': '2026-01-07 10:30:00'
+                    'plant': 'Test Plant',
+                    'alias': 'Inverter 1',
+                    'desc': 'Test alarm',
+                    'gts': '2026-01-07 10:30:00'
                 },
                 'alarm_key': alarm_key,
                 'send_count': 1  # Previous count
@@ -472,16 +561,19 @@ class TestDeviceAlarmSystem:
         assert updated_state[alarm_key]['ignored'] == False  # Not yet ignored (< 3 sends)
 
     def test_update_alarm_state_auto_ignore_after_3_sends(self):
-        """Update state after 3rd send - should auto-ignore"""
-        alarm_key = "12345:DEV001:W001"
+        """Update state after 3rd send - should auto-ignore
+
+        Uses ACTUAL ShineMonitor API field names.
+        """
+        alarm_key = "12345:D70000210151320901:abc123def456"
 
         alarms_to_send = [
             {
                 'alarm': {
-                    'pName': 'Test Plant',
-                    'devName': 'Inverter 1',
-                    'warnMsg': 'Test alarm',
-                    'warnTime': '2026-01-07 10:30:00'
+                    'plant': 'Test Plant',
+                    'alias': 'Inverter 1',
+                    'desc': 'Test alarm',
+                    'gts': '2026-01-07 10:30:00'
                 },
                 'alarm_key': alarm_key,
                 'send_count': 2  # About to be 3rd send
@@ -503,8 +595,11 @@ class TestDeviceAlarmSystem:
         assert updated_state[alarm_key]['ignored'] == True  # Auto-ignored after 3 sends
 
     def test_state_persistence(self, test_state_file):
-        """Test alarm state save and load"""
-        alarm_key = "12345:DEV001:W001"
+        """Test alarm state save and load
+
+        Uses realistic alarm key format: pid:pn:id
+        """
+        alarm_key = "12345:D70000210151320901:abc123def456"
 
         state = {
             alarm_key: {

@@ -198,10 +198,13 @@ Report Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
             alarm = item['alarm']
             send_count = item['send_count'] + 1  # +1 because we're about to send
 
-            plant_name = alarm.get('pName', 'Unknown Plant')
-            device_name = alarm.get('devName', 'Unknown Device')
-            warning_msg = alarm.get('warnMsg', 'No message')
-            warning_time = alarm.get('warnTime', 'Unknown time')
+            # Handle both old and new API field names
+            # New API: plant, alias, desc, gts
+            # Old API: pName, devName, warnMsg, warnTime
+            plant_name = alarm.get('plant', alarm.get('pName', 'Unknown Plant'))
+            device_name = alarm.get('alias', alarm.get('devName', 'Unknown Device'))
+            warning_msg = alarm.get('desc', alarm.get('warnMsg', 'No message'))
+            warning_time = alarm.get('gts', alarm.get('warnTime', 'Unknown time'))
 
             email_body += f"│    Plant:   {plant_name}\n"
             email_body += f"│    Device:  {device_name}\n"
