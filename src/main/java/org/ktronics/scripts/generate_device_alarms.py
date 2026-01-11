@@ -251,6 +251,10 @@ def update_alarm_state(state, alarms_to_send):
         state[alarm_key]['send_count'] += 1
         state[alarm_key]['last_sent'] = now.isoformat()
 
+        # UC7: Add human-readable customer and plant names
+        state[alarm_key]['customer'] = alarm.get('customer_label', 'Unknown')
+        state[alarm_key]['plant'] = alarm.get('plant', 'Unknown')
+
         # Auto-ignore after 3 sends
         if state[alarm_key]['send_count'] >= 3:
             state[alarm_key]['ignored'] = True
@@ -390,10 +394,18 @@ def main():
     alarms_to_send = filter_alarms_to_send(all_alarms, state)
     print(f"✓ {len(alarms_to_send)} alarms ready to send")
 
-    # UC5: Test mode - if no alarms to send but alarms exist, include most recent
+    # UC5: Test mode - if no alarms to send but alarms exist, include most recent from test customer
     if args.test_mode and len(alarms_to_send) == 0 and len(all_alarms) > 0:
         print("  [TEST MODE] No alarms passed filter, adding most recent alarm for testing...")
-        most_recent = get_most_recent_alarm(all_alarms)
+        # UC5 FIX: Filter to test customer (Gayan-IMH) alarms only
+        test_customer_alarms = [a for a in all_alarms if a.get('customer_label', '').lower() == 'gayan-imh']
+        if test_customer_alarms:
+            most_recent = get_most_recent_alarm(test_customer_alarms)
+            print(f"  [TEST MODE] Found {len(test_customer_alarms)} alarms for test customer (Gayan-IMH)")
+        else:
+            # Fallback: If test customer has no alarms, log and skip
+            print("  [TEST MODE] No alarms found for test customer (Gayan-IMH)")
+            most_recent = None
         if most_recent:
             alarm_key = create_alarm_key(most_recent)
             alarm_state = state.get(alarm_key, {'send_count': 0})
@@ -444,6 +456,12 @@ def main():
     state = update_alarm_state(state, alarms_to_send)
     save_alarm_state(args.state_file, state)
     print(f"✓ State saved to {args.state_file}")
+
+    # UC6: Print summary for admin visibility in logs
+    if alarms_to_send:
+        unique_plants = set(item['alarm'].get('plant', 'Unknown') for item in alarms_to_send)
+        unique_customers = set(item['alarm'].get('customer_label', 'Unknown') for item in alarms_to_send)
+        print(f"📊 Summary: {len(alarms_to_send)} alarms from {len(unique_customers)} customers affecting {len(unique_plants)} plants")
 
     print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 

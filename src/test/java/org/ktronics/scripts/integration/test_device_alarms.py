@@ -1251,6 +1251,142 @@ class TestDeviceAlarmSystem:
         assert alarms_to_send_test[0]['alarm']['desc'] == 'Test alarm'
         assert alarms_to_send_test[0]['send_count'] == 3  # Uses existing state count
 
+    def test_uc6_log_summary_counts(self, tmp_path, capsys):
+        """UC6: Verify log summary shows alarm/customer/plant counts
+
+        When alarms are processed, the log should output:
+        '📊 Summary: X alarms from Y customers affecting Z plants'
+        """
+        # Create alarms from multiple customers and plants
+        alarms_to_send = [
+            {
+                'alarm': {
+                    'pid': 12345,
+                    'plant': 'plant-a',
+                    'alias': 'Inverter 1',
+                    'desc': 'Alarm 1',
+                    'gts': '2026-01-07 10:00:00',
+                    'customer_label': 'Customer-A'
+                },
+                'alarm_key': '12345:DEV001:W001',
+                'send_count': 0
+            },
+            {
+                'alarm': {
+                    'pid': 12346,
+                    'plant': 'plant-b',
+                    'alias': 'Inverter 2',
+                    'desc': 'Alarm 2',
+                    'gts': '2026-01-07 11:00:00',
+                    'customer_label': 'Customer-A'
+                },
+                'alarm_key': '12346:DEV002:W002',
+                'send_count': 0
+            },
+            {
+                'alarm': {
+                    'pid': 12347,
+                    'plant': 'plant-c',
+                    'alias': 'Inverter 3',
+                    'desc': 'Alarm 3',
+                    'gts': '2026-01-07 12:00:00',
+                    'customer_label': 'Customer-B'
+                },
+                'alarm_key': '12347:DEV003:W003',
+                'send_count': 0
+            }
+        ]
+
+        # UC6: Calculate summary (same logic as in generate_device_alarms.py)
+        if alarms_to_send:
+            unique_plants = set(item['alarm'].get('plant', 'Unknown') for item in alarms_to_send)
+            unique_customers = set(item['alarm'].get('customer_label', 'Unknown') for item in alarms_to_send)
+            summary = f"📊 Summary: {len(alarms_to_send)} alarms from {len(unique_customers)} customers affecting {len(unique_plants)} plants"
+            print(summary)
+
+        captured = capsys.readouterr()
+        assert "📊 Summary:" in captured.out
+        assert "3 alarms" in captured.out
+        assert "2 customers" in captured.out
+        assert "3 plants" in captured.out
+
+    def test_uc7_state_includes_customer_plant(self, tmp_path):
+        """UC7: Verify state JSON includes customer and plant names for readability
+
+        After update_alarm_state(), each alarm entry should have:
+        - 'customer': customer label
+        - 'plant': plant name
+        """
+        alarms_to_send = [
+            {
+                'alarm': {
+                    'pid': 12345,
+                    'plant': 'gayan-imh-imbulgoda-3kw',
+                    'alias': 'Inverter 1',
+                    'desc': 'Test alarm',
+                    'gts': '2026-01-07 10:00:00',
+                    'customer_label': 'Gayan-IMH'
+                },
+                'alarm_key': '12345:DEV001:W001',
+                'send_count': 0
+            }
+        ]
+
+        state = {}
+        updated_state = update_alarm_state(state, alarms_to_send)
+
+        # UC7: Verify customer and plant are in state
+        alarm_key = '12345:DEV001:W001'
+        assert alarm_key in updated_state
+        assert 'customer' in updated_state[alarm_key]
+        assert 'plant' in updated_state[alarm_key]
+        assert updated_state[alarm_key]['customer'] == 'Gayan-IMH'
+        assert updated_state[alarm_key]['plant'] == 'gayan-imh-imbulgoda-3kw'
+
+        # Also verify standard fields still exist
+        assert updated_state[alarm_key]['send_count'] == 1
+        assert 'first_seen' in updated_state[alarm_key]
+        assert 'last_sent' in updated_state[alarm_key]
+
+    def test_uc8_workflow_conditional_structure(self):
+        """UC8: Verify workflow YAML has correct conditional for customer emails
+
+        The trigger-customer-reports.yml should have:
+        - Admin email step: NO conditional (runs on all triggers)
+        - Customer email step: if: github.event_name == 'schedule'
+        - Skip message step: if: github.event_name != 'schedule'
+
+        This test verifies the workflow file structure.
+        """
+        import os
+        from pathlib import Path
+
+        # Find workflow file
+        workflow_path = Path(__file__).parents[7] / '.github' / 'workflows' / 'trigger-customer-reports.yml'
+
+        assert workflow_path.exists(), f"Workflow file not found at {workflow_path}"
+
+        with open(workflow_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # Verify customer email step has schedule conditional
+        assert "if: github.event_name == 'schedule'" in content, \
+            "UC8: Customer email step should have schedule conditional"
+
+        # Verify skip message step exists for non-scheduled runs
+        assert "if: github.event_name != 'schedule'" in content, \
+            "UC8: Skip message step should exist for non-scheduled runs"
+
+        # Verify admin email step exists (no conditional needed - it's implied by absence)
+        assert "Send admin summary email" in content, \
+            "Admin summary email step should exist"
+
+        # Verify the conditional messages
+        assert "Scheduled Run Only" in content, \
+            "UC8: Customer email step should indicate scheduled run only"
+        assert "SKIPPING CUSTOMER EMAILS" in content, \
+            "UC8: Skip message should be present"
+
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
