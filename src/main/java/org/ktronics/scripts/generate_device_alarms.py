@@ -302,30 +302,27 @@ def create_customer_device_alarms(alarms_to_send, state, credentials_file):
         alarm = item['alarm']
         alarm_key = item['alarm_key']
 
-        # API returns 'plant' not 'pName', and 'pid' not 'pId'
-        plant_name = alarm.get('plant', alarm.get('pName', ''))
-        plant_id = alarm.get('pid', alarm.get('pId', ''))
-
-        # Normalize plant name for matching
-        plant_normalized = re.sub(r'[^a-z0-9]', '', plant_name.lower())
-
-        # Find matching customer
-        matched_customer = None
-        for customer_norm, customer_info in customer_map.items():
-            # Match if customer name in plant name OR plant starts with customer (6+ chars)
-            if customer_norm in plant_normalized or \
-               (len(customer_norm) >= 6 and plant_normalized.startswith(customer_norm[:6])):
-                matched_customer = customer_info
-                break
-
-        if not matched_customer:
+        # Use customer_label from alarm (set by parse_alarm_files from filename)
+        # e.g., "Gayan-IMH-alarms.json" -> customer_label = "Gayan-IMH"
+        customer_label = alarm.get('customer_label', '')
+        if not customer_label:
             continue
 
-        customer_label = matched_customer['label']
-        customer_email = matched_customer['email']
+        # Normalize to find in customer_map
+        customer_norm = re.sub(r'[^a-z0-9]', '', customer_label.lower())
+
+        # Look up customer email from credentials
+        if customer_norm not in customer_map:
+            continue
+
+        customer_info = customer_map[customer_norm]
+        customer_email = customer_info.get('email', '')
 
         if not customer_email:
             continue
+
+        # Use original label from credentials for consistency
+        customer_label = customer_info['label']
 
         # Initialize customer entry if not exists
         if customer_label not in customer_alarms:
@@ -338,9 +335,9 @@ def create_customer_device_alarms(alarms_to_send, state, credentials_file):
         send_count = item['send_count'] + 1  # +1 because we're about to send
 
         # Add alarm to customer's list
-        # API field mappings: alias=device name, desc=warning message, gts=warning time
+        # API field mappings: plant=plant name, alias=device name, desc=warning message, gts=warning time
         customer_alarms[customer_label]['alarms'].append({
-            'plant': plant_name,
+            'plant': alarm.get('plant', alarm.get('pName', 'Unknown Plant')),
             'device': alarm.get('alias', alarm.get('devName', 'Unknown Device')),
             'message': alarm.get('desc', alarm.get('warnMsg', 'No message')),
             'time': alarm.get('gts', alarm.get('warnTime', 'Unknown time')),
@@ -350,11 +347,27 @@ def create_customer_device_alarms(alarms_to_send, state, credentials_file):
     return customer_alarms
 
 
+def get_most_recent_alarm(alarms):
+    """Get the most recent alarm based on timestamp (gts field)."""
+    if not alarms:
+        return None
+
+    # Sort by timestamp (gts = warning time), most recent first
+    sorted_alarms = sorted(
+        alarms,
+        key=lambda a: a.get('gts', a.get('warnTime', '1970-01-01 00:00:00')),
+        reverse=True
+    )
+    return sorted_alarms[0] if sorted_alarms else None
+
+
 def main():
     parser = argparse.ArgumentParser(description='Process device alarms and send notifications')
     parser.add_argument('--alarms-dir', required=True, help='Directory containing alarm JSON files')
     parser.add_argument('--state-file', required=True, help='Path to alarm state JSON file')
     parser.add_argument('--output-file', required=True, help='Path to output email text file')
+    parser.add_argument('--test-mode', action='store_true',
+                        help='Test mode: include most recent alarm even if max sends reached (for push/manual runs)')
 
     args = parser.parse_args()
 

@@ -687,26 +687,28 @@ class TestDeviceAlarmSystem:
         with open(test_credentials, 'w', encoding='utf-8') as f:
             json.dump(credentials_data, f)
 
-        # Create alarms for plants matching "Gayan-IMH"
+        # Create alarms for Gayan-IMH (customer_label from filename)
         alarms_to_send = [
             {
                 'alarm': {
-                    'pId': '12345',
-                    'pName': 'gayan-imh-imbulgoda-3kw',  # Matches "gayanimh"
-                    'devName': 'Inverter 1',
-                    'warnMsg': 'Grid voltage too high',
-                    'warnTime': '2026-01-07 10:30:00'
+                    'pid': 12345,
+                    'plant': 'gayan-imh-imbulgoda-3kw',
+                    'alias': 'Inverter 1',
+                    'desc': 'Grid voltage too high',
+                    'gts': '2026-01-07 10:30:00',
+                    'customer_label': 'Gayan-IMH'  # Set by parse_alarm_files from filename
                 },
                 'alarm_key': '12345:DEV001:W001',
                 'send_count': 0
             },
             {
                 'alarm': {
-                    'pId': '12345',
-                    'pName': 'gayan-imh-plant-2',  # Also matches
-                    'devName': 'Inverter 2',
-                    'warnMsg': 'Temperature warning',
-                    'warnTime': '2026-01-07 11:00:00'
+                    'pid': 12345,
+                    'plant': 'gayan-imh-plant-2',
+                    'alias': 'Inverter 2',
+                    'desc': 'Temperature warning',
+                    'gts': '2026-01-07 11:00:00',
+                    'customer_label': 'Gayan-IMH'  # Set by parse_alarm_files from filename
                 },
                 'alarm_key': '12345:DEV002:W002',
                 'send_count': 1
@@ -723,11 +725,11 @@ class TestDeviceAlarmSystem:
         assert customer_alarms['Gayan-IMH']['email'] == 'gayan@test.com'
         assert len(customer_alarms['Gayan-IMH']['alarms']) == 2
 
-        # Verify alarm details
+        # Verify alarm details (API field names: plant, alias->device, desc->message, gts->time)
         alarm1 = customer_alarms['Gayan-IMH']['alarms'][0]
         assert alarm1['plant'] == 'gayan-imh-imbulgoda-3kw'
-        assert alarm1['device'] == 'Inverter 1'
-        assert alarm1['message'] == 'Grid voltage too high'
+        assert alarm1['device'] == 'Inverter 1'  # alias -> device
+        assert alarm1['message'] == 'Grid voltage too high'  # desc -> message
         assert alarm1['send_count'] == 1  # +1 because we're about to send
 
         alarm2 = customer_alarms['Gayan-IMH']['alarms'][1]
@@ -758,26 +760,28 @@ class TestDeviceAlarmSystem:
         with open(test_credentials, 'w', encoding='utf-8') as f:
             json.dump(credentials_data, f)
 
-        # Create alarms for different customers
+        # Create alarms for different customers (customer_label from filename)
         alarms_to_send = [
             {
                 'alarm': {
-                    'pId': '12345',
-                    'pName': 'gayan-imh-plant',
-                    'devName': 'Inverter A',
-                    'warnMsg': 'Alarm A',
-                    'warnTime': '2026-01-07 10:00:00'
+                    'pid': 12345,
+                    'plant': 'gayan-imh-plant',
+                    'alias': 'Inverter A',
+                    'desc': 'Alarm A',
+                    'gts': '2026-01-07 10:00:00',
+                    'customer_label': 'Gayan-IMH'  # From Gayan-IMH-alarms.json
                 },
                 'alarm_key': '12345:DEV001:W001',
                 'send_count': 0
             },
             {
                 'alarm': {
-                    'pId': '67890',
-                    'pName': 'namila-waragoda-plant',
-                    'devName': 'Inverter B',
-                    'warnMsg': 'Alarm B',
-                    'warnTime': '2026-01-07 11:00:00'
+                    'pid': 67890,
+                    'plant': 'namila-waragoda-plant',
+                    'alias': 'Inverter B',
+                    'desc': 'Alarm B',
+                    'gts': '2026-01-07 11:00:00',
+                    'customer_label': 'Namila-Waragoda'  # From Namila-Waragoda-alarms.json
                 },
                 'alarm_key': '67890:DEV002:W002',
                 'send_count': 0
@@ -820,15 +824,16 @@ class TestDeviceAlarmSystem:
         with open(test_credentials, 'w', encoding='utf-8') as f:
             json.dump(credentials_data, f)
 
-        # Create alarm for this customer
+        # Create alarm for this customer (customer_label from filename)
         alarms_to_send = [
             {
                 'alarm': {
-                    'pId': '12345',
-                    'pName': 'no-email-customer-plant',
-                    'devName': 'Inverter 1',
-                    'warnMsg': 'Test alarm',
-                    'warnTime': '2026-01-07 10:00:00'
+                    'pid': 12345,
+                    'plant': 'no-email-customer-plant',
+                    'alias': 'Inverter 1',
+                    'desc': 'Test alarm',
+                    'gts': '2026-01-07 10:00:00',
+                    'customer_label': 'No-Email-Customer'  # From No-Email-Customer-alarms.json
                 },
                 'alarm_key': '12345:DEV001:W001',
                 'send_count': 0
