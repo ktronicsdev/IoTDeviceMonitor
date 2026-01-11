@@ -390,6 +390,20 @@ def main():
     alarms_to_send = filter_alarms_to_send(all_alarms, state)
     print(f"✓ {len(alarms_to_send)} alarms ready to send")
 
+    # UC5: Test mode - if no alarms to send but alarms exist, include most recent
+    if args.test_mode and len(alarms_to_send) == 0 and len(all_alarms) > 0:
+        print("  [TEST MODE] No alarms passed filter, adding most recent alarm for testing...")
+        most_recent = get_most_recent_alarm(all_alarms)
+        if most_recent:
+            alarm_key = create_alarm_key(most_recent)
+            alarm_state = state.get(alarm_key, {'send_count': 0})
+            alarms_to_send.append({
+                'alarm': most_recent,
+                'alarm_key': alarm_key,
+                'send_count': alarm_state.get('send_count', 0)
+            })
+            print(f"  [TEST MODE] Added alarm: {most_recent.get('plant', 'Unknown')} - {most_recent.get('desc', 'No message')}")
+
     # Format email
     print("[4/5] Formatting email...")
     email_body = format_device_alarms_email(alarms_to_send)

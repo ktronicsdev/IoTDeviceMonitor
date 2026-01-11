@@ -26,7 +26,8 @@ from generate_device_alarms import (
     load_alarm_state,
     save_alarm_state,
     load_customer_mapping,
-    create_customer_device_alarms
+    create_customer_device_alarms,
+    get_most_recent_alarm
 )
 
 from send_customer_emails import (
@@ -1111,6 +1112,144 @@ class TestDeviceAlarmSystem:
         assert len(expected_response['dat']['warning']) >= 1
         assert expected_response['dat']['warning'][0]['usr'] == "namila"
         assert expected_response['dat']['warning'][0]['plant'] == "Namila Plant"
+
+    # ========================================================================
+    # UC5: Test Mode Tests
+    # ========================================================================
+
+    def test_get_most_recent_alarm(self):
+        """UC5: Get most recent alarm based on timestamp (gts field)"""
+        alarms = [
+            {
+                'pid': 12345,
+                'plant': 'plant-1',
+                'alias': 'Inverter 1',
+                'desc': 'Old alarm',
+                'gts': '2026-01-05 10:00:00',
+                'customer_label': 'Customer-A'
+            },
+            {
+                'pid': 12346,
+                'plant': 'plant-2',
+                'alias': 'Inverter 2',
+                'desc': 'Most recent alarm',
+                'gts': '2026-01-07 15:30:00',
+                'customer_label': 'Customer-B'
+            },
+            {
+                'pid': 12347,
+                'plant': 'plant-3',
+                'alias': 'Inverter 3',
+                'desc': 'Middle alarm',
+                'gts': '2026-01-06 12:00:00',
+                'customer_label': 'Customer-C'
+            }
+        ]
+
+        most_recent = get_most_recent_alarm(alarms)
+
+        assert most_recent is not None
+        assert most_recent['desc'] == 'Most recent alarm'
+        assert most_recent['gts'] == '2026-01-07 15:30:00'
+        assert most_recent['customer_label'] == 'Customer-B'
+
+    def test_get_most_recent_alarm_empty_list(self):
+        """UC5: Get most recent alarm returns None for empty list"""
+        most_recent = get_most_recent_alarm([])
+        assert most_recent is None
+
+    def test_get_most_recent_alarm_single_alarm(self):
+        """UC5: Get most recent alarm with single alarm returns that alarm"""
+        alarms = [
+            {
+                'pid': 12345,
+                'plant': 'single-plant',
+                'alias': 'Inverter 1',
+                'desc': 'Only alarm',
+                'gts': '2026-01-07 10:00:00',
+                'customer_label': 'Customer-A'
+            }
+        ]
+
+        most_recent = get_most_recent_alarm(alarms)
+
+        assert most_recent is not None
+        assert most_recent['desc'] == 'Only alarm'
+
+    def test_test_mode_adds_alarm_when_all_blocked(self, tmp_path):
+        """UC5: Test mode adds most recent alarm when all alarms are blocked by 3-send limit
+
+        This is the core UC5 feature: When running in test mode (push/manual runs),
+        if no alarms pass the normal filter (all have reached 3 sends), the most
+        recent alarm is added anyway for testing purposes.
+        """
+        # Create alarms directory with alarm file
+        alarms_dir = tmp_path / "alarms"
+        alarms_dir.mkdir()
+
+        # Create alarm file with one alarm
+        alarm_data = {
+            "err": "0",
+            "dat": {
+                "total": 1,
+                "warning": [
+                    {
+                        "pid": 12345,
+                        "pn": "DEV001",
+                        "id": "W001",
+                        "plant": "test-plant",
+                        "alias": "Inverter 1",
+                        "desc": "Test alarm",
+                        "gts": "2026-01-07 10:00:00",
+                        "status": False
+                    }
+                ]
+            }
+        }
+
+        alarm_file = alarms_dir / "Gayan-IMH-alarms.json"
+        with open(alarm_file, 'w', encoding='utf-8') as f:
+            json.dump(alarm_data, f)
+
+        # Create state file where alarm has been sent 3 times (blocked)
+        state_file = tmp_path / "state.json"
+        state = {
+            "12345:DEV001:W001": {
+                "send_count": 3,
+                "last_sent": "2026-01-07T06:00:00",
+                "first_seen": "2026-01-06T10:00:00",
+                "ignored": True
+            }
+        }
+        with open(state_file, 'w', encoding='utf-8') as f:
+            json.dump(state, f)
+
+        output_file = tmp_path / "output.txt"
+
+        # Parse alarms and filter WITHOUT test mode
+        all_alarms = parse_alarm_files(str(alarms_dir))
+        alarms_to_send_normal = filter_alarms_to_send(all_alarms, state)
+
+        # Without test mode, no alarms should be sent (all blocked)
+        assert len(alarms_to_send_normal) == 0
+
+        # Now simulate test mode logic
+        alarms_to_send_test = list(alarms_to_send_normal)  # Copy
+        if len(alarms_to_send_test) == 0 and len(all_alarms) > 0:
+            most_recent = get_most_recent_alarm(all_alarms)
+            if most_recent:
+                alarm_key = create_alarm_key(most_recent)
+                alarm_state = state.get(alarm_key, {'send_count': 0})
+                alarms_to_send_test.append({
+                    'alarm': most_recent,
+                    'alarm_key': alarm_key,
+                    'send_count': alarm_state.get('send_count', 0)
+                })
+
+        # With test mode, one alarm should be added
+        assert len(alarms_to_send_test) == 1
+        assert alarms_to_send_test[0]['alarm']['desc'] == 'Test alarm'
+        assert alarms_to_send_test[0]['send_count'] == 3  # Uses existing state count
 
 
 if __name__ == '__main__':

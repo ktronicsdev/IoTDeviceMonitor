@@ -169,10 +169,21 @@ jobs:
           set +e
           mkdir -p state alarms
 
-          python3 src/main/java/org/ktronics/scripts/generate_device_alarms.py \
-            --alarms-dir alarms \
-            --state-file state/device_alarms_state.json \
-            --output-file alarms/device_alarms.txt 2>&1
+          # UC5: On push/manual runs, use test mode to bypass 3-send limit
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "📅 Scheduled run: Normal alarm filtering"
+            python3 src/main/java/org/ktronics/scripts/generate_device_alarms.py \
+              --alarms-dir alarms \
+              --state-file state/device_alarms_state.json \
+              --output-file alarms/device_alarms.txt 2>&1
+          else
+            echo "🔧 Push/Manual run: Test mode (bypass 3-send limit for most recent alarm)"
+            python3 src/main/java/org/ktronics/scripts/generate_device_alarms.py \
+              --alarms-dir alarms \
+              --state-file state/device_alarms_state.json \
+              --output-file alarms/device_alarms.txt \
+              --test-mode 2>&1
+          fi
 
           code=$?
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
