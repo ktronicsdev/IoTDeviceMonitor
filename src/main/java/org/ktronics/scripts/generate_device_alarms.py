@@ -251,9 +251,10 @@ def update_alarm_state(state, alarms_to_send):
         state[alarm_key]['send_count'] += 1
         state[alarm_key]['last_sent'] = now.isoformat()
 
-        # UC7: Add human-readable customer and plant names
+        # UC7: Add human-readable customer, plant, and message
         state[alarm_key]['customer'] = alarm.get('customer_label', 'Unknown')
         state[alarm_key]['plant'] = alarm.get('plant', 'Unknown')
+        state[alarm_key]['message'] = alarm.get('desc', alarm.get('warnMsg', 'Unknown'))
 
         # Auto-ignore after 3 sends
         if state[alarm_key]['send_count'] >= 3:

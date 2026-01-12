@@ -1382,12 +1382,13 @@ class TestDeviceAlarmSystem:
         assert "2 customers" in captured.out
         assert "3 plants" in captured.out
 
-    def test_uc7_state_includes_customer_plant(self, tmp_path):
-        """UC7: Verify state JSON includes customer and plant names for readability
+    def test_uc7_state_includes_customer_plant_message(self):
+        """UC7: Verify state JSON includes customer, plant, and message for readability
 
         After update_alarm_state(), each alarm entry should have:
         - 'customer': customer label
         - 'plant': plant name
+        - 'message': alarm description
         """
         alarms_to_send = [
             {
@@ -1395,7 +1396,7 @@ class TestDeviceAlarmSystem:
                     'pid': 12345,
                     'plant': 'gayan-imh-imbulgoda-3kw',
                     'alias': 'Inverter 1',
-                    'desc': 'Test alarm',
+                    'desc': 'Low battery',
                     'gts': '2026-01-07 10:00:00',
                     'customer_label': 'Gayan-IMH'
                 },
@@ -1407,13 +1408,15 @@ class TestDeviceAlarmSystem:
         state = {}
         updated_state = update_alarm_state(state, alarms_to_send)
 
-        # UC7: Verify customer and plant are in state
+        # UC7: Verify customer, plant, and message are in state
         alarm_key = '12345:DEV001:W001'
         assert alarm_key in updated_state
         assert 'customer' in updated_state[alarm_key]
         assert 'plant' in updated_state[alarm_key]
+        assert 'message' in updated_state[alarm_key]
         assert updated_state[alarm_key]['customer'] == 'Gayan-IMH'
         assert updated_state[alarm_key]['plant'] == 'gayan-imh-imbulgoda-3kw'
+        assert updated_state[alarm_key]['message'] == 'Low battery'
 
         # Also verify standard fields still exist
         assert updated_state[alarm_key]['send_count'] == 1
