@@ -88,12 +88,13 @@
     "plant": "Home"
   },
   "1187499:D70000210184361276:682405c8d7b31d268722c52e": {
-    "send_count": 1,
+    "send_count": 2,
     "first_seen": "2026-01-12T00:26:33.691440",
     "ignored": false,
-    "last_sent": "2026-01-12T00:26:33.691440",
+    "last_sent": "2026-01-12T01:08:24.798315",
     "customer": "Gayan-IMH",
-    "plant": "imbulgoda  3kw"
+    "plant": "imbulgoda  3kw",
+    "message": "Inverter over current protection error"
   },
   "1264925:D70000210187176225:670eab0e163e2b5b30acd955": {
     "send_count": 1,
