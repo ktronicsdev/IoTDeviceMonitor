@@ -8,14 +8,216 @@ Automated monitoring system for ShineMonitor solar panel installations with inte
 
 **Features:**
 
-- 🔄 Automated data collection from 20+ solar plants
-- 📊 Daily, monthly, and yearly production tracking
-- 🚨 Smart anomaly detection with RED/ORANGE severity levels
-- 📧 Personalized email alerts for individual customers
-- 📅 Weekly progress reports sent to customers
-- 🔕 3-day auto-ignore rule for persistent alerts
-- 📈 Historical data retention and trending
-- ⏰ Scheduled monitoring (6x daily via GitHub Actions)
+- Automated data collection from 20+ solar plants
+- Daily, monthly, and yearly production tracking
+- Smart anomaly detection with RED/ORANGE severity levels
+- Personalized email alerts for individual customers
+- Weekly progress reports sent to customers
+- Device alarm monitoring with 3-send rule
+- Historical data retention and trending
+- Scheduled monitoring (6x daily via GitHub Actions)
+
+---
+
+## Use Cases
+
+### UC1: Admin Production Alerts
+
+Monitors all solar plants for production anomalies and sends system-wide alerts to admin.
+
+**Features:**
+
+- RED alert: Production < 20% of baseline for 3 consecutive days
+- ORANGE alert: Production < 40% of baseline for 3 consecutive months
+- Auto-ignore: Plants with 0 production for 1 month
+- 3-day auto-ignore rule prevents alert fatigue
+
+**Email Recipient:** <ktronicssolar@gmail.com>
+
+**Test Coverage:** 15/15 PASSED (100%)
+
+---
+
+### UC2: Customer Weekly Reports
+
+Sends personalized weekly production reports to customers every Sunday.
+
+**Schedule:** Every Sunday at 04:00 UTC
+
+**Report Contents:**
+
+- Weekly production summary (last 7 days)
+- Monthly progress (current month)
+- Yearly totals (year-to-date)
+- Plant count and combined statistics
+
+**Email Recipients:** Customers with email in credentials.json
+
+**Test Coverage:** 11/11 PASSED (100%)
+
+---
+
+### UC3: Device Alarm Alerts
+
+Monitors device-level warnings from ShineMonitor API and sends targeted notifications.
+
+**Features:**
+
+- Admin device alarms: Sent to <ktronicssolar@gmail.com>
+- Customer device alarms: Sent to individual customers (mapped by plant ownership)
+- 3-send rule: Each alarm sent 3 times (every 4 hours), then auto-ignored
+- 4-hour interval: Prevents spam
+- State persistence with human-readable fields (customer, plant, message)
+
+**Test Coverage:** 35/35 PASSED (100%)
+
+---
+
+### UC4: Separate Notification Triggers (PLANNED)
+
+Control who receives emails based on workflow trigger type.
+
+**Planned Behavior:**
+
+- Gayan-IMH (test customer): Receives emails on ALL triggers
+- Other customers: Only receive emails on scheduled runs
+- Admin: No change (continues receiving all)
+
+---
+
+### UC5: Test Mode Filter
+
+Test mode filters alarms to Gayan-IMH (test customer) only.
+
+**Purpose:** Allows testing alarm workflow without sending to all customers
+
+**Test Coverage:** 2 tests
+
+---
+
+### UC6: Log Summary Counts
+
+Adds admin visibility in GitHub Actions logs showing alarm summary.
+
+**Output:** `Summary: X alarms from Y customers affecting Z plants`
+
+**Test Coverage:** 1 test
+
+---
+
+### UC7: State JSON Enhancement
+
+Human-readable device alarm state file with customer, plant, and message fields.
+
+**State File:** `state/device_alarms_state.json`
+
+**Fields Added:**
+
+- `customer` - Customer name (e.g., "Gayan-IMH")
+- `plant` - Plant name (e.g., "imbulgoda 3kw")
+- `message` - Alarm message (e.g., "Low battery")
+
+**Test Coverage:** 1 test
+
+---
+
+### UC8: Weekly Report Schedule Filter
+
+Controls when customer emails are sent based on workflow trigger type.
+
+**Behavior:**
+
+| Trigger | Admin Email | Customer Emails |
+| ------- | ----------- | --------------- |
+| Schedule (Sunday) | Yes | Yes |
+| Push | Yes | No |
+| Manual | Yes | No |
+
+**Test Coverage:** 1 test
+
+---
+
+## Bug Fixes
+
+### UC3: API Field Name Mismatch (Session 10)
+
+**Problem:** Admin device alarm emails showed "Unknown Plant", "Unknown Device", "No message"
+
+**Root Cause:** Code expected field names `pId`, `devId`, `warnId` but API returns `pid`, `pn`, `id`
+
+**Fix:** Check both field name variants in:
+
+- `create_alarm_key()` - Alarm key generation
+- `create_customer_device_alarms()` - Customer mapping
+- `format_device_alarms_email()` - Email formatting
+
+**Commits:** `e06e813`, `b10bad9`, `5480ffa`
+
+---
+
+### UC3: JSON Parsing Bug (Session 7)
+
+**Problem:** Device alarm emails not sent despite alarms being fetched
+
+**Root Cause:**
+
+- Code expected `{"dat": [...]}` (array)
+- API returns `{"dat": {"total": N, "warning": [...]}}` (object)
+
+**Fix:** Handle both response formats in `generate_device_alarms.py`
+
+**Commit:** `7cdc8cd`
+
+---
+
+### UC3: Test Mode 3-Send Limit Bug (Session 12)
+
+**Problem:** Test mode showed "Send #4/3" - alarm sent 4 times despite 3-send limit
+
+**Root Cause:** Test mode bypassed ignore check and send_count validation
+
+**Fix:** Added same validation as `filter_alarms_to_send()` to test mode
+
+**Commit:** `334035b`
+
+---
+
+### UC2: CSV Column Name Bug (Session 1)
+
+**Problem:** Weekly reports showed 0.00 kWh values
+
+**Root Cause:** Code expected column `energy_kwh` but CSV files use `kwh`
+
+**Fix:** Changed `row['energy_kwh']` to `row['kwh']` in `generate_weekly_report.py`
+
+---
+
+### UC2: Date Comparison Bug (Session 8)
+
+**Problem:** Weekly reports missing first day of data
+
+**Root Cause:** Compared datetime objects WITH time components causing boundary issues
+
+**Fix:** Compare date objects WITHOUT time: `week_ago.date() <= row_date <= today.date()`
+
+**Commit:** `44d52f4`
+
+---
+
+### BVT: Centralized Config (Session 8)
+
+**Problem:** UC3 device alarms failed with `FileNotFoundError: credentials.json`
+
+**Root Cause:** 10 files had different hardcoded credentials paths
+
+**Fix:** Created centralized config modules:
+
+- `config.py` - Python: `CREDENTIALS_PATH` constant
+- `common_config.sh` - Bash: `CREDENTIALS_FILE` variable
+
+**Commit:** `5356e75`
+
+---
 
 ## Architecture
 
@@ -55,8 +257,8 @@ Create `src/main/java/org/ktronics/config/credentials.json`:
 **Note**: The `email` field is optional. Customers with email addresses will receive:
 
 - Weekly progress reports (every Sunday)
-- Personalized Auto-ignored alert notifications for after 3 consecutive days harvesting lost > 20% (for 3 days)
-- Personalized Auto-ignored alert notifications for alarams (2 times a day)
+- Personalized alert notifications for harvesting lost > 20% (for 3 days)
+- Personalized device alarm notifications (2 times a day)
 
 ### 3. Run data collection manually
 
@@ -75,8 +277,8 @@ py -m src/main/java/org/ktronics/scripts/check_anomaly.py \
 ```
 
 ```bash
-# Run alaram detection
-sh  ./src/main/java/org/ktronics/scripts/check_device_alarms.sh "Ganishkawa" "123456" "bnrl_frRFjEz8Mkn" "alarms/customer_alerts.json"
+# Run alarm detection
+sh ./src/main/java/org/ktronics/scripts/check_device_alarms.sh "Ganishkawa" "123456" "bnrl_frRFjEz8Mkn" "alarms/customer_alerts.json"
 ```
 
 ### 4. View alerts
@@ -84,54 +286,6 @@ sh  ./src/main/java/org/ktronics/scripts/check_device_alarms.sh "Ganishkawa" "12
 ```bash
 cat alerts/alerts.txt
 ```
-
-## Customer Email System
-
-Customers with email addresses in `credentials.json` receive two types of emails:
-
-### 1. Customer-Specific Alert Emails (6x daily with main monitoring)
-
-When anomalies are detected in the main monitoring workflow (runs 6x daily), **both admin and customers** receive alert emails with a 3-day auto-ignore rule:
-
-**3-Day Auto-Ignore Rule** (applies to both admin and customer alerts):
-
-- **Day 0** (first detection): Alert email sent
-- **Day 1**: Reminder email sent
-- **Day 2**: Final alert email sent
-- **Day 3+**: Alert auto-ignored, **NO emails sent** until issue resolved
-
-This prevents alert fatigue while ensuring proper notification.
-
-**Email Recipients**:
-
-- **Admin**: Receives system-wide alerts for all plants at <ktronicssolar@gmail.com>
-- **Customers**: Receive alerts only for their own plants (if email address configured in credentials.json)
-
-### 2. Weekly Progress Reports
-
-**Schedule**: Every Sunday at 18:00 UTC
-
-Customers receive personalized weekly reports including:
-
-- **Weekly Production Summary**: Total kWh for the past 7 days
-- **Monthly Progress**: Current month's production
-- **Yearly Totals**: Year-to-date production
-- **Plant-by-Plant Breakdown**: Individual performance for each solar installation
-- **Active Alerts**: Any ongoing issues (if applicable)
-
-### Customer Alert Tracking
-
-The system automatically:
-
-- Maps plants to customers based on naming patterns
-- Tracks alert duration per customer
-- Sends only relevant alerts to affected customers
-- Maintains state between workflow runs
-
-**Plant-to-Customer Mapping Example**:
-
-- Customer label: `"Lahiru Ryan"`
-- Matches plants: `lahiru-ryan-*`, `lahiruryan-*`, etc.
 
 ## GitHub Actions Setup
 
@@ -143,13 +297,14 @@ The system runs automatically via GitHub Actions:
   - Tracks customer-specific alerts (3-day auto-ignore)
   - Sends customer-specific alert emails to individual customers
 
-- **Weekly Reports**: Every Sunday at 18:00 UTC
+- **Weekly Reports**: Every Sunday at 04:00 UTC
   - Sends personalized reports to customers with email addresses
-  - No system notifications (silent operation)
+  - Admin receives summary on all triggers (push/manual/schedule)
+  - Customers receive reports only on scheduled runs
 
 ### Required Secrets
 
-Configure these in GitHub Settings → Secrets:
+Configure these in GitHub Settings > Secrets:
 
 - `SHINEMONITOR_CREDENTIALS_JSON`: Contents of credentials.json
 - `SMTP_HOST`: SMTP server (e.g., smtp.gmail.com)
@@ -188,15 +343,20 @@ Default thresholds in `check_anomaly.py`:
 │   ├── config/
 │   │   └── credentials.json           # API credentials (gitignored)
 │   └── scripts/
-│       ├── shinemonitor_common.sh     # Shared configuration
+│       ├── config.py                  # Centralized Python config
+│       ├── common_config.sh           # Centralized Bash config
+│       ├── shinemonitor_common.sh     # Shared API utilities
 │       ├── check_shinemonitor_monthly.sh  # Fetch monthly data
 │       ├── check_shinemonitor_yearly.sh   # Fetch yearly data
-│       ├── check_anomaly.py           # Anomaly detection + customer alert generation
-│       ├── email_utils.py             # Shared email utilities
+│       ├── check_device_alarms.sh     # Fetch device alarms
+│       ├── check_anomaly.py           # Anomaly detection
+│       ├── generate_device_alarms.py  # Device alarm processing
 │       ├── generate_weekly_report.py  # Weekly report generation
-│       ├── send_customer_emails.py    # Customer email sending (alerts & reports)
+│       ├── generate_admin_summary.py  # Admin summary generation
+│       ├── send_customer_emails.py    # Customer email sending
 │       └── send_email.py              # System-wide email notifications
 ├── data/                              # CSV time-series data
+├── alarms/                            # Device alarm JSON files
 ├── alerts/                            # Generated alert reports
 │   ├── alerts.json                    # System-wide alerts
 │   ├── alerts.txt                     # Formatted alert report
@@ -204,32 +364,8 @@ Default thresholds in `check_anomaly.py`:
 ├── reports/                           # Weekly customer reports
 │   └── archive/                       # Report archives (last 4 weeks)
 └── state/                             # State tracking
-    └── alerts_state.json              # Unified alert state (admin & customer 3-day auto-ignore)
-```
-
-## Alert Format
-
-Alerts are formatted with clear visual indicators:
-
-```
-================================================================================
-║                          ⚠ ATTENTION REQUIRED ⚠                              ║
-║                      Status: 1 CRITICAL, 0 WARNING                           ║
-================================================================================
-
-┌─ ALERT SUMMARY ──────────────────────────────────────────────────────────
-│ 🔴 [RED] plant-name
-│   Issue: Production dropped 85.5% below normal
-│   Normal: 5.50 kWh/day  →  Current: 0.80 kWh/day
-└────────────────────────────────────────────────────────
-
-┌─ RECOMMENDED ACTIONS ────────────────────────────────────────────────────
-│ plant-name:
-│   1. Check inverter status and error codes
-│   2. Verify grid connection and breaker status
-│   3. Inspect panels for shading or physical damage
-│   4. Contact maintenance team if issue persists
-└──────────────────────────────────────────────────────
+    ├── alerts_state.json              # Admin alert state
+    └── device_alarms_state.json       # Device alarm state
 ```
 
 ## Testing
@@ -238,12 +374,15 @@ Alerts are formatted with clear visual indicators:
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 46 tests
+#### Test Coverage: 79 tests
 
-- ✅ **UC1 (Admin Alerts): 15/15 PASSED (100%)**
-- ✅ **UC2 (Customer Weekly): 11/11 PASSED (100%)**
-- ✅ **UC3 (Device Alarms): 12/12 PASSED (100%)**
-- ⏭️ **API Tests: 8/8 SKIPPED on Windows** (run in GitHub Actions/Linux)
+| Suite | Tests | Status |
+| ----- | ----- | ------ |
+| UC1 (Admin Alerts) | 15/15 | PASSED (100%) |
+| UC2 (Customer Weekly) | 11/11 | PASSED (100%) |
+| UC3 (Device Alarms) | 35/35 | PASSED (100%) |
+| BVT (Centralized Config) | 14/14 | PASSED (100%) |
+| API Tests | 8/8 | SKIPPED on Windows |
 
 ```bash
 # Run all tests
@@ -254,52 +393,10 @@ py -m pytest integration/ -v
 py -m pytest integration/test_admin_alerts.py -v      # UC1: Admin alerts
 py -m pytest integration/test_customer_weekly.py -v   # UC2: Customer reports
 py -m pytest integration/test_device_alarms.py -v     # UC3: Device alarms
+py -m pytest integration/test_centralized_config.py -v # BVT: Config tests
 ```
 
 See [src/test/java/org/ktronics/scripts/README.md](src/test/java/org/ktronics/scripts/README.md) for detailed test documentation.
-
-### Test Weekly Report Generation Locally
-
-```bash
-# Generate reports for all customers
-python3 src/main/java/org/ktronics/scripts/generate_weekly_report.py \
-  --credentials src/main/java/org/ktronics/config/credentials.json \
-  --data-dir data \
-  --output-dir reports
-
-# View generated reports
-ls -la reports/
-cat reports/weekly_report_*.txt
-```
-
-### Test Customer Alert Tracking
-
-```bash
-# Process customer alerts
-python3 src/main/java/org/ktronics/scripts/track_customer_alerts.py \
-  --alerts alerts/alerts.json \
-  --credentials src/main/java/org/ktronics/config/credentials.json \
-  --state-file state/customer_alerts_state.json \
-  --auto-ignore-days 3 \
-  --output alerts/customer_alerts.json
-
-# View customer alerts
-cat alerts/customer_alerts.json
-```
-
-### Test Email Sending (Manual)
-
-```bash
-# Set SMTP credentials
-export SMTP_HOST=smtp.gmail.com
-export SMTP_PORT=587
-export SMTP_USER=your-email@gmail.com
-export SMTP_PASS=your-app-password
-
-# Send test weekly reports
-python3 src/main/java/org/ktronics/scripts/send_customer_emails.py \
-  --reports-dir reports
-```
 
 ## Troubleshooting
 
@@ -312,17 +409,24 @@ python3 src/main/java/org/ktronics/scripts/send_customer_emails.py \
 
 ### Alerts Not Auto-Ignoring
 
-1. Check `state/customer_alerts_state.json` file
+1. Check `state/alerts_state.json` file
 2. Verify `auto-ignore-days` is set to 3
 3. Check main workflow includes customer alert tracking step
 4. Review workflow logs for tracking step
+
+### Device Alarms Not Sending
+
+1. Check `state/device_alarms_state.json` for alarm tracking
+2. Verify alarm hasn't reached 3-send limit (`send_count >= 3`)
+3. Check 4-hour interval hasn't elapsed since last send
+4. Review workflow logs for "alarms ready to send" count
 
 ### Plants Not Matching Customers
 
 The system uses fuzzy matching based on customer labels:
 
-- Customer: "Lahiru Ryan" → matches: `lahiru-ryan-*`, `lahiruryan-*`
-- Customer: "Gayan-IMH" → matches: `gayan-imh-*`, `gayanim-*`
+- Customer: "Lahiru Ryan" -> matches: `lahiru-ryan-*`, `lahiruryan-*`
+- Customer: "Gayan-IMH" -> matches: `gayan-imh-*`, `gayanim-*`
 
 Ensure plant file names contain recognizable parts of the customer label.
 
