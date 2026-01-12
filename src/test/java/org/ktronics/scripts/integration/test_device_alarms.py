@@ -1176,12 +1176,15 @@ class TestDeviceAlarmSystem:
         assert most_recent is not None
         assert most_recent['desc'] == 'Only alarm'
 
-    def test_test_mode_adds_alarm_when_all_blocked(self, tmp_path):
-        """UC5: Test mode adds most recent alarm when all alarms are blocked by 3-send limit
+    def test_test_mode_skips_ignored_alarms(self, tmp_path):
+        """UC5 FIX: Test mode should NOT add alarms that are already ignored or hit max sends
 
-        This is the core UC5 feature: When running in test mode (push/manual runs),
-        if no alarms pass the normal filter (all have reached 3 sends), the most
-        recent alarm is added anyway for testing purposes.
+        Bug fixed: Previously test mode would bypass the ignore check and send alarms
+        that had already been sent 3 times (showing "Send #4/3" in email).
+
+        Fixed behavior: Test mode respects the same rules as filter_alarms_to_send:
+        - Skip if ignored: True
+        - Skip if send_count >= 3
         """
         # Create alarms directory with alarm file
         alarms_dir = tmp_path / "alarms"
@@ -1201,7 +1204,8 @@ class TestDeviceAlarmSystem:
                         "alias": "Inverter 1",
                         "desc": "Test alarm",
                         "gts": "2026-01-07 10:00:00",
-                        "status": False
+                        "status": False,
+                        "customer_label": "Gayan-IMH"
                     }
                 ]
             }
@@ -1212,7 +1216,6 @@ class TestDeviceAlarmSystem:
             json.dump(alarm_data, f)
 
         # Create state file where alarm has been sent 3 times (blocked)
-        state_file = tmp_path / "state.json"
         state = {
             "12345:DEV001:W001": {
                 "send_count": 3,
@@ -1221,35 +1224,104 @@ class TestDeviceAlarmSystem:
                 "ignored": True
             }
         }
-        with open(state_file, 'w', encoding='utf-8') as f:
-            json.dump(state, f)
 
-        output_file = tmp_path / "output.txt"
-
-        # Parse alarms and filter WITHOUT test mode
+        # Parse alarms
         all_alarms = parse_alarm_files(str(alarms_dir))
         alarms_to_send_normal = filter_alarms_to_send(all_alarms, state)
 
         # Without test mode, no alarms should be sent (all blocked)
         assert len(alarms_to_send_normal) == 0
 
-        # Now simulate test mode logic
+        # Simulate FIXED test mode logic (same as in generate_device_alarms.py)
         alarms_to_send_test = list(alarms_to_send_normal)  # Copy
         if len(alarms_to_send_test) == 0 and len(all_alarms) > 0:
-            most_recent = get_most_recent_alarm(all_alarms)
+            # Filter to Gayan-IMH alarms only (UC5 fix)
+            test_customer_alarms = [a for a in all_alarms if a.get('customer_label', '').lower() == 'gayan-imh']
+            if test_customer_alarms:
+                most_recent = get_most_recent_alarm(test_customer_alarms)
+                if most_recent:
+                    alarm_key = create_alarm_key(most_recent)
+                    alarm_state = state.get(alarm_key, {'send_count': 0, 'ignored': False})
+                    # UC5 FIX: Check if alarm should be skipped
+                    if not alarm_state.get('ignored', False) and alarm_state.get('send_count', 0) < 3:
+                        alarms_to_send_test.append({
+                            'alarm': most_recent,
+                            'alarm_key': alarm_key,
+                            'send_count': alarm_state.get('send_count', 0)
+                        })
+
+        # With FIXED test mode, ignored alarms should NOT be added
+        assert len(alarms_to_send_test) == 0, "Test mode should skip ignored alarms"
+
+    def test_test_mode_adds_non_ignored_alarm(self, tmp_path):
+        """UC5: Test mode adds alarm only if it hasn't reached max sends
+
+        This tests the CORRECT behavior: test mode should add an alarm that
+        still has sends remaining (send_count < 3 and ignored: False).
+        """
+        alarms_dir = tmp_path / "alarms"
+        alarms_dir.mkdir()
+
+        # Create alarm with 2 sends (not yet ignored)
+        alarm_data = {
+            "err": "0",
+            "dat": {
+                "total": 1,
+                "warning": [
+                    {
+                        "pid": 12345,
+                        "pn": "DEV001",
+                        "id": "W001",
+                        "plant": "test-plant",
+                        "alias": "Inverter 1",
+                        "desc": "Test alarm",
+                        "gts": "2026-01-07 10:00:00",
+                        "status": False,
+                        "customer_label": "Gayan-IMH"
+                    }
+                ]
+            }
+        }
+
+        alarm_file = alarms_dir / "Gayan-IMH-alarms.json"
+        with open(alarm_file, 'w', encoding='utf-8') as f:
+            json.dump(alarm_data, f)
+
+        # State: alarm sent 2 times but blocked by 4-hour rule
+        state = {
+            "12345:DEV001:W001": {
+                "send_count": 2,
+                "last_sent": datetime.now().isoformat(),  # Just sent (blocked by 4hr rule)
+                "first_seen": "2026-01-06T10:00:00",
+                "ignored": False
+            }
+        }
+
+        all_alarms = parse_alarm_files(str(alarms_dir))
+        alarms_to_send_normal = filter_alarms_to_send(all_alarms, state)
+
+        # Normal filter blocks due to 4-hour rule
+        assert len(alarms_to_send_normal) == 0
+
+        # Simulate test mode with fix
+        alarms_to_send_test = []
+        test_customer_alarms = [a for a in all_alarms if a.get('customer_label', '').lower() == 'gayan-imh']
+        if test_customer_alarms:
+            most_recent = get_most_recent_alarm(test_customer_alarms)
             if most_recent:
                 alarm_key = create_alarm_key(most_recent)
-                alarm_state = state.get(alarm_key, {'send_count': 0})
-                alarms_to_send_test.append({
-                    'alarm': most_recent,
-                    'alarm_key': alarm_key,
-                    'send_count': alarm_state.get('send_count', 0)
-                })
+                alarm_state = state.get(alarm_key, {'send_count': 0, 'ignored': False})
+                # UC5 FIX: Only add if not ignored and under max sends
+                if not alarm_state.get('ignored', False) and alarm_state.get('send_count', 0) < 3:
+                    alarms_to_send_test.append({
+                        'alarm': most_recent,
+                        'alarm_key': alarm_key,
+                        'send_count': alarm_state.get('send_count', 0)
+                    })
 
-        # With test mode, one alarm should be added
+        # Test mode SHOULD add this alarm (not yet at 3 sends, not ignored)
         assert len(alarms_to_send_test) == 1
-        assert alarms_to_send_test[0]['alarm']['desc'] == 'Test alarm'
-        assert alarms_to_send_test[0]['send_count'] == 3  # Uses existing state count
+        assert alarms_to_send_test[0]['send_count'] == 2
 
     def test_uc6_log_summary_counts(self, tmp_path, capsys):
         """UC6: Verify log summary shows alarm/customer/plant counts
