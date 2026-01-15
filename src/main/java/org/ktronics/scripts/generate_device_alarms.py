@@ -410,18 +410,14 @@ def main():
         if most_recent:
             alarm_key = create_alarm_key(most_recent)
             alarm_state = state.get(alarm_key, {'send_count': 0, 'ignored': False})
-            # Check if alarm should be skipped (same rules as filter_alarms_to_send)
-            if alarm_state.get('ignored', False):
-                print(f"  [TEST MODE] Skipped (already ignored): {most_recent.get('plant', 'Unknown')}")
-            elif alarm_state.get('send_count', 0) >= 3:
-                print(f"  [TEST MODE] Skipped (max sends reached): {most_recent.get('plant', 'Unknown')}")
-            else:
-                alarms_to_send.append({
-                    'alarm': most_recent,
-                    'alarm_key': alarm_key,
-                    'send_count': alarm_state.get('send_count', 0)
-                })
-                print(f"  [TEST MODE] Added alarm: {most_recent.get('plant', 'Unknown')} - {most_recent.get('desc', 'No message')}")
+            # UC4: Test mode bypasses 3-send limit for Gayan-IMH testing
+            # Always include the most recent alarm regardless of ignored/send_count
+            alarms_to_send.append({
+                'alarm': most_recent,
+                'alarm_key': alarm_key,
+                'send_count': alarm_state.get('send_count', 0)
+            })
+            print(f"  [TEST MODE] Added alarm (bypassing limits): {most_recent.get('plant', 'Unknown')} - {most_recent.get('desc', 'No message')}")
 
     # Format email
     print("[4/5] Formatting email...")

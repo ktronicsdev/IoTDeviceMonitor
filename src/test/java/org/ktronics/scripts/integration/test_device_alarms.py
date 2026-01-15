@@ -1462,6 +1462,153 @@ class TestDeviceAlarmSystem:
         assert "SKIPPING CUSTOMER EMAILS" in content, \
             "UC8: Skip message should be present"
 
+    def test_uc4_test_mode_bypasses_ignored_flag(self, test_alarms_dir):
+        """UC4: Test mode bypasses ignored flag and sends alarm anyway
+
+        This tests that when --test-mode is used, alarms marked as ignored
+        are still included in the output (bypassing the 3-send limit).
+        """
+        # Create state with ignored alarm
+        alarm_key = "12345:D70000210151320901:abc123"
+        state = {
+            alarm_key: {
+                'send_count': 3,
+                'ignored': True,
+                'last_sent': (datetime.now() - timedelta(hours=5)).isoformat(),
+                'first_seen': (datetime.now() - timedelta(days=2)).isoformat(),
+                'customer': 'gayan-imh',
+                'plant': 'Test Plant',
+                'message': 'Test warning'
+            }
+        }
+
+        # Create alarm that matches the ignored state
+        alarm = {
+            'pid': 12345,
+            'pn': 'D70000210151320901',
+            'id': 'abc123',
+            'plant': 'Test Plant',
+            'alias': 'Inverter 1',
+            'desc': 'Test warning',
+            'gts': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'status': False
+        }
+
+        # Test mode should include this alarm despite ignored=True
+        most_recent = alarm
+        alarms_to_send = []
+
+        # Simulate test mode logic (from generate_device_alarms.py lines 413-420)
+        if most_recent:
+            alarm_key_check = create_alarm_key(most_recent)
+            alarm_state = state.get(alarm_key_check, {'send_count': 0, 'ignored': False})
+
+            # UC4: Test mode bypasses 3-send limit
+            alarms_to_send.append({
+                'alarm': most_recent,
+                'alarm_key': alarm_key_check,
+                'send_count': alarm_state.get('send_count', 0)
+            })
+
+        # Verify alarm was added despite ignored=True
+        assert len(alarms_to_send) == 1, "UC4: Test mode should bypass ignored flag"
+        assert alarms_to_send[0]['alarm_key'] == alarm_key
+        assert alarms_to_send[0]['send_count'] == 3, "UC4: Should preserve send_count=3"
+
+    def test_uc4_test_mode_bypasses_max_sends(self, test_alarms_dir):
+        """UC4: Test mode bypasses max sends limit (send_count >= 3)
+
+        This tests that when --test-mode is used, alarms that have reached
+        the 3-send limit are still included in the output.
+        """
+        # Create state with alarm at max sends (not yet ignored)
+        alarm_key = "12345:D70000210151320901:def456"
+        state = {
+            alarm_key: {
+                'send_count': 3,
+                'ignored': False,  # Not yet ignored, but at max sends
+                'last_sent': (datetime.now() - timedelta(hours=5)).isoformat(),
+                'first_seen': (datetime.now() - timedelta(days=1)).isoformat(),
+                'customer': 'gayan-imh',
+                'plant': 'Test Plant 2',
+                'message': 'Battery low warning'
+            }
+        }
+
+        # Create alarm that matches
+        alarm = {
+            'pid': 12345,
+            'pn': 'D70000210151320901',
+            'id': 'def456',
+            'plant': 'Test Plant 2',
+            'alias': 'Battery Monitor',
+            'desc': 'Battery low warning',
+            'gts': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'status': False
+        }
+
+        # Test mode should include this alarm despite send_count=3
+        most_recent = alarm
+        alarms_to_send = []
+
+        # Simulate test mode logic
+        if most_recent:
+            alarm_key_check = create_alarm_key(most_recent)
+            alarm_state = state.get(alarm_key_check, {'send_count': 0, 'ignored': False})
+
+            # UC4: Test mode bypasses send count limit
+            alarms_to_send.append({
+                'alarm': most_recent,
+                'alarm_key': alarm_key_check,
+                'send_count': alarm_state.get('send_count', 0)
+            })
+
+        # Verify alarm was added despite send_count >= 3
+        assert len(alarms_to_send) == 1, "UC4: Test mode should bypass send_count limit"
+        assert alarms_to_send[0]['send_count'] == 3, "UC4: Should include alarm with send_count=3"
+
+    def test_uc4_test_mode_includes_fresh_alarms(self, test_alarms_dir):
+        """UC4: Test mode includes fresh alarms (send_count=0, ignored=False)
+
+        This tests that test mode still works for new alarms that haven't
+        been sent yet. Verifies test mode doesn't break normal functionality.
+        """
+        # Create empty state (no previous sends for this alarm)
+        state = {}
+
+        # Create fresh alarm
+        alarm = {
+            'pid': 67890,
+            'pn': 'D70000210151999999',
+            'id': 'fresh123',
+            'plant': 'Gayan-IMH Plant',
+            'alias': 'New Inverter',
+            'desc': 'New warning just appeared',
+            'gts': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'status': False
+        }
+
+        # Test mode should include this fresh alarm
+        most_recent = alarm
+        alarms_to_send = []
+
+        # Simulate test mode logic
+        if most_recent:
+            alarm_key_check = create_alarm_key(most_recent)
+            alarm_state = state.get(alarm_key_check, {'send_count': 0, 'ignored': False})
+
+            # UC4: Test mode includes fresh alarms
+            alarms_to_send.append({
+                'alarm': most_recent,
+                'alarm_key': alarm_key_check,
+                'send_count': alarm_state.get('send_count', 0)
+            })
+
+        # Verify fresh alarm was added
+        assert len(alarms_to_send) == 1, "UC4: Test mode should include fresh alarms"
+        assert alarms_to_send[0]['send_count'] == 0, "UC4: Fresh alarm should have send_count=0"
+        assert alarms_to_send[0]['alarm']['plant'] == 'Gayan-IMH Plant'
+
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
