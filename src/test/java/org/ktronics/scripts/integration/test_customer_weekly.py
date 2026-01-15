@@ -12,7 +12,7 @@ import csv
 import tempfile
 import shutil
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 # Add scripts directory to path
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent.parent.parent / "main" / "java" / "org" / "ktronics" / "scripts"
@@ -197,16 +197,21 @@ class TestCustomerWeeklyReports:
 
     def test_multiple_plants_per_customer(self, test_data_dir):
         """Customer with multiple plants gets combined report"""
-        # Create 3 plants for same customer
+        # Create 3 plants for same customer (use last 2 days, dynamic dates)
+        today = date.today()
+        day1 = (today - timedelta(days=1)).strftime('%Y-%m-%d')
+        day2 = today.strftime('%Y-%m-%d')
+        current_month = today.strftime('%Y-%m')
+
         plants_data = [
-            ("customer-plant1", [('2026-01-01', 10.0), ('2026-01-02', 11.0)]),
-            ("customer-plant2", [('2026-01-01', 15.0), ('2026-01-02', 16.0)]),
-            ("customer-plant3", [('2026-01-01', 8.0), ('2026-01-02', 9.0)]),
+            ("customer-plant1", [(day1, 10.0), (day2, 11.0)]),
+            ("customer-plant2", [(day1, 15.0), (day2, 16.0)]),
+            ("customer-plant3", [(day1, 8.0), (day2, 9.0)]),
         ]
 
         plant_base_names = []
         for plant_name, daily_data in plants_data:
-            self.create_monthly_csv(test_data_dir, plant_name, '2026-01', daily_data)
+            self.create_monthly_csv(test_data_dir, plant_name, current_month, daily_data)
             plant_base_names.append(plant_name)
 
         summary = get_weekly_summary(plant_base_names, test_data_dir)
@@ -400,9 +405,14 @@ class TestCustomerWeeklyReports:
         """
         plant_name = "test-plant"
 
-        # Create only current month data (no previous month/year files)
-        current_data = [(f'2026-01-{day:02d}', 10.0) for day in range(1, 8)]
-        self.create_monthly_csv(test_data_dir, plant_name, '2026-01', current_data)
+        # Create only current month data (no previous month/year files) - use last 7 days, dynamic dates
+        today = date.today()
+        current_month = today.strftime('%Y-%m')
+        current_data = [
+            ((today - timedelta(days=7-i)).strftime('%Y-%m-%d'), 10.0)
+            for i in range(1, 8)
+        ]
+        self.create_monthly_csv(test_data_dir, plant_name, current_month, current_data)
 
         plant_base_names = [plant_name]
         summary = get_weekly_summary(plant_base_names, test_data_dir)

@@ -209,11 +209,16 @@ class TestAdminProductionAlerts:
         """
         NO ALERTS: All plants producing normally
         """
-        # Create normal production data
-        normal_data = [(f'2026-01-{day:02d}', 10.0 + day * 0.1) for day in range(1, 8)]
+        # Create normal production data (last 7 days, dynamic dates)
+        today = date.today()
+        normal_data = [
+            ((today - timedelta(days=7-i)).strftime('%Y-%m-%d'), 10.0 + i * 0.1)
+            for i in range(1, 8)
+        ]
 
         plant_name = "test-plant-normal"
-        self.create_monthly_csv(test_data_dir, plant_name, '2026-01', normal_data)
+        current_month = today.strftime('%Y-%m')
+        self.create_monthly_csv(test_data_dir, plant_name, current_month, normal_data)
 
         # Run anomaly detection
         from check_anomaly import main as check_anomaly_main
