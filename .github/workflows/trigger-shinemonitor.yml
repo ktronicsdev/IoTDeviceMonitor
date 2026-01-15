@@ -51,11 +51,11 @@ jobs:
           # Install pytest
           pip install pytest
 
-          # Run all integration tests (skip API tests on CI, they require credentials)
+          # Run all integration tests (skip API tests and credentials validation tests on CI)
           pytest src/test/java/org/ktronics/scripts/integration/ \
             -v \
             --tb=short \
-            -k "not test_shinemonitor_api" \
+            -k "not test_shinemonitor_api and not test_credentials_file_exists and not test_credentials_file_is_valid_json" \
             || { echo "❌ Tests failed"; exit 1; }
 
           echo "✅ All tests passed"
