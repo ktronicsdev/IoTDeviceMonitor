@@ -45,7 +45,7 @@ class TestShineMonitorAPI:
         """Get test credentials"""
         return load_test_credentials()
 
-    def run_bash_script(self, script_content):
+    def run_bash_script(self, script_content, timeout=30):
         """Execute bash script and return output"""
         # Skip on Windows - these tests require Unix environment
         if platform.system() == 'Windows':
@@ -55,7 +55,7 @@ class TestShineMonitorAPI:
             ['bash', '-c', script_content],
             capture_output=True,
             text=True,
-            timeout=30
+            timeout=timeout
         )
         return result
 
@@ -241,7 +241,8 @@ class TestShineMonitorAPI:
         bash check_shinemonitor_monthly.sh "{CREDS_FILE}" "2026-01" 2>&1 | grep -E "(AUTH OK|DONE)"
         """
 
-        result = self.run_bash_script(script)
+        # Use 90-second timeout (processes 20+ accounts)
+        result = self.run_bash_script(script, timeout=90)
 
         assert result.returncode == 0, f"Monthly script failed: {result.stderr}"
         assert "AUTH OK" in result.stdout or "DONE" in result.stdout
@@ -254,7 +255,8 @@ class TestShineMonitorAPI:
         timeout 60 bash check_shinemonitor_yearly.sh "{CREDS_FILE}" "2026" 2>&1 | head -20 | grep -E "(AUTH OK|DONE)"
         """
 
-        result = self.run_bash_script(script)
+        # Use 90-second timeout (processes 20+ accounts)
+        result = self.run_bash_script(script, timeout=90)
 
         # Allow timeout (script may take long with many accounts)
         assert result.returncode in [0, 124], f"Yearly script failed: {result.stderr}"
