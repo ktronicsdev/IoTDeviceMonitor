@@ -61,6 +61,9 @@ jobs:
           # Install pytest
           pip install pytest
 
+          # Make bash scripts executable (required for API tests)
+          chmod +x src/main/java/org/ktronics/scripts/*.sh
+
           # Run ALL integration tests (no filters - 93/93 tests)
           pytest src/test/java/org/ktronics/scripts/integration/ \
             -v \
