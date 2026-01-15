@@ -40,6 +40,27 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Run integration tests
+        shell: bash
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🧪 RUNNING INTEGRATION TESTS"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          set -e
+
+          # Install pytest
+          pip install pytest
+
+          # Run all integration tests (skip API tests on CI, they require credentials)
+          pytest src/test/java/org/ktronics/scripts/integration/ \
+            -v \
+            --tb=short \
+            -k "not test_shinemonitor_api" \
+            || { echo "❌ Tests failed"; exit 1; }
+
+          echo "✅ All tests passed"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
       - name: Create credentials.json from GitHub Secrets
         shell: bash
         run: |
@@ -248,18 +269,76 @@ jobs:
         shell: bash
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📧 SENDING SYSTEM-WIDE STATUS EMAIL TO ADMIN"
+          echo "📧 CHECKING IF ADMIN EMAIL SHOULD BE SENT (UC9)"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           set -e
-          body="$(cat alerts/alerts.txt)"
 
-          if [ "${{ steps.anomaly.outputs.exit_code }}" == "2" ]; then
-            subject="ShineMonitor ALERTS - ${{ github.repository }} - ${{ github.run_id }}"
+          # UC9: Calculate hash of current alert state (from alerts.json)
+          if [ -f "alerts/alerts.json" ]; then
+            current_hash=$(sha256sum alerts/alerts.json | awk '{print $1}')
           else
-            subject="ShineMonitor Status: ALL SYSTEMS OPERATIONAL - ${{ github.repository }} - ${{ github.run_id }}"
+            current_hash="empty"
           fi
 
-          EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 src/main/java/org/ktronics/scripts/send_email.py 2>&1
+          # Read previous hash from state file
+          previous_hash="empty"
+          if [ -f "state/admin_email_state.txt" ]; then
+            previous_hash=$(cat state/admin_email_state.txt)
+          fi
+
+          echo "Current alert hash: $current_hash"
+          echo "Previous alert hash: $previous_hash"
+
+          # Determine if email should be sent
+          send_email="false"
+
+          # Logic 1: Always send on push/manual triggers (build verification)
+          if [ "${{ github.event_name }}" = "push" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "✓ Sending email: Push/Manual trigger (build verification)"
+            send_email="true"
+
+          # Logic 2: Send when alert content changed (any change detected)
+          elif [ "$current_hash" != "$previous_hash" ]; then
+            if [ "$current_hash" = "empty" ]; then
+              echo "✓ Sending email: ALERTS CLEARED (state change: alerts → clear)"
+            elif [ "$previous_hash" = "empty" ]; then
+              echo "✓ Sending email: NEW ALERTS DETECTED (state change: clear → alerts)"
+            else
+              echo "✓ Sending email: ALERT CONTENT CHANGED (different plants/severities)"
+            fi
+            send_email="true"
+
+          # Logic 3: Skip when hash unchanged (same alert state)
+          else
+            if [ "$current_hash" = "empty" ]; then
+              echo "⏭️ Skipping email: Still clear (no alerts, no change)"
+            else
+              echo "⏭️ Skipping email: Same alerts (no change)"
+            fi
+            send_email="false"
+          fi
+
+          # Send email if needed
+          if [ "$send_email" = "true" ]; then
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "📧 SENDING SYSTEM-WIDE STATUS EMAIL TO ADMIN"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+            body="$(cat alerts/alerts.txt)"
+
+            if [ "${{ steps.anomaly.outputs.exit_code }}" = "2" ]; then
+              subject="ShineMonitor ALERTS - ${{ github.repository }} - ${{ github.run_id }}"
+            else
+              subject="ShineMonitor Status: ALL SYSTEMS OPERATIONAL - ${{ github.repository }} - ${{ github.run_id }}"
+            fi
+
+            EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 src/main/java/org/ktronics/scripts/send_email.py 2>&1
+          fi
+
+          # Save current hash for next run
+          mkdir -p state
+          echo "$current_hash" > state/admin_email_state.txt
+
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Send customer-specific alert emails
