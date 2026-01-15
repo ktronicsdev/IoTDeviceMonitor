@@ -215,7 +215,7 @@ class TestShineMonitorAPI:
             script = f"""
             set -euo pipefail
             cd "{SCRIPTS_DIR}"
-            ./check_device_alarms.sh "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}" "{output_file}"
+            bash check_device_alarms.sh "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}" "{output_file}"
             """
 
             result = self.run_bash_script(script)
@@ -238,7 +238,7 @@ class TestShineMonitorAPI:
         script = f"""
         set -euo pipefail
         cd "{SCRIPTS_DIR}"
-        ./check_shinemonitor_monthly.sh "{CREDS_FILE}" "2026-01" 2>&1 | grep -E "(AUTH OK|DONE)"
+        bash check_shinemonitor_monthly.sh "{CREDS_FILE}" "2026-01" 2>&1 | grep -E "(AUTH OK|DONE)"
         """
 
         result = self.run_bash_script(script)
@@ -251,7 +251,7 @@ class TestShineMonitorAPI:
         script = f"""
         set -euo pipefail
         cd "{SCRIPTS_DIR}"
-        timeout 60 ./check_shinemonitor_yearly.sh "{CREDS_FILE}" "2026" 2>&1 | head -20 | grep -E "(AUTH OK|DONE)"
+        timeout 60 bash check_shinemonitor_yearly.sh "{CREDS_FILE}" "2026" 2>&1 | head -20 | grep -E "(AUTH OK|DONE)"
         """
 
         result = self.run_bash_script(script)
