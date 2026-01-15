@@ -69,43 +69,63 @@ Monitors device-level warnings from ShineMonitor API and sends targeted notifica
 - 4-hour interval: Prevents spam
 - State persistence with human-readable fields (customer, plant, message)
 
-**Test Coverage:** 35/35 PASSED (100%)
+**Test Coverage:** 38/38 PASSED (100%) - includes UC4, UC5, UC6, UC7, UC8 tests
 
 ---
 
-### UC4: Separate Notification Triggers (PLANNED)
+### UC4: Test Customer Email Control
 
-Control who receives emails based on workflow trigger type.
+Test mode bypasses 3-send limit for Gayan-IMH device alarms, allowing continuous testing.
 
-**Planned Behavior:**
+**Implementation:**
 
-- Gayan-IMH (test customer): Receives emails on ALL triggers
-- Other customers: Only receive emails on scheduled runs
-- Admin: No change (continues receiving all)
+Test mode (`--test-mode` flag in `generate_device_alarms.py`):
+- **Bypasses ignored flag** - Sends alarms even if marked as ignored
+- **Bypasses send count limit** - Sends alarms even after 3 sends
+- **Always includes most recent alarm** - For test customer (Gayan-IMH)
+
+**Use Case:**
+- Allows developers to test device alarm workflow on every push/manual trigger
+- Gayan-IMH receives device alarms regardless of 3-send rule
+- Other customers still respect 3-send limit on scheduled runs
+
+**Implementation File:** [generate_device_alarms.py:413-420](src/main/java/org/ktronics/scripts/generate_device_alarms.py#L413-L420)
+
+**Related Use Cases:**
+- UC5 (Test Mode Filter) - Filters to Gayan-IMH only
+- UC8 (Schedule Filter) - Controls customer email delivery based on trigger type
+
+**Implementation Status:** ✅ **IMPLEMENTED** (Session 13)
+
+**Test Coverage:** 3 tests (100% pass rate)
 
 ---
 
-### UC5: Test Mode Filter
+### UC5: Test Mode Filter (Part of UC3)
 
 Test mode filters alarms to Gayan-IMH (test customer) only.
 
 **Purpose:** Allows testing alarm workflow without sending to all customers
 
+**Parent Use Case:** UC3 (Device Alarm Alerts)
+
 **Test Coverage:** 2 tests
 
 ---
 
-### UC6: Log Summary Counts
+### UC6: Log Summary Counts (Part of UC3)
 
 Adds admin visibility in GitHub Actions logs showing alarm summary.
 
 **Output:** `Summary: X alarms from Y customers affecting Z plants`
 
+**Parent Use Case:** UC3 (Device Alarm Alerts)
+
 **Test Coverage:** 1 test
 
 ---
 
-### UC7: State JSON Enhancement
+### UC7: State JSON Enhancement (Part of UC3)
 
 Human-readable device alarm state file with customer, plant, and message fields.
 
@@ -116,6 +136,8 @@ Human-readable device alarm state file with customer, plant, and message fields.
 - `customer` - Customer name (e.g., "Gayan-IMH")
 - `plant` - Plant name (e.g., "imbulgoda 3kw")
 - `message` - Alarm message (e.g., "Low battery")
+
+**Parent Use Case:** UC3 (Device Alarm Alerts)
 
 **Test Coverage:** 1 test
 
@@ -134,6 +156,45 @@ Controls when customer emails are sent based on workflow trigger type.
 | Manual | Yes | No |
 
 **Test Coverage:** 1 test
+
+---
+
+### UC9: Admin Alert Email Optimization
+
+Reduces admin email noise by only sending emails when alert state changes.
+
+**Implementation:**
+
+Hash-based state detection in GitHub Actions workflow:
+
+- **Calculate hash** of `alerts/alerts.json` using SHA256
+- **Compare with previous hash** from `state/admin_email_state.txt`
+- **Send email when:**
+  - Alert content changed (hash mismatch)
+  - Alerts appeared (empty → hash)
+  - Alerts cleared (hash → different hash)
+  - Push/manual trigger (build verification)
+- **Skip email when:**
+  - Scheduled run AND hash unchanged (same state)
+
+**State File:** `state/admin_email_state.txt`
+
+**Email Reduction:** From 6 emails/day to ~1-2 emails/day (83% reduction)
+
+**Implementation File:** [trigger-shinemonitor.yml:247-321](/.github/workflows/trigger-shinemonitor.yml#L247-L321)
+
+**How It Works:**
+
+1. Generate `alerts/alerts.json` with current alerts
+2. Calculate SHA256 hash of file content
+3. Load previous hash from state file
+4. Compare hashes to detect changes
+5. Send email only if changed or push/manual trigger
+6. Save current hash for next run
+
+**Implementation Status:** ✅ **IMPLEMENTED** (Session 13)
+
+**Test Coverage:** 7 tests (100% pass rate)
 
 ---
 
@@ -374,14 +435,16 @@ Default thresholds in `check_anomaly.py`:
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 79 tests
+#### Test Coverage: 79 tests (UC9 tests: TBD)
 
 | Suite | Tests | Status |
 | ----- | ----- | ------ |
 | UC1 (Admin Alerts) | 15/15 | PASSED (100%) |
 | UC2 (Customer Weekly) | 11/11 | PASSED (100%) |
 | UC3 (Device Alarms) | 35/35 | PASSED (100%) |
+| UC5-UC8 (Enhancements) | 5/5 | PASSED (100%) |
 | BVT (Centralized Config) | 14/14 | PASSED (100%) |
+| UC9 (Email Optimization) | TBD | NOT YET IMPLEMENTED |
 | API Tests | 8/8 | SKIPPED on Windows |
 
 ```bash

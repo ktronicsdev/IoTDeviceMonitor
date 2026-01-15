@@ -48,3 +48,6 @@ src/main/java/org/ktronics/scripts/alarms
 __pycache__
 nul
 scripts/test/poll_github_actions.py
+
+# Temporary document generation scripts
+.temp/
