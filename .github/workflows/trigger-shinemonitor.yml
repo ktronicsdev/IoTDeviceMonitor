@@ -40,27 +40,6 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Run integration tests
-        shell: bash
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🧪 RUNNING INTEGRATION TESTS"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          set -e
-
-          # Install pytest
-          pip install pytest
-
-          # Run all integration tests (skip API tests and credentials validation tests on CI)
-          pytest src/test/java/org/ktronics/scripts/integration/ \
-            -v \
-            --tb=short \
-            -k "not test_shinemonitor_api and not test_credentials_file_exists and not test_credentials_file_is_valid_json" \
-            || { echo "❌ Tests failed"; exit 1; }
-
-          echo "✅ All tests passed"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
       - name: Create credentials.json from GitHub Secrets
         shell: bash
         run: |
@@ -70,6 +49,26 @@ jobs:
           ${{ secrets.SHINEMONITOR_CREDENTIALS_JSON }}
           EOF
           chmod 600 src/main/java/org/ktronics/config/credentials.json
+
+      - name: Run integration tests
+        shell: bash
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🧪 RUNNING INTEGRATION TESTS (ALL 93 TESTS)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          set -e
+
+          # Install pytest
+          pip install pytest
+
+          # Run ALL integration tests (no filters - 93/93 tests)
+          pytest src/test/java/org/ktronics/scripts/integration/ \
+            -v \
+            --tb=short \
+            || { echo "❌ Tests failed"; exit 1; }
+
+          echo "✅ All tests passed"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Run monthly fetch (last month + current month)
         shell: bash

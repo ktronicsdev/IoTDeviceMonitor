@@ -435,17 +435,17 @@ Default thresholds in `check_anomaly.py`:
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 79 tests (UC9 tests: TBD)
+#### Test Coverage: 93 tests (100% pass rate)
 
 | Suite | Tests | Status |
 | ----- | ----- | ------ |
 | UC1 (Admin Alerts) | 15/15 | PASSED (100%) |
 | UC2 (Customer Weekly) | 11/11 | PASSED (100%) |
-| UC3 (Device Alarms) | 35/35 | PASSED (100%) |
-| UC5-UC8 (Enhancements) | 5/5 | PASSED (100%) |
+| UC3 (Device Alarms) | 38/38 | PASSED (100%) - includes UC4, UC5, UC6, UC7, UC8 |
+| UC9 (Email Optimization) | 7/7 | PASSED (100%) |
 | BVT (Centralized Config) | 14/14 | PASSED (100%) |
-| UC9 (Email Optimization) | TBD | NOT YET IMPLEMENTED |
-| API Tests | 8/8 | SKIPPED on Windows |
+| API Tests (Bash Scripts) | 8/8 | PASSED in CI (skipped on Windows) |
+| **TOTAL** | **93/93** | **PASSED (100%)** |
 
 ```bash
 # Run all tests

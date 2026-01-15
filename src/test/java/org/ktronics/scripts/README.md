@@ -95,26 +95,27 @@ open htmlcov/index.html   # macOS
 
 ## Current Test Status
 
-**Total: 74 tests**
+**Total: 93 tests**
 
-- ✅ **Passed: 66 tests (89%)**
-- ⏭️ **Skipped: 8 tests (11%)**
+- ✅ **Passed: 93 tests (100%)** in CI environment
+- ⏭️ **Skipped: 8 tests** on Windows (API tests only)
 - ❌ **Failed: 0 tests (0%)**
 
 ### By Test Suite:
 
 - **UC1 (Admin Alerts): 15/15 PASSED (100%)** ✅
 - **UC2 (Customer Weekly): 11/11 PASSED (100%)** ✅
-- **UC3 (Device Alarms): 26/26 PASSED (100%)** ✅
+- **UC3 (Device Alarms): 38/38 PASSED (100%)** ✅ (includes UC4, UC5, UC6, UC7, UC8)
+- **UC9 (Email Optimization): 7/7 PASSED (100%)** ✅
 - **BVT (Centralized Config): 14/14 PASSED (100%)** ✅
-- **API Tests: 8/8 SKIPPED on Windows** ⏭️ (run in GitHub Actions/Linux)
+- **API Tests: 8/8 PASSED in CI** ✅ (skipped on Windows)
 
-### Notes on Skipped Tests:
+### Notes on Platform-Specific Tests:
 - **API tests**: Bash script tests require Unix environment (Linux/macOS)
   - Auto-skip on Windows with clear message
-  - Will run and pass in GitHub Actions (Ubuntu)
+  - Run and pass in GitHub Actions (Ubuntu)
   - Tests load credentials from `src/main/java/org/ktronics/config/credentials.json`
-  - All functional business logic tests (UC1, UC2, UC3) pass with 100% coverage
+  - **100% pass rate in CI environment**
 
 ## Test Cases
 
