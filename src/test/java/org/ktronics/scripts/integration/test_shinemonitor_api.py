@@ -258,8 +258,8 @@ class TestShineMonitorAPI:
         # Use 90-second timeout (processes 20+ accounts)
         result = self.run_bash_script(script, timeout=90)
 
-        # Allow timeout (script may take long with many accounts)
-        assert result.returncode in [0, 124], f"Yearly script failed: {result.stderr}"
+        # Allow timeout (124) and SIGPIPE (141 from head closing pipe early)
+        assert result.returncode in [0, 124, 141], f"Yearly script failed: {result.stderr}"
         assert "AUTH OK" in result.stdout or "DONE" in result.stdout
 
 
