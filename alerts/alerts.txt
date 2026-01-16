@@ -1,5 +1,7 @@
 ================================================================================
 ║                                                                              ║
+║                      [SHINEMONITOR] PRODUCTION MONITOR                       ║
+║                                                                              ║
 ║                            ⚠ ATTENTION REQUIRED ⚠                            ║
 ║                                                                              ║
 ║                        Status: 1 CRITICAL, 0 WARNING                         ║
