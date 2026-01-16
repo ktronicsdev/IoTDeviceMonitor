@@ -18,6 +18,15 @@ from datetime import datetime, timedelta, date
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent.parent.parent / "main" / "java" / "org" / "ktronics" / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
+
+def add_months_to_date(d: date, months: int) -> date:
+    """Add or subtract months from a date (simple implementation for tests)"""
+    month = d.month - 1 + months
+    year = d.year + month // 12
+    month = month % 12 + 1
+    day = min(d.day, [31,28,31,30,31,30,31,31,30,31,30,31][month-1])
+    return date(year, month, day)
+
 # Import will be done at test time to avoid import errors during collection
 
 
@@ -118,8 +127,9 @@ class TestAdminProductionAlerts:
     def test_orange_alert_low_production_3months(self, test_data_dir, test_state_file, test_output_dir):
         """
         ORANGE ALERT: Plant < 40% baseline for 3 consecutive months
+        NOTE: Uses hardcoded dates for 2026 - will need updating in 2027
         """
-        # Create baseline (12 months of normal ~300 kWh/month)
+        # Create baseline (12 months of normal ~300 kWh/month from 2024)
         baseline_months = [
             ('2024-01', 300.0), ('2024-02', 310.0), ('2024-03', 320.0),
             ('2024-04', 305.0), ('2024-05', 315.0), ('2024-06', 310.0),
@@ -128,6 +138,7 @@ class TestAdminProductionAlerts:
         ]
 
         # Create current period with 3 low months (< 40% = < 120 kWh)
+        # Using late 2025 months (past dates relative to 2026-01-16)
         current_months = [
             ('2025-10', 100.0),  # LOW - Month 1
             ('2025-11', 110.0),  # LOW - Month 2
@@ -682,13 +693,14 @@ class TestAdminProductionAlerts:
         """
         BOUNDARY TEST: Exactly 3 consecutive months of low production
         Should trigger ORANGE alert (or RED from daily checks)
+        NOTE: Uses hardcoded dates for 2026 - will need updating in 2027
         """
-        # Baseline: 12 months of normal production
+        # Baseline: 12 months of normal production (2024)
         baseline_months = []
         for month_num in range(1, 13):
             baseline_months.append((f'2024-{month_num:02d}', 300.0))
 
-        # Exactly 3 low months
+        # Exactly 3 low months (late 2025, past dates relative to 2026-01-16)
         current_months = [
             ('2025-10', 100.0),  # Month 1 - LOW
             ('2025-11', 110.0),  # Month 2 - LOW
