@@ -129,31 +129,31 @@ class TestAdminProductionAlerts:
         ORANGE ALERT: Plant < 40% baseline for 3 consecutive months
         NOTE: Uses hardcoded dates for 2026 - will need updating in 2027
         """
-        # Create baseline (12 months of normal ~300 kWh/month from 2024)
+        # Latest month in data will be Dec 2025
+        # Orange window: Oct, Nov, Dec 2025 (last 3 months)
+        # Baseline window: Oct 2024 - Sep 2025 (12 months BEFORE orange window starts)
+
+        plant_name = "test-plant-orange"
+
+        # Create baseline: Oct 2024 through Sep 2025 (12 months of normal ~310 kWh avg)
         baseline_months = [
-            ('2024-01', 300.0), ('2024-02', 310.0), ('2024-03', 320.0),
-            ('2024-04', 305.0), ('2024-05', 315.0), ('2024-06', 310.0),
-            ('2024-07', 325.0), ('2024-08', 320.0), ('2024-09', 310.0),
             ('2024-10', 315.0), ('2024-11', 305.0), ('2024-12', 300.0),
+            ('2025-01', 300.0), ('2025-02', 310.0), ('2025-03', 320.0),
+            ('2025-04', 305.0), ('2025-05', 315.0), ('2025-06', 310.0),
+            ('2025-07', 325.0), ('2025-08', 320.0), ('2025-09', 310.0),
         ]
 
-        # Create current period with 3 low months (< 40% = < 120 kWh)
-        # Using late 2025 months (past dates relative to 2026-01-16)
+        # Create MONTHLY CSV files for baseline (check_anomaly only reads YYYY-MM.csv files!)
+        for month, total_kwh in baseline_months:
+            month_data = [(f'{month}-{day:02d}', total_kwh / 30) for day in range(1, 31)]
+            self.create_monthly_csv(test_data_dir, plant_name, month, month_data)
+
+        # Create current period with 3 low months (< 40% of 310 = < 124 kWh)
         current_months = [
             ('2025-10', 100.0),  # LOW - Month 1
             ('2025-11', 110.0),  # LOW - Month 2
             ('2025-12', 105.0),  # LOW - Month 3
         ]
-
-        plant_name = "test-plant-orange"
-
-        # Create yearly CSV for baseline
-        yearly_file = test_data_dir / f"{plant_name}-2024.csv"
-        with open(yearly_file, 'w', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(['month', 'kwh'])
-            for month, kwh in baseline_months:
-                writer.writerow([month, kwh])
 
         # Create monthly CSVs for current period
         for month, total_kwh in current_months:
@@ -695,29 +695,31 @@ class TestAdminProductionAlerts:
         Should trigger ORANGE alert (or RED from daily checks)
         NOTE: Uses hardcoded dates for 2026 - will need updating in 2027
         """
-        # Baseline: 12 months of normal production (2024)
-        baseline_months = []
-        for month_num in range(1, 13):
-            baseline_months.append((f'2024-{month_num:02d}', 300.0))
+        # Latest month in data will be Dec 2025
+        # Orange window: Oct, Nov, Dec 2025 (last 3 months)
+        # Baseline window: Oct 2024 - Sep 2025 (12 months BEFORE orange window starts)
 
-        # Exactly 3 low months (late 2025, past dates relative to 2026-01-16)
+        plant_name = "test-plant-exact-3month"
+
+        # Create baseline: Oct 2024 through Sep 2025 (12 months of normal ~300 kWh)
+        baseline_months = []
+        for i in range(12):
+            month_date = add_months_to_date(date(2024, 10, 1), i)
+            baseline_months.append((month_date.strftime('%Y-%m'), 300.0))
+
+        # Create MONTHLY CSV files for baseline (check_anomaly only reads YYYY-MM.csv files!)
+        for month, total_kwh in baseline_months:
+            month_data = [(f'{month}-{day:02d}', total_kwh / 30) for day in range(1, 31)]
+            self.create_monthly_csv(test_data_dir, plant_name, month, month_data)
+
+        # Exactly 3 low months (< 40% of 300 = < 120 kWh)
         current_months = [
             ('2025-10', 100.0),  # Month 1 - LOW
             ('2025-11', 110.0),  # Month 2 - LOW
             ('2025-12', 105.0),  # Month 3 - LOW
         ]
 
-        plant_name = "test-plant-exact-3month"
-
-        # Create yearly baseline CSV
-        yearly_file = test_data_dir / f"{plant_name}-2024.csv"
-        with open(yearly_file, 'w', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(['month', 'kwh'])
-            for month, kwh in baseline_months:
-                writer.writerow([month, kwh])
-
-        # Create monthly CSVs
+        # Create monthly CSVs for current period
         for month, total_kwh in current_months:
             month_data = [(f'{month}-{day:02d}', total_kwh / 30) for day in range(1, 31)]
             self.create_monthly_csv(test_data_dir, plant_name, month, month_data)
