@@ -51,3 +51,4 @@ scripts/test/poll_github_actions.py
 
 # Temporary document generation scripts
 .temp/
+~$*
