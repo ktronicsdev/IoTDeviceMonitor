@@ -272,9 +272,13 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           set -e
 
-          # UC9: Calculate hash of current alert state (from alerts.json)
+          # UC9: Calculate hash of CONTENT ONLY (excluding generated_at timestamp)
+          # BUG FIX (Session 14): Previous implementation hashed entire file,
+          # but generated_at changes every run, causing emails on EVERY scheduled run.
+          # FIX: Use jq to extract only alert content fields, then hash that.
           if [ -f "alerts/alerts.json" ]; then
-            current_hash=$(sha256sum alerts/alerts.json | awk '{print $1}')
+            # Extract only alerts, suppressed, ignored arrays (exclude generated_at)
+            current_hash=$(jq -cS '{alerts, suppressed, ignored}' alerts/alerts.json | sha256sum | awk '{print $1}')
           else
             current_hash="empty"
           fi

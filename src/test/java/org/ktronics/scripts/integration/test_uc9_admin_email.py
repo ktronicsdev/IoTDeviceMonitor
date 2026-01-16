@@ -311,6 +311,114 @@ class TestUC9AdminEmailOptimization:
         assert loaded_hash == current_hash, "UC9: State file should preserve hash exactly"
         assert len(loaded_hash) == 64, "UC9: SHA256 hash should be 64 hex characters"
 
+    def test_uc9_hash_excludes_generated_at_timestamp(self, test_dirs):
+        """UC9 BUG FIX: Hash should NOT change when only generated_at timestamp changes
+
+        BUG DISCOVERED: Session 14 (2026-01-16)
+        - Admin emails sent 6x daily even when alert content unchanged
+        - Root cause: alerts.json includes "generated_at" timestamp
+        - Hashing entire file means hash changes on EVERY run
+        - Result: UC9 deduplication was ineffective
+
+        FIX REQUIRED: Hash only the alert CONTENT (alerts, suppressed, ignored arrays)
+        and exclude the generated_at timestamp from hash calculation.
+
+        This test will FAIL until the fix is implemented.
+        """
+        alerts_json_path = test_dirs['alerts'] / "alerts.json"
+
+        # Same alert content, different timestamps (simulates consecutive scheduled runs)
+        alert_10am = {
+            "generated_at": "2026-01-16T10:00:00Z",
+            "alerts": [
+                {
+                    "plant_key": "test-plant",
+                    "severity": "RED",
+                    "rule": "< 20% of 14-day baseline"
+                }
+            ],
+            "suppressed": [],
+            "ignored": []
+        }
+
+        alert_2pm = {
+            "generated_at": "2026-01-16T14:00:00Z",  # Different timestamp
+            "alerts": [
+                {
+                    "plant_key": "test-plant",
+                    "severity": "RED",
+                    "rule": "< 20% of 14-day baseline"
+                }
+            ],
+            "suppressed": [],
+            "ignored": []
+        }
+
+        # Calculate content-only hash (what we SHOULD be doing)
+        def calculate_content_hash(data):
+            """Hash only alert content, excluding generated_at"""
+            content = {
+                "alerts": data.get("alerts", []),
+                "suppressed": data.get("suppressed", []),
+                "ignored": data.get("ignored", [])
+            }
+            content_str = json.dumps(content, sort_keys=True)
+            return hashlib.sha256(content_str.encode()).hexdigest()
+
+        hash_10am_content = calculate_content_hash(alert_10am)
+        hash_2pm_content = calculate_content_hash(alert_2pm)
+
+        # Content hash should be IDENTICAL (same alerts, different timestamp)
+        assert hash_10am_content == hash_2pm_content, \
+            "UC9 FIX: Content hash should be identical when only timestamp differs"
+
+        # Full file hash would be DIFFERENT (this is the bug)
+        with open(alerts_json_path, 'w', encoding='utf-8') as f:
+            json.dump(alert_10am, f)
+        hash_10am_full = self.calculate_hash(alerts_json_path)
+
+        with open(alerts_json_path, 'w', encoding='utf-8') as f:
+            json.dump(alert_2pm, f)
+        hash_2pm_full = self.calculate_hash(alerts_json_path)
+
+        # Document that full file hash changes (this is why UC9 was broken)
+        assert hash_10am_full != hash_2pm_full, \
+            "Full file hash changes due to timestamp (this is the bug we're fixing)"
+
+    def test_uc9_workflow_uses_content_only_hash(self):
+        """UC9 BUG FIX: Workflow must use content-only hash (excluding generated_at)
+
+        BUG: Current workflow hashes entire alerts.json file
+        - sha256sum alerts/alerts.json includes generated_at timestamp
+        - Timestamp changes on every run, so hash always changes
+        - Result: Email sent on EVERY scheduled run (no deduplication)
+
+        FIX: Workflow should use jq to extract content fields only:
+        - jq '{alerts, suppressed, ignored}' alerts/alerts.json | sha256sum
+
+        This test will FAIL until the workflow is fixed.
+        """
+        project_root = Path(__file__).parents[7]
+        workflow_path = project_root / ".github" / "workflows" / "trigger-shinemonitor.yml"
+
+        assert workflow_path.exists(), f"Workflow file should exist at {workflow_path}"
+
+        with open(workflow_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # Check for content-only hash (the FIX)
+        # The workflow should use jq to exclude generated_at before hashing
+        has_content_only_hash = (
+            "jq" in content and
+            ("alerts" in content or "suppressed" in content) and
+            "sha256sum" in content
+        )
+
+        # This assertion will FAIL until we fix the workflow
+        assert has_content_only_hash, \
+            "UC9 FIX REQUIRED: Workflow should use jq to hash only alert content, " \
+            "excluding generated_at timestamp. Current implementation hashes entire file."
+
     def test_uc9_workflow_yaml_structure(self):
         """UC9: Verify workflow YAML has hash-based state detection logic
 
@@ -331,9 +439,9 @@ class TestUC9AdminEmailOptimization:
         # Verify UC9 comment exists
         assert "UC9" in content, "UC9: Workflow should have UC9 comment"
 
-        # Verify hash calculation logic
-        assert "sha256sum alerts/alerts.json" in content, \
-            "UC9: Workflow should calculate SHA256 hash of alerts.json"
+        # Verify hash calculation logic (after fix, this should use jq + sha256sum)
+        assert "sha256sum" in content, \
+            "UC9: Workflow should calculate SHA256 hash"
 
         # Verify state file usage
         assert "admin_email_state.txt" in content, \

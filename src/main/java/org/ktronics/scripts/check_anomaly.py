@@ -56,14 +56,23 @@ def daterange(start: date, end_inclusive: date) -> List[date]:
     return out
 
 
-def load_daily_series(data_dir: Path) -> Dict[str, Dict[date, float]]:
+def load_daily_series(data_dir: Path, platform_filter: Optional[str] = None) -> Dict[str, Dict[date, float]]:
     """
     Load all monthly csvs in data_dir and merge into per-plant daily maps.
     plant_key is filename prefix (everything before -YYYY-MM.csv).
+
+    UC10: If platform_filter is specified, only load files starting with that prefix.
+    E.g., platform_filter="dessmonitor" will only load "dessmonitor-*.csv" files.
     """
     plants: Dict[str, Dict[date, float]] = {}
 
-    for p in sorted(data_dir.glob("*.csv")):
+    # Determine glob pattern based on platform filter
+    if platform_filter:
+        glob_pattern = f"{platform_filter}-*.csv"
+    else:
+        glob_pattern = "*.csv"
+
+    for p in sorted(data_dir.glob(glob_pattern)):
         m = CSV_PATTERN.match(p.name)
         if not m:
             continue
@@ -162,6 +171,11 @@ def main() -> int:
     # Ignore rule
     ap.add_argument("--ignore-zero-months", type=int, default=1, help="If month total == 0 for N months, ignore plant")
 
+    # UC10: Multi-platform support
+    ap.add_argument("--platform", default=None, help="Filter CSV files by platform prefix (e.g., 'dessmonitor' for dessmonitor-*.csv)")
+    ap.add_argument("--output-file", default=None, help="Custom output file path for alerts text")
+    ap.add_argument("--json-output", default=None, help="Custom output file path for alerts JSON")
+
     args = ap.parse_args()
 
     data_dir = Path(args.data_dir)
@@ -171,8 +185,25 @@ def main() -> int:
 
     today = utc_today()
 
-    plants_daily = load_daily_series(data_dir)
+    # UC10: Pass platform filter to load only relevant CSV files
+    plants_daily = load_daily_series(data_dir, platform_filter=args.platform)
     state = read_state(state_path)
+
+    # UC10: Determine output file paths
+    if args.output_file:
+        output_txt_path = Path(args.output_file)
+        output_txt_path.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        output_txt_path = out_dir / "alerts.txt"
+
+    if args.json_output:
+        output_json_path = Path(args.json_output)
+        output_json_path.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        output_json_path = out_dir / "alerts.json"
+
+    # UC10: Platform label for reporting
+    platform_label = args.platform.upper() if args.platform else "SHINEMONITOR"
 
     alerts: List[dict] = []
     suppressed: List[dict] = []
@@ -281,12 +312,16 @@ def main() -> int:
         "ignored": ignored,
     }
 
-    (out_dir / "alerts.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    # UC10: Write to custom JSON output path
+    output_json_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
 
     lines: List[str] = []
 
     # --- Header with prominent status ---
+    # UC10: Include platform label in header
     lines.append("=" * 80)
+    lines.append("║" + " " * 78 + "║")
+    lines.append("║" + f"[{platform_label}] PRODUCTION MONITOR".center(78) + "║")
     lines.append("║" + " " * 78 + "║")
     if not alerts:
         lines.append("║" + "✓ ALL SYSTEMS OPERATIONAL".center(78) + "║")
@@ -399,7 +434,8 @@ def main() -> int:
         lines.append("└" + "─" * 78 + "┘")
         lines.append("")
 
-    (out_dir / "alerts.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    # UC10: Write to custom text output path
+    output_txt_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     # --- 3-Day Auto-Ignore Rule for Admin Alerts ---
     # Track when alerts were first seen and how many times sent

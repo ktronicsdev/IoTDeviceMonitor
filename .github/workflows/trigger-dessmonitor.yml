@@ -1,0 +1,177 @@
+name: DessMonitor Daily Monitor
+
+# UC10: Multi-Cloud Platform Support - DessMonitor Integration
+# This workflow runs in parallel with ShineMonitor workflow
+# Both platforms feed into the same anomaly detection system
+
+on:
+  # 6x daily scheduled runs (every 4 hours, offset by 30 min from ShineMonitor)
+  schedule:
+    - cron: "0 3 * * *"
+    - cron: "0 7 * * *"
+    - cron: "0 11 * * *"
+    - cron: "0 15 * * *"
+    - cron: "0 19 * * *"
+    - cron: "0 23 * * *"
+
+  # Manual trigger for testing
+  workflow_dispatch: {}
+
+  # Optional: trigger on push for testing (comment out in production)
+  # push:
+  #   branches:
+  #     - main
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    env:
+      ALERT_TO: ktronicssolar@gmail.com
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASS: ${{ secrets.SMTP_PASS }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Create DessMonitor credentials from GitHub Secrets
+        shell: bash
+        run: |
+          set -e
+          mkdir -p src/main/java/org/ktronics/config
+
+          # Create DessMonitor-specific credentials file
+          cat <<'EOF' > src/main/java/org/ktronics/config/dessmonitor_credentials.json
+          ${{ secrets.DESSMONITOR_CREDENTIALS_JSON }}
+          EOF
+          chmod 600 src/main/java/org/ktronics/config/dessmonitor_credentials.json
+
+          # Also create main credentials for shared scripts
+          cat <<'EOF' > src/main/java/org/ktronics/config/credentials.json
+          ${{ secrets.SHINEMONITOR_CREDENTIALS_JSON }}
+          EOF
+          chmod 600 src/main/java/org/ktronics/config/credentials.json
+
+      - name: Install dependencies
+        run: |
+          pip install pytest
+          sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Run DessMonitor monthly fetch
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x src/main/java/org/ktronics/scripts/check_dessmonitor_monthly.sh
+          chmod +x src/main/java/org/ktronics/scripts/dessmonitor_common.sh
+
+          LAST_MONTH=$(date -u -d "$(date -u +%Y-%m-01) -1 day" +%Y-%m)
+          CURRENT_MONTH=$(date -u +%Y-%m)
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 DESSMONITOR: FETCHING MONTHLY DATA: $LAST_MONTH & $CURRENT_MONTH"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          # Fetch last month data
+          src/main/java/org/ktronics/scripts/check_dessmonitor_monthly.sh \
+            src/main/java/org/ktronics/config/dessmonitor_credentials.json "$LAST_MONTH" 2>&1 || true
+
+          # Fetch current month data
+          src/main/java/org/ktronics/scripts/check_dessmonitor_monthly.sh \
+            src/main/java/org/ktronics/config/dessmonitor_credentials.json "$CURRENT_MONTH" 2>&1 || true
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: List generated data files
+        shell: bash
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📁 DESSMONITOR DATA FILES:"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          ls -la data/dessmonitor-*.csv 2>/dev/null || echo "No DessMonitor data files yet"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: Run anomaly detection (DessMonitor data only)
+        id: anomaly
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🔍 DESSMONITOR: RUNNING ANOMALY DETECTION"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          mkdir -p alerts state
+
+          # Check if any DessMonitor data files exist
+          if ! ls data/dessmonitor-*.csv 1> /dev/null 2>&1; then
+            echo "No DessMonitor data files found. Skipping anomaly detection."
+            echo "exit_code=0" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Run anomaly detection on DessMonitor data
+          # The check_anomaly.py script will process all CSV files in data/
+          # DessMonitor files are prefixed with "dessmonitor-" for identification
+          python3 src/main/java/org/ktronics/scripts/check_anomaly.py \
+            --data-dir data \
+            --state-file state/dessmonitor_alerts_state.json \
+            --output-file alerts/dessmonitor_alerts.txt \
+            --json-output alerts/dessmonitor_alerts.json \
+            --platform dessmonitor \
+            --ignore-zero-months 1 \
+            2>&1 || true
+
+          exit_code=$?
+          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
+
+          if [ -f alerts/dessmonitor_alerts.txt ]; then
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "📋 DESSMONITOR ALERTS:"
+            cat alerts/dessmonitor_alerts.txt
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          fi
+
+      - name: Send DessMonitor alert email
+        if: steps.anomaly.outputs.exit_code == '2'
+        shell: bash
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📧 SENDING DESSMONITOR ALERT EMAIL"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          ALERT_BODY=$(cat alerts/dessmonitor_alerts.txt)
+
+          EMAIL_SUBJECT="[DessMonitor] Production Alert - $(date -u +%Y-%m-%d)" \
+          EMAIL_BODY="$ALERT_BODY" \
+          EMAIL_TO="$ALERT_TO" \
+          python3 src/main/java/org/ktronics/scripts/send_email.py
+
+      - name: Commit DessMonitor data and state
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Add DessMonitor data files
+          git add data/dessmonitor-*.csv 2>/dev/null || true
+          git add state/dessmonitor_*.json 2>/dev/null || true
+          git add alerts/dessmonitor_*.txt 2>/dev/null || true
+          git add alerts/dessmonitor_*.json 2>/dev/null || true
+
+          if git diff --staged --quiet; then
+            echo "No DessMonitor changes to commit"
+          else
+            git commit -m "Update DessMonitor data & alerts"
+            git push
+          fi
