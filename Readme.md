@@ -75,24 +75,33 @@ Monitors device-level warnings from ShineMonitor API and sends targeted notifica
 
 ### UC4: Test Customer Email Control
 
-Test mode bypasses 3-send limit for Gayan-IMH device alarms, allowing continuous testing.
+Enables continuous testing of device alarm workflow using Gayan-IMH as test customer, bypassing normal 3-send limits on push/manual triggers.
+
+**Workflow Behavior:**
+
+**Scheduled Runs (every 4 hours):**
+- All customers: Normal alarm processing with 3-send limit
+- Gayan-IMH: Treated same as other customers (receives alarms normally)
+
+**Push/Manual Runs:**
+- All customers: Alarm processing skipped for emails
+- Gayan-IMH ONLY: Receives device alarm emails with test mode enabled
+  - Bypasses ignored flag
+  - Bypasses send count limit (3-send rule disabled)
+  - Always includes most recent alarm
 
 **Implementation:**
 
-Test mode (`--test-mode` flag in `generate_device_alarms.py`):
-- **Bypasses ignored flag** - Sends alarms even if marked as ignored
-- **Bypasses send count limit** - Sends alarms even after 3 sends
-- **Always includes most recent alarm** - For test customer (Gayan-IMH)
+**Device Alarm Processing** ([generate_device_alarms.py:413-420](src/main/java/org/ktronics/scripts/generate_device_alarms.py#L413-L420)):
+- `--test-mode` flag bypasses 3-send limit and ignored flag
+- Used on push/manual triggers only ([workflow:192-206](/.github/workflows/trigger-shinemonitor.yml#L192-L206))
 
-**Use Case:**
-- Allows developers to test device alarm workflow on every push/manual trigger
-- Gayan-IMH receives device alarms regardless of 3-send rule
-- Other customers still respect 3-send limit on scheduled runs
-
-**Implementation File:** [generate_device_alarms.py:413-420](src/main/java/org/ktronics/scripts/generate_device_alarms.py#L413-L420)
+**Customer Email Filtering** ([workflow:252-260](/.github/workflows/trigger-shinemonitor.yml#L252-L260)):
+- Scheduled runs: Send to ALL customers
+- Push/manual runs: `--test-customer-only` filters to Gayan-IMH only
 
 **Related Use Cases:**
-- UC5 (Test Mode Filter) - Filters to Gayan-IMH only
+- UC5 (Test Mode Filter) - Filters alarms to Gayan-IMH in test mode
 - UC8 (Schedule Filter) - Controls customer email delivery based on trigger type
 
 **Implementation Status:** ✅ **IMPLEMENTED** (Session 13)
