@@ -6,7 +6,7 @@
 ║                                                                              ║
 ║                        Status: 1 CRITICAL, 0 WARNING                         ║
 ║                                                                              ║
-║               Date: 2026-01-16  |  Total Plants Monitored: 21                ║
+║               Date: 2026-01-17  |  Total Plants Monitored: 21                ║
 ║                                                                              ║
 ================================================================================
 
@@ -15,7 +15,7 @@
 │ 🔴 [RED] lahiru-ryan-lahiru-plant
 │
 │   Issue: Production dropped 100.0% below normal
-│   Normal: 6.57 kWh/day  →  Current: 0.00 kWh/day
+│   Normal: 6.12 kWh/day  →  Current: 0.00 kWh/day
 │   Rule: < 20.0% baseline for 3 consecutive days
 │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -34,12 +34,12 @@
 │
 │ [RED] lahiru-ryan-lahiru-plant
 │
-│   Baseline (avg/day): 6.5714 kWh
-│   Alert Threshold: < 1.3143 kWh/day
+│   Baseline (avg/day): 6.1214 kWh
+│   Alert Threshold: < 1.2243 kWh/day
 │   Recent Production:
-│     2026-01-14: 0.0000 kWh (0.0% of baseline)
 │     2026-01-15: 0.0000 kWh (0.0% of baseline)
 │     2026-01-16: 0.0000 kWh (0.0% of baseline)
+│     2026-01-17: 0.0000 kWh (0.0% of baseline)
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
