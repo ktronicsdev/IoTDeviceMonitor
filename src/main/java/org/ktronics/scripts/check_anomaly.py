@@ -175,6 +175,8 @@ def main() -> int:
     ap.add_argument("--platform", default=None, help="Filter CSV files by platform prefix (e.g., 'dessmonitor' for dessmonitor-*.csv)")
     ap.add_argument("--output-file", default=None, help="Custom output file path for alerts text")
     ap.add_argument("--json-output", default=None, help="Custom output file path for alerts JSON")
+    ap.add_argument("--credentials", default=None, help="Path to credentials JSON file (default: config.CREDENTIALS_PATH)")
+    ap.add_argument("--customer-alerts-file", default=None, help="Output path for customer alerts JSON (default: alerts/customer_alerts.json)")
 
     args = ap.parse_args()
 
@@ -503,7 +505,8 @@ def main() -> int:
 
     # --- Generate Customer-Specific Alerts ---
     # Load credentials to map plants to customers
-    credentials_path = CREDENTIALS_PATH
+    # UC10 Phase 2: Support custom credentials path for multi-platform
+    credentials_path = Path(args.credentials) if args.credentials else CREDENTIALS_PATH
     customer_alerts_output = {}
 
     if credentials_path.exists():
@@ -558,7 +561,12 @@ def main() -> int:
             customer_alerts_output = {'customer_alerts': customer_alerts_map}
 
             # Write customer alerts JSON
-            customer_alerts_file = out_dir / "customer_alerts.json"
+            # UC10 Phase 2: Support custom output path for multi-platform
+            if args.customer_alerts_file:
+                customer_alerts_file = Path(args.customer_alerts_file)
+                customer_alerts_file.parent.mkdir(parents=True, exist_ok=True)
+            else:
+                customer_alerts_file = out_dir / "customer_alerts.json"
             customer_alerts_file.write_text(json.dumps(customer_alerts_output, indent=2), encoding="utf-8")
 
         except Exception as e:

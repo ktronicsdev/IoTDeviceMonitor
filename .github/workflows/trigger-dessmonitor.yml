@@ -123,11 +123,14 @@ jobs:
           # Run anomaly detection on DessMonitor data
           # The check_anomaly.py script will process all CSV files in data/
           # DessMonitor files are prefixed with "dessmonitor-" for identification
+          # UC10 Phase 2: Use DessMonitor credentials for customer alert mapping
           python3 src/main/java/org/ktronics/scripts/check_anomaly.py \
             --data-dir data \
             --state-file state/dessmonitor_alerts_state.json \
             --output-file alerts/dessmonitor_alerts.txt \
             --json-output alerts/dessmonitor_alerts.json \
+            --credentials src/main/java/org/ktronics/config/dessmonitor_credentials.json \
+            --customer-alerts-file alerts/dessmonitor_customer_alerts.json \
             --platform dessmonitor \
             --ignore-zero-months 1 \
             2>&1 || true
@@ -142,12 +145,12 @@ jobs:
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           fi
 
-      - name: Send DessMonitor alert email
+      - name: Send DessMonitor alert email (admin)
         if: steps.anomaly.outputs.exit_code == '2'
         shell: bash
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📧 SENDING DESSMONITOR ALERT EMAIL"
+          echo "📧 SENDING DESSMONITOR ALERT EMAIL (ADMIN)"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
           ALERT_BODY=$(cat alerts/dessmonitor_alerts.txt)
@@ -156,6 +159,23 @@ jobs:
           EMAIL_BODY="$ALERT_BODY" \
           EMAIL_TO="$ALERT_TO" \
           python3 src/main/java/org/ktronics/scripts/send_email.py
+
+      # UC10 Phase 2: Send customer-specific alerts (reuse existing send_customer_emails.py)
+      - name: Send DessMonitor customer alerts
+        if: steps.anomaly.outputs.exit_code == '2'
+        shell: bash
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📧 SENDING DESSMONITOR CUSTOMER ALERTS"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          if [ -f alerts/dessmonitor_customer_alerts.json ]; then
+            echo "Customer alerts file found, sending emails..."
+            python3 src/main/java/org/ktronics/scripts/send_customer_emails.py \
+              --customer-alerts alerts/dessmonitor_customer_alerts.json
+          else
+            echo "No DessMonitor customer alerts file found"
+          fi
 
       - name: Commit DessMonitor data and state
         shell: bash
