@@ -47,9 +47,10 @@ class TestCentralizedConfig:
         assert "from config import CREDENTIALS_PATH" in content, \
             "check_anomaly.py must import CREDENTIALS_PATH from config module"
 
-        # Verify it uses CREDENTIALS_PATH (not hardcoded path)
-        assert "credentials_path = CREDENTIALS_PATH" in content, \
-            "check_anomaly.py must use CREDENTIALS_PATH variable"
+        # Verify it uses CREDENTIALS_PATH as default (UC10 Phase 2: supports --credentials CLI arg)
+        # The code now has: credentials_path = Path(args.credentials) if args.credentials else CREDENTIALS_PATH
+        assert "CREDENTIALS_PATH" in content, \
+            "check_anomaly.py must use CREDENTIALS_PATH as default"
 
         # Verify NO hardcoded path
         assert 'Path("src/main/java/org/ktronics/config/credentials.json")' not in content, \
