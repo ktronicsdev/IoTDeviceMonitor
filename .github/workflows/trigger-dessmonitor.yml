@@ -82,6 +82,16 @@ jobs:
           echo "📊 DESSMONITOR: FETCHING MONTHLY DATA: $LAST_MONTH & $CURRENT_MONTH"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
+          # DEBUG: Verify credentials file is valid JSON
+          echo "DEBUG: Verifying DessMonitor credentials file..."
+          if jq -e '.' src/main/java/org/ktronics/config/dessmonitor_credentials.json > /dev/null 2>&1; then
+            echo "DEBUG: Credentials file is valid JSON"
+            echo "DEBUG: Accounts found: $(jq -r '.dessmonitor_accounts | length // 0' src/main/java/org/ktronics/config/dessmonitor_credentials.json 2>/dev/null || echo 'N/A')"
+          else
+            echo "ERROR: Credentials file is NOT valid JSON!"
+            echo "DEBUG: First 100 chars: $(head -c 100 src/main/java/org/ktronics/config/dessmonitor_credentials.json)"
+          fi
+
           # Fetch last month data
           src/main/java/org/ktronics/scripts/check_dessmonitor_monthly.sh \
             src/main/java/org/ktronics/config/dessmonitor_credentials.json "$LAST_MONTH" 2>&1 || true
