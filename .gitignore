@@ -53,3 +53,6 @@ scripts/test/poll_github_actions.py
 # Temporary document generation scripts
 .temp/
 ~$*
+
+# ROI analysis data (UC11 - customer-specific data)
+roi/

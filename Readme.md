@@ -1,13 +1,22 @@
-# ShineMonitor IoT Device Monitoring System
+# Multi-Cloud IoT Device Monitoring System
 
-[![GitHub Actions](https://github.com/ktronicsdev/IoTDeviceMonitor/workflows/ShineMonitor%20Daily%20Monitor/badge.svg)](https://github.com/ktronicsdev/IoTDeviceMonitor/actions)
+[![ShineMonitor](https://github.com/ktronicsdev/IoTDeviceMonitor/workflows/ShineMonitor%20Daily%20Monitor/badge.svg)](https://github.com/ktronicsdev/IoTDeviceMonitor/actions)
+[![DessMonitor](https://github.com/ktronicsdev/IoTDeviceMonitor/workflows/DessMonitor%20Daily%20Monitor/badge.svg)](https://github.com/ktronicsdev/IoTDeviceMonitor/actions)
 
 ## Description
 
-Automated monitoring system for ShineMonitor solar panel installations with intelligent anomaly detection and email alerting.
+Automated monitoring system for **multi-cloud solar panel installations** with intelligent anomaly detection and email alerting. Supports both **ShineMonitor** and **DessMonitor** platforms.
+
+**Supported Platforms:**
+
+| Platform     | API Endpoint            | Status           |
+|--------------|-------------------------|------------------|
+| ShineMonitor | `web.shinemonitor.com`  | Production       |
+| DessMonitor  | `web.dessmonitor.com`   | Production (UC10)|
 
 **Features:**
 
+- **Multi-cloud support** for ShineMonitor and DessMonitor platforms
 - Automated data collection from 20+ solar plants
 - Daily, monthly, and yearly production tracking
 - Smart anomaly detection with RED/ORANGE severity levels
@@ -16,6 +25,7 @@ Automated monitoring system for ShineMonitor solar panel installations with inte
 - Device alarm monitoring with 3-send rule
 - Historical data retention and trending
 - Scheduled monitoring (6x daily via GitHub Actions)
+- Platform-specific CSV naming and state management
 
 ---
 
@@ -203,11 +213,127 @@ Hash-based state detection in GitHub Actions workflow:
 
 **Implementation Status:** ✅ **IMPLEMENTED** (Session 13)
 
-**Test Coverage:** 7 tests (100% pass rate)
+**Test Coverage:** 9 tests (100% pass rate)
+
+---
+
+### UC10: Multi-Cloud Platform Support (DessMonitor)
+
+Extends monitoring capabilities to DessMonitor platform, running in parallel with ShineMonitor.
+
+**Implementation Status:** ✅ **Phase 1 IMPLEMENTED** (Session 14)
+
+**Features:**
+
+- Separate workflow (`trigger-dessmonitor.yml`) runs every 4 hours (offset from ShineMonitor)
+- Platform-specific credentials file (`dessmonitor_credentials.json`)
+- CSV naming convention: `dessmonitor-{label}-{plant}-YYYY-MM.csv`
+- Separate state files for alert tracking
+- Shared anomaly detection with `--platform` filter
+
+**Platform Comparison:**
+
+| Feature              | ShineMonitor                    | DessMonitor                        |
+|----------------------|---------------------------------|------------------------------------|
+| Workflow             | `trigger-shinemonitor.yml`      | `trigger-dessmonitor.yml`          |
+| Schedule             | 02:30, 06:30, 10:30, 14:30...   | 03:00, 07:00, 11:00, 15:00...      |
+| Credentials          | `credentials.json`              | `dessmonitor_credentials.json`     |
+| CSV Prefix           | (none)                          | `dessmonitor-`                     |
+| State File           | `alerts_state.json`             | `dessmonitor_alerts_state.json`    |
+| Test Customer        | Gayan-IMH                       | MifrazMarsoon                      |
+
+**API Scripts:**
+
+- `dessmonitor_common.sh` - API client with dual auth fallback
+- `check_dessmonitor_monthly.sh` - Monthly energy data fetcher
+
+**GitHub Secrets Required:**
+
+- `DESSMONITOR_CREDENTIALS_JSON` - DessMonitor account credentials
+
+**Test Coverage:** 13 tests (100% pass rate)
+
+---
+
+### UC11: Customer Plant ROI Verification (OffGrid Backup Analysis)
+
+Analyzes historical device data to calculate ROI from OffGrid (battery backup) usage. Tracks when the system provides power from battery during grid outages.
+
+**Implementation Status:** ✅ **IMPLEMENTED** (Session 15)
+
+**Purpose:**
+
+- Verify customer ROI by analyzing backup power usage over time
+- Track when `work_state = OffGrid` and `PLoad > 0`
+- Calculate total backup hours, energy provided, and estimated cost savings
+- Generate monthly breakdown and event history
+
+**Scripts:**
+
+| Script | Purpose |
+|--------|---------|
+| `check_plant_roi.py` | Fetch historical device data via `queryDeviceDataOneDayPaging` API |
+| `analyze_plant_roi.py` | Analyze CSV data and generate ROI report |
+
+**Usage:**
+
+```bash
+# Fetch last 365 days of data
+py check_plant_roi.py --customer Abeetha --days 365
+
+# Fetch specific year
+py check_plant_roi.py --customer Abeetha --start-date 2024-01-01 --end-date 2024-12-31
+
+# Generate ROI report
+py analyze_plant_roi.py --input roi/abeetha-device-data-365days.csv --customer "Abeetha"
+```
+
+**Output Metrics:**
+
+- Total OffGrid time (hours)
+- Total OffGrid energy (kWh)
+- Number of backup events
+- Average/longest event duration
+- Peak load during backup
+- Monthly breakdown
+- Estimated cost savings (Rs.)
+
+**Sample 3-Year Results (Abeetha):**
+
+| Year | OffGrid Time | Energy | Events | Peak Load | Savings |
+|------|--------------|--------|--------|-----------|---------|
+| 2023 | 55.3 hrs | 15.68 kWh | 60 | 3,159 W | Rs. 314 |
+| 2024 | 24.6 hrs | 6.25 kWh | 44 | 1,577 W | Rs. 125 |
+| 2025-26 | 68.8 hrs | 12.02 kWh | 72 | 2,716 W | Rs. 240 |
+| **Total** | **148.7 hrs** | **33.95 kWh** | **176** | 3,159 W | **Rs. 679** |
+
+**Data Storage:** `roi/` directory (gitignored for customer privacy)
+
+**API Endpoint:** `queryDeviceDataOneDayPaging` - Returns 5-minute interval device metrics
 
 ---
 
 ## Bug Fixes
+
+### UC9: Hash Timestamp Bug (Session 14)
+
+**Problem:** Admin emails sent 6x daily even when alert content unchanged
+
+**Root Cause:** `alerts.json` includes `generated_at` timestamp which changes on every run, causing hash to always change
+
+**Fix:** Use `jq` to hash only alert content (excluding timestamp):
+
+```bash
+# Before (buggy):
+sha256sum alerts/alerts.json
+
+# After (fixed):
+jq -cS '{alerts, suppressed, ignored}' alerts/alerts.json | sha256sum
+```
+
+**Commit:** `f624472`
+
+---
 
 ### UC3: API Field Name Mismatch (Session 10)
 
@@ -376,7 +502,8 @@ The system runs automatically via GitHub Actions:
 
 Configure these in GitHub Settings > Secrets:
 
-- `SHINEMONITOR_CREDENTIALS_JSON`: Contents of credentials.json
+- `SHINEMONITOR_CREDENTIALS_JSON`: ShineMonitor account credentials
+- `DESSMONITOR_CREDENTIALS_JSON`: DessMonitor account credentials (UC10)
 - `SMTP_HOST`: SMTP server (e.g., smtp.gmail.com)
 - `SMTP_PORT`: SMTP port (e.g., 587)
 - `SMTP_USER`: Email address for sending
@@ -407,34 +534,42 @@ Default thresholds in `check_anomaly.py`:
 ```text
 .
 ├── .github/workflows/
-│   ├── trigger-shinemonitor.yml       # Main monitoring (6x daily)
+│   ├── trigger-shinemonitor.yml       # ShineMonitor monitoring (6x daily)
+│   ├── trigger-dessmonitor.yml        # DessMonitor monitoring (6x daily) - UC10
 │   └── trigger-customer-reports.yml   # Weekly reports (Sunday)
 ├── src/main/java/org/ktronics/
 │   ├── config/
-│   │   └── credentials.json           # API credentials (gitignored)
+│   │   ├── credentials.json           # ShineMonitor credentials (gitignored)
+│   │   └── dessmonitor_credentials.json # DessMonitor credentials (gitignored)
 │   └── scripts/
 │       ├── config.py                  # Centralized Python config
 │       ├── common_config.sh           # Centralized Bash config
-│       ├── shinemonitor_common.sh     # Shared API utilities
-│       ├── check_shinemonitor_monthly.sh  # Fetch monthly data
-│       ├── check_shinemonitor_yearly.sh   # Fetch yearly data
+│       ├── shinemonitor_common.sh     # ShineMonitor API utilities
+│       ├── dessmonitor_common.sh      # DessMonitor API utilities (UC10)
+│       ├── check_shinemonitor_monthly.sh  # ShineMonitor monthly data
+│       ├── check_shinemonitor_yearly.sh   # ShineMonitor yearly data
+│       ├── check_dessmonitor_monthly.sh   # DessMonitor monthly data (UC10)
 │       ├── check_device_alarms.sh     # Fetch device alarms
-│       ├── check_anomaly.py           # Anomaly detection
+│       ├── check_anomaly.py           # Anomaly detection (multi-platform)
 │       ├── generate_device_alarms.py  # Device alarm processing
 │       ├── generate_weekly_report.py  # Weekly report generation
 │       ├── generate_admin_summary.py  # Admin summary generation
 │       ├── send_customer_emails.py    # Customer email sending
 │       └── send_email.py              # System-wide email notifications
 ├── data/                              # CSV time-series data
+│   ├── {plant}-YYYY-MM.csv            # ShineMonitor data files
+│   └── dessmonitor-{plant}-YYYY-MM.csv # DessMonitor data files (UC10)
 ├── alarms/                            # Device alarm JSON files
 ├── alerts/                            # Generated alert reports
-│   ├── alerts.json                    # System-wide alerts
-│   ├── alerts.txt                     # Formatted alert report
+│   ├── alerts.json                    # ShineMonitor alerts
+│   ├── dessmonitor_alerts.json        # DessMonitor alerts (UC10)
 │   └── customer_alerts.json           # Customer-specific alerts
 ├── reports/                           # Weekly customer reports
 │   └── archive/                       # Report archives (last 4 weeks)
 └── state/                             # State tracking
-    ├── alerts_state.json              # Admin alert state
+    ├── alerts_state.json              # ShineMonitor alert state
+    ├── dessmonitor_alerts_state.json  # DessMonitor alert state (UC10)
+    ├── admin_email_state.txt          # UC9 hash state
     └── device_alarms_state.json       # Device alarm state
 ```
 
@@ -444,17 +579,18 @@ Default thresholds in `check_anomaly.py`:
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 93 tests (100% pass rate)
+#### Test Coverage: 108 tests (100% pass rate)
 
 | Suite | Tests | Status |
 | ----- | ----- | ------ |
 | UC1 (Admin Alerts) | 15/15 | PASSED (100%) |
 | UC2 (Customer Weekly) | 11/11 | PASSED (100%) |
-| UC3 (Device Alarms) | 38/38 | PASSED (100%) - includes UC4, UC5, UC6, UC7, UC8 |
-| UC9 (Email Optimization) | 7/7 | PASSED (100%) |
+| UC3 (Device Alarms) | 38/38 | PASSED (100%) - includes UC4-UC8 |
+| UC9 (Email Optimization) | 9/9 | PASSED (100%) |
+| UC10 (DessMonitor) | 13/13 | PASSED (100%) |
 | BVT (Centralized Config) | 14/14 | PASSED (100%) |
 | API Tests (Bash Scripts) | 8/8 | PASSED in CI (skipped on Windows) |
-| **TOTAL** | **93/93** | **PASSED (100%)** |
+| **TOTAL** | **108/108** | **PASSED (100%)** |
 
 ```bash
 # Run all tests
@@ -466,6 +602,8 @@ py -m pytest integration/test_admin_alerts.py -v      # UC1: Admin alerts
 py -m pytest integration/test_customer_weekly.py -v   # UC2: Customer reports
 py -m pytest integration/test_device_alarms.py -v     # UC3: Device alarms
 py -m pytest integration/test_centralized_config.py -v # BVT: Config tests
+py -m pytest integration/test_uc9_admin_email.py -v    # UC9: Email optimization
+py -m pytest integration/test_dessmonitor_integration.py -v # UC10: DessMonitor
 ```
 
 See [src/test/java/org/ktronics/scripts/README.md](src/test/java/org/ktronics/scripts/README.md) for detailed test documentation.
