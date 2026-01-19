@@ -14,14 +14,38 @@ from collections import defaultdict
 
 from config import CREDENTIALS_PATH
 
-def load_credentials(creds_file):
-    """Load customer credentials and email addresses."""
+def load_credentials(creds_file, platform=None):
+    """Load customer credentials and email addresses.
+
+    Args:
+        creds_file: Path to credentials JSON file
+        platform: Optional platform ('shinemonitor' or 'dessmonitor')
+                  For 'dessmonitor', looks for 'dessmonitor_accounts' key
+                  Otherwise, uses 'accounts' key (ShineMonitor default)
+
+    Returns:
+        List of account dictionaries with label, email, etc.
+    """
     with open(creds_file, 'r') as f:
         data = json.load(f)
-    return data['accounts']
 
-def get_customer_plants(data_dir, customer_label):
-    """Find unique plant base names for a customer (without year/month suffixes)."""
+    if platform == 'dessmonitor':
+        # DessMonitor credentials format: {"dessmonitor_accounts": [...]}
+        return data.get('dessmonitor_accounts', [])
+    else:
+        # ShineMonitor credentials format: {"accounts": [...]}
+        return data.get('accounts', [])
+
+def get_customer_plants(data_dir, customer_label, platform=None):
+    """Find unique plant base names for a customer (without year/month suffixes).
+
+    Args:
+        data_dir: Directory containing CSV files
+        customer_label: Customer label to match
+        platform: Optional platform filter ('shinemonitor' or 'dessmonitor')
+                  If 'dessmonitor', only matches files starting with 'dessmonitor-'
+                  If 'shinemonitor' or None, excludes files starting with 'dessmonitor-'
+    """
     import re
     data_path = Path(data_dir)
     plant_names = set()
@@ -33,6 +57,17 @@ def get_customer_plants(data_dir, customer_label):
     # We want to extract just the plantname part
     for csv_file in data_path.glob('*.csv'):
         filename = csv_file.stem.lower()
+
+        # Platform filtering
+        if platform == 'dessmonitor':
+            # Only match DessMonitor files (prefixed with 'dessmonitor-')
+            if not filename.startswith('dessmonitor-'):
+                continue
+        else:
+            # ShineMonitor (default): exclude DessMonitor files
+            if filename.startswith('dessmonitor-'):
+                continue
+
         if normalized_label in filename:
             # Remove year/month suffixes: -YYYY-MM or -YYYY
             base_name = re.sub(r'-\d{4}(-\d{2})?$', '', csv_file.stem)
@@ -239,14 +274,20 @@ def main():
     parser.add_argument('--data-dir', default='data', help='Directory containing CSV files')
     parser.add_argument('--alerts-state', default='state/customer_alerts_state.json', help='Customer alerts state file')
     parser.add_argument('--output-dir', default='reports', help='Output directory for reports')
+    parser.add_argument('--platform', default=None, choices=['shinemonitor', 'dessmonitor'],
+                        help='Filter by platform (shinemonitor or dessmonitor). If not specified, processes ShineMonitor data.')
 
     args = parser.parse_args()
 
     # Create output directory
     os.makedirs(args.output_dir, exist_ok=True)
 
+    # Determine platform for logging
+    platform_name = args.platform.upper() if args.platform else 'ShineMonitor'
+    print(f"Generating {platform_name} weekly reports")
+
     # Load customer data
-    customers = load_credentials(args.credentials)
+    customers = load_credentials(args.credentials, args.platform)
     data_dir = Path(args.data_dir)
 
     # Load alerts state if exists
@@ -268,8 +309,8 @@ def main():
 
         print(f"Generating report for {customer_label} ({customer_email})")
 
-        # Find customer's plants
-        plants = get_customer_plants(data_dir, customer_label)
+        # Find customer's plants (filtered by platform)
+        plants = get_customer_plants(data_dir, customer_label, args.platform)
 
         if not plants:
             print(f"  No plants found for {customer_label}", file=sys.stderr)
@@ -286,26 +327,30 @@ def main():
         # Format email
         email_content = format_weekly_email(customer_label, summary, customer_alerts)
 
+        # Determine report filename prefix based on platform
+        prefix = 'dessmonitor_weekly_report' if args.platform == 'dessmonitor' else 'weekly_report'
+
         # Save report to file
-        report_file = Path(args.output_dir) / f"weekly_report_{customer_label.replace(' ', '_').lower()}.txt"
-        with open(report_file, 'w') as f:
+        report_file = Path(args.output_dir) / f"{prefix}_{customer_label.replace(' ', '_').lower()}.txt"
+        with open(report_file, 'w', encoding='utf-8') as f:
             f.write(email_content)
 
         # Also save email metadata
-        metadata_file = Path(args.output_dir) / f"weekly_report_{customer_label.replace(' ', '_').lower()}.json"
-        with open(metadata_file, 'w') as f:
+        metadata_file = Path(args.output_dir) / f"{prefix}_{customer_label.replace(' ', '_').lower()}.json"
+        with open(metadata_file, 'w', encoding='utf-8') as f:
             json.dump({
                 'customer': customer_label,
                 'email': customer_email,
                 'report_file': str(report_file),
                 'generated_at': datetime.now().isoformat(),
-                'summary': summary
+                'summary': summary,
+                'platform': args.platform or 'shinemonitor'
             }, f, indent=2)
 
         reports_generated += 1
         print(f"  Report saved to {report_file}")
 
-    print(f"\nGenerated {reports_generated} weekly reports")
+    print(f"\nGenerated {reports_generated} {platform_name} weekly reports")
     return 0
 
 if __name__ == '__main__':

@@ -425,6 +425,136 @@ class TestCustomerWeeklyReports:
         assert summary['total_monthly'] > 0
         assert summary['total_weekly'] > 0
 
+    # =========================================================================
+    # UC10: DessMonitor Platform Support Tests
+    # =========================================================================
+
+    def test_load_credentials_dessmonitor_platform(self, tmp_path):
+        """
+        UC10 TEST: Load credentials with DessMonitor platform parameter
+        Verifies that dessmonitor_accounts key is used for DessMonitor platform
+        """
+        # Create DessMonitor credentials file
+        creds = {
+            "company_key": "bnrl_test",
+            "dessmonitor_accounts": [
+                {
+                    "label": "DessCustomer1",
+                    "username": "dessuser1",
+                    "password": "pass123",
+                    "email": "dess@example.com"
+                },
+                {
+                    "label": "DessCustomer2",
+                    "username": "dessuser2",
+                    "password": "pass456"
+                    # No email - should be skipped in report generation
+                }
+            ]
+        }
+        creds_file = tmp_path / "dessmonitor_credentials.json"
+        with open(creds_file, 'w') as f:
+            json.dump(creds, f)
+
+        # Load with dessmonitor platform
+        accounts = load_credentials(creds_file, platform='dessmonitor')
+
+        assert len(accounts) == 2
+        assert accounts[0]['label'] == "DessCustomer1"
+        assert accounts[0]['email'] == "dess@example.com"
+        assert accounts[1]['label'] == "DessCustomer2"
+        assert 'email' not in accounts[1]
+
+    def test_load_credentials_shinemonitor_default(self, tmp_path):
+        """
+        UC10 TEST: Load credentials defaults to ShineMonitor (accounts key)
+        Verifies backward compatibility with existing credentials format
+        """
+        creds = {
+            "company_key": "shine_test",
+            "accounts": [
+                {
+                    "label": "ShineCustomer",
+                    "username": "shineuser",
+                    "password": "pass789",
+                    "email": "shine@example.com"
+                }
+            ],
+            "dessmonitor_accounts": [
+                {
+                    "label": "DessCustomer",
+                    "username": "dessuser",
+                    "password": "pass000",
+                    "email": "dess@example.com"
+                }
+            ]
+        }
+        creds_file = tmp_path / "credentials.json"
+        with open(creds_file, 'w') as f:
+            json.dump(creds, f)
+
+        # Load without platform (default = shinemonitor)
+        accounts = load_credentials(creds_file)
+        assert len(accounts) == 1
+        assert accounts[0]['label'] == "ShineCustomer"
+
+        # Load with explicit shinemonitor platform
+        accounts = load_credentials(creds_file, platform='shinemonitor')
+        assert len(accounts) == 1
+        assert accounts[0]['label'] == "ShineCustomer"
+
+    def test_get_customer_plants_dessmonitor_filter(self, test_data_dir):
+        """
+        UC10 TEST: get_customer_plants filters by dessmonitor- prefix
+        Verifies that DessMonitor platform only returns DessMonitor CSV files
+        """
+        today = date.today()
+        current_month = today.strftime('%Y-%m')
+
+        # Create ShineMonitor CSV files
+        self.create_monthly_csv(test_data_dir, "customer-plant1", current_month, [('2026-01-01', 10.0)])
+        self.create_monthly_csv(test_data_dir, "customer-plant2", current_month, [('2026-01-01', 15.0)])
+
+        # Create DessMonitor CSV files (prefixed with dessmonitor-)
+        self.create_monthly_csv(test_data_dir, "dessmonitor-customer-plant3", current_month, [('2026-01-01', 20.0)])
+        self.create_monthly_csv(test_data_dir, "dessmonitor-customer-plant4", current_month, [('2026-01-01', 25.0)])
+
+        # Get plants for ShineMonitor (default) - should NOT include dessmonitor files
+        shine_plants = get_customer_plants(test_data_dir, "customer")
+        assert len(shine_plants) == 2
+        assert "customer-plant1" in shine_plants
+        assert "customer-plant2" in shine_plants
+        assert "dessmonitor-customer-plant3" not in shine_plants
+
+        # Get plants for DessMonitor - should ONLY include dessmonitor files
+        dess_plants = get_customer_plants(test_data_dir, "customer", platform='dessmonitor')
+        assert len(dess_plants) == 2
+        assert "dessmonitor-customer-plant3" in dess_plants
+        assert "dessmonitor-customer-plant4" in dess_plants
+        assert "customer-plant1" not in dess_plants
+
+    def test_get_customer_plants_shinemonitor_excludes_dessmonitor(self, test_data_dir):
+        """
+        UC10 TEST: ShineMonitor platform excludes dessmonitor- prefixed files
+        Ensures backward compatibility - ShineMonitor reports don't include DessMonitor data
+        """
+        today = date.today()
+        current_month = today.strftime('%Y-%m')
+
+        # Create mixed CSV files
+        self.create_monthly_csv(test_data_dir, "gayan-imh-plant", current_month, [('2026-01-01', 10.0)])
+        self.create_monthly_csv(test_data_dir, "dessmonitor-gayan-imh-dessplant", current_month, [('2026-01-01', 20.0)])
+
+        # Default (no platform) should exclude dessmonitor files
+        plants = get_customer_plants(test_data_dir, "gayan-imh")
+        assert len(plants) == 1
+        assert plants[0] == "gayan-imh-plant"
+
+        # Explicit shinemonitor should also exclude dessmonitor files
+        plants = get_customer_plants(test_data_dir, "gayan-imh", platform='shinemonitor')
+        assert len(plants) == 1
+        assert plants[0] == "gayan-imh-plant"
+
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

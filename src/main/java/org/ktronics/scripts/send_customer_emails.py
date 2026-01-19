@@ -255,8 +255,14 @@ def send_customer_alerts(customer_alerts_file):
     return sent_count, failed_count
 
 
-def send_weekly_reports(reports_dir):
-    """Send all weekly reports to customers."""
+def send_weekly_reports(reports_dir, report_prefix='weekly_report'):
+    """Send all weekly reports to customers.
+
+    Args:
+        reports_dir: Directory containing report files
+        report_prefix: Prefix for report files (default: 'weekly_report')
+                       Use 'dessmonitor_weekly_report' for DessMonitor reports
+    """
     reports_path = Path(reports_dir)
 
     if not reports_path.exists():
@@ -266,8 +272,8 @@ def send_weekly_reports(reports_dir):
     sent_count = 0
     failed_count = 0
 
-    # Find all report metadata files
-    for metadata_file in reports_path.glob("weekly_report_*.json"):
+    # Find all report metadata files matching the prefix
+    for metadata_file in reports_path.glob(f"{report_prefix}_*.json"):
         try:
             with open(metadata_file, 'r') as f:
                 metadata = json.load(f)
@@ -275,13 +281,17 @@ def send_weekly_reports(reports_dir):
             customer = metadata['customer']
             email = metadata['email']
             report_file = metadata['report_file']
+            platform = metadata.get('platform', 'shinemonitor')
 
             # Read report content
             with open(report_file, 'r') as f:
                 report_content = f.read()
 
-            # Send email
-            subject = f"Weekly Solar Production Report - {customer}"
+            # Send email with platform-specific subject
+            if platform == 'dessmonitor':
+                subject = f"[DessMonitor] Weekly Solar Production Report - {customer}"
+            else:
+                subject = f"Weekly Solar Production Report - {customer}"
             if send_email(email, subject, report_content):
                 sent_count += 1
                 print(f"✓ Sent weekly report to {customer} ({email})")
@@ -414,6 +424,8 @@ def main():
 
     parser = argparse.ArgumentParser(description='Send customer emails (alerts or weekly reports)')
     parser.add_argument('--reports-dir', help='Directory containing weekly reports (for weekly reports)')
+    parser.add_argument('--report-prefix', default='weekly_report',
+                        help='Prefix for report files (default: weekly_report, use dessmonitor_weekly_report for DessMonitor)')
     parser.add_argument('--customer-alerts', help='Path to customer_alerts.json (for alert emails)')
     parser.add_argument('--customer-device-alarms', help='Path to customer_device_alarms.json file')
     parser.add_argument('--test-customer-only', action='store_true',
@@ -437,9 +449,9 @@ def main():
     # Send weekly reports if provided
     if args.reports_dir:
         print("=" * 80)
-        print("SENDING WEEKLY REPORTS")
+        print(f"SENDING WEEKLY REPORTS (prefix: {args.report_prefix})")
         print("=" * 80)
-        sent, failed = send_weekly_reports(args.reports_dir)
+        sent, failed = send_weekly_reports(args.reports_dir, args.report_prefix)
         total_sent += sent
         total_failed += failed
         print(f"\nWeekly reports sent: {sent}, failed: {failed}")
