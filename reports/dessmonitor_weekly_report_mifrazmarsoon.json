@@ -1,0 +1,31 @@
+{
+  "customer": "MifrazMarsoon",
+  "email": "pcgayan@gmail.com",
+  "report_file": "reports/dessmonitor_weekly_report_mifrazmarsoon.txt",
+  "generated_at": "2026-01-19T19:11:44.076004",
+  "summary": {
+    "plants": [
+      {
+        "name": "dessmonitor-mifrazmarsoon-plant",
+        "weekly_kwh": 0.0,
+        "monthly_kwh": 0.0,
+        "yearly_kwh": 0,
+        "prev_monthly_kwh": 0.0,
+        "prev_yearly_kwh": 0,
+        "daily_average": 0.0
+      }
+    ],
+    "total_weekly": 0.0,
+    "total_monthly": 0.0,
+    "total_yearly": 0,
+    "total_prev_monthly": 0.0,
+    "total_prev_yearly": 0,
+    "week_start": "2026-01-12",
+    "week_end": "2026-01-19",
+    "current_month": "2026-01",
+    "prev_month": "2025-12",
+    "current_year": "2026",
+    "prev_year": "2025"
+  },
+  "platform": "dessmonitor"
+}
