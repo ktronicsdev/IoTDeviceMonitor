@@ -125,16 +125,26 @@ echo "$ACCOUNTS_JSON" | while read -r acc; do
     # ---- Query collectors for this plant ----
     collectors_resp="$(dessmonitor_api_call "webQueryCollectorsEs" "plantid=${pid}&page=0&pagesize=50" || true)"
 
+    # DEBUG: Show collectors response
+    echo "      DEBUG collectors response: $(echo "$collectors_resp" | head -c 500)"
+
     if [[ -z "$collectors_resp" ]] || ! printf "%s" "$collectors_resp" | grep -q '"err"[[:space:]]*:[[:space:]]*0'; then
       echo "      Collectors query failed"
       continue
     fi
 
     # Extract collector serial numbers (pn/sn)
+    # Try both .dat[] (array) and .dat.collector[] (nested) formats
     COLLECTOR_DATA=$(echo "$collectors_resp" | jq -r '.dat[]? | "\(.pn // .sn)|\(.devcode // 2429)"' 2>/dev/null || true)
+
+    # If empty, try alternate format
+    if [[ -z "$COLLECTOR_DATA" ]]; then
+      COLLECTOR_DATA=$(echo "$collectors_resp" | jq -r '.dat.collector[]? | "\(.pn // .sn)|\(.devcode // 2429)"' 2>/dev/null || true)
+    fi
 
     if [[ -z "$COLLECTOR_DATA" ]]; then
       echo "      No collectors found for plant"
+      echo "      DEBUG: dat content: $(echo "$collectors_resp" | jq '.dat' 2>/dev/null || echo 'parse error')"
       continue
     fi
 
