@@ -47,11 +47,15 @@ dessmonitor_auth_source() {
   local password="${2:?Missing password}"
   local company_key="${3:?Missing company_key}"
 
-  local salt pw_sha1 sign login_response token secret err
+  local salt pw_sha1 sign_input sign login_response token secret err
 
   salt=$(salt_ms)
   pw_sha1=$(sha1hex "${password}")
-  sign=$(sha1hex "${username}${pw_sha1}${salt}")
+
+  # DessMonitor signature format (from API docs):
+  # sign = SHA-1(salt + SHA-1(pwd) + "&action=authSource&usr=" + usr + "&company-key=" + company-key + "&source=" + source)
+  sign_input="${salt}${pw_sha1}&action=authSource&usr=${username}&company-key=${company_key}&source=1"
+  sign=$(sha1hex "${sign_input}")
 
   login_response=$(curl -s -X POST "${API_URL}?action=authSource" \
     -H "Content-Type: application/x-www-form-urlencoded" \
@@ -83,12 +87,15 @@ dessmonitor_auth_email() {
   local password="${2:?Missing password}"
   local company_key="${3:?Missing company_key}"
 
-  local salt pw_sha1 tail sign auth_url auth_resp token secret
+  local salt pw_sha1 sign_input sign auth_url auth_resp token secret
 
   salt=$(salt_ms)
   pw_sha1=$(sha1hex "$password")
-  tail="&action=authEmail&usr=$(urlencode "${username}")&company-key=${company_key}"
-  sign=$(sha1hex "${salt}${pw_sha1}${tail}")
+
+  # DessMonitor signature format (from API docs):
+  # sign = SHA-1(salt + SHA-1(pwd) + "&action=authEmail&usr=" + usr + "&company-key=" + company-key + "&source=" + source)
+  sign_input="${salt}${pw_sha1}&action=authEmail&usr=${username}&company-key=${company_key}&source=1"
+  sign=$(sha1hex "${sign_input}")
 
   auth_url="${API_URL}?sign=${sign}&salt=${salt}&action=authEmail&usr=$(urlencode "${username}")&company-key=${company_key}&source=1"
   auth_resp=$(curl -sS --max-time 25 "$auth_url" 2>/dev/null || true)
