@@ -86,6 +86,9 @@ echo "$ACCOUNTS_JSON" | while read -r acc; do
   # -----------------------------------------------------------------
   plants_resp="$(dessmonitor_api_call "queryPlants" "page=0&pagesize=50" || true)"
 
+  # DEBUG: Show raw plants response
+  echo "  DEBUG queryPlants response: $(echo "$plants_resp" | head -c 500)"
+
   if [[ -z "$plants_resp" ]] || ! printf "%s" "$plants_resp" | grep -q '"err"[[:space:]]*:[[:space:]]*0'; then
     echo "  PLANTS FAIL"
     echo "  Response: $(echo "$plants_resp" | head -c 200)..."
@@ -93,10 +96,17 @@ echo "$ACCOUNTS_JSON" | while read -r acc; do
   fi
 
   # Extract plant IDs and names using jq
+  # Try both .dat[] (array) and .dat.plant[] (nested) formats
   PLANT_DATA=$(echo "$plants_resp" | jq -r '.dat[]? | "\(.pid)|\(.name // "unknown")"' 2>/dev/null || true)
+
+  # If empty, try alternate format .dat.plant[]
+  if [[ -z "$PLANT_DATA" ]]; then
+    PLANT_DATA=$(echo "$plants_resp" | jq -r '.dat.plant[]? | "\(.pid // .id)|\(.name // .pname // "unknown")"' 2>/dev/null || true)
+  fi
 
   if [[ -z "$PLANT_DATA" ]]; then
     echo "  No plants found."
+    echo "  DEBUG: dat content: $(echo "$plants_resp" | jq '.dat' 2>/dev/null || echo 'parse error')"
     continue
   fi
 
