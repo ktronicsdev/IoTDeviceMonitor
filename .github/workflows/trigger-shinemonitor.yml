@@ -369,14 +369,25 @@ jobs:
           git config user.name "shinemonitor-bot"
           git config user.email "actions@users.noreply.github.com"
 
+          # Add all ShineMonitor changes
           git add data/*.csv 2>/dev/null || true
           git add alerts/* 2>/dev/null || true
           git add state/* 2>/dev/null || true
 
-          git commit -m "Update ShineMonitor data & alerts" || exit 0
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "No ShineMonitor changes to commit"
+            exit 0
+          fi
+
+          git commit -m "Update ShineMonitor data & alerts"
 
           # Pull with rebase to handle concurrent workflow pushes (e.g., DessMonitor)
+          # Stash any unstaged changes first to avoid rebase conflicts
+          git stash --include-untracked || true
           git pull --rebase origin main || true
+          git stash pop || true
+
           git push
 
       # ✅ Build verification email on every push (success)
