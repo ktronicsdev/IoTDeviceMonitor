@@ -3,8 +3,8 @@
 # UC10: Multi-Cloud Platform Support - DessMonitor Integration
 
 # API Configuration
-# DessMonitor uses web.dessmonitor.com (same backend as ShineMonitor but different domain)
-API_URL="https://web.dessmonitor.com/public/"
+# DessMonitor API endpoint (api.dessmonitor.com - no CAPTCHA, unlike web.dessmonitor.com)
+API_URL="https://api.dessmonitor.com/public/"
 
 # Common utility functions
 sha1hex() { printf "%s" "$1" | sha1sum | awk '{print $1}'; }

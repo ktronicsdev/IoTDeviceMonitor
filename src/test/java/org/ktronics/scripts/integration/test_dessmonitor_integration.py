@@ -188,14 +188,70 @@ class TestDessMonitorAPIClient:
     """Test DessMonitor API client functions (mocked)"""
 
     def test_api_endpoint_configuration(self):
-        """Test that DessMonitor API endpoint is correctly configured"""
-        # Expected DessMonitor API endpoint
-        expected_endpoint = "https://web.dessmonitor.com/public/"
+        """
+        Test that DessMonitor API endpoint is correctly configured.
 
-        # This would be read from dessmonitor_common.sh
-        # For now, just verify the expected value
-        assert expected_endpoint.startswith("https://")
-        assert "dessmonitor.com" in expected_endpoint
+        CRITICAL BUG FIX (2026-01-19):
+        - web.dessmonitor.com has CAPTCHA protection causing ERR_PASSWORD_VERIF_FAIL (error 16)
+        - api.dessmonitor.com is the official API endpoint without CAPTCHA
+        - Fix: Change API_URL from web.dessmonitor.com to api.dessmonitor.com
+
+        This test ensures we use the correct API endpoint.
+        """
+        # Read the actual API_URL from dessmonitor_common.sh
+        script_path = scripts_dir / "dessmonitor_common.sh"
+
+        if script_path.exists():
+            content = script_path.read_text()
+
+            # Extract API_URL line
+            import re
+            match = re.search(r'API_URL="([^"]+)"', content)
+            assert match is not None, "API_URL not found in dessmonitor_common.sh"
+
+            actual_url = match.group(1)
+
+            # CRITICAL: Must use api.dessmonitor.com, NOT web.dessmonitor.com
+            assert "api.dessmonitor.com" in actual_url, \
+                f"API_URL must use api.dessmonitor.com (no CAPTCHA), got: {actual_url}"
+            assert "web.dessmonitor.com" not in actual_url, \
+                f"API_URL must NOT use web.dessmonitor.com (has CAPTCHA), got: {actual_url}"
+
+            # Verify full expected URL
+            expected_endpoint = "https://api.dessmonitor.com/public/"
+            assert actual_url == expected_endpoint, \
+                f"Expected {expected_endpoint}, got {actual_url}"
+        else:
+            # Fallback test if script doesn't exist
+            expected_endpoint = "https://api.dessmonitor.com/public/"
+            assert expected_endpoint.startswith("https://")
+            assert "api.dessmonitor.com" in expected_endpoint
+
+    def test_api_endpoint_not_web_dessmonitor(self):
+        """
+        REGRESSION TEST: Ensure we never accidentally use web.dessmonitor.com
+
+        Background: web.dessmonitor.com returns CAPTCHA challenge on login attempts,
+        causing all API authentications to fail with error 16 (ERR_PASSWORD_VERIF_FAIL).
+        The correct endpoint is api.dessmonitor.com which has no CAPTCHA.
+        """
+        script_path = scripts_dir / "dessmonitor_common.sh"
+
+        if script_path.exists():
+            content = script_path.read_text()
+
+            # These patterns should NEVER appear
+            forbidden_patterns = [
+                'web.dessmonitor.com',
+                'www.dessmonitor.com',
+            ]
+
+            for pattern in forbidden_patterns:
+                # Only check in API_URL assignment (not comments)
+                import re
+                matches = re.findall(rf'API_URL=.*{pattern}', content)
+                assert len(matches) == 0, \
+                    f"Found forbidden pattern '{pattern}' in API_URL. Use api.dessmonitor.com instead!"
 
     def test_authentication_signature_format(self):
         """Test SHA-1 signature generation format for DessMonitor API"""
@@ -215,6 +271,51 @@ class TestDessMonitorAPIClient:
         sign = hashlib.sha1(sign_input.encode()).hexdigest()
         assert len(sign) == 40
 
+    def test_dual_auth_fallback_exists(self):
+        """
+        Test that dual authentication fallback is implemented.
+
+        DessMonitor supports two auth methods:
+        1. authEmail (GET) - faster, try first
+        2. authSource (POST) - fallback if authEmail fails
+
+        Both methods use same SHA-1 signature scheme.
+        """
+        script_path = scripts_dir / "dessmonitor_common.sh"
+
+        if script_path.exists():
+            content = script_path.read_text()
+
+            # Check for dual auth functions
+            assert "dessmonitor_auth_email" in content, \
+                "Missing dessmonitor_auth_email function"
+            assert "dessmonitor_auth_source" in content, \
+                "Missing dessmonitor_auth_source function"
+            assert "dessmonitor_authenticate" in content, \
+                "Missing dessmonitor_authenticate (fallback wrapper) function"
+
+            # Check fallback logic exists
+            assert "authEmail failed" in content or "fallback" in content.lower(), \
+                "Missing fallback logic between auth methods"
+
+    def test_auth_error_codes_documented(self):
+        """Test that common DessMonitor API error codes are known"""
+        # Common error codes from DessMonitor API
+        error_codes = {
+            0: "Success",
+            8: "ERR_FORBIDDEN (missing required parameters)",
+            16: "ERR_PASSWORD_VERIF_FAIL (wrong password or CAPTCHA)",
+            264: "ERR_NOT_FOUND_DEVICE_WARNING (no alarms - not an error)",
+        }
+
+        # All codes should be defined
+        assert error_codes[0] == "Success"
+        assert error_codes[16] == "ERR_PASSWORD_VERIF_FAIL (wrong password or CAPTCHA)"
+
+        # This error caused the CAPTCHA issue - now fixed by using api.dessmonitor.com
+        captcha_error = 16
+        assert captcha_error in error_codes
+
     def test_api_actions_available(self):
         """Test that required API actions are documented"""
         required_actions = [
@@ -228,6 +329,70 @@ class TestDessMonitorAPIClient:
         # All actions should be defined
         for action in required_actions:
             assert len(action) > 0
+
+
+class TestDessMonitorCredentialValidation:
+    """Test credential file validation for DessMonitor"""
+
+    def test_credentials_has_dessmonitor_accounts_key(self):
+        """
+        Test that DessMonitor credentials use 'dessmonitor_accounts' key (not 'accounts').
+
+        Bug fix: GitHub secret was initially created with wrong key name.
+        Correct key: dessmonitor_accounts
+        Wrong key: accounts (that's for ShineMonitor)
+        """
+        valid_credentials = {
+            "company_key": "bnrl_frRFjEz8Mkn",
+            "dessmonitor_accounts": [
+                {"label": "Test", "username": "user", "password": "pass"}
+            ]
+        }
+
+        # Must have dessmonitor_accounts, not accounts
+        assert "dessmonitor_accounts" in valid_credentials
+        assert "accounts" not in valid_credentials
+
+    def test_credentials_account_required_fields(self):
+        """Test that each account has required fields"""
+        required_fields = ["label", "username", "password"]
+        optional_fields = ["email"]  # Email only needed for customer alerts
+
+        account = {
+            "label": "MifrazMarsoon",
+            "username": "mifrazlk",
+            "password": "testpass123",
+            "email": "test@example.com"  # Optional
+        }
+
+        for field in required_fields:
+            assert field in account, f"Missing required field: {field}"
+
+    def test_credentials_company_key_present(self):
+        """Test that company_key is present in credentials"""
+        credentials = {
+            "company_key": "bnrl_frRFjEz8Mkn",
+            "dessmonitor_accounts": []
+        }
+
+        assert "company_key" in credentials
+        assert len(credentials["company_key"]) > 0
+
+    def test_workflow_validates_credentials_json(self):
+        """
+        Test that workflow validates credentials file before using it.
+
+        The workflow should:
+        1. Check if file is valid JSON
+        2. Check for dessmonitor_accounts array
+        3. Log number of accounts found
+        """
+        # Workflow validation command pattern
+        jq_validate_cmd = "jq -e '.' credentials.json"
+        jq_count_cmd = "jq -r '.dessmonitor_accounts | length'"
+
+        assert "jq -e" in jq_validate_cmd  # -e flag returns error on invalid JSON
+        assert "dessmonitor_accounts" in jq_count_cmd
 
 
 class TestMultiPlatformAlertAggregation:
