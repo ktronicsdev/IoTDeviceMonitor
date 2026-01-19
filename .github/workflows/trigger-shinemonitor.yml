@@ -374,6 +374,9 @@ jobs:
           git add state/* 2>/dev/null || true
 
           git commit -m "Update ShineMonitor data & alerts" || exit 0
+
+          # Pull with rebase to handle concurrent workflow pushes (e.g., DessMonitor)
+          git pull --rebase origin main || true
           git push
 
       # ✅ Build verification email on every push (success)
