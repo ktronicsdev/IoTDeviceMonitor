@@ -3,7 +3,7 @@ name: DessMonitor Daily Monitor
 # UC10: Multi-Cloud Platform Support - DessMonitor Integration
 # This workflow runs in parallel with ShineMonitor workflow
 # Both platforms feed into the same anomaly detection system
-# Trigger: credentials updated 2026-01-19
+# Trigger: test SSH push 2026-01-19
 
 on:
   # 6x daily scheduled runs (every 4 hours, offset by 30 min from ShineMonitor)
