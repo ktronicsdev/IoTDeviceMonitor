@@ -122,118 +122,108 @@ echo "$ACCOUNTS_JSON" | while read -r acc; do
 
     echo "    Plant: ${pname:-?} (pid=$pid)"
 
-    # ---- Query collectors for this plant ----
-    collectors_resp="$(dessmonitor_api_call "webQueryCollectorsEs" "plantid=${pid}&page=0&pagesize=50" || true)"
+    # ---- Query devices for this plant ----
+    # Try queryDevices first (returns devices directly for plant)
+    devices_resp="$(dessmonitor_api_call "queryDevices" "plantid=${pid}&page=0&pagesize=50" || true)"
 
-    # DEBUG: Show collectors response
-    echo "      DEBUG collectors response: $(echo "$collectors_resp" | head -c 500)"
+    # DEBUG: Show devices response
+    echo "      DEBUG queryDevices response: $(echo "$devices_resp" | head -c 800)"
 
-    if [[ -z "$collectors_resp" ]] || ! printf "%s" "$collectors_resp" | grep -q '"err"[[:space:]]*:[[:space:]]*0'; then
-      echo "      Collectors query failed"
+    if [[ -z "$devices_resp" ]] || ! printf "%s" "$devices_resp" | grep -q '"err"[[:space:]]*:[[:space:]]*0'; then
+      echo "      queryDevices failed, trying webQueryCollectorsEs..."
+
+      # Fallback to collectors approach
+      collectors_resp="$(dessmonitor_api_call "webQueryCollectorsEs" "plantid=${pid}&page=0&pagesize=50" || true)"
+      echo "      DEBUG webQueryCollectorsEs response: $(echo "$collectors_resp" | head -c 500)"
+
+      if [[ -z "$collectors_resp" ]] || ! printf "%s" "$collectors_resp" | grep -q '"err"[[:space:]]*:[[:space:]]*0'; then
+        echo "      No devices or collectors found"
+        continue
+      fi
+    fi
+
+    # Extract device info - try multiple formats
+    # Format 1: .dat[] array with pn/sn
+    DEVICE_DATA=$(echo "$devices_resp" | jq -r '.dat[]? | "\(.pn // .sn)|\(.devcode // 2429)|\(.devaddr // 1)"' 2>/dev/null || true)
+
+    # Format 2: .dat.device[] nested
+    if [[ -z "$DEVICE_DATA" ]]; then
+      DEVICE_DATA=$(echo "$devices_resp" | jq -r '.dat.device[]? | "\(.pn // .sn)|\(.devcode // 2429)|\(.devaddr // 1)"' 2>/dev/null || true)
+    fi
+
+    # Format 3: Check for .dat with total/page structure
+    if [[ -z "$DEVICE_DATA" ]]; then
+      DEVICE_DATA=$(echo "$devices_resp" | jq -r '.dat[]? | select(.pn or .sn) | "\(.pn // .sn)|\(.devcode // 2429)|\(.devaddr // 1)"' 2>/dev/null || true)
+    fi
+
+    if [[ -z "$DEVICE_DATA" ]]; then
+      echo "      No devices found for plant"
+      echo "      DEBUG: dat content: $(echo "$devices_resp" | jq '.dat' 2>/dev/null || echo 'parse error')"
       continue
     fi
 
-    # Extract collector serial numbers (pn/sn)
-    # Try both .dat[] (array) and .dat.collector[] (nested) formats
-    COLLECTOR_DATA=$(echo "$collectors_resp" | jq -r '.dat[]? | "\(.pn // .sn)|\(.devcode // 2429)"' 2>/dev/null || true)
+    echo "      Found devices: $(echo "$DEVICE_DATA" | wc -l)"
 
-    # If empty, try alternate format
-    if [[ -z "$COLLECTOR_DATA" ]]; then
-      COLLECTOR_DATA=$(echo "$collectors_resp" | jq -r '.dat.collector[]? | "\(.pn // .sn)|\(.devcode // 2429)"' 2>/dev/null || true)
-    fi
+    # For each device, get energy data
+    echo "$DEVICE_DATA" | while read -r device_line; do
+      [[ -z "$device_line" ]] && continue
 
-    if [[ -z "$COLLECTOR_DATA" ]]; then
-      echo "      No collectors found for plant"
-      echo "      DEBUG: dat content: $(echo "$collectors_resp" | jq '.dat' 2>/dev/null || echo 'parse error')"
-      continue
-    fi
-
-    # For each collector, get the device energy data
-    total_plant_energy=0
-
-    echo "$COLLECTOR_DATA" | while read -r collector_line; do
-      [[ -z "$collector_line" ]] && continue
-
-      pn="${collector_line%%|*}"
-      devcode="${collector_line#*|}"
+      # Parse: pn|devcode|devaddr
+      pn=$(echo "$device_line" | cut -d'|' -f1)
+      devcode=$(echo "$device_line" | cut -d'|' -f2)
+      devaddr=$(echo "$device_line" | cut -d'|' -f3)
       [[ -z "$pn" ]] && continue
 
-      echo "      Collector: $pn (devcode=$devcode)"
+      echo "      Device: pn=$pn, devcode=$devcode, devaddr=$devaddr"
 
-      # ---- Query devices for this collector ----
-      devices_resp="$(dessmonitor_api_call "queryCollectorDevices" "pn=${pn}" || true)"
+      # ---- Query device energy ----
+      energy_resp="$(dessmonitor_api_call "webQueryDeviceEs" "pn=${pn}&devcode=${devcode}&devaddr=${devaddr}&sn=${pn}" || true)"
 
-      if [[ -z "$devices_resp" ]] || ! printf "%s" "$devices_resp" | grep -q '"err"[[:space:]]*:[[:space:]]*0'; then
-        echo "        Devices query failed"
+      if [[ -z "$energy_resp" ]] || ! printf "%s" "$energy_resp" | grep -q '"err"[[:space:]]*:[[:space:]]*0'; then
+        echo "        Energy query failed, trying querySPDeviceLastData..."
+        energy_resp="$(dessmonitor_api_call "querySPDeviceLastData" "pn=${pn}&devaddr=${devaddr}" || true)"
+      fi
+
+      echo "        DEBUG energy response: $(echo "$energy_resp" | head -c 300)"
+
+      if [[ -z "$energy_resp" ]] || ! printf "%s" "$energy_resp" | grep -q '"err"[[:space:]]*:[[:space:]]*0'; then
+        echo "        Energy query failed"
         continue
       fi
 
-      # Extract device info
-      DEVICE_DATA=$(echo "$devices_resp" | jq -r '.dat[]? | "\(.devaddr // 1)|\(.sn // .pn)"' 2>/dev/null || true)
+      # Extract energy values
+      e_today=$(echo "$energy_resp" | jq -r '.dat.e_today // .dat.eToday // 0' 2>/dev/null || echo "0")
+      e_month=$(echo "$energy_resp" | jq -r '.dat.e_month // .dat.eMonth // 0' 2>/dev/null || echo "0")
+      e_year=$(echo "$energy_resp" | jq -r '.dat.e_year // .dat.eYear // 0' 2>/dev/null || echo "0")
+      e_total=$(echo "$energy_resp" | jq -r '.dat.e_total // .dat.eTotal // 0' 2>/dev/null || echo "0")
 
-      if [[ -z "$DEVICE_DATA" ]]; then
-        # Try using collector as device
-        DEVICE_DATA="1|$pn"
+      echo "        Today: ${e_today} kWh, Month: ${e_month} kWh, Year: ${e_year} kWh"
+
+      # ---- Save to CSV ----
+      safe_name="$(printf "%s" "$pname" \
+        | tr '[:upper:]' '[:lower:]' \
+        | sed 's/[^a-z0-9]/-/g' \
+        | sed 's/--*/-/g' \
+        | sed 's/^-//;s/-$//')"
+
+      safe_label="$(printf "%s" "$label" \
+        | tr '[:upper:]' '[:lower:]' \
+        | sed 's/[^a-z0-9]/-/g' \
+        | sed 's/--*/-/g' \
+        | sed 's/^-//;s/-$//')"
+
+      out="data/dessmonitor-${safe_label}-${safe_name}-${MONTH}.csv"
+
+      if [[ ! -f "$out" ]]; then
+        echo "date,kwh" > "$out"
       fi
 
-      echo "$DEVICE_DATA" | while read -r device_line; do
-        [[ -z "$device_line" ]] && continue
+      today=$(date -u +%Y-%m-%d)
+      echo "${today},${e_today}" >> "$out"
 
-        devaddr="${device_line%%|*}"
-        sn="${device_line#*|}"
-        [[ -z "$devaddr" ]] && devaddr="1"
-        [[ -z "$sn" ]] && sn="$pn"
+      echo "        CSV written: $out"
 
-        echo "        Device: sn=$sn, addr=$devaddr"
-
-        # ---- Query device energy statistics ----
-        # Use webQueryDeviceEs for energy data
-        energy_resp="$(dessmonitor_api_call "webQueryDeviceEs" "pn=${pn}&devcode=${devcode}&devaddr=${devaddr}&sn=${sn}" || true)"
-
-        if [[ -z "$energy_resp" ]] || ! printf "%s" "$energy_resp" | grep -q '"err"[[:space:]]*:[[:space:]]*0'; then
-          echo "          Energy query failed"
-          continue
-        fi
-
-        # Extract energy values (e_total = total energy in kWh)
-        e_today=$(echo "$energy_resp" | jq -r '.dat.e_today // 0' 2>/dev/null || echo "0")
-        e_month=$(echo "$energy_resp" | jq -r '.dat.e_month // 0' 2>/dev/null || echo "0")
-        e_year=$(echo "$energy_resp" | jq -r '.dat.e_year // 0' 2>/dev/null || echo "0")
-        e_total=$(echo "$energy_resp" | jq -r '.dat.e_total // 0' 2>/dev/null || echo "0")
-
-        echo "          Today: ${e_today} kWh, Month: ${e_month} kWh, Year: ${e_year} kWh"
-
-        # ---- Save to CSV ----
-        # Sanitize names for filename
-        safe_name="$(printf "%s" "$pname" \
-          | tr '[:upper:]' '[:lower:]' \
-          | sed 's/[^a-z0-9]/-/g' \
-          | sed 's/--*/-/g' \
-          | sed 's/^-//;s/-$//')"
-
-        safe_label="$(printf "%s" "$label" \
-          | tr '[:upper:]' '[:lower:]' \
-          | sed 's/[^a-z0-9]/-/g' \
-          | sed 's/--*/-/g' \
-          | sed 's/^-//;s/-$//')"
-
-        # Create monthly CSV with platform prefix for identification
-        out="data/dessmonitor-${safe_label}-${safe_name}-${MONTH}.csv"
-
-        # If file doesn't exist, create with header
-        if [[ ! -f "$out" ]]; then
-          echo "date,kwh" > "$out"
-        fi
-
-        # For now, we record the current day's data
-        # In production, this would query historical daily data
-        today=$(date -u +%Y-%m-%d)
-        echo "${today},${e_today}" >> "$out"
-
-        echo "          CSV written: $out"
-
-      done  # devices
-    done  # collectors
+    done  # devices
   done  # plants
 done  # accounts
 
