@@ -2,6 +2,9 @@
 """
 Integration tests for admin production alert system
 Tests UC1: Verify daily production sent to admin works for yearly, daily, monthly updated
+
+IMPORTANT: These tests use utc_today() from check_anomaly.py to ensure timezone consistency.
+This prevents fragile tests that fail due to local vs UTC timezone differences.
 """
 
 import pytest
@@ -12,11 +15,14 @@ import csv
 import tempfile
 import shutil
 from pathlib import Path
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 
 # Add scripts directory to path
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent.parent.parent / "main" / "java" / "org" / "ktronics" / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
+
+# Import utc_today from production code to ensure timezone consistency
+from check_anomaly import utc_today
 
 
 def add_months_to_date(d: date, months: int) -> date:
@@ -67,7 +73,7 @@ class TestAdminProductionAlerts:
         RED ALERT: Plant < 20% baseline for 3 consecutive days
         """
         from datetime import date
-        today = date.today()
+        today = utc_today()
 
         # Create baseline data (14+ days of normal production ~10 kWh/day) ending yesterday
         baseline_data = []
@@ -221,7 +227,7 @@ class TestAdminProductionAlerts:
         NO ALERTS: All plants producing normally
         """
         # Create normal production data (last 7 days, dynamic dates)
-        today = date.today()
+        today = utc_today()
         normal_data = [
             ((today - timedelta(days=7-i)).strftime('%Y-%m-%d'), 10.0 + i * 0.1)
             for i in range(1, 8)
@@ -296,7 +302,7 @@ class TestAdminProductionAlerts:
         Note: check_anomaly looks at last 3 days INCLUDING today
         Baseline = 14 days BEFORE those 3 days
         """
-        today = date.today()
+        today = utc_today()
 
         # Baseline: 14 days BEFORE the red window (days -17 to -4)
         # Red window: last 3 days (days -2, -1, 0=today)
@@ -359,7 +365,7 @@ class TestAdminProductionAlerts:
         EDGE CASE: Production at 21% of baseline (just above 20% RED threshold) for 3 days
         Should NOT trigger alert
         """
-        today = date.today()
+        today = utc_today()
 
         # Create baseline data (14 days of 10 kWh/day)
         baseline_data = []
@@ -416,7 +422,7 @@ class TestAdminProductionAlerts:
         NO ALERT: Intermittent low production (not 3 consecutive days)
         Pattern: LOW, NORMAL, LOW, NORMAL, LOW
         """
-        today = date.today()
+        today = utc_today()
 
         # Create baseline data (14 days of 10 kWh/day)
         baseline_data = []
@@ -470,7 +476,7 @@ class TestAdminProductionAlerts:
         RECOVERY: Plant had RED alert (3 low days), then recovers to normal production
         Should NOT trigger alert after recovery
         """
-        today = date.today()
+        today = utc_today()
 
         # Create baseline data
         baseline_data = []
@@ -528,7 +534,7 @@ class TestAdminProductionAlerts:
         - Plant 3: Zero production (auto-ignored)
         Verify email contains all alert types with proper formatting
         """
-        today = date.today()
+        today = utc_today()
 
         # Plant 1: RED alert
         baseline_red = []
@@ -593,7 +599,7 @@ class TestAdminProductionAlerts:
         EDGE CASE: Less than 14 days of baseline data
         Should handle gracefully without crashing
         """
-        today = date.today()
+        today = utc_today()
 
         # Only 5 days of baseline (less than required 14 days)
         baseline_data = []
@@ -640,7 +646,7 @@ class TestAdminProductionAlerts:
         BOUNDARY TEST: Exactly 3 consecutive days of low production (no more, no less)
         Should trigger RED alert
         """
-        today = date.today()
+        today = utc_today()
 
         # Baseline: 14 days of normal
         baseline_data = []
@@ -753,7 +759,7 @@ class TestAdminProductionAlerts:
         Run 1: Trigger RED alert, save state
         Run 2: Same data, verify alert is not sent again (already sent)
         """
-        today = date.today()
+        today = utc_today()
 
         # Create alert scenario
         baseline_data = []
@@ -831,7 +837,7 @@ class TestAdminProductionAlerts:
         - Detailed Breakdown
         - Proper formatting with sections
         """
-        today = date.today()
+        today = utc_today()
 
         # Create RED alert scenario
         baseline_data = []
