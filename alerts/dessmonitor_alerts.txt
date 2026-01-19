@@ -1,0 +1,22 @@
+================================================================================
+║                                                                              ║
+║                       [DESSMONITOR] PRODUCTION MONITOR                       ║
+║                                                                              ║
+║                          ✓ ALL SYSTEMS OPERATIONAL                           ║
+║                                                                              ║
+║                          Status: NO ALERTS DETECTED                          ║
+║                                                                              ║
+║                Date: 2026-01-19  |  Total Plants Monitored: 2                ║
+║                                                                              ║
+================================================================================
+
+┌─ ADDITIONAL INFORMATION ────────────────────────────────────────────────────┐
+│
+│ IGNORED PLANTS (No production for extended period):
+│   • dessmonitor-dushanthatiqri-plant
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│   • dessmonitor-mifrazmarsoon-plant
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│
+└──────────────────────────────────────────────────────────────────────────────┘
+

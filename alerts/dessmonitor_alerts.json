@@ -1,0 +1,21 @@
+{
+  "generated_at": "2026-01-19T12:34:39.160955Z",
+  "alerts": [],
+  "suppressed": [],
+  "ignored": [
+    {
+      "plant_key": "dessmonitor-dushanthatiqri-plant",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-01"
+      ]
+    },
+    {
+      "plant_key": "dessmonitor-mifrazmarsoon-plant",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-01"
+      ]
+    }
+  ]
+}
