@@ -6,7 +6,7 @@
 ║                                                                              ║
 ║                        Status: 1 CRITICAL, 0 WARNING                         ║
 ║                                                                              ║
-║               Date: 2026-01-19  |  Total Plants Monitored: 21                ║
+║               Date: 2026-01-19  |  Total Plants Monitored: 23                ║
 ║                                                                              ║
 ================================================================================
 
@@ -51,6 +51,10 @@
 │   • chamila-chamila-119h
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • chandika-plant
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│   • dessmonitor-dushanthatiqri-plant
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│   • dessmonitor-mifrazmarsoon-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • samurdi-kohuwala
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
