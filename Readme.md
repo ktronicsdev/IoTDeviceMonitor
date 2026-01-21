@@ -54,16 +54,38 @@ Sends personalized weekly production reports to customers every Sunday.
 
 **Schedule:** Every Sunday at 04:00 UTC
 
+**Platforms Supported:**
+- **ShineMonitor:** [trigger-customer-reports.yml](.github/workflows/trigger-customer-reports.yml)
+- **DessMonitor:** [trigger-dessmonitor-weekly-reports.yml](.github/workflows/trigger-dessmonitor-weekly-reports.yml)
+
 **Report Contents:**
 
 - Weekly production summary (last 7 days)
 - Monthly progress (current month)
 - Yearly totals (year-to-date)
 - Plant count and combined statistics
+- Active production alerts (if any)
 
-**Email Recipients:** Customers with email in credentials.json
+**Email Recipients:** Customers with email in credentials.json (platform-specific)
 
-**Test Coverage:** 11/11 PASSED (100%)
+**Platform Filtering:**
+- ShineMonitor reports: Exclude `dessmonitor-*` CSV files
+- DessMonitor reports: Only include `dessmonitor-*` CSV files
+- Email subject: DessMonitor emails prefixed with `[DessMonitor]`
+
+**Admin Summary:**
+- Aggregates all customers per platform
+- Sent to admin on ALL triggers (push, manual, schedule)
+- Platform-specific summaries (ShineMonitor vs DessMonitor)
+
+**UC8 Schedule Filter:**
+- **Admin emails:** ALWAYS sent (all triggers)
+- **Customer emails:** ONLY on scheduled runs (Sunday)
+- **Push/manual triggers:** Admin-only mode (build verification)
+
+**Test Coverage:** 15/15 PASSED (100%)
+- Core UC2: 11 tests
+- UC10 Platform Support: 4 tests
 
 ---
 
