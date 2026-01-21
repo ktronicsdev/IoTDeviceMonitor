@@ -470,5 +470,167 @@ class TestBackwardCompatibility:
         assert not shine_pattern.match("dessmonitor-mifraz-plant-2026-01.csv")
 
 
+class TestDessMonitorDataCollection:
+    """
+    Test DessMonitor data collection scripts (bash integration tests).
+
+    These tests verify the CRITICAL BUG FIX (2026-01-21):
+    - Changed from device-level API to plant-level API
+    - Fixed date parsing to use API response dates (not today's date)
+    - Added AWK parsing for daily breakdown (matches ShineMonitor pattern)
+    """
+
+    def run_bash_script(self, script_content, timeout=30):
+        """Execute bash script and return output"""
+        import subprocess
+        import platform as plat
+
+        # Skip on Windows - these tests require Unix environment
+        if plat.system() == 'Windows':
+            pytest.skip("Bash script tests require Unix environment (Linux/macOS). Run in GitHub Actions.")
+
+        result = subprocess.run(
+            ['bash', '-c', script_content],
+            capture_output=True,
+            text=True,
+            timeout=timeout
+        )
+        return result
+
+    def test_dessmonitor_common_functions_exist(self):
+        """Test that dessmonitor_common.sh defines required functions"""
+        script_path = scripts_dir / "dessmonitor_common.sh"
+
+        if not script_path.exists():
+            pytest.skip("dessmonitor_common.sh not found")
+
+        content = script_path.read_text()
+
+        # Required functions
+        required_functions = [
+            "dessmonitor_authenticate",
+            "dessmonitor_api_call",
+            "dessmonitor_auth_email",
+            "dessmonitor_auth_source",
+        ]
+
+        for func in required_functions:
+            assert func in content, f"Missing required function: {func}"
+
+    def test_check_monthly_uses_plant_level_api(self):
+        """
+        REGRESSION TEST: Verify check_dessmonitor_monthly.sh uses plant-level API.
+
+        BUG FIX (2026-01-21):
+        - Old: webQueryDeviceEs (device-level, returns current snapshot only)
+        - New: queryPlantEnergyMonthPerDay (plant-level, returns daily breakdown)
+        """
+        script_path = scripts_dir / "check_dessmonitor_monthly.sh"
+
+        if not script_path.exists():
+            pytest.skip("check_dessmonitor_monthly.sh not found")
+
+        content = script_path.read_text()
+
+        # MUST use plant-level API
+        assert "queryPlantEnergyMonthPerDay" in content, \
+            "Script must use queryPlantEnergyMonthPerDay API (plant-level)"
+
+        # Should NOT use old device-level API
+        assert "webQueryDeviceEs" not in content or "webQueryDeviceEs" in content and "#" in content.split("webQueryDeviceEs")[0].split("\n")[-1], \
+            "Script should NOT use webQueryDeviceEs (device-level API)"
+
+    def test_check_monthly_parses_dates_from_api(self):
+        """
+        REGRESSION TEST: Verify dates are parsed from API response (not hardcoded to today).
+
+        BUG FIX (2026-01-21):
+        - Old: today=$(date -u +%Y-%m-%d) - wrote today's date for all rows
+        - New: Extract 'ts' field from API response - each row has correct date
+        """
+        script_path = scripts_dir / "check_dessmonitor_monthly.sh"
+
+        if not script_path.exists():
+            pytest.skip("check_dessmonitor_monthly.sh not found")
+
+        content = script_path.read_text()
+
+        # MUST use AWK to parse dates from API (looks for "ts" field)
+        assert '"ts"' in content, \
+            "Script must parse 'ts' (timestamp) field from API response"
+
+        # MUST use AWK for parsing (same pattern as ShineMonitor)
+        assert "awk" in content, \
+            "Script must use AWK to parse API response"
+
+        # Should NOT hardcode today's date in the loop
+        lines = content.split("\n")
+        for i, line in enumerate(lines):
+            if "echo \"${today}," in line or "echo \"$today," in line:
+                # Check if this line is inside the plant loop (should NOT be)
+                context = "\n".join(lines[max(0, i-10):min(len(lines), i+10)])
+                assert "done  # plants" not in context or "while" not in context, \
+                    f"Line {i+1}: Should NOT write hardcoded today date inside plant loop"
+
+    def test_check_monthly_awk_parsing_logic(self):
+        """
+        Test that AWK parsing logic matches ShineMonitor pattern.
+
+        Expected pattern: Extract "val" and "ts" pairs from API JSON response
+        """
+        script_path = scripts_dir / "check_dessmonitor_monthly.sh"
+
+        if not script_path.exists():
+            pytest.skip("check_dessmonitor_monthly.sh not found")
+
+        content = script_path.read_text()
+
+        # AWK should parse both val and ts fields
+        assert '"val"' in content and '"ts"' in content, \
+            "AWK parsing must extract both 'val' (kWh) and 'ts' (date) from API response"
+
+        # Should use mapfile to collect rows
+        assert "mapfile" in content or "ROWS" in content, \
+            "Should use mapfile to collect daily rows"
+
+    def test_check_monthly_csv_output_format(self):
+        """Test that CSV output format is correct: date,kwh"""
+        script_path = scripts_dir / "check_dessmonitor_monthly.sh"
+
+        if not script_path.exists():
+            pytest.skip("check_dessmonitor_monthly.sh not found")
+
+        content = script_path.read_text()
+
+        # CSV header must be "date,kwh"
+        assert 'echo "date,kwh"' in content or '"date,kwh"' in content, \
+            "CSV header must be 'date,kwh'"
+
+        # AWK output should be "day,val" format
+        assert 'print day "," val' in content or 'print day","val' in content, \
+            "AWK output must format as: date,kwh"
+
+    def test_check_monthly_file_naming_convention(self):
+        """
+        Test that output files follow naming convention.
+
+        Expected: data/dessmonitor-<label>-<plant>-YYYY-MM.csv
+        """
+        script_path = scripts_dir / "check_dessmonitor_monthly.sh"
+
+        if not script_path.exists():
+            pytest.skip("check_dessmonitor_monthly.sh not found")
+
+        content = script_path.read_text()
+
+        # Output path must include dessmonitor prefix
+        assert 'dessmonitor-${' in content or 'dessmonitor-$' in content, \
+            "Output filename must include 'dessmonitor-' prefix"
+
+        # Output path must include month variable
+        assert '${MONTH}' in content or '$MONTH' in content, \
+            "Output filename must include month (YYYY-MM)"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
