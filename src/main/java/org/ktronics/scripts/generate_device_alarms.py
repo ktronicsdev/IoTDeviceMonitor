@@ -37,12 +37,26 @@ def save_alarm_state(state_file, state):
         json.dump(state, f, indent=2)
 
 
-def parse_alarm_files(alarms_dir):
-    """Parse all alarm JSON files and extract UNHANDLED alarms."""
+def parse_alarm_files(alarms_dir, platform=None):
+    """
+    Parse all alarm JSON files and extract UNHANDLED alarms.
+
+    Args:
+        alarms_dir: Directory containing alarm JSON files
+        platform: Optional platform filter ('shinemonitor', 'dessmonitor', or None)
+    """
     alarms_dir = Path(alarms_dir)
     all_alarms = []
 
-    for alarm_file in alarms_dir.glob('*-alarms.json'):
+    alarm_files = list(alarms_dir.glob('*-alarms.json'))
+
+    # Filter by platform
+    if platform == 'dessmonitor':
+        alarm_files = [f for f in alarm_files if f.name.startswith('dessmonitor-')]
+    elif platform == 'shinemonitor':
+        alarm_files = [f for f in alarm_files if not f.name.startswith('dessmonitor-')]
+
+    for alarm_file in alarm_files:
         try:
             with open(alarm_file, 'r') as f:
                 data = json.load(f)
@@ -373,6 +387,8 @@ def main():
     parser.add_argument('--output-file', required=True, help='Path to output email text file')
     parser.add_argument('--test-mode', action='store_true',
                         help='Test mode: include most recent alarm even if max sends reached (for push/manual runs)')
+    parser.add_argument('--platform', choices=['shinemonitor', 'dessmonitor'],
+                        help='Platform filter: only process alarms for specified platform')
 
     args = parser.parse_args()
 
@@ -387,8 +403,10 @@ def main():
 
     # Parse alarm files
     print(f"[2/5] Parsing alarm files from {args.alarms_dir}...")
-    all_alarms = parse_alarm_files(args.alarms_dir)
-    print(f"✓ Found {len(all_alarms)} UNHANDLED alarms")
+    platform_info = f" (platform: {args.platform})" if args.platform else ""
+    print(f"  Filtering for platform: {args.platform if args.platform else 'all'}")
+    all_alarms = parse_alarm_files(args.alarms_dir, platform=args.platform)
+    print(f"✓ Found {len(all_alarms)} UNHANDLED alarms{platform_info}")
 
     # Filter alarms to send
     print("[3/5] Filtering alarms (max 3 sends per alarm, 4-hour interval)...")
@@ -439,7 +457,13 @@ def main():
         )
 
         # Write customer device alarms JSON
-        customer_alarms_file = Path(args.output_file).parent / 'customer_device_alarms.json'
+        # Auto-detect platform from output filename to prevent file collision
+        output_stem = Path(args.output_file).stem
+        if output_stem.startswith('dessmonitor_'):
+            customer_filename = 'dessmonitor_customer_device_alarms.json'
+        else:
+            customer_filename = 'customer_device_alarms.json'
+        customer_alarms_file = Path(args.output_file).parent / customer_filename
         output_data = {'customer_device_alarms': customer_device_alarms}
 
         with open(customer_alarms_file, 'w', encoding='utf-8') as f:
@@ -449,7 +473,13 @@ def main():
         print(f"  Customers with device alarms: {len(customer_device_alarms)}")
     else:
         # No alarms - create empty customer alarms file
-        customer_alarms_file = Path(args.output_file).parent / 'customer_device_alarms.json'
+        # Auto-detect platform from output filename to prevent file collision
+        output_stem = Path(args.output_file).stem
+        if output_stem.startswith('dessmonitor_'):
+            customer_filename = 'dessmonitor_customer_device_alarms.json'
+        else:
+            customer_filename = 'customer_device_alarms.json'
+        customer_alarms_file = Path(args.output_file).parent / customer_filename
         with open(customer_alarms_file, 'w', encoding='utf-8') as f:
             json.dump({'customer_device_alarms': {}}, f, indent=2)
         print(f"✓ Empty customer device alarms file created")

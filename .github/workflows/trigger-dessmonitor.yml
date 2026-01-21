@@ -188,6 +188,137 @@ jobs:
             echo "No DessMonitor customer alerts file found"
           fi
 
+      # UC3: Check device alarms for all DessMonitor customers
+      - name: Check DessMonitor device alarms for all customers
+        shell: bash
+        run: |
+          set +e  # Don't exit on error - some customers may have no alarms
+          mkdir -p alarms
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🔔 UC3: CHECKING DESSMONITOR DEVICE ALARMS FOR ALL CUSTOMERS"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          # Make bash scripts executable
+          chmod +x src/main/java/org/ktronics/scripts/check_dessmonitor_device_alarms.sh
+          chmod +x src/main/java/org/ktronics/scripts/dessmonitor_common.sh
+
+          # Get company key from credentials
+          COMPANY_KEY=$(jq -r '.company_key // "bnrl_frRFjEz8Mkn"' src/main/java/org/ktronics/config/dessmonitor_credentials.json 2>/dev/null || echo "bnrl_frRFjEz8Mkn")
+
+          # Loop through each DessMonitor account
+          jq -c '.dessmonitor_accounts[]' src/main/java/org/ktronics/config/dessmonitor_credentials.json 2>/dev/null | while read -r acc; do
+            label=$(echo "$acc" | jq -r '.label // empty')
+            username=$(echo "$acc" | jq -r '.username // empty')
+            password=$(echo "$acc" | jq -r '.password // empty')
+
+            [[ -z "$username" || -z "$password" ]] && continue
+            [[ -z "$label" ]] && label="$username"
+
+            echo ""
+            echo "Checking device alarms for: $label"
+
+            # Sanitize label for filename
+            safe_label=$(echo "$label" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g')
+
+            bash src/main/java/org/ktronics/scripts/check_dessmonitor_device_alarms.sh \
+              "$username" \
+              "$password" \
+              "$COMPANY_KEY" \
+              "alarms/dessmonitor-${safe_label}-alarms.json" 2>&1 || echo "  ⚠️ Failed to fetch alarms for $label"
+          done
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      # UC3: Process DessMonitor device alarms and generate email
+      - name: Process DessMonitor device alarms and generate email
+        id: dessmonitor_device_alarms
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🔔 UC3: PROCESSING DESSMONITOR DEVICE ALARMS"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          mkdir -p alarms state
+
+          # UC5: Conditional test mode
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            TEST_MODE=""
+            echo "Mode: PRODUCTION (scheduled run - normal filtering)"
+          else
+            TEST_MODE="--test-mode"
+            echo "Mode: TEST (push/manual - includes most recent Mifrazmarso alarm for testing)"
+          fi
+
+          python3 src/main/java/org/ktronics/scripts/generate_device_alarms.py \
+            --alarms-dir alarms \
+            --state-file state/dessmonitor_device_alarms_state.json \
+            --output-file alarms/dessmonitor_device_alarms.txt \
+            --platform dessmonitor \
+            $TEST_MODE
+
+          exit_code=$?
+          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
+
+          # UC6: Log summary counts
+          if [[ -f alarms/dessmonitor_device_alarms.txt ]]; then
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "📊 DESSMONITOR DEVICE ALARMS SUMMARY:"
+            grep "📊 Summary:" alarms/dessmonitor_device_alarms.txt 2>/dev/null || echo "No alarms to send"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          fi
+
+          exit $exit_code
+
+      # UC3: Send DessMonitor device alarms email to admin
+      - name: Send DessMonitor device alarms email to admin
+        if: steps.dessmonitor_device_alarms.outputs.exit_code == '2'
+        shell: bash
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📧 SENDING DESSMONITOR DEVICE ALARMS EMAIL (ADMIN)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          EMAIL_SUBJECT="🔔 [DessMonitor] DEVICE ALARMS DETECTED - $(date -u +%Y-%m-%d)" \
+          EMAIL_BODY="$(cat alarms/dessmonitor_device_alarms.txt)" \
+          EMAIL_TO="$ALERT_TO" \
+          python3 src/main/java/org/ktronics/scripts/send_email.py
+
+          echo "✓ Admin device alarms email sent"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      # UC4: Send DessMonitor customer-specific device alarm emails
+      - name: Send DessMonitor customer device alarm emails
+        if: steps.dessmonitor_device_alarms.outputs.exit_code == '2'
+        shell: bash
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📧 UC4: SENDING DESSMONITOR CUSTOMER DEVICE ALARMS"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          # UC4: Conditional test-customer-only mode
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            TEST_CUSTOMER_ONLY=""
+            echo "Mode: PRODUCTION (sending to all customers with device alarms)"
+          else
+            TEST_CUSTOMER_ONLY="--test-customer-only"
+            echo "Mode: TEST (sending only to test customer: Mifrazmarso)"
+          fi
+
+          if [ -f alarms/dessmonitor_customer_device_alarms.json ]; then
+            python3 src/main/java/org/ktronics/scripts/send_customer_emails.py \
+              --customer-alarms alarms/dessmonitor_customer_device_alarms.json \
+              $TEST_CUSTOMER_ONLY
+
+            echo "✓ Customer device alarm emails sent"
+          else
+            echo "No customer device alarms file found (all clear or no customers with alarms)"
+          fi
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
       - name: Commit DessMonitor data and state
         shell: bash
         run: |
@@ -199,6 +330,9 @@ jobs:
           git add state/dessmonitor_*.json 2>/dev/null || true
           git add alerts/dessmonitor_*.txt 2>/dev/null || true
           git add alerts/dessmonitor_*.json 2>/dev/null || true
+          git add alarms/dessmonitor-*-alarms.json 2>/dev/null || true
+          git add alarms/dessmonitor_device_alarms.txt 2>/dev/null || true
+          git add alarms/dessmonitor_customer_device_alarms.json 2>/dev/null || true
 
           if git diff --staged --quiet; then
             echo "No DessMonitor changes to commit"
