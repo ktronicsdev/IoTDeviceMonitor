@@ -2,7 +2,7 @@
   "customer": "MifrazMarsoon",
   "email": "pcgayan@gmail.com",
   "report_file": "reports/dessmonitor_weekly_report_mifrazmarsoon.txt",
-  "generated_at": "2026-01-20T23:25:35.873927",
+  "generated_at": "2026-01-21T04:02:09.233573",
   "summary": {
     "plants": [
       {
@@ -20,8 +20,8 @@
     "total_yearly": 0,
     "total_prev_monthly": 0.0,
     "total_prev_yearly": 0,
-    "week_start": "2026-01-13",
-    "week_end": "2026-01-20",
+    "week_start": "2026-01-14",
+    "week_end": "2026-01-21",
     "current_month": "2026-01",
     "prev_month": "2025-12",
     "current_year": "2026",
