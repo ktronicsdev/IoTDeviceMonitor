@@ -188,51 +188,6 @@ jobs:
             echo "No DessMonitor customer alerts file found"
           fi
 
-      # UC2 Equivalent: Weekly Reports for DessMonitor
-      - name: Generate DessMonitor weekly reports
-        if: github.event_name == 'schedule'
-        shell: bash
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📊 GENERATING DESSMONITOR WEEKLY REPORTS"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          mkdir -p reports state
-
-          # Check if any DessMonitor data files exist
-          if ! ls data/dessmonitor-*.csv 1> /dev/null 2>&1; then
-            echo "No DessMonitor data files found. Skipping weekly report generation."
-            exit 0
-          fi
-
-          python3 src/main/java/org/ktronics/scripts/generate_weekly_report.py \
-            --credentials src/main/java/org/ktronics/config/dessmonitor_credentials.json \
-            --data-dir data \
-            --alerts-state state/dessmonitor_alerts_state.json \
-            --output-dir reports \
-            --platform dessmonitor
-
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-      - name: Send DessMonitor weekly reports to customers
-        if: github.event_name == 'schedule'
-        shell: bash
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📧 SENDING DESSMONITOR WEEKLY REPORTS TO CUSTOMERS"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-          # Check if any DessMonitor weekly reports exist
-          if ! ls reports/dessmonitor_weekly_report_*.json 1> /dev/null 2>&1; then
-            echo "No DessMonitor weekly reports found. Skipping email sending."
-            exit 0
-          fi
-
-          python3 src/main/java/org/ktronics/scripts/send_customer_emails.py \
-            --reports-dir reports \
-            --report-prefix dessmonitor_weekly_report
-
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
       - name: Commit DessMonitor data and state
         shell: bash
         run: |
@@ -244,8 +199,6 @@ jobs:
           git add state/dessmonitor_*.json 2>/dev/null || true
           git add alerts/dessmonitor_*.txt 2>/dev/null || true
           git add alerts/dessmonitor_*.json 2>/dev/null || true
-          git add reports/dessmonitor_*.txt 2>/dev/null || true
-          git add reports/dessmonitor_*.json 2>/dev/null || true
 
           if git diff --staged --quiet; then
             echo "No DessMonitor changes to commit"

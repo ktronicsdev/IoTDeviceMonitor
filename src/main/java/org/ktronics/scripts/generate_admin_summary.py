@@ -20,11 +20,18 @@ sys.path.insert(0, str(Path(__file__).parent))
 from generate_weekly_report import load_credentials, get_customer_plants, get_weekly_summary
 
 
-def generate_admin_summary(credentials_file, data_dir, output_file):
-    """Generate comprehensive admin summary of all customers."""
+def generate_admin_summary(credentials_file, data_dir, output_file, platform=None):
+    """Generate comprehensive admin summary of all customers.
+
+    Args:
+        credentials_file: Path to credentials JSON file
+        data_dir: Directory containing CSV files
+        output_file: Output file path
+        platform: Optional platform filter ('shinemonitor', 'dessmonitor', or None for default)
+    """
 
     data_path = Path(data_dir)
-    accounts = load_credentials(credentials_file)
+    accounts = load_credentials(credentials_file, platform=platform)
 
     today = datetime.now()
     week_ago = today - timedelta(days=7)
@@ -41,8 +48,8 @@ def generate_admin_summary(credentials_file, data_dir, output_file):
     for customer in accounts:
         customer_label = customer['label']
 
-        # Get customer's plants
-        plant_names = get_customer_plants(data_path, customer_label)
+        # Get customer's plants (filter by platform)
+        plant_names = get_customer_plants(data_path, customer_label, platform=platform)
 
         if not plant_names:
             continue
@@ -173,10 +180,12 @@ def main():
     parser.add_argument('--credentials', default=str(CREDENTIALS_PATH), help='Path to credentials.json')
     parser.add_argument('--data-dir', default='data', help='Directory containing CSV files')
     parser.add_argument('--output', default='reports/admin_summary.txt', help='Output file path')
+    parser.add_argument('--platform', default=None, choices=['shinemonitor', 'dessmonitor'],
+                        help='Filter by platform (shinemonitor or dessmonitor). If not specified, defaults to ShineMonitor.')
 
     args = parser.parse_args()
 
-    result = generate_admin_summary(args.credentials, args.data_dir, args.output)
+    result = generate_admin_summary(args.credentials, args.data_dir, args.output, platform=args.platform)
 
     return 0
 
