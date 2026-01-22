@@ -235,7 +235,7 @@ jobs:
         id: dessmonitor_device_alarms
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail  # Removed -e to allow exit code 2 to be captured
 
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🔔 UC3: PROCESSING DESSMONITOR DEVICE ALARMS"
