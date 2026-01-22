@@ -20,7 +20,10 @@ from unittest.mock import patch, MagicMock
 import pytest
 
 # Add the scripts directory to the path
-scripts_dir = Path(__file__).parent.parent.parent.parent.parent / "main" / "java" / "org" / "ktronics" / "scripts"
+# File location: src/test/java/org/ktronics/scripts/integration/test_dessmonitor_integration.py
+# Scripts location: src/main/java/org/ktronics/scripts/
+# Go up 2 levels (integration/ -> scripts/) then across to main/
+scripts_dir = Path(__file__).parent.parent.parent.parent.parent.parent / "main" / "java" / "org" / "ktronics" / "scripts"
 sys.path.insert(0, str(scripts_dir))
 
 
