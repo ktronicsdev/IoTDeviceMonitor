@@ -21,9 +21,10 @@ import pytest
 
 # Add the scripts directory to the path
 # File location: src/test/java/org/ktronics/scripts/integration/test_dessmonitor_integration.py
-# Scripts location: src/main/java/org/ktronics/scripts/
-# Go up 2 levels (integration/ -> scripts/) then across to main/
-scripts_dir = Path(__file__).parent.parent.parent.parent.parent.parent / "main" / "java" / "org" / "ktronics" / "scripts"
+# Target location: src/main/java/org/ktronics/scripts/
+# From test file: integration/ -> scripts/ -> ktronics/ -> org/ -> java/ -> test/ -> src/ -> (root)
+# That's 7 parent calls to reach root, then navigate to main/
+scripts_dir = Path(__file__).parent.parent.parent.parent.parent.parent.parent / "src" / "main" / "java" / "org" / "ktronics" / "scripts"
 sys.path.insert(0, str(scripts_dir))
 
 
