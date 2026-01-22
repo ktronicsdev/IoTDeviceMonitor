@@ -22,8 +22,8 @@ import pytest
 # Add the scripts directory to the path
 # File location: src/test/java/org/ktronics/scripts/integration/test_dessmonitor_integration.py
 # Target location: src/main/java/org/ktronics/scripts/
-# Using .parents[6] to reach repo root, then navigate to src/main/...
-scripts_dir = Path(__file__).parents[6] / "src" / "main" / "java" / "org" / "ktronics" / "scripts"
+# parents[7] = repo root, then navigate to src/main/java/org/ktronics/scripts
+scripts_dir = Path(__file__).parents[7] / "src" / "main" / "java" / "org" / "ktronics" / "scripts"
 sys.path.insert(0, str(scripts_dir))
 
 
