@@ -277,16 +277,30 @@ def update_alarm_state(state, alarms_to_send):
     return state
 
 
-def load_customer_mapping(credentials_file):
+def load_customer_mapping(credentials_file, platform=None):
     """Load plant-to-customer mapping from credentials.json.
+
+    Args:
+        credentials_file: Path to credentials file
+        platform: 'shinemonitor' or 'dessmonitor' (auto-detect from filename if not provided)
 
     Returns dict: {normalized_customer: {'label': str, 'email': str}}
     """
     with open(credentials_file, 'r', encoding='utf-8') as f:
         creds = json.load(f)
 
+    # Auto-detect platform from filename if not specified
+    if platform is None:
+        platform = 'dessmonitor' if 'dessmonitor' in str(credentials_file).lower() else 'shinemonitor'
+
+    # Choose correct accounts key based on platform
+    if platform == 'dessmonitor':
+        accounts_key = 'dessmonitor_accounts'
+    else:
+        accounts_key = 'accounts'
+
     customer_map = {}
-    for account in creds.get('accounts', []):
+    for account in creds.get(accounts_key, []):
         label = account.get('label', '')
         email = account.get('email', '')
 
@@ -303,18 +317,19 @@ def load_customer_mapping(credentials_file):
     return customer_map
 
 
-def create_customer_device_alarms(alarms_to_send, state, credentials_file):
+def create_customer_device_alarms(alarms_to_send, state, credentials_file, platform=None):
     """Map alarms to customers and create customer_device_alarms.json structure.
 
     Args:
         alarms_to_send: List of alarm dicts that should be sent
         state: Current alarm state dict
         credentials_file: Path to credentials.json
+        platform: 'shinemonitor' or 'dessmonitor' (auto-detect if not provided)
 
     Returns:
         dict: {customer_label: {'email': str, 'alarms': [...]}}
     """
-    customer_map = load_customer_mapping(credentials_file)
+    customer_map = load_customer_mapping(credentials_file, platform)
     customer_alarms = {}
 
     for item in alarms_to_send:
@@ -453,7 +468,8 @@ def main():
         customer_device_alarms = create_customer_device_alarms(
             alarms_to_send,
             state,
-            credentials_file
+            credentials_file,
+            args.platform
         )
 
         # Write customer device alarms JSON
