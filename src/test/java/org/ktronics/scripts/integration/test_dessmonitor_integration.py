@@ -683,7 +683,7 @@ class TestDessMonitorUC1AdminAlerts:
 
         # Create baseline data (14 days before red window)
         baseline_data = []
-        for i in range(17, 3, -1):
+        for i in range(17, 2, -1):  # Days 17-3 (matches check_anomaly.py baseline window)
             day = today - timedelta(days=i)
             baseline_data.append((day.strftime('%Y-%m-%d'), 10.0))
 
@@ -885,7 +885,7 @@ class TestDessMonitorUC1AdminAlerts:
 
         # Baseline: 14 days before red window
         baseline_data = []
-        for i in range(17, 3, -1):
+        for i in range(17, 2, -1):  # Days 17-3 (matches check_anomaly.py baseline window)
             day = today - timedelta(days=i)
             baseline_data.append((day.strftime('%Y-%m-%d'), 10.0))
 
@@ -930,7 +930,7 @@ class TestDessMonitorUC1AdminAlerts:
         today = utc_today()
 
         baseline_data = []
-        for i in range(17, 3, -1):
+        for i in range(17, 2, -1):  # Days 17-3 (matches check_anomaly.py baseline window)
             day = today - timedelta(days=i)
             baseline_data.append((day.strftime('%Y-%m-%d'), 10.0))
 
@@ -1069,7 +1069,7 @@ class TestDessMonitorUC1AdminAlerts:
 
         # Plant 1: RED alert
         baseline_data = []
-        for i in range(17, 3, -1):
+        for i in range(17, 2, -1):  # Days 17-3 (matches check_anomaly.py baseline window)
             day = today - timedelta(days=i)
             baseline_data.append((day.strftime('%Y-%m-%d'), 10.0))
 
@@ -1156,7 +1156,7 @@ class TestDessMonitorUC1AdminAlerts:
         today = utc_today()
 
         baseline_data = []
-        for i in range(17, 3, -1):
+        for i in range(17, 2, -1):  # Days 17-3 (matches check_anomaly.py baseline window)
             day = today - timedelta(days=i)
             baseline_data.append((day.strftime('%Y-%m-%d'), 10.0))
 
@@ -1231,7 +1231,7 @@ class TestDessMonitorUC1AdminAlerts:
         today = utc_today()
 
         baseline_data = []
-        for i in range(17, 3, -1):
+        for i in range(17, 2, -1):  # Days 17-3 (matches check_anomaly.py baseline window)
             day = today - timedelta(days=i)
             baseline_data.append((day.strftime('%Y-%m-%d'), 10.0))
 
@@ -1284,7 +1284,7 @@ class TestDessMonitorUC1AdminAlerts:
         today = utc_today()
 
         baseline_data = []
-        for i in range(17, 3, -1):
+        for i in range(17, 2, -1):  # Days 17-3 (matches check_anomaly.py baseline window)
             day = today - timedelta(days=i)
             baseline_data.append((day.strftime('%Y-%m-%d'), 10.0))
 
