@@ -19,8 +19,12 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-# Add scripts directory to path (matching ShineMonitor pattern)
-scripts_dir = Path(__file__).parent.parent.parent.parent.parent.parent / "main" / "java" / "org" / "ktronics" / "scripts"
+# Add scripts directory to path
+# ShineMonitor tests use 6 .parent calls because they IMPORT modules (sys.path based)
+# DessMonitor tests use subprocess.run() which needs ABSOLUTE path to script file
+# Starting from: src/test/java/org/ktronics/scripts/integration/test_dessmonitor_integration.py
+# 8 .parent calls reach repo root (IOT/), then add src/main/java/org/ktronics/scripts
+scripts_dir = Path(__file__).parent.parent.parent.parent.parent.parent.parent.parent / "src" / "main" / "java" / "org" / "ktronics" / "scripts"
 sys.path.insert(0, str(scripts_dir))
 
 
