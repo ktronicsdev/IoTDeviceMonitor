@@ -974,7 +974,7 @@ class TestDessMonitorUC1AdminAlerts:
 
         # Baseline
         baseline_data = []
-        for i in range(17, 5, -1):
+        for i in range(17, 2, -1):  # Days 17-3 (matches check_anomaly.py baseline window)
             day = today - timedelta(days=i)
             baseline_data.append((day.strftime('%Y-%m-%d'), 10.0))
 
@@ -1018,18 +1018,14 @@ class TestDessMonitorUC1AdminAlerts:
 
         today = utc_today()
 
-        # Baseline + 3 low days + 3 recovery days
+        # Baseline + 3 recovery days (normal production after previous low period)
         baseline_data = []
-        for i in range(17, 6, -1):
+        for i in range(17, 2, -1):  # Days 17-3 (matches check_anomaly.py baseline window)
             day = today - timedelta(days=i)
             baseline_data.append((day.strftime('%Y-%m-%d'), 10.0))
 
         recovery_data = baseline_data.copy()
-        # 3 low days
-        for i in range(5, 2, -1):
-            day = today - timedelta(days=i)
-            recovery_data.append((day.strftime('%Y-%m-%d'), 1.0))
-        # 3 recovery days
+        # Last 3 days: recovery to normal production
         for i in range(2, -1, -1):
             day = today - timedelta(days=i)
             recovery_data.append((day.strftime('%Y-%m-%d'), 10.0))
