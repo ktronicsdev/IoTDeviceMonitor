@@ -740,20 +740,33 @@ class TestDessMonitorUC1AdminAlerts:
 
         from datetime import datetime, timedelta
 
-        # Create 3 months of low production data
+        # Create baseline (6 months) + orange window (3 months)
+        # check_anomaly.py expects 6 baseline months BEFORE the 3 orange window months
         today = datetime.now()
         current_month = today.replace(day=1)
 
-        for month_offset in range(3):
+        # Create 6 baseline months with normal production (10.0 kWh/day)
+        for month_offset in range(9, 3, -1):  # Months 9, 8, 7, 6, 5, 4 before current
             month_date = current_month - timedelta(days=30 * month_offset)
             month_str = month_date.strftime('%Y-%m')
 
-            # Create low production data (30% of normal)
+            daily_data = []
+            for day in range(1, 31):
+                date_str = f"{month_str}-{day:02d}"
+                daily_data.append((date_str, 10.0))  # Normal baseline production
+
+            self.create_dessmonitor_monthly_csv(test_dessmonitor_data_dir, "mifraz-plant", month_str, daily_data)
+
+        # Create 3 orange window months with low production (30% of baseline = 3.0 kWh/day)
+        for month_offset in range(3):  # Months 2, 1, 0 (current)
+            month_date = current_month - timedelta(days=30 * month_offset)
+            month_str = month_date.strftime('%Y-%m')
+
             daily_data = []
             days_in_month = 30
             for day in range(1, days_in_month + 1):
                 date_str = f"{month_str}-{day:02d}"
-                daily_data.append((date_str, 3.0))  # Low production
+                daily_data.append((date_str, 3.0))  # Low production (30% of 10.0)
 
             self.create_dessmonitor_monthly_csv(test_dessmonitor_data_dir, "mifraz-plant", month_str, daily_data)
 
@@ -815,14 +828,33 @@ class TestDessMonitorUC1AdminAlerts:
         if plat.system() == 'Windows':
             pytest.skip("check_anomaly.py requires Unix date command")
 
-        from datetime import datetime
+        from datetime import datetime, timedelta
+        from check_anomaly import utc_today
 
-        today = datetime.now()
-        month_str = today.strftime('%Y-%m')
+        today = utc_today()
 
-        # Create normal production data
-        daily_data = [(f"{month_str}-{day:02d}", 10.0) for day in range(1, 31)]
-        self.create_dessmonitor_monthly_csv(test_dessmonitor_data_dir, "normal-plant", month_str, daily_data)
+        # Create baseline data (14 days before red window) + current data
+        baseline_data = []
+        for i in range(17, 2, -1):  # Days 17-3 (matches check_anomaly.py baseline window)
+            day = today - timedelta(days=i)
+            baseline_data.append((day.strftime('%Y-%m-%d'), 10.0))
+
+        # Add current 3 days with normal production (no alert)
+        current_data = baseline_data.copy()
+        for i in range(2, -1, -1):  # Last 3 days
+            day = today - timedelta(days=i)
+            current_data.append((day.strftime('%Y-%m-%d'), 10.0))  # Normal production
+
+        # Group by month
+        from collections import defaultdict
+        data_by_month = defaultdict(list)
+        for date_str, kwh in current_data:
+            month = date_str[:7]
+            data_by_month[month].append((date_str, kwh))
+
+        # Create CSV files
+        for month, data in data_by_month.items():
+            self.create_dessmonitor_monthly_csv(test_dessmonitor_data_dir, "normal-plant", month, data)
 
         # Run anomaly detection
         result = subprocess.run([
@@ -1194,7 +1226,15 @@ class TestDessMonitorUC1AdminAlerts:
         today = datetime.now()
         current_month = today.replace(day=1)
 
-        # Exactly 3 months
+        # Create 6 baseline months with normal production (10.0 kWh/day)
+        for month_offset in range(9, 3, -1):  # Months 9, 8, 7, 6, 5, 4 before current
+            month_date = current_month - timedelta(days=30 * month_offset)
+            month_str = month_date.strftime('%Y-%m')
+
+            daily_data = [(f"{month_str}-{day:02d}", 10.0) for day in range(1, 28)]
+            self.create_dessmonitor_monthly_csv(test_dessmonitor_data_dir, "exact3months-plant", month_str, daily_data)
+
+        # Exactly 3 low months (orange window)
         for month_offset in range(3):
             month_date = current_month - timedelta(days=30 * month_offset)
             month_str = month_date.strftime('%Y-%m')
