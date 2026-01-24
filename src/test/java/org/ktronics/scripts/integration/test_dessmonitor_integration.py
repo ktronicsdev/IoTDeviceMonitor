@@ -872,7 +872,7 @@ class TestDessMonitorUC1AdminAlerts:
         with open(alerts_file, 'r', encoding='utf-8') as f:
             alert_text = f.read()
 
-        assert "All Systems Operational" in alert_text or "ALL CLEAR" in alert_text
+        assert "NO ALERTS DETECTED" in alert_text
 
     def test_dessmonitor_customer_specific_alerts_generated(self, test_dessmonitor_data_dir, test_output_dir, test_state_file):
         """Customer-specific alerts JSON file is generated"""
