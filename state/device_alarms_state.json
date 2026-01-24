@@ -276,5 +276,14 @@
     "customer": "Sohan",
     "plant": "Must PV1800 3024 Pro",
     "message": "battery voltage is too low"
+  },
+  "1058467:D70000210184951128:69746b1a91271129726824a5": {
+    "send_count": 1,
+    "first_seen": "2026-01-24T07:06:29.140669",
+    "ignored": false,
+    "last_sent": "2026-01-24T07:06:29.140669",
+    "customer": "Sohan",
+    "plant": "Must PV1800 3024 Pro",
+    "message": "Overload time out"
   }
 }
