@@ -195,13 +195,15 @@ jobs:
             python3 src/main/java/org/ktronics/scripts/generate_device_alarms.py \
               --alarms-dir alarms \
               --state-file state/device_alarms_state.json \
-              --output-file alarms/device_alarms.txt 2>&1
+              --output-file alarms/device_alarms.txt \
+              --platform shinemonitor 2>&1
           else
             echo "🔧 Push/Manual run: Test mode (bypass 3-send limit for most recent alarm)"
             python3 src/main/java/org/ktronics/scripts/generate_device_alarms.py \
               --alarms-dir alarms \
               --state-file state/device_alarms_state.json \
               --output-file alarms/device_alarms.txt \
+              --platform shinemonitor \
               --test-mode 2>&1
           fi
 
