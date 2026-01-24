@@ -161,26 +161,49 @@ echo "$ACCOUNTS_JSON" | while read -r acc; do
     echo "date,kwh" >> "$out"
 
     # Extract day rows: val + ts (API returns val before ts, same as ShineMonitor)
+    # FIX: DessMonitor API returns unquoted numbers: "val":10.5 (not "val":"10.5")
     mapfile -t ROWS < <(
       printf "%s" "$d_resp" | tr -d '\r\n' |
       awk '
         {
           s=$0
-          while (match(s, /"val"[[:space:]]*:[[:space:]]*"[^"]*"/)) {
-            val_part = substr(s, RSTART, RLENGTH)
-            val = val_part
-            sub(/.*:"/, "", val); sub(/"$/, "", val)
+          while (1) {
+            val=""
+            # Try quoted format first: "val":"10.5"
+            if (match(s, /"val"[[:space:]]*:[[:space:]]*"[^"]*"/)) {
+              val_part = substr(s, RSTART, RLENGTH)
+              val = val_part
+              sub(/.*:"/, "", val); sub(/"$/, "", val)
+              rest = substr(s, RSTART+RLENGTH)
+            }
+            # Try unquoted format: "val":10.5 (DessMonitor API format)
+            else if (match(s, /"val"[[:space:]]*:[[:space:]]*[0-9.]+/)) {
+              val_part = substr(s, RSTART, RLENGTH)
+              val = val_part
+              sub(/.*:/, "", val)
+              rest = substr(s, RSTART+RLENGTH)
+            }
+            else {
+              break
+            }
 
-            rest = substr(s, RSTART+RLENGTH)
             ts=""
+            # Try quoted ts format: "ts":"2026-01-01"
             if (match(rest, /"ts"[[:space:]]*:[[:space:]]*"[^"]*"/)) {
               ts_part = substr(rest, RSTART, RLENGTH)
               ts = ts_part
               sub(/.*:"/, "", ts); sub(/"$/, "", ts)
               day = ts
               sub(/[[:space:]].*$/, "", day)
-            } else {
-              # If ts is not found, stop scanning
+            }
+            # Try unquoted ts format (unlikely but handle it)
+            else if (match(rest, /"ts"[[:space:]]*:[[:space:]]*[0-9-]+/)) {
+              ts_part = substr(rest, RSTART, RLENGTH)
+              ts = ts_part
+              sub(/.*:/, "", ts)
+              day = ts
+            }
+            else {
               break
             }
 
