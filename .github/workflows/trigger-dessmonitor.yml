@@ -316,7 +316,7 @@ jobs:
 
           if [ -f alarms/dessmonitor_customer_device_alarms.json ]; then
             python3 src/main/java/org/ktronics/scripts/send_customer_emails.py \
-              --customer-alarms alarms/dessmonitor_customer_device_alarms.json \
+              --customer-device-alarms alarms/dessmonitor_customer_device_alarms.json \
               $TEST_CUSTOMER_ONLY
 
             echo "✓ Customer device alarm emails sent"
