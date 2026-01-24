@@ -1,21 +1,6 @@
 {
-  "generated_at": "2026-01-24T20:08:54.487203Z",
+  "generated_at": "2026-01-24T20:44:16.817949Z",
   "alerts": [],
   "suppressed": [],
-  "ignored": [
-    {
-      "plant_key": "dessmonitor-dushanthatiqri-plant",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-01"
-      ]
-    },
-    {
-      "plant_key": "dessmonitor-mifrazmarsoon-plant",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-01"
-      ]
-    }
-  ]
+  "ignored": []
 }
