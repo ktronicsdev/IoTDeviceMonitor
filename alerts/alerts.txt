@@ -6,7 +6,7 @@
 ║                                                                              ║
 ║                        Status: 1 CRITICAL, 0 WARNING                         ║
 ║                                                                              ║
-║               Date: 2026-01-24  |  Total Plants Monitored: 21                ║
+║               Date: 2026-01-24  |  Total Plants Monitored: 23                ║
 ║                                                                              ║
 ================================================================================
 
