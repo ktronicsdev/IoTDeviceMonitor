@@ -654,73 +654,63 @@ class TestDessMonitorDataCollection:
 class TestDessMonitorYearlyScript:
     """Tests for check_dessmonitor_yearly.sh script"""
 
-    def test_yearly_script_sums_daily_values_correctly(self):
+    def test_yearly_script_parses_monthly_values_correctly(self):
         """
-        Test that yearly script correctly sums daily values to get monthly totals.
+        Test that yearly script correctly parses monthly values from API response.
 
-        This simulates the AWK logic used in check_dessmonitor_yearly.sh:
-        - Input: API response with daily values in dat.option[] array
-        - Output: Sum of all daily values for the month
+        The querySPDeviceKeyParameterYearPerMonth API returns monthly totals
+        in dat.option[] array with gts (YYYY-MM) and val fields.
         """
         import re
 
-        # Sample API response format (same as monthly script)
-        # This is what querySPDeviceKeyParameterMonthPerDay returns
+        # Sample API response format from querySPDeviceKeyParameterYearPerMonth
+        # (Confirmed from web portal browser DevTools)
         sample_response = '''{"err":0,"dat":{"option":[
-            {"gts":"2026-01-01","val":"5.2000"},
-            {"gts":"2026-01-02","val":"6.0000"},
-            {"gts":"2026-01-03","val":"5.9000"},
-            {"gts":"2026-01-04","val":"6.5000"},
-            {"gts":"2026-01-05","val":"5.5000"},
-            {"gts":"2026-01-06","val":"0.0000"},
-            {"gts":"2026-01-07","val":"7.2000"}
+            {"gts":"2026-01","val":"150.5000"},
+            {"gts":"2026-02","val":"140.2000"},
+            {"gts":"2026-03","val":"0.0000"},
+            {"gts":"2026-04","val":"160.8000"}
         ]}}'''
 
-        # Expected sum: 5.2 + 6.0 + 5.9 + 6.5 + 5.5 + 0.0 + 7.2 = 36.3
-        expected_sum = 36.3
+        # Parse monthly values using regex (simulates AWK logic)
+        months = []
+        for match in re.finditer(r'"gts"\s*:\s*"([^"]+)"[^}]*"val"\s*:\s*"?([0-9.]+)"?', sample_response):
+            months.append((match.group(1), float(match.group(2))))
 
-        # Simulate the AWK summing logic using Python regex
-        total = 0.0
-        for match in re.finditer(r'"val"\s*:\s*"?([0-9.]+)"?', sample_response):
-            total += float(match.group(1))
+        assert len(months) == 4, f"Should parse 4 months, got {len(months)}"
+        assert months[0] == ("2026-01", 150.5), f"First month should be 2026-01 with 150.5 kWh"
+        assert months[1] == ("2026-02", 140.2), f"Second month should be 2026-02 with 140.2 kWh"
 
-        assert abs(total - expected_sum) < 0.01, \
-            f"Sum should be {expected_sum}, got {total}"
-
-    def test_yearly_script_handles_12_months(self):
+    def test_yearly_script_uses_year_per_month_api(self):
         """
-        Test that yearly CSV contains exactly 12 months of data.
+        Test that yearly script uses querySPDeviceKeyParameterYearPerMonth API.
 
-        Expected format:
-        month,kwh
-        2026-01,150.5
-        2026-02,140.2
-        ...
-        2026-12,120.8
+        This API returns all 12 months in one call (efficient).
+        NOT querySPDeviceKeyParameterMonthPerDay which would require 12 calls.
         """
-        # Verify script has proper month loop
         script_path = scripts_dir / "check_dessmonitor_yearly.sh"
         if not script_path.exists():
             pytest.skip("check_dessmonitor_yearly.sh not found")
 
         content = script_path.read_text()
 
-        # Must loop through 12 months
-        assert "seq -w 1 12" in content, "Script should loop through months 01-12"
+        # Must use YearPerMonth API (returns all 12 months in one call)
+        assert "querySPDeviceKeyParameterYearPerMonth" in content, \
+            "Script should use querySPDeviceKeyParameterYearPerMonth API"
 
-        # Must format month as YYYY-MM
-        assert '${YEAR}-${m}' in content or '${ym}' in content, \
-            "Month should be formatted as YYYY-MM"
+        # Must use ENERGY_TOTAL parameter (confirmed from web portal)
+        assert "ENERGY_TOTAL" in content, \
+            "Script should use ENERGY_TOTAL parameter"
 
         # Must write to CSV
         assert '>> "$out"' in content, "Script should append to output file"
 
-    def test_yearly_script_aggregates_multiple_devices(self):
+    def test_yearly_script_processes_multiple_devices(self):
         """
-        Test that yearly script aggregates energy from ALL devices in a plant.
+        Test that yearly script processes ALL devices in a plant.
 
-        Some plants have multiple inverters/devices. The yearly total should
-        be the sum of all devices' energy production.
+        Some plants have multiple inverters/devices. The script should
+        query each device and append results to the CSV.
         """
         script_path = scripts_dir / "check_dessmonitor_yearly.sh"
         if not script_path.exists():
@@ -733,9 +723,9 @@ class TestDessMonitorYearlyScript:
         assert 'while read' in content and 'device_line' in content, \
             "Script should loop through each device"
 
-        # Must aggregate device sums
-        assert "awk '{total+=" in content or 'month_total' in content, \
-            "Script should aggregate device sums into month total"
+        # Must append device results to CSV
+        assert '>> "$out"' in content, \
+            "Script should append device results to output CSV"
 
     def test_yearly_script_exists(self):
         """Test that check_dessmonitor_yearly.sh exists"""
@@ -747,7 +737,8 @@ class TestDessMonitorYearlyScript:
         REGRESSION TEST: Verify check_dessmonitor_yearly.sh uses device-level API.
 
         BUG FIX (2026-01-24):
-        - Must use device-level API (querySPDeviceKeyParameterMonthPerDay)
+        - Must use querySPDeviceKeyParameterYearPerMonth (NOT MonthPerDay)
+        - Must use ENERGY_TOTAL parameter (NOT ENERGY_TODAY)
         - Plant-level API returns 0 for all values
         """
         script_path = scripts_dir / "check_dessmonitor_yearly.sh"
@@ -762,23 +753,29 @@ class TestDessMonitorYearlyScript:
         assert 'sn=${pid}' in content, \
             "Script must use sn=pid (not pn=pid) for device query"
 
-        # Must use correct energy API
-        assert "querySPDeviceKeyParameterMonthPerDay" in content, \
-            "Script must use device-level energy API"
-        assert "ENERGY_TODAY" in content, \
-            "Script must use ENERGY_TODAY parameter (not ENERGY_TODAY_FROM_GRID)"
+        # Must use correct energy API (YearPerMonth, not MonthPerDay)
+        assert "querySPDeviceKeyParameterYearPerMonth" in content, \
+            "Script must use querySPDeviceKeyParameterYearPerMonth API"
+        assert "ENERGY_TOTAL" in content, \
+            "Script must use ENERGY_TOTAL parameter (confirmed from web portal)"
 
-    def test_yearly_script_loops_through_months(self):
-        """Test that yearly script loops through all 12 months"""
+    def test_yearly_script_uses_single_api_call(self):
+        """
+        Test that yearly script uses single API call for all 12 months.
+
+        querySPDeviceKeyParameterYearPerMonth returns all 12 months in one call,
+        so we should NOT loop through months 01-12 with separate calls.
+        """
         script_path = scripts_dir / "check_dessmonitor_yearly.sh"
         if not script_path.exists():
             pytest.skip("check_dessmonitor_yearly.sh not found")
 
         content = script_path.read_text()
 
-        # Must loop through 12 months
-        assert "seq -w 1 12" in content or "for m in" in content, \
-            "Script should loop through months 01-12"
+        # Should NOT have a month loop (seq -w 1 12) since API returns all months
+        # The API call uses date=${YEAR} (just the year, not YYYY-MM)
+        assert "date=${YEAR}" in content or 'date=${YEAR}' in content, \
+            "Script should use date=YEAR format (not YYYY-MM)"
 
     def test_yearly_csv_output_format(self):
         """Test that yearly CSV output format is correct: month,kwh"""

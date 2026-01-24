@@ -2,8 +2,9 @@
 set -euo pipefail
 
 # UC10: Multi-Cloud Platform Support - DessMonitor Yearly Data Fetcher
-# Fetches yearly energy data from DessMonitor API by aggregating monthly data
-# Uses device-level API (querySPDeviceKeyParameterMonthPerDay) since plant-level API returns 0
+# Fetches yearly energy data from DessMonitor API
+# Uses querySPDeviceKeyParameterYearPerMonth with ENERGY_TOTAL parameter
+# (Confirmed from web portal browser DevTools - returns monthly totals for the year)
 
 # Source common configuration and functions
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -93,11 +94,11 @@ echo "$ACCOUNTS_JSON" | while read -r acc; do
 
   # Extract plant IDs and names using jq
   # Try both .dat[] (array) and .dat.plant[] (nested) formats
-  PLANT_DATA=$(echo "$plants_resp" | jq -r '.dat[]? | "\(.pid)|\\(.name // "unknown")"' 2>/dev/null || true)
+  PLANT_DATA=$(echo "$plants_resp" | jq -r '.dat[]? | "\(.pid)|\(.name // "unknown")"' 2>/dev/null || true)
 
   # If empty, try alternate format .dat.plant[]
   if [[ -z "$PLANT_DATA" ]]; then
-    PLANT_DATA=$(echo "$plants_resp" | jq -r '.dat.plant[]? | "\(.pid // .id)|\\(.name // .pname // "unknown")"' 2>/dev/null || true)
+    PLANT_DATA=$(echo "$plants_resp" | jq -r '.dat.plant[]? | "\(.pid // .id)|\(.name // .pname // "unknown")"' 2>/dev/null || true)
   fi
 
   if [[ -z "$PLANT_DATA" ]]; then
@@ -120,6 +121,8 @@ echo "$ACCOUNTS_JSON" | while read -r acc; do
     # ---- QUERY DEVICES for this plant/collector ----
     # CRITICAL: Use sn=${pid} to query devices (NOT pn=${pid})
     devices_resp="$(dessmonitor_api_call "webQueryDeviceEs" "sn=${pid}" || true)"
+
+    echo "      DEBUG webQueryDeviceEs response: $(echo "$devices_resp" | head -c 300)"
 
     # Extract device info: pn, sn, devcode, devaddr
     # CRITICAL: pn comes from device response (e.g., "D70000210187967959"), NOT from queryPlants pid
@@ -154,68 +157,91 @@ echo "$ACCOUNTS_JSON" | while read -r acc; do
     : > "$out"
     echo "month,kwh" >> "$out"
 
-    # ---- LOOP THROUGH MONTHS 01..12 ----
-    for m in $(seq -w 1 12); do
-      ym="${YEAR}-${m}"
-      month_total="0"
+    # ---- PROCESS EACH DEVICE ----
+    # Use querySPDeviceKeyParameterYearPerMonth to get all 12 months in one API call
+    # (Confirmed from web portal browser DevTools)
+    echo "$DEVICE_DATA" | while read -r device_line; do
+      [[ -z "$device_line" ]] && continue
 
-      # ---- PROCESS EACH DEVICE ----
-      echo "$DEVICE_DATA" | while read -r device_line; do
-        [[ -z "$device_line" ]] && continue
+      # Parse 4 fields: pn|sn|devcode|devaddr
+      device_pn="${device_line%%|*}"
+      rest="${device_line#*|}"
+      device_sn="${rest%%|*}"
+      rest="${rest#*|}"
+      devcode="${rest%%|*}"
+      devaddr="${rest#*|}"
 
-        # Parse 4 fields: pn|sn|devcode|devaddr
-        device_pn="${device_line%%|*}"
-        rest="${device_line#*|}"
-        device_sn="${rest%%|*}"
-        rest="${rest#*|}"
-        devcode="${rest%%|*}"
-        devaddr="${rest#*|}"
+      echo "      Device: pn=$device_pn sn=$device_sn devcode=$devcode devaddr=$devaddr"
 
-        # ---- QUERY DEVICE ENERGY for this month ----
-        # CRITICAL: Use ENERGY_TODAY parameter (returns real data)
-        d_resp="$(dessmonitor_api_call "querySPDeviceKeyParameterMonthPerDay" \
-          "pn=${device_pn}&sn=${device_sn}&devcode=${devcode}&devaddr=${devaddr}&parameter=ENERGY_TODAY&date=${ym}&i18n=en_US&chartStatus=false" || true)"
+      # ---- QUERY YEARLY ENERGY DATA ----
+      # CRITICAL: Use querySPDeviceKeyParameterYearPerMonth with ENERGY_TOTAL
+      # (Confirmed from web portal - returns monthly totals for the entire year)
+      d_resp="$(dessmonitor_api_call "querySPDeviceKeyParameterYearPerMonth" \
+        "pn=${device_pn}&sn=${device_sn}&devcode=${devcode}&devaddr=${devaddr}&parameter=ENERGY_TOTAL&date=${YEAR}&i18n=en_US&chartStatus=false" || true)"
 
-        # Check if API call succeeded
-        if [[ -z "$d_resp" ]] || ! printf "%s" "$d_resp" | grep -q '"err"[[:space:]]*:[[:space:]]*0'; then
-          continue
-        fi
+      echo "        DEBUG querySPDeviceKeyParameterYearPerMonth response: $(echo "$d_resp" | head -c 500)"
 
-        # Sum all daily values for this month using awk
-        # Response format: {"dat":{"option":[{"gts":"2026-01-01","val":"8.6120"},...]}}
-        device_sum=$(echo "$d_resp" | tr -d '\r\n' | \
-          awk '
-            {
-              s=$0
-              total=0
-              while (1) {
-                # Match val field: "val":"8.6120" or "val":8.6120
-                if (match(s, /"val"[[:space:]]*:[[:space:]]*"?[0-9.]+/)) {
-                  val_part = substr(s, RSTART, RLENGTH)
-                  val = val_part
-                  sub(/.*:/, "", val); gsub(/"/, "", val)
-                  total += val
-                  s = substr(s, RSTART+RLENGTH)
-                } else {
-                  break
-                }
+      # Check if API call succeeded
+      if [[ -z "$d_resp" ]] || ! printf "%s" "$d_resp" | grep -q '"err"[[:space:]]*:[[:space:]]*0'; then
+        echo "        Yearly energy query failed"
+        continue
+      fi
+
+      # Extract month rows: gts (YYYY-MM) and val from response
+      # Response format: {"dat":{"option":[{"gts":"2026-01","val":"150.5"},{"gts":"2026-02","val":"140.2"},...]}}
+      mapfile -t ROWS < <(
+        printf "%s" "$d_resp" | tr -d '\r\n' |
+        awk '
+          {
+            s=$0
+            while (1) {
+              gts=""
+              val=""
+
+              # Match gts field: "gts":"2026-01"
+              if (match(s, /"gts"[[:space:]]*:[[:space:]]*"[^"]*"/)) {
+                gts_part = substr(s, RSTART, RLENGTH)
+                gts = gts_part
+                sub(/.*:"/, "", gts); sub(/"$/, "", gts)
+                rest = substr(s, RSTART+RLENGTH)
               }
-              printf "%.4f", total
+              else {
+                break
+              }
+
+              # Match val field: "val":"150.5" or "val":150.5
+              if (match(rest, /"val"[[:space:]]*:[[:space:]]*"?[0-9.]+/)) {
+                val_part = substr(rest, RSTART, RLENGTH)
+                val = val_part
+                sub(/.*:/, "", val); gsub(/"/, "", val)
+                s = substr(rest, RSTART+RLENGTH)
+              }
+              else {
+                break
+              }
+
+              # Output month,kwh (gts is already YYYY-MM format)
+              print gts "," val
             }
-          ')
+          }
+        '
+      )
 
-        # Add device sum to month total (handled via subshell - need to print for aggregation)
-        echo "$device_sum"
-      done | awk '{total+=$1} END {printf "%.4f", total}' > "/tmp/dessmonitor_month_total_$$"
+      if [[ "${#ROWS[@]}" -eq 0 ]]; then
+        echo "        (No monthly values returned)"
+      else
+        printf "%s\n" "${ROWS[@]}" >> "$out"
+        echo "        Got ${#ROWS[@]} monthly values"
+      fi
+    done  # devices
 
-      month_total=$(cat "/tmp/dessmonitor_month_total_$$" 2>/dev/null || echo "0")
-      rm -f "/tmp/dessmonitor_month_total_$$"
-
-      # Write month row
-      echo "${ym},${month_total}" >> "$out"
-    done
-
-    echo "      Yearly CSV written: $out"
+    # Count rows written (excluding header)
+    row_count=$(($(wc -l < "$out") - 1))
+    if [[ "$row_count" -gt 0 ]]; then
+      echo "      Yearly CSV written: $out ($row_count months)"
+    else
+      echo "      (No data written to CSV)"
+    fi
   done  # plants
 done  # accounts
 

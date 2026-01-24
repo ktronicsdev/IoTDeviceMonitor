@@ -358,8 +358,9 @@ class TestDessMonitorScripts:
 
         BUG FIX (2026-01-24):
         - Must use sn=pid (NOT pn=pid) for device query
-        - Must use ENERGY_TODAY (NOT ENERGY_TODAY_FROM_GRID) for energy data
-        - Must parse dat.option[] with gts field
+        - Must use querySPDeviceKeyParameterYearPerMonth (NOT MonthPerDay)
+        - Must use ENERGY_TOTAL (NOT ENERGY_TODAY) for yearly data
+        - (Confirmed from web portal browser DevTools)
         """
         script_path = SCRIPTS_DIR / "check_dessmonitor_yearly.sh"
         if not script_path.exists():
@@ -371,9 +372,9 @@ class TestDessMonitorScripts:
         assert 'webQueryDeviceEs' in content, "Should use webQueryDeviceEs"
         assert 'sn=${pid}' in content, "Should use sn=pid (not pn=pid) for device query"
 
-        # Must use correct energy parameter
-        assert 'ENERGY_TODAY' in content, "Should use ENERGY_TODAY parameter"
-        assert 'querySPDeviceKeyParameterMonthPerDay' in content, "Should use device-level energy API"
+        # Must use correct energy API for yearly data
+        assert 'ENERGY_TOTAL' in content, "Should use ENERGY_TOTAL parameter"
+        assert 'querySPDeviceKeyParameterYearPerMonth' in content, "Should use YearPerMonth API"
 
 
 class TestDessMonitorAPIErrorHandling:
