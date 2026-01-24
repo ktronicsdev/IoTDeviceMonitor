@@ -278,19 +278,19 @@
     "message": "battery voltage is too low"
   },
   "1058467:D70000210184951128:69746b1a91271129726824a5": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-01-24T07:06:29.140669",
-    "ignored": false,
-    "last_sent": "2026-01-24T14:54:37.651890",
+    "ignored": true,
+    "last_sent": "2026-01-24T19:01:29.248048",
     "customer": "Sohan",
     "plant": "Must PV1800 3024 Pro",
     "message": "Overload time out"
   },
   "1116664:D70000210150900869:6974c659912711297235c103": {
-    "send_count": 1,
+    "send_count": 2,
     "first_seen": "2026-01-24T14:54:37.651890",
     "ignored": false,
-    "last_sent": "2026-01-24T14:54:37.651890",
+    "last_sent": "2026-01-24T19:01:29.248048",
     "customer": "Ravindra",
     "plant": "Ravindra 3kw",
     "message": "Battery connection is open"
