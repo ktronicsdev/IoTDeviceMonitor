@@ -529,12 +529,15 @@ class TestDessMonitorDataCollection:
         - Old: queryPlantEnergyMonthPerDay (plant-level, returns 0 for all values)
         - New: querySPDeviceKeyParameterMonthPerDay (device-level, returns real data)
 
-        The web portal uses device-level API with ENERGY_TODAY_FROM_GRID parameter.
-        Plant-level API queryPlantEnergyMonthPerDay returns zeros for all values.
+        LOCAL TESTING CONFIRMED (2026-01-24):
+        - Query devices with sn=${pid} (NOT pn=${pid})
+        - Use ENERGY_TODAY parameter (NOT ENERGY_TODAY_FROM_GRID which returns 0s)
+        - Response data is in dat.option[] (NOT dat.perday[])
+        - Date field is gts (NOT ts)
 
         Flow:
-        1. webQueryDeviceEs - get device list (sn, devcode, devaddr)
-        2. querySPDeviceKeyParameterMonthPerDay - get actual energy data
+        1. webQueryDeviceEs with sn=${pid} - get device list (pn, sn, devcode, devaddr)
+        2. querySPDeviceKeyParameterMonthPerDay with ENERGY_TODAY - get actual energy data
         """
         script_path = scripts_dir / "check_dessmonitor_monthly.sh"
 
@@ -543,13 +546,13 @@ class TestDessMonitorDataCollection:
 
         content = script_path.read_text()
 
-        # MUST use device-level APIs (confirmed from browser DevTools)
+        # MUST use device-level APIs (confirmed from local testing)
         assert "webQueryDeviceEs" in content, \
             "Script must use webQueryDeviceEs to get device list"
         assert "querySPDeviceKeyParameterMonthPerDay" in content, \
             "Script must use querySPDeviceKeyParameterMonthPerDay for energy data"
-        assert "ENERGY_TODAY_FROM_GRID" in content, \
-            "Script must request ENERGY_TODAY_FROM_GRID parameter"
+        assert "ENERGY_TODAY" in content, \
+            "Script must request ENERGY_TODAY parameter (not ENERGY_TODAY_FROM_GRID which returns 0s)"
 
     def test_check_monthly_parses_dates_from_api(self):
         """
@@ -557,7 +560,11 @@ class TestDessMonitorDataCollection:
 
         BUG FIX (2026-01-21):
         - Old: today=$(date -u +%Y-%m-%d) - wrote today's date for all rows
-        - New: Extract 'ts' field from API response - each row has correct date
+        - New: Extract date field from API response - each row has correct date
+
+        LOCAL TESTING CONFIRMED (2026-01-24):
+        - Date field is "gts" (NOT "ts")
+        - Response format: {"dat":{"option":[{"gts":"2026-01-01","val":"8.6120"},...]}}
         """
         script_path = scripts_dir / "check_dessmonitor_monthly.sh"
 
@@ -566,9 +573,9 @@ class TestDessMonitorDataCollection:
 
         content = script_path.read_text()
 
-        # MUST use AWK to parse dates from API (looks for "ts" field)
-        assert '"ts"' in content, \
-            "Script must parse 'ts' (timestamp) field from API response"
+        # MUST use AWK to parse dates from API (looks for "gts" field)
+        assert '"gts"' in content, \
+            "Script must parse 'gts' (date) field from API response (confirmed by local testing)"
 
         # MUST use AWK for parsing (same pattern as ShineMonitor)
         assert "awk" in content, \
@@ -617,9 +624,10 @@ class TestDessMonitorDataCollection:
         assert 'echo "date,kwh"' in content or '"date,kwh"' in content, \
             "CSV header must be 'date,kwh'"
 
-        # AWK output should be "day,val" format
-        assert 'print day "," val' in content or 'print day","val' in content, \
-            "AWK output must format as: date,kwh"
+        # AWK output should be "gts,val" format (gts = date field from DessMonitor API)
+        # LOCAL TESTING CONFIRMED (2026-01-24): Date field is "gts" not "day"
+        assert 'print gts "," val' in content or 'print gts","val' in content, \
+            "AWK output must format as: gts,val (gts is the date field from DessMonitor API)"
 
     def test_check_monthly_file_naming_convention(self):
         """

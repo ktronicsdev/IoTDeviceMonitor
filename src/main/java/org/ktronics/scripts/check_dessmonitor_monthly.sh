@@ -123,24 +123,26 @@ echo "$ACCOUNTS_JSON" | while read -r acc; do
     echo "    Plant: ${pname:-?} (pid=$pid)"
 
     # ---- QUERY DEVICES for this plant/collector ----
-    # The pn (collector ID) is the same as pid from queryPlants
-    devices_resp="$(dessmonitor_api_call "webQueryDeviceEs" "pn=${pid}&devcode=2429&devaddr=1&sn=${pid}" || true)"
+    # CRITICAL: Use sn=${pid} to query devices (NOT pn=${pid})
+    # Local testing confirmed: pn=${pid} returns ERR_NOT_FOUND_DEVICE, sn=${pid} works
+    devices_resp="$(dessmonitor_api_call "webQueryDeviceEs" "sn=${pid}" || true)"
 
     echo "      DEBUG webQueryDeviceEs response: $(echo "$devices_resp" | head -c 500)"
 
-    # Extract device info: sn, devcode, devaddr
+    # Extract device info: pn, sn, devcode, devaddr
+    # CRITICAL: pn comes from device response, NOT from queryPlants pid
     # Try multiple JSON structures for device list
-    DEVICE_DATA=$(echo "$devices_resp" | jq -r '.dat.device[]? | "\(.sn)|\(.devcode)|\(.devaddr)"' 2>/dev/null || true)
+    DEVICE_DATA=$(echo "$devices_resp" | jq -r '.dat.device[]? | "\(.pn)|\(.sn)|\(.devcode)|\(.devaddr)"' 2>/dev/null || true)
 
     # If empty, try alternate format .dat[]
     if [[ -z "$DEVICE_DATA" ]]; then
-      DEVICE_DATA=$(echo "$devices_resp" | jq -r '.dat[]? | "\(.sn // .pn)|\(.devcode // 2500)|\(.devaddr // 1)"' 2>/dev/null || true)
+      DEVICE_DATA=$(echo "$devices_resp" | jq -r '.dat[]? | "\(.pn)|\(.sn)|\(.devcode // 2500)|\(.devaddr // 1)"' 2>/dev/null || true)
     fi
 
-    # If still no devices, use the plant ID as device (fallback)
+    # If still no devices, skip this plant (can't get energy without device info)
     if [[ -z "$DEVICE_DATA" ]]; then
-      echo "      No devices found, using plant ID as device fallback"
-      DEVICE_DATA="${pid}|2500|1"
+      echo "      No devices found for this plant, skipping"
+      continue
     fi
 
     # Sanitize names for filename
@@ -168,86 +170,87 @@ echo "$ACCOUNTS_JSON" | while read -r acc; do
     echo "$DEVICE_DATA" | while read -r device_line; do
       [[ -z "$device_line" ]] && continue
 
-      device_sn="${device_line%%|*}"
+      # Parse 4 fields: pn|sn|devcode|devaddr
+      # CRITICAL: pn comes from device response (e.g., "D70000210187967959"), NOT from queryPlants pid
+      device_pn="${device_line%%|*}"
       rest="${device_line#*|}"
+      device_sn="${rest%%|*}"
+      rest="${rest#*|}"
       devcode="${rest%%|*}"
       devaddr="${rest#*|}"
 
-      echo "      Device: sn=$device_sn devcode=$devcode devaddr=$devaddr"
+      echo "      Device: pn=$device_pn sn=$device_sn devcode=$devcode devaddr=$devaddr"
 
       # ---- QUERY DEVICE ENERGY using correct endpoint ----
-      # Use querySPDeviceKeyParameterMonthPerDay with ENERGY_TODAY_FROM_GRID
+      # CRITICAL: Use ENERGY_TODAY parameter (local testing confirmed it returns real data)
+      # ENERGY_TODAY_FROM_GRID returns 0.0000 for all values
       d_resp="$(dessmonitor_api_call "querySPDeviceKeyParameterMonthPerDay" \
-        "pn=${pid}&sn=${device_sn}&devcode=${devcode}&devaddr=${devaddr}&parameter=ENERGY_TODAY_FROM_GRID&date=${MONTH}&i18n=en_US&chartStatus=false" || true)"
+        "pn=${device_pn}&sn=${device_sn}&devcode=${devcode}&devaddr=${devaddr}&parameter=ENERGY_TODAY&date=${MONTH}&i18n=en_US&chartStatus=false" || true)"
 
       echo "        DEBUG querySPDeviceKeyParameterMonthPerDay response: $(echo "$d_resp" | head -c 500)"
 
       # Check if API call succeeded
       if [[ -z "$d_resp" ]] || ! printf "%s" "$d_resp" | grep -q '"err"[[:space:]]*:[[:space:]]*0'; then
-        echo "        Device energy query failed, trying alternate parameter..."
-
-        # Try ENERGY_TODAY as alternate parameter
-        d_resp="$(dessmonitor_api_call "querySPDeviceKeyParameterMonthPerDay" \
-          "pn=${pid}&sn=${device_sn}&devcode=${devcode}&devaddr=${devaddr}&parameter=ENERGY_TODAY&date=${MONTH}&i18n=en_US&chartStatus=false" || true)"
-
-        if [[ -z "$d_resp" ]] || ! printf "%s" "$d_resp" | grep -q '"err"[[:space:]]*:[[:space:]]*0'; then
-          echo "        No energy data available for this device"
-          continue
-        fi
+        echo "        Device energy query failed"
+        continue
       fi
 
-      # Extract day rows: val + ts from response
-      # Response format: {"dat":{"perday":[{"val":"6.5","ts":"2026-01-01 00:00:00"},...]}}
+      # Extract day rows: val + gts from response
+      # CRITICAL: Response format is {"dat":{"option":[{"gts":"2026-01-01","val":"8.6120"},...]}}
+      # - Data is in "option" array (NOT "perday")
+      # - Date field is "gts" (NOT "ts")
       mapfile -t ROWS < <(
         printf "%s" "$d_resp" | tr -d '\r\n' |
         awk '
           {
             s=$0
             while (1) {
+              gts=""
               val=""
-              # Try quoted format: "val":"10.5"
-              if (match(s, /"val"[[:space:]]*:[[:space:]]*"[^"]*"/)) {
-                val_part = substr(s, RSTART, RLENGTH)
+
+              # Match gts field: "gts":"2026-01-01"
+              if (match(s, /"gts"[[:space:]]*:[[:space:]]*"[^"]*"/)) {
+                gts_part = substr(s, RSTART, RLENGTH)
+                gts = gts_part
+                sub(/.*:"/, "", gts); sub(/"$/, "", gts)
+                rest = substr(s, RSTART+RLENGTH)
+              }
+              else {
+                break
+              }
+
+              # Match val field: "val":"8.6120"
+              if (match(rest, /"val"[[:space:]]*:[[:space:]]*"[^"]*"/)) {
+                val_part = substr(rest, RSTART, RLENGTH)
                 val = val_part
                 sub(/.*:"/, "", val); sub(/"$/, "", val)
-                rest = substr(s, RSTART+RLENGTH)
+                s = substr(rest, RSTART+RLENGTH)
               }
-              # Try unquoted format: "val":10.5
-              else if (match(s, /"val"[[:space:]]*:[[:space:]]*[0-9.]+/)) {
-                val_part = substr(s, RSTART, RLENGTH)
+              # Try unquoted format: "val":8.6120
+              else if (match(rest, /"val"[[:space:]]*:[[:space:]]*[0-9.]+/)) {
+                val_part = substr(rest, RSTART, RLENGTH)
                 val = val_part
                 sub(/.*:/, "", val)
-                rest = substr(s, RSTART+RLENGTH)
+                s = substr(rest, RSTART+RLENGTH)
               }
               else {
                 break
               }
 
-              ts=""
-              # Try quoted ts format: "ts":"2026-01-01 00:00:00"
-              if (match(rest, /"ts"[[:space:]]*:[[:space:]]*"[^"]*"/)) {
-                ts_part = substr(rest, RSTART, RLENGTH)
-                ts = ts_part
-                sub(/.*:"/, "", ts); sub(/"$/, "", ts)
-                day = ts
-                sub(/[[:space:]].*$/, "", day)  # Remove time portion
+              # Only output non-zero values
+              if (val != "0.0000" && val != "0") {
+                print gts "," val
               }
-              else {
-                break
-              }
-
-              print day "," val
-              s = rest
             }
           }
         '
       )
 
       if [[ "${#ROWS[@]}" -eq 0 ]]; then
-        echo "        (No daily rows returned)"
+        echo "        (No non-zero daily values)"
       else
         printf "%s\n" "${ROWS[@]}" >> "$out"
-        echo "        Got ${#ROWS[@]} daily values"
+        echo "        Got ${#ROWS[@]} non-zero daily values"
       fi
     done  # devices
 
