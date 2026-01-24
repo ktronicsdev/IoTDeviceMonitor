@@ -360,9 +360,6 @@ jobs:
           git add state/dessmonitor_*.json 2>/dev/null || true
           git add alerts/dessmonitor_*.txt 2>/dev/null || true
           git add alerts/dessmonitor_*.json 2>/dev/null || true
-          git add alarms/dessmonitor-*-alarms.json 2>/dev/null || true
-          git add alarms/dessmonitor_device_alarms.txt 2>/dev/null || true
-          git add alarms/dessmonitor_customer_device_alarms.json 2>/dev/null || true
 
           if git diff --staged --quiet; then
             echo "No DessMonitor changes to commit"
