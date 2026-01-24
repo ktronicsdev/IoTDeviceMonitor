@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-24T20:15:02.451680Z",
+  "generated_at": "2026-01-24T21:06:55.513326Z",
   "alerts": [
     {
       "severity": "RED",
@@ -47,20 +47,6 @@
     },
     {
       "plant_key": "chandika-plant",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-01"
-      ]
-    },
-    {
-      "plant_key": "dessmonitor-dushanthatiqri-plant",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-01"
-      ]
-    },
-    {
-      "plant_key": "dessmonitor-mifrazmarsoon-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
         "2026-01"
