@@ -270,7 +270,13 @@ jobs:
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           fi
 
-          exit $exit_code
+          # Log result but always exit 0 to prevent workflow failure
+          if [[ $exit_code -eq 2 ]]; then
+            echo "🔴 DEVICE ALARMS FOUND - Email will be sent"
+          else
+            echo "✅ No device alarms to send"
+          fi
+          exit 0
 
       # UC3: Send DessMonitor device alarms email to admin
       - name: Send DessMonitor device alarms email to admin
