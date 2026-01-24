@@ -521,13 +521,20 @@ class TestDessMonitorDataCollection:
         for func in required_functions:
             assert func in content, f"Missing required function: {func}"
 
-    def test_check_monthly_uses_plant_level_api(self):
+    def test_check_monthly_uses_device_level_api(self):
         """
-        REGRESSION TEST: Verify check_dessmonitor_monthly.sh uses plant-level API.
+        REGRESSION TEST: Verify check_dessmonitor_monthly.sh uses device-level API.
 
-        BUG FIX (2026-01-21):
-        - Old: webQueryDeviceEs (device-level, returns current snapshot only)
-        - New: queryPlantEnergyMonthPerDay (plant-level, returns daily breakdown)
+        BUG FIX (2026-01-24):
+        - Old: queryPlantEnergyMonthPerDay (plant-level, returns 0 for all values)
+        - New: querySPDeviceKeyParameterMonthPerDay (device-level, returns real data)
+
+        The web portal uses device-level API with ENERGY_TODAY_FROM_GRID parameter.
+        Plant-level API queryPlantEnergyMonthPerDay returns zeros for all values.
+
+        Flow:
+        1. webQueryDeviceEs - get device list (sn, devcode, devaddr)
+        2. querySPDeviceKeyParameterMonthPerDay - get actual energy data
         """
         script_path = scripts_dir / "check_dessmonitor_monthly.sh"
 
@@ -536,13 +543,13 @@ class TestDessMonitorDataCollection:
 
         content = script_path.read_text()
 
-        # MUST use plant-level API
-        assert "queryPlantEnergyMonthPerDay" in content, \
-            "Script must use queryPlantEnergyMonthPerDay API (plant-level)"
-
-        # Should NOT use old device-level API
-        assert "webQueryDeviceEs" not in content or "webQueryDeviceEs" in content and "#" in content.split("webQueryDeviceEs")[0].split("\n")[-1], \
-            "Script should NOT use webQueryDeviceEs (device-level API)"
+        # MUST use device-level APIs (confirmed from browser DevTools)
+        assert "webQueryDeviceEs" in content, \
+            "Script must use webQueryDeviceEs to get device list"
+        assert "querySPDeviceKeyParameterMonthPerDay" in content, \
+            "Script must use querySPDeviceKeyParameterMonthPerDay for energy data"
+        assert "ENERGY_TODAY_FROM_GRID" in content, \
+            "Script must request ENERGY_TODAY_FROM_GRID parameter"
 
     def test_check_monthly_parses_dates_from_api(self):
         """
