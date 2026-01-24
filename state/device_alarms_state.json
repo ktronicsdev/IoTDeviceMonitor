@@ -99,10 +99,10 @@
     "message": "Solar charger stops due to high PV voltage"
   },
   "1187499:D70000210184361276:682405c8d7b31d268722c52e": {
-    "send_count": 21,
+    "send_count": 22,
     "first_seen": "2026-01-12T00:26:33.691440",
     "ignored": true,
-    "last_sent": "2026-01-24T16:30:51.621169",
+    "last_sent": "2026-01-24T18:29:51.357112",
     "customer": "Gayan-IMH",
     "plant": "imbulgoda  3kw",
     "message": "Inverter over current protection error"
