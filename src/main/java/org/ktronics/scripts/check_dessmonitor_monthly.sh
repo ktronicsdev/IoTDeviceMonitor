@@ -111,7 +111,7 @@ echo "$ACCOUNTS_JSON" | while read -r acc; do
   fi
 
   # -----------------------------------------------------------------
-  # PROCESS EACH PLANT
+  # PROCESS EACH PLANT/COLLECTOR
   # -----------------------------------------------------------------
   echo "$PLANT_DATA" | while read -r plant_line; do
     [[ -z "$plant_line" ]] && continue
@@ -122,27 +122,28 @@ echo "$ACCOUNTS_JSON" | while read -r acc; do
 
     echo "    Plant: ${pname:-?} (pid=$pid)"
 
-    # ---- MONTH PER DAY using plant-level API (not device-level) ----
-    # Try queryPlantEnergyMonthPerDay first (matches ShineMonitor pattern)
-    d_resp="$(dessmonitor_api_call "queryPlantEnergyMonthPerDay" "plantid=${pid}&date=${MONTH}" || true)"
+    # ---- QUERY DEVICES for this plant/collector ----
+    # The pn (collector ID) is the same as pid from queryPlants
+    devices_resp="$(dessmonitor_api_call "webQueryDeviceEs" "pn=${pid}&devcode=2429&devaddr=1&sn=${pid}" || true)"
 
-    # DEBUG: Show API response
-    echo "      DEBUG queryPlantEnergyMonthPerDay response: $(echo "$d_resp" | head -c 500)"
+    echo "      DEBUG webQueryDeviceEs response: $(echo "$devices_resp" | head -c 500)"
 
-    # Check if API call succeeded
-    if [[ -z "$d_resp" ]] || ! printf "%s" "$d_resp" | grep -q '"err"[[:space:]]*:[[:space:]]*0'; then
-      echo "      queryPlantEnergyMonthPerDay failed, trying alternate API..."
+    # Extract device info: sn, devcode, devaddr
+    # Try multiple JSON structures for device list
+    DEVICE_DATA=$(echo "$devices_resp" | jq -r '.dat.device[]? | "\(.sn)|\(.devcode)|\(.devaddr)"' 2>/dev/null || true)
 
-      # Try alternate endpoint (webQueryPlantEnergyMonthPerDay)
-      d_resp="$(dessmonitor_api_call "webQueryPlantEnergyMonthPerDay" "plantid=${pid}&date=${MONTH}" || true)"
-
-      if [[ -z "$d_resp" ]] || ! printf "%s" "$d_resp" | grep -q '"err"[[:space:]]*:[[:space:]]*0'; then
-        echo "      No daily data available for this plant"
-        continue
-      fi
+    # If empty, try alternate format .dat[]
+    if [[ -z "$DEVICE_DATA" ]]; then
+      DEVICE_DATA=$(echo "$devices_resp" | jq -r '.dat[]? | "\(.sn // .pn)|\(.devcode // 2500)|\(.devaddr // 1)"' 2>/dev/null || true)
     fi
 
-    # Sanitize plant name for filename (lowercase, no spaces/symbols)
+    # If still no devices, use the plant ID as device (fallback)
+    if [[ -z "$DEVICE_DATA" ]]; then
+      echo "      No devices found, using plant ID as device fallback"
+      DEVICE_DATA="${pid}|2500|1"
+    fi
+
+    # Sanitize names for filename
     safe_name="$(printf "%s" "$pname" \
       | tr '[:upper:]' '[:lower:]' \
       | sed 's/[^a-z0-9]/-/g' \
@@ -155,70 +156,107 @@ echo "$ACCOUNTS_JSON" | while read -r acc; do
       | sed 's/--*/-/g' \
       | sed 's/^-//;s/-$//')"
 
-    # Always overwrite monthly file: dessmonitor-<label>-<pname>-<YYYY-MM>.csv
+    # Initialize CSV file for this plant
     out="data/dessmonitor-${safe_label}-${safe_name}-${MONTH}.csv"
     : > "$out"
     echo "date,kwh" >> "$out"
 
-    # Extract day rows: val + ts (API returns val before ts, same as ShineMonitor)
-    # FIX: DessMonitor API returns unquoted numbers: "val":10.5 (not "val":"10.5")
-    mapfile -t ROWS < <(
-      printf "%s" "$d_resp" | tr -d '\r\n' |
-      awk '
-        {
-          s=$0
-          while (1) {
-            val=""
-            # Try quoted format first: "val":"10.5"
-            if (match(s, /"val"[[:space:]]*:[[:space:]]*"[^"]*"/)) {
-              val_part = substr(s, RSTART, RLENGTH)
-              val = val_part
-              sub(/.*:"/, "", val); sub(/"$/, "", val)
-              rest = substr(s, RSTART+RLENGTH)
-            }
-            # Try unquoted format: "val":10.5 (DessMonitor API format)
-            else if (match(s, /"val"[[:space:]]*:[[:space:]]*[0-9.]+/)) {
-              val_part = substr(s, RSTART, RLENGTH)
-              val = val_part
-              sub(/.*:/, "", val)
-              rest = substr(s, RSTART+RLENGTH)
-            }
-            else {
-              break
-            }
+    # Accumulate daily totals across all devices
+    declare -A daily_totals
 
-            ts=""
-            # Try quoted ts format: "ts":"2026-01-01"
-            if (match(rest, /"ts"[[:space:]]*:[[:space:]]*"[^"]*"/)) {
-              ts_part = substr(rest, RSTART, RLENGTH)
-              ts = ts_part
-              sub(/.*:"/, "", ts); sub(/"$/, "", ts)
-              day = ts
-              sub(/[[:space:]].*$/, "", day)
-            }
-            # Try unquoted ts format (unlikely but handle it)
-            else if (match(rest, /"ts"[[:space:]]*:[[:space:]]*[0-9-]+/)) {
-              ts_part = substr(rest, RSTART, RLENGTH)
-              ts = ts_part
-              sub(/.*:/, "", ts)
-              day = ts
-            }
-            else {
-              break
-            }
+    # ---- PROCESS EACH DEVICE ----
+    echo "$DEVICE_DATA" | while read -r device_line; do
+      [[ -z "$device_line" ]] && continue
 
-            print day "," val
-            s = rest
+      device_sn="${device_line%%|*}"
+      rest="${device_line#*|}"
+      devcode="${rest%%|*}"
+      devaddr="${rest#*|}"
+
+      echo "      Device: sn=$device_sn devcode=$devcode devaddr=$devaddr"
+
+      # ---- QUERY DEVICE ENERGY using correct endpoint ----
+      # Use querySPDeviceKeyParameterMonthPerDay with ENERGY_TODAY_FROM_GRID
+      d_resp="$(dessmonitor_api_call "querySPDeviceKeyParameterMonthPerDay" \
+        "pn=${pid}&sn=${device_sn}&devcode=${devcode}&devaddr=${devaddr}&parameter=ENERGY_TODAY_FROM_GRID&date=${MONTH}&i18n=en_US&chartStatus=false" || true)"
+
+      echo "        DEBUG querySPDeviceKeyParameterMonthPerDay response: $(echo "$d_resp" | head -c 500)"
+
+      # Check if API call succeeded
+      if [[ -z "$d_resp" ]] || ! printf "%s" "$d_resp" | grep -q '"err"[[:space:]]*:[[:space:]]*0'; then
+        echo "        Device energy query failed, trying alternate parameter..."
+
+        # Try ENERGY_TODAY as alternate parameter
+        d_resp="$(dessmonitor_api_call "querySPDeviceKeyParameterMonthPerDay" \
+          "pn=${pid}&sn=${device_sn}&devcode=${devcode}&devaddr=${devaddr}&parameter=ENERGY_TODAY&date=${MONTH}&i18n=en_US&chartStatus=false" || true)"
+
+        if [[ -z "$d_resp" ]] || ! printf "%s" "$d_resp" | grep -q '"err"[[:space:]]*:[[:space:]]*0'; then
+          echo "        No energy data available for this device"
+          continue
+        fi
+      fi
+
+      # Extract day rows: val + ts from response
+      # Response format: {"dat":{"perday":[{"val":"6.5","ts":"2026-01-01 00:00:00"},...]}}
+      mapfile -t ROWS < <(
+        printf "%s" "$d_resp" | tr -d '\r\n' |
+        awk '
+          {
+            s=$0
+            while (1) {
+              val=""
+              # Try quoted format: "val":"10.5"
+              if (match(s, /"val"[[:space:]]*:[[:space:]]*"[^"]*"/)) {
+                val_part = substr(s, RSTART, RLENGTH)
+                val = val_part
+                sub(/.*:"/, "", val); sub(/"$/, "", val)
+                rest = substr(s, RSTART+RLENGTH)
+              }
+              # Try unquoted format: "val":10.5
+              else if (match(s, /"val"[[:space:]]*:[[:space:]]*[0-9.]+/)) {
+                val_part = substr(s, RSTART, RLENGTH)
+                val = val_part
+                sub(/.*:/, "", val)
+                rest = substr(s, RSTART+RLENGTH)
+              }
+              else {
+                break
+              }
+
+              ts=""
+              # Try quoted ts format: "ts":"2026-01-01 00:00:00"
+              if (match(rest, /"ts"[[:space:]]*:[[:space:]]*"[^"]*"/)) {
+                ts_part = substr(rest, RSTART, RLENGTH)
+                ts = ts_part
+                sub(/.*:"/, "", ts); sub(/"$/, "", ts)
+                day = ts
+                sub(/[[:space:]].*$/, "", day)  # Remove time portion
+              }
+              else {
+                break
+              }
+
+              print day "," val
+              s = rest
+            }
           }
-        }
-      '
-    )
+        '
+      )
 
-    if [[ "${#ROWS[@]}" -eq 0 ]]; then
-      echo "      (No daily rows returned - API may not support daily breakdown)"
+      if [[ "${#ROWS[@]}" -eq 0 ]]; then
+        echo "        (No daily rows returned)"
+      else
+        printf "%s\n" "${ROWS[@]}" >> "$out"
+        echo "        Got ${#ROWS[@]} daily values"
+      fi
+    done  # devices
+
+    # Count rows written (excluding header)
+    row_count=$(($(wc -l < "$out") - 1))
+    if [[ "$row_count" -gt 0 ]]; then
+      echo "      Daily CSV written: $out ($row_count days)"
     else
-      printf "%s\n" "${ROWS[@]}" >> "$out"
-      echo "      Daily CSV written: $out (${#ROWS[@]} days)"
+      echo "      (No data written to CSV)"
     fi
   done  # plants
 done  # accounts
