@@ -18,10 +18,10 @@ on:
   # Manual trigger for testing
   workflow_dispatch: {}
 
-  # Optional: trigger on push for testing (comment out in production)
-  # push:
-  #   branches:
-  #     - main
+  # Build verification on every push (matches ShineMonitor pattern)
+  push:
+    branches:
+      - main
 
 permissions:
   contents: write
