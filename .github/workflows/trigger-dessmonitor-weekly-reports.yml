@@ -44,6 +44,28 @@ jobs:
           EOF
           chmod 600 src/main/java/org/ktronics/config/dessmonitor_credentials.json
 
+      - name: Fetch DessMonitor yearly data (for admin summary)
+        shell: bash
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 DESSMONITOR: FETCHING YEARLY DATA FOR ADMIN SUMMARY"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          set +e
+          chmod +x src/main/java/org/ktronics/scripts/check_dessmonitor_yearly.sh
+
+          LAST_YEAR=$(date -u -d "$(date -u +%Y-01-01) -1 day" +%Y)
+          CURRENT_YEAR=$(date -u +%Y)
+
+          # Fetch last year data
+          src/main/java/org/ktronics/scripts/check_dessmonitor_yearly.sh \
+            src/main/java/org/ktronics/config/dessmonitor_credentials.json "$LAST_YEAR" 2>&1 || true
+
+          # Fetch current year data
+          src/main/java/org/ktronics/scripts/check_dessmonitor_yearly.sh \
+            src/main/java/org/ktronics/config/dessmonitor_credentials.json "$CURRENT_YEAR" 2>&1 || true
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
       - name: Generate weekly reports for all DessMonitor customers
         shell: bash
         run: |
