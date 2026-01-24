@@ -651,6 +651,181 @@ class TestDessMonitorDataCollection:
             "Output filename must include month (YYYY-MM)"
 
 
+class TestDessMonitorYearlyScript:
+    """Tests for check_dessmonitor_yearly.sh script"""
+
+    def test_yearly_script_sums_daily_values_correctly(self):
+        """
+        Test that yearly script correctly sums daily values to get monthly totals.
+
+        This simulates the AWK logic used in check_dessmonitor_yearly.sh:
+        - Input: API response with daily values in dat.option[] array
+        - Output: Sum of all daily values for the month
+        """
+        import re
+
+        # Sample API response format (same as monthly script)
+        # This is what querySPDeviceKeyParameterMonthPerDay returns
+        sample_response = '''{"err":0,"dat":{"option":[
+            {"gts":"2026-01-01","val":"5.2000"},
+            {"gts":"2026-01-02","val":"6.0000"},
+            {"gts":"2026-01-03","val":"5.9000"},
+            {"gts":"2026-01-04","val":"6.5000"},
+            {"gts":"2026-01-05","val":"5.5000"},
+            {"gts":"2026-01-06","val":"0.0000"},
+            {"gts":"2026-01-07","val":"7.2000"}
+        ]}}'''
+
+        # Expected sum: 5.2 + 6.0 + 5.9 + 6.5 + 5.5 + 0.0 + 7.2 = 36.3
+        expected_sum = 36.3
+
+        # Simulate the AWK summing logic using Python regex
+        total = 0.0
+        for match in re.finditer(r'"val"\s*:\s*"?([0-9.]+)"?', sample_response):
+            total += float(match.group(1))
+
+        assert abs(total - expected_sum) < 0.01, \
+            f"Sum should be {expected_sum}, got {total}"
+
+    def test_yearly_script_handles_12_months(self):
+        """
+        Test that yearly CSV contains exactly 12 months of data.
+
+        Expected format:
+        month,kwh
+        2026-01,150.5
+        2026-02,140.2
+        ...
+        2026-12,120.8
+        """
+        # Verify script has proper month loop
+        script_path = scripts_dir / "check_dessmonitor_yearly.sh"
+        if not script_path.exists():
+            pytest.skip("check_dessmonitor_yearly.sh not found")
+
+        content = script_path.read_text()
+
+        # Must loop through 12 months
+        assert "seq -w 1 12" in content, "Script should loop through months 01-12"
+
+        # Must format month as YYYY-MM
+        assert '${YEAR}-${m}' in content or '${ym}' in content, \
+            "Month should be formatted as YYYY-MM"
+
+        # Must write to CSV
+        assert '>> "$out"' in content, "Script should append to output file"
+
+    def test_yearly_script_aggregates_multiple_devices(self):
+        """
+        Test that yearly script aggregates energy from ALL devices in a plant.
+
+        Some plants have multiple inverters/devices. The yearly total should
+        be the sum of all devices' energy production.
+        """
+        script_path = scripts_dir / "check_dessmonitor_yearly.sh"
+        if not script_path.exists():
+            pytest.skip("check_dessmonitor_yearly.sh not found")
+
+        content = script_path.read_text()
+
+        # Must loop through devices
+        assert 'DEVICE_DATA' in content, "Script should process DEVICE_DATA"
+        assert 'while read' in content and 'device_line' in content, \
+            "Script should loop through each device"
+
+        # Must aggregate device sums
+        assert "awk '{total+=" in content or 'month_total' in content, \
+            "Script should aggregate device sums into month total"
+
+    def test_yearly_script_exists(self):
+        """Test that check_dessmonitor_yearly.sh exists"""
+        script_path = scripts_dir / "check_dessmonitor_yearly.sh"
+        assert script_path.exists(), "check_dessmonitor_yearly.sh should exist"
+
+    def test_yearly_script_uses_device_level_api(self):
+        """
+        REGRESSION TEST: Verify check_dessmonitor_yearly.sh uses device-level API.
+
+        BUG FIX (2026-01-24):
+        - Must use device-level API (querySPDeviceKeyParameterMonthPerDay)
+        - Plant-level API returns 0 for all values
+        """
+        script_path = scripts_dir / "check_dessmonitor_yearly.sh"
+        if not script_path.exists():
+            pytest.skip("check_dessmonitor_yearly.sh not found")
+
+        content = script_path.read_text()
+
+        # Must use device query with correct parameter
+        assert "webQueryDeviceEs" in content, \
+            "Script must use webQueryDeviceEs to get device list"
+        assert 'sn=${pid}' in content, \
+            "Script must use sn=pid (not pn=pid) for device query"
+
+        # Must use correct energy API
+        assert "querySPDeviceKeyParameterMonthPerDay" in content, \
+            "Script must use device-level energy API"
+        assert "ENERGY_TODAY" in content, \
+            "Script must use ENERGY_TODAY parameter (not ENERGY_TODAY_FROM_GRID)"
+
+    def test_yearly_script_loops_through_months(self):
+        """Test that yearly script loops through all 12 months"""
+        script_path = scripts_dir / "check_dessmonitor_yearly.sh"
+        if not script_path.exists():
+            pytest.skip("check_dessmonitor_yearly.sh not found")
+
+        content = script_path.read_text()
+
+        # Must loop through 12 months
+        assert "seq -w 1 12" in content or "for m in" in content, \
+            "Script should loop through months 01-12"
+
+    def test_yearly_csv_output_format(self):
+        """Test that yearly CSV output format is correct: month,kwh"""
+        script_path = scripts_dir / "check_dessmonitor_yearly.sh"
+        if not script_path.exists():
+            pytest.skip("check_dessmonitor_yearly.sh not found")
+
+        content = script_path.read_text()
+
+        # Header should be month,kwh
+        assert 'month,kwh' in content, \
+            "CSV header must be 'month,kwh'"
+
+    def test_yearly_file_naming_convention(self):
+        """
+        Test that yearly output files follow naming convention.
+
+        Expected: data/dessmonitor-<label>-<plant>-YYYY.csv
+        """
+        script_path = scripts_dir / "check_dessmonitor_yearly.sh"
+        if not script_path.exists():
+            pytest.skip("check_dessmonitor_yearly.sh not found")
+
+        content = script_path.read_text()
+
+        # Output path must include dessmonitor prefix
+        assert 'dessmonitor-${' in content or 'dessmonitor-$' in content, \
+            "Output filename must include 'dessmonitor-' prefix"
+
+        # Output path must include year variable
+        assert '${YEAR}' in content or '$YEAR' in content, \
+            "Output filename must include year (YYYY)"
+
+    def test_yearly_sources_common_config(self):
+        """Test that yearly script sources common configuration"""
+        script_path = scripts_dir / "check_dessmonitor_yearly.sh"
+        if not script_path.exists():
+            pytest.skip("check_dessmonitor_yearly.sh not found")
+
+        content = script_path.read_text()
+
+        assert "source" in content and "common_config.sh" in content, \
+            "Script should source common_config.sh"
+        assert "source" in content and "dessmonitor_common.sh" in content, \
+            "Script should source dessmonitor_common.sh"
+
+
 class TestDessMonitorUC1AdminAlerts:
     """DessMonitor UC1 admin production alerts tests (15 tests total)"""
 

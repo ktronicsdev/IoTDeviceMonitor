@@ -309,6 +309,73 @@ class TestDessMonitorAPI:
             f"Response should use 'gts' date field: {result.stdout}"
 
 
+class TestDessMonitorScripts:
+    """Test DessMonitor shell scripts"""
+
+    def run_bash_script(self, script_content, timeout=60):
+        """Execute bash script and return output"""
+        if platform.system() == 'Windows':
+            pytest.skip("Bash script tests require Unix environment")
+
+        result = subprocess.run(
+            ['bash', '-c', script_content],
+            capture_output=True,
+            text=True,
+            timeout=timeout
+        )
+        return result
+
+    def test_check_monthly_script(self):
+        """Test check_dessmonitor_monthly.sh script"""
+        creds = load_dessmonitor_credentials()
+        script = f"""
+        set -euo pipefail
+        cd "{SCRIPTS_DIR}"
+        bash check_dessmonitor_monthly.sh "{DESSMONITOR_CREDS_FILE}" "2026-01" 2>&1 | grep -E "(AUTH OK|DONE)"
+        """
+
+        result = self.run_bash_script(script, timeout=90)
+        assert result.returncode == 0, f"Monthly script failed: {result.stderr}"
+        assert "AUTH OK" in result.stdout or "DONE" in result.stdout
+
+    def test_check_yearly_script(self):
+        """Test check_dessmonitor_yearly.sh script"""
+        creds = load_dessmonitor_credentials()
+        script = f"""
+        set -euo pipefail
+        cd "{SCRIPTS_DIR}"
+        timeout 60 bash check_dessmonitor_yearly.sh "{DESSMONITOR_CREDS_FILE}" "2026" 2>&1 | head -20 | grep -E "(AUTH OK|DONE)"
+        """
+
+        result = self.run_bash_script(script, timeout=90)
+        # Allow timeout (124) and SIGPIPE (141 from head closing pipe early)
+        assert result.returncode in [0, 124, 141], f"Yearly script failed: {result.stderr}"
+        assert "AUTH OK" in result.stdout or "DONE" in result.stdout
+
+    def test_yearly_script_uses_device_level_api(self):
+        """
+        REGRESSION TEST: Verify check_dessmonitor_yearly.sh uses correct API params.
+
+        BUG FIX (2026-01-24):
+        - Must use sn=pid (NOT pn=pid) for device query
+        - Must use ENERGY_TODAY (NOT ENERGY_TODAY_FROM_GRID) for energy data
+        - Must parse dat.option[] with gts field
+        """
+        script_path = SCRIPTS_DIR / "check_dessmonitor_yearly.sh"
+        if not script_path.exists():
+            pytest.skip("check_dessmonitor_yearly.sh not found")
+
+        content = script_path.read_text()
+
+        # Must use correct device query parameter
+        assert 'webQueryDeviceEs' in content, "Should use webQueryDeviceEs"
+        assert 'sn=${pid}' in content, "Should use sn=pid (not pn=pid) for device query"
+
+        # Must use correct energy parameter
+        assert 'ENERGY_TODAY' in content, "Should use ENERGY_TODAY parameter"
+        assert 'querySPDeviceKeyParameterMonthPerDay' in content, "Should use device-level energy API"
+
+
 class TestDessMonitorAPIErrorHandling:
     """Test error handling for DessMonitor API"""
 
