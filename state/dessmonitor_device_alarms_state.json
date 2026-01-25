@@ -1,9 +1,9 @@
 {
   "5019289:D70000210187967959:68fc22a478b5fc5602a23531": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-01-24T19:08:56.443888",
-    "ignored": false,
-    "last_sent": "2026-01-24T23:23:02.644329",
+    "ignored": true,
+    "last_sent": "2026-01-25T04:12:17.103184",
     "customer": "dessmonitor-dushanthatiqri",
     "plant": "PLANT",
     "message": "battery voltage is too low"
