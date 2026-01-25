@@ -206,7 +206,7 @@ class TestDessMonitorAPIClient:
         script_path = scripts_dir / "dessmonitor_common.sh"
 
         if script_path.exists():
-            content = script_path.read_text()
+            content = script_path.read_text(encoding='utf-8')
 
             # Extract API_URL line
             import re
@@ -242,7 +242,7 @@ class TestDessMonitorAPIClient:
         script_path = scripts_dir / "dessmonitor_common.sh"
 
         if script_path.exists():
-            content = script_path.read_text()
+            content = script_path.read_text(encoding='utf-8')
 
             # These patterns should NEVER appear
             forbidden_patterns = [
@@ -288,7 +288,7 @@ class TestDessMonitorAPIClient:
         script_path = scripts_dir / "dessmonitor_common.sh"
 
         if script_path.exists():
-            content = script_path.read_text()
+            content = script_path.read_text(encoding='utf-8')
 
             # Check for dual auth functions
             assert "dessmonitor_auth_email" in content, \
@@ -508,7 +508,7 @@ class TestDessMonitorDataCollection:
         if not script_path.exists():
             pytest.skip("dessmonitor_common.sh not found")
 
-        content = script_path.read_text()
+        content = script_path.read_text(encoding='utf-8')
 
         # Required functions
         required_functions = [
@@ -544,7 +544,7 @@ class TestDessMonitorDataCollection:
         if not script_path.exists():
             pytest.skip("check_dessmonitor_monthly.sh not found")
 
-        content = script_path.read_text()
+        content = script_path.read_text(encoding='utf-8')
 
         # MUST use device-level APIs (confirmed from local testing)
         assert "webQueryDeviceEs" in content, \
@@ -571,7 +571,7 @@ class TestDessMonitorDataCollection:
         if not script_path.exists():
             pytest.skip("check_dessmonitor_monthly.sh not found")
 
-        content = script_path.read_text()
+        content = script_path.read_text(encoding='utf-8')
 
         # MUST use AWK to parse dates from API (looks for "gts" field)
         assert '"gts"' in content, \
@@ -601,7 +601,7 @@ class TestDessMonitorDataCollection:
         if not script_path.exists():
             pytest.skip("check_dessmonitor_monthly.sh not found")
 
-        content = script_path.read_text()
+        content = script_path.read_text(encoding='utf-8')
 
         # AWK should parse both val and ts fields
         assert '"val"' in content and '"ts"' in content, \
@@ -618,7 +618,7 @@ class TestDessMonitorDataCollection:
         if not script_path.exists():
             pytest.skip("check_dessmonitor_monthly.sh not found")
 
-        content = script_path.read_text()
+        content = script_path.read_text(encoding='utf-8')
 
         # CSV header must be "date,kwh"
         assert 'echo "date,kwh"' in content or '"date,kwh"' in content, \
@@ -640,7 +640,7 @@ class TestDessMonitorDataCollection:
         if not script_path.exists():
             pytest.skip("check_dessmonitor_monthly.sh not found")
 
-        content = script_path.read_text()
+        content = script_path.read_text(encoding='utf-8')
 
         # Output path must include dessmonitor prefix
         assert 'dessmonitor-${' in content or 'dessmonitor-$' in content, \
@@ -692,7 +692,7 @@ class TestDessMonitorYearlyScript:
         if not script_path.exists():
             pytest.skip("check_dessmonitor_yearly.sh not found")
 
-        content = script_path.read_text()
+        content = script_path.read_text(encoding='utf-8')
 
         # Must use YearPerMonth API (returns all 12 months in one call)
         assert "querySPDeviceKeyParameterYearPerMonth" in content, \
@@ -716,7 +716,7 @@ class TestDessMonitorYearlyScript:
         if not script_path.exists():
             pytest.skip("check_dessmonitor_yearly.sh not found")
 
-        content = script_path.read_text()
+        content = script_path.read_text(encoding='utf-8')
 
         # Must loop through devices
         assert 'DEVICE_DATA' in content, "Script should process DEVICE_DATA"
@@ -745,7 +745,7 @@ class TestDessMonitorYearlyScript:
         if not script_path.exists():
             pytest.skip("check_dessmonitor_yearly.sh not found")
 
-        content = script_path.read_text()
+        content = script_path.read_text(encoding='utf-8')
 
         # Must use device query with correct parameter
         assert "webQueryDeviceEs" in content, \
@@ -770,7 +770,7 @@ class TestDessMonitorYearlyScript:
         if not script_path.exists():
             pytest.skip("check_dessmonitor_yearly.sh not found")
 
-        content = script_path.read_text()
+        content = script_path.read_text(encoding='utf-8')
 
         # Should NOT have a month loop (seq -w 1 12) since API returns all months
         # The API call uses date=${YEAR} (just the year, not YYYY-MM)
@@ -783,7 +783,7 @@ class TestDessMonitorYearlyScript:
         if not script_path.exists():
             pytest.skip("check_dessmonitor_yearly.sh not found")
 
-        content = script_path.read_text()
+        content = script_path.read_text(encoding='utf-8')
 
         # Header should be month,kwh
         assert 'month,kwh' in content, \
@@ -799,7 +799,7 @@ class TestDessMonitorYearlyScript:
         if not script_path.exists():
             pytest.skip("check_dessmonitor_yearly.sh not found")
 
-        content = script_path.read_text()
+        content = script_path.read_text(encoding='utf-8')
 
         # Output path must include dessmonitor prefix
         assert 'dessmonitor-${' in content or 'dessmonitor-$' in content, \
@@ -815,7 +815,7 @@ class TestDessMonitorYearlyScript:
         if not script_path.exists():
             pytest.skip("check_dessmonitor_yearly.sh not found")
 
-        content = script_path.read_text()
+        content = script_path.read_text(encoding='utf-8')
 
         assert "source" in content and "common_config.sh" in content, \
             "Script should source common_config.sh"

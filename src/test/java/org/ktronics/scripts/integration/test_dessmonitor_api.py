@@ -366,7 +366,7 @@ class TestDessMonitorScripts:
         if not script_path.exists():
             pytest.skip("check_dessmonitor_yearly.sh not found")
 
-        content = script_path.read_text()
+        content = script_path.read_text(encoding='utf-8')
 
         # Must use correct device query parameter
         assert 'webQueryDeviceEs' in content, "Should use webQueryDeviceEs"
