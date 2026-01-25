@@ -56,7 +56,7 @@ Monitors device alarms and notifies admin/customers:
 
 - 3-send rule (max 3 notifications per alarm)
 - 4-hour interval between sends
-- Test customer mode (Gayan-IMH only on non-scheduled runs)
+- Test customer mode (ShineMonitor: Gayan-IMH, DessMonitor: Mifrazmarso)
 - Customer-specific alarm mapping
 
 ### UC9: Admin Email Optimization
