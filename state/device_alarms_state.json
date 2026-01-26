@@ -303,5 +303,23 @@
     "customer": "dessmonitor-dushanthatiqri",
     "plant": "PLANT",
     "message": "battery voltage is too low"
+  },
+  "1101493:D70000210186250779:6976c76d9127112972ab5daf": {
+    "send_count": 1,
+    "first_seen": "2026-01-26T04:20:23.956485",
+    "ignored": false,
+    "last_sent": "2026-01-26T04:20:23.956485",
+    "customer": "Abeetha",
+    "plant": "PLANT",
+    "message": "Inverter over current protection error"
+  },
+  "1058467:D70000210184951128:6976c4db9127112972a85eaf": {
+    "send_count": 1,
+    "first_seen": "2026-01-26T04:20:23.956485",
+    "ignored": false,
+    "last_sent": "2026-01-26T04:20:23.956485",
+    "customer": "Sohan",
+    "plant": "Must PV1800 3024 Pro",
+    "message": "battery voltage is too low"
   }
 }
