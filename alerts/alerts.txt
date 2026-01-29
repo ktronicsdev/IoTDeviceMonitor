@@ -48,8 +48,6 @@
 │ IGNORED PLANTS (No production for extended period):
 │   • abeetha-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│   • chamila-chamila-119h
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • chandika-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • samurdi-kohuwala
