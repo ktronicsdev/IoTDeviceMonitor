@@ -150,11 +150,16 @@ class TestCustomerWeeklyReports:
 
     def test_monthly_production_sum(self, test_data_dir):
         """Calculate correct monthly total"""
-        # Create full month of data (January 2026 - 31 days)
-        daily_data = [(f'2026-01-{day:02d}', 10.0 + day * 0.1) for day in range(1, 32)]
+        import calendar
+        today = date.today()
+        current_month = today.strftime('%Y-%m')
+        days_in_month = calendar.monthrange(today.year, today.month)[1]
+
+        # Create full month of data for current month (dynamic)
+        daily_data = [(f'{current_month}-{day:02d}', 10.0 + day * 0.1) for day in range(1, days_in_month + 1)]
 
         plant_name = "test-plant"
-        self.create_monthly_csv(test_data_dir, plant_name, '2026-01', daily_data)
+        self.create_monthly_csv(test_data_dir, plant_name, current_month, daily_data)
 
         plant_base_names = [plant_name]
         summary = get_weekly_summary(plant_base_names, test_data_dir)
@@ -271,31 +276,40 @@ class TestCustomerWeeklyReports:
         NEW FEATURE TEST: Previous month comparison
         Verify that previous month totals are read and calculated correctly
         """
+        import calendar
         plant_name = "test-plant"
+        today = date.today()
+        current_month = today.strftime('%Y-%m')
+        days_in_current = calendar.monthrange(today.year, today.month)[1]
 
-        # Create current month data (January 2026)
-        current_data = [(f'2026-01-{day:02d}', 10.0) for day in range(1, 32)]
-        self.create_monthly_csv(test_data_dir, plant_name, '2026-01', current_data)
+        # Previous month
+        first_of_month = today.replace(day=1)
+        prev_month_date = first_of_month - timedelta(days=1)
+        prev_month = prev_month_date.strftime('%Y-%m')
+        days_in_prev = calendar.monthrange(prev_month_date.year, prev_month_date.month)[1]
 
-        # Create previous month data (December 2025)
-        prev_data = [(f'2025-12-{day:02d}', 8.0) for day in range(1, 32)]
-        self.create_monthly_csv(test_data_dir, plant_name, '2025-12', prev_data)
+        # Create current month data (dynamic)
+        current_data = [(f'{current_month}-{day:02d}', 10.0) for day in range(1, days_in_current + 1)]
+        self.create_monthly_csv(test_data_dir, plant_name, current_month, current_data)
+
+        # Create previous month data (dynamic)
+        prev_data = [(f'{prev_month}-{day:02d}', 8.0) for day in range(1, days_in_prev + 1)]
+        self.create_monthly_csv(test_data_dir, plant_name, prev_month, prev_data)
 
         plant_base_names = [plant_name]
         summary = get_weekly_summary(plant_base_names, test_data_dir)
 
         # Verify previous month total
-        expected_prev_monthly = 8.0 * 31  # 31 days × 8.0 kWh
+        expected_prev_monthly = 8.0 * days_in_prev
         assert summary['total_prev_monthly'] == pytest.approx(expected_prev_monthly, 0.01)
-        assert summary['total_prev_monthly'] == pytest.approx(248.0, 0.01)
 
         # Verify current month total
-        expected_current_monthly = 10.0 * 31  # 31 days × 10.0 kWh
+        expected_current_monthly = 10.0 * days_in_current
         assert summary['total_monthly'] == pytest.approx(expected_current_monthly, 0.01)
 
         # Verify month-over-month change
         expected_change = expected_current_monthly - expected_prev_monthly
-        assert expected_change == pytest.approx(62.0, 0.01)
+        assert summary['total_monthly'] - summary['total_prev_monthly'] == pytest.approx(expected_change, 0.01)
 
     def test_previous_year_comparison(self, test_data_dir):
         """
@@ -554,6 +568,55 @@ class TestCustomerWeeklyReports:
         plants = get_customer_plants(test_data_dir, "gayan-imh", platform='shinemonitor')
         assert len(plants) == 1
         assert plants[0] == "gayan-imh-plant"
+
+
+    def test_dynamic_months_no_hardcoding(self, test_data_dir):
+        """
+        REGRESSION TEST: Verify monthly/previous-month calculations work with
+        dynamic dates. This test failed when months were hardcoded to 2026-01
+        and the calendar rolled to February 2026.
+        Tests: current month total, previous month total, and month-over-month change.
+        """
+        import calendar
+        today = date.today()
+        current_month = today.strftime('%Y-%m')
+        days_in_current = calendar.monthrange(today.year, today.month)[1]
+
+        # Previous month (dynamic)
+        first_of_month = today.replace(day=1)
+        prev_month_date = first_of_month - timedelta(days=1)
+        prev_month = prev_month_date.strftime('%Y-%m')
+        days_in_prev = calendar.monthrange(prev_month_date.year, prev_month_date.month)[1]
+
+        plant_name = "dynamic-test-plant"
+
+        # Create current month CSV with 12.0 kWh per day
+        current_data = [(f'{current_month}-{d:02d}', 12.0) for d in range(1, days_in_current + 1)]
+        self.create_monthly_csv(test_data_dir, plant_name, current_month, current_data)
+
+        # Create previous month CSV with 9.0 kWh per day
+        prev_data = [(f'{prev_month}-{d:02d}', 9.0) for d in range(1, days_in_prev + 1)]
+        self.create_monthly_csv(test_data_dir, plant_name, prev_month, prev_data)
+
+        summary = get_weekly_summary([plant_name], test_data_dir)
+
+        # Current month total
+        expected_current = 12.0 * days_in_current
+        assert summary['total_monthly'] == pytest.approx(expected_current, 0.01), \
+            f"Current month ({current_month}) total wrong: got {summary['total_monthly']}, expected {expected_current}"
+
+        # Previous month total
+        expected_prev = 9.0 * days_in_prev
+        assert summary['total_prev_monthly'] == pytest.approx(expected_prev, 0.01), \
+            f"Prev month ({prev_month}) total wrong: got {summary['total_prev_monthly']}, expected {expected_prev}"
+
+        # Month-over-month change
+        assert summary['total_monthly'] - summary['total_prev_monthly'] == \
+            pytest.approx(expected_current - expected_prev, 0.01)
+
+        # Verify summary uses correct month labels
+        assert summary['current_month'] == current_month
+        assert summary['prev_month'] == prev_month
 
 
 if __name__ == '__main__':
