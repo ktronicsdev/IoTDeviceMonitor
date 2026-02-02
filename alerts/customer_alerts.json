@@ -1,3 +1,19 @@
 {
-  "customer_alerts": {}
+  "customer_alerts": {
+    "Sohan": {
+      "email": "Sohan.Goonewardena@gmail.com",
+      "alerts": [
+        {
+          "plant": "sohan-must-pv1800-3024-pro",
+          "level": "RED",
+          "issue": "< 20.0% baseline for 3 consecutive days",
+          "normal": 7.9143,
+          "current": {
+            "date": "2026-02-02",
+            "kwh": 1.2
+          }
+        }
+      ]
+    }
+  }
 }

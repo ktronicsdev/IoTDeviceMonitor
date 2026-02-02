@@ -2,13 +2,46 @@
 ║                                                                              ║
 ║                      [SHINEMONITOR] PRODUCTION MONITOR                       ║
 ║                                                                              ║
-║                          ✓ ALL SYSTEMS OPERATIONAL                           ║
+║                            ⚠ ATTENTION REQUIRED ⚠                            ║
 ║                                                                              ║
-║                          Status: NO ALERTS DETECTED                          ║
+║                        Status: 1 CRITICAL, 0 WARNING                         ║
 ║                                                                              ║
-║               Date: 2026-02-01  |  Total Plants Monitored: 23                ║
+║               Date: 2026-02-02  |  Total Plants Monitored: 23                ║
 ║                                                                              ║
 ================================================================================
+
+┌─ ALERT SUMMARY ──────────────────────────────────────────────────────────────┐
+│
+│ 🔴 [RED] sohan-must-pv1800-3024-pro
+│
+│   Issue: Production dropped 84.8% below normal
+│   Normal: 7.91 kWh/day  →  Current: 1.20 kWh/day
+│   Rule: < 20.0% baseline for 3 consecutive days
+│
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ RECOMMENDED ACTIONS ────────────────────────────────────────────────────────┐
+│
+│ sohan-must-pv1800-3024-pro:
+│   1. Check inverter status and error codes
+│   2. Verify grid connection and breaker status
+│   3. Inspect panels for shading or physical damage
+│   4. Contact maintenance team if issue persists
+│
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ DETAILED BREAKDOWN ─────────────────────────────────────────────────────────┐
+│
+│ [RED] sohan-must-pv1800-3024-pro
+│
+│   Baseline (avg/day): 7.9143 kWh
+│   Alert Threshold: < 1.5829 kWh/day
+│   Recent Production:
+│     2026-01-31: 0.0000 kWh (0.0% of baseline)
+│     2026-02-01: 0.0000 kWh (0.0% of baseline)
+│     2026-02-02: 1.2000 kWh (15.2% of baseline)
+│
+└──────────────────────────────────────────────────────────────────────────────┘
 
 ┌─ ADDITIONAL INFORMATION ────────────────────────────────────────────────────┐
 │
@@ -22,8 +55,6 @@
 │   • lahiru-ryan-lahiru-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • samurdi-kohuwala
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│   • sohan-must-pv1800-3024-pro
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │
 └──────────────────────────────────────────────────────────────────────────────┘
