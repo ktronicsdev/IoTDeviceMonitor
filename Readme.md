@@ -2,6 +2,7 @@
 
 [![ShineMonitor](https://github.com/ktronicsdev/IoTDeviceMonitor/workflows/ShineMonitor%20Daily%20Monitor/badge.svg)](https://github.com/ktronicsdev/IoTDeviceMonitor/actions)
 [![DessMonitor](https://github.com/ktronicsdev/IoTDeviceMonitor/workflows/DessMonitor%20Daily%20Monitor/badge.svg)](https://github.com/ktronicsdev/IoTDeviceMonitor/actions)
+[![Dashboard](https://img.shields.io/badge/UC%20Dashboard-Live-blue)](https://ktronicsdev.github.io/IoTDeviceMonitor/dashboard.html)
 
 ## Description
 
