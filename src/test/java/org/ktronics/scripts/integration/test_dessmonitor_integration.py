@@ -1547,5 +1547,51 @@ class TestDessMonitorUC1AdminAlerts:
         assert "RED" in email_text or "🔴" in email_text
 
 
+class TestDessMonitorDiagnostics:
+    """
+    Production credential diagnostics - converted from scripts/diagnose_dessmonitor_api.py.
+
+    These tests validate the actual credentials.json file has correct DessMonitor
+    configuration, replacing the standalone diagnostic script.
+    """
+
+    def _load_dessmonitor_creds(self):
+        """Helper to load DessMonitor credentials, skipping if unavailable."""
+        from config import CREDENTIALS_PATH
+
+        if not CREDENTIALS_PATH.exists():
+            pytest.skip("credentials.json not found (CI environment)")
+
+        with open(CREDENTIALS_PATH, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        if "dessmonitor_credentials" not in data:
+            pytest.skip("dessmonitor_credentials not in local credentials.json (only in GitHub Actions secret)")
+
+        return data["dessmonitor_credentials"]
+
+    def test_dessmonitor_credentials_loaded(self):
+        """Test that dessmonitor_credentials key exists and has company_key"""
+        creds = self._load_dessmonitor_creds()
+        assert "company_key" in creds, "Missing company_key"
+        assert len(creds["company_key"]) > 0
+
+    def test_dessmonitor_accounts_not_empty(self):
+        """Test that at least one DessMonitor account is configured"""
+        creds = self._load_dessmonitor_creds()
+        accounts = creds.get("dessmonitor_accounts", [])
+        assert len(accounts) > 0, "No dessmonitor_accounts configured"
+
+    def test_dessmonitor_accounts_have_required_fields(self):
+        """Test that each DessMonitor account has label, username, password"""
+        creds = self._load_dessmonitor_creds()
+        accounts = creds.get("dessmonitor_accounts", [])
+
+        for i, acc in enumerate(accounts):
+            assert "label" in acc, f"Account {i} missing 'label'"
+            assert "username" in acc, f"Account {i} missing 'username'"
+            assert "password" in acc, f"Account {i} missing 'password'"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
