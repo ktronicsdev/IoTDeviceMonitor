@@ -4,11 +4,5 @@
       "last_sent": "2026-01-02T18:35:57.725487Z",
       "rule": "< 20.0% baseline for 3 consecutive days"
     }
-  },
-  "sohan-must-pv1800-3024-pro:RED": {
-    "first_seen": "2026-02-02",
-    "ignored_date": null,
-    "last_sent": "2026-02-02",
-    "send_count": 1
   }
 }
