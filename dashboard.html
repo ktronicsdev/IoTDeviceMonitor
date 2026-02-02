@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IoT Multi-Cloud Monitor - UC Dashboard</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+/* Header */
+.header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-bottom: 1px solid #334155; padding: 20px 32px; }
+.header h1 { font-size: 22px; font-weight: 600; color: #f1f5f9; }
+.header p { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+
+/* Tabs */
+.tabs { display: flex; gap: 0; background: #1e293b; border-bottom: 1px solid #334155; padding: 0 32px; }
+.tab { padding: 12px 24px; cursor: pointer; font-size: 14px; font-weight: 500; color: #94a3b8; border-bottom: 2px solid transparent; transition: all 0.2s; }
+.tab:hover { color: #cbd5e1; }
+.tab.active { color: #38bdf8; border-bottom-color: #38bdf8; }
+.tab.active-dess { color: #a78bfa; border-bottom-color: #a78bfa; }
+.tab .badge { display: inline-block; background: #334155; color: #94a3b8; font-size: 11px; padding: 1px 7px; border-radius: 10px; margin-left: 6px; }
+.tab.active .badge { background: #0c4a6e; color: #38bdf8; }
+.tab.active-dess .badge { background: #4c1d95; color: #a78bfa; }
+
+/* Content */
+.content { max-width: 1100px; margin: 0 auto; padding: 24px 32px; }
+.platform-content { display: none; }
+.platform-content.visible { display: block; }
+
+/* Summary Cards */
+.summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+.summary-card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 16px 20px; }
+.summary-card .label { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+.summary-card .value { font-size: 28px; font-weight: 700; margin-top: 4px; }
+.summary-card .sub { font-size: 12px; color: #64748b; margin-top: 2px; }
+.shine-accent { color: #38bdf8; }
+.dess-accent { color: #a78bfa; }
+
+/* Category Section */
+.category { margin-bottom: 24px; }
+.category-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-bottom: 10px; padding-left: 4px; }
+
+/* UC Cards */
+.uc-card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; margin-bottom: 8px; overflow: hidden; transition: border-color 0.2s; }
+.uc-card:hover { border-color: #475569; }
+.uc-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; cursor: pointer; user-select: none; }
+.uc-left { display: flex; align-items: center; gap: 12px; }
+.uc-num { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 4px; background: #334155; color: #94a3b8; }
+.uc-name { font-size: 15px; font-weight: 500; color: #f1f5f9; }
+.uc-right { display: flex; align-items: center; gap: 10px; }
+.uc-tests { font-size: 12px; color: #22c55e; background: #14532d; padding: 2px 8px; border-radius: 4px; }
+.uc-status { font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #14532d; color: #4ade80; }
+.expand-icon { font-size: 12px; color: #64748b; transition: transform 0.2s; }
+.uc-card.expanded .expand-icon { transform: rotate(180deg); }
+
+/* UC Details */
+.uc-details { display: none; padding: 0 20px 16px 20px; border-top: 1px solid #334155; }
+.uc-card.expanded .uc-details { display: block; }
+.uc-desc { font-size: 13px; color: #94a3b8; margin-top: 12px; line-height: 1.5; }
+.uc-features { margin-top: 12px; }
+.uc-features h4 { font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 6px; }
+.uc-features li { font-size: 13px; color: #cbd5e1; margin-left: 16px; margin-bottom: 3px; line-height: 1.4; }
+.uc-meta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px; }
+.meta-item { font-size: 12px; color: #94a3b8; }
+.meta-item strong { color: #cbd5e1; }
+
+/* Workflow Section */
+.workflow-card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 16px 20px; margin-bottom: 8px; }
+.workflow-card h3 { font-size: 14px; color: #f1f5f9; margin-bottom: 6px; }
+.workflow-card .wf-detail { font-size: 12px; color: #94a3b8; margin-bottom: 2px; }
+
+/* UC11 Plant Selector */
+.roi-section { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 20px; margin-top: 12px; }
+.roi-section h4 { font-size: 14px; color: #f1f5f9; margin-bottom: 12px; }
+.roi-controls { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
+.roi-select { background: #0f172a; border: 1px solid #475569; color: #e2e8f0; padding: 8px 12px; border-radius: 6px; font-size: 13px; min-width: 200px; }
+.roi-btn { background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+.roi-btn:hover { background: #1d4ed8; }
+.roi-output { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 16px; font-family: 'Courier New', monospace; font-size: 12px; color: #94a3b8; white-space: pre-wrap; max-height: 500px; overflow-y: auto; display: none; }
+.roi-output.visible { display: block; }
+.roi-note { font-size: 12px; color: #64748b; margin-top: 8px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .summary-grid { grid-template-columns: repeat(2, 1fr); }
+  .uc-meta-grid { grid-template-columns: 1fr; }
+  .content { padding: 16px; }
+  .tabs { padding: 0 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>IoT Multi-Cloud Monitor</h1>
+  <p>Use Case Dashboard &mdash; ShineMonitor &amp; DessMonitor Platforms</p>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('shine')">ShineMonitor <span class="badge">11 UCs</span></div>
+  <div class="tab" onclick="switchTab('dess')">DessMonitor <span class="badge">11 UCs</span></div>
+</div>
+
+<!-- ShineMonitor Tab -->
+<div id="tab-shine" class="platform-content visible">
+<div class="content">
+
+  <div class="summary-grid">
+    <div class="summary-card"><div class="label">Use Cases</div><div class="value shine-accent">11</div><div class="sub">UC1-UC11</div></div>
+    <div class="summary-card"><div class="label">Tests</div><div class="value shine-accent">131</div><div class="sub">All passing</div></div>
+    <div class="summary-card"><div class="label">Workflows</div><div class="value shine-accent">2</div><div class="sub">Daily + Weekly</div></div>
+    <div class="summary-card"><div class="label">Schedule</div><div class="value shine-accent" style="font-size:18px">6x/day</div><div class="sub">Every 4 hours</div></div>
+  </div>
+
+  <!-- Production Monitoring -->
+  <div class="category">
+    <div class="category-title">Production Monitoring</div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC1</span><span class="uc-name">Admin Production Alerts</span></div>
+        <div class="uc-right"><span class="uc-tests">15 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Monitors all solar plants for production anomalies and sends system-wide alerts to admin.</div>
+        <div class="uc-features"><h4>Features</h4><ul>
+          <li>RED alert: Production &lt; 20% of baseline for 3 consecutive days</li>
+          <li>ORANGE alert: Production &lt; 40% of baseline for 3 consecutive months</li>
+          <li>Auto-ignore: Plants with 0 production for 1 month</li>
+          <li>HTML email with color-coded alert sections</li>
+        </ul></div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>Workflow:</strong> trigger-shinemonitor.yml</div>
+          <div class="meta-item"><strong>Schedule:</strong> 6x daily (every 4 hours)</div>
+          <div class="meta-item"><strong>Recipient:</strong> ktronicssolar@gmail.com</div>
+          <div class="meta-item"><strong>Test file:</strong> test_admin_alerts.py</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC2</span><span class="uc-name">Customer Weekly Reports</span></div>
+        <div class="uc-right"><span class="uc-tests">15 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Generates personalized weekly production reports for each customer every Sunday.</div>
+        <div class="uc-features"><h4>Features</h4><ul>
+          <li>Weekly, monthly, yearly production totals</li>
+          <li>Month-over-month and year-over-year comparisons</li>
+          <li>Multi-plant support per customer</li>
+          <li>Admin summary email with all customers combined</li>
+        </ul></div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>Workflow:</strong> trigger-customer-reports.yml</div>
+          <div class="meta-item"><strong>Schedule:</strong> Sunday 04:00 UTC</div>
+          <div class="meta-item"><strong>Recipient:</strong> Each customer + admin</div>
+          <div class="meta-item"><strong>Test file:</strong> test_customer_weekly.py</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Device Alarms -->
+  <div class="category">
+    <div class="category-title">Device Alarms &amp; Notifications</div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC3</span><span class="uc-name">Device Alarm Notifications</span></div>
+        <div class="uc-right"><span class="uc-tests">38 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Monitors device-level warnings from ShineMonitor API and sends alarm notifications to admin and customers.</div>
+        <div class="uc-features"><h4>Features</h4><ul>
+          <li>Fetches UNHANDLED device alarms via webQueryPlantsWarning API</li>
+          <li>3-send rule: each alarm sent 3 times, then auto-ignored</li>
+          <li>4-hour interval between sends to prevent spam</li>
+          <li>State persistence for send count tracking</li>
+          <li>Admin + customer device alarm emails</li>
+        </ul></div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>Workflow:</strong> trigger-shinemonitor.yml</div>
+          <div class="meta-item"><strong>Schedule:</strong> 6x daily (every 4 hours)</div>
+          <div class="meta-item"><strong>State:</strong> state/device_alarms_state.json</div>
+          <div class="meta-item"><strong>Test file:</strong> test_device_alarms.py</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC4</span><span class="uc-name">Test Customer Email Control</span></div>
+        <div class="uc-right"><span class="uc-tests">3 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Controls which customers receive emails based on trigger type, enabling continuous testing.</div>
+        <div class="uc-features"><h4>Features</h4><ul>
+          <li>Scheduled runs: all customers receive emails</li>
+          <li>Push/manual runs: only test customer (Gayan-IMH) receives emails</li>
+          <li>Test mode bypasses 3-send limit for testing</li>
+        </ul></div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>Test customer:</strong> Gayan-IMH</div>
+          <div class="meta-item"><strong>Test file:</strong> test_device_alarms.py</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC5</span><span class="uc-name">Test Mode Filter</span></div>
+        <div class="uc-right"><span class="uc-tests">2 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Filters alarms to test customer only when running in test mode (push/manual triggers).</div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>Part of:</strong> UC3 Device Alarms</div>
+          <div class="meta-item"><strong>Test file:</strong> test_device_alarms.py</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC6</span><span class="uc-name">Log Summary Counts</span></div>
+        <div class="uc-right"><span class="uc-tests">1 test</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Logs alarm summary counts in GitHub Actions for admin visibility.</div>
+        <div class="uc-features"><h4>Output</h4><ul>
+          <li>"Summary: X alarms from Y customers affecting Z plants"</li>
+        </ul></div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>Part of:</strong> UC3 Device Alarms</div>
+          <div class="meta-item"><strong>Test file:</strong> test_device_alarms.py</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC7</span><span class="uc-name">State JSON Enhancement</span></div>
+        <div class="uc-right"><span class="uc-tests">1 test</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Adds human-readable fields (customer, plant, message) to device alarm state file.</div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>State file:</strong> state/device_alarms_state.json</div>
+          <div class="meta-item"><strong>Test file:</strong> test_device_alarms.py</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC8</span><span class="uc-name">Weekly Report Schedule Filter</span></div>
+        <div class="uc-right"><span class="uc-tests">1 test</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Controls when customer emails are sent based on trigger type.</div>
+        <div class="uc-features"><h4>Rules</h4><ul>
+          <li>Admin emails: sent on ALL triggers (push/manual/schedule)</li>
+          <li>Customer emails: only on scheduled runs (Sunday)</li>
+        </ul></div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>Workflow:</strong> trigger-customer-reports.yml</div>
+          <div class="meta-item"><strong>Test file:</strong> test_device_alarms.py</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- System Optimization -->
+  <div class="category">
+    <div class="category-title">System Optimization</div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC9</span><span class="uc-name">Admin Email Optimization</span></div>
+        <div class="uc-right"><span class="uc-tests">9 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Reduces admin email noise using hash-based duplicate detection. Only sends when alert state actually changes.</div>
+        <div class="uc-features"><h4>Features</h4><ul>
+          <li>SHA256 hash of alert content (excludes timestamp)</li>
+          <li>Compares hash to previous run's hash</li>
+          <li>Email reduction: 6/day down to 1-2/day (83% reduction)</li>
+        </ul></div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>State:</strong> state/admin_email_state.txt</div>
+          <div class="meta-item"><strong>Test file:</strong> test_uc9_admin_email.py</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Multi-Platform -->
+  <div class="category">
+    <div class="category-title">Multi-Platform Support</div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC10</span><span class="uc-name">DessMonitor Multi-Platform</span></div>
+        <div class="uc-right"><span class="uc-tests">49 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Extends the monitoring system to DessMonitor platform, running in parallel with ShineMonitor.</div>
+        <div class="uc-features"><h4>Features</h4><ul>
+          <li>Separate API integration (different endpoint and auth flow)</li>
+          <li>Platform-specific credentials, CSV naming, state files</li>
+          <li>CSV prefix: dessmonitor-{label}-{plant}-YYYY-MM.csv</li>
+          <li>Anomaly detection with --platform flag</li>
+          <li>Weekly reports with platform filtering</li>
+        </ul></div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>Workflows:</strong> trigger-dessmonitor.yml, trigger-dessmonitor-weekly-reports.yml</div>
+          <div class="meta-item"><strong>Test files:</strong> test_dessmonitor_integration.py, test_dessmonitor_api.py</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analytics -->
+  <div class="category">
+    <div class="category-title">Analytics &amp; ROI</div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC11</span><span class="uc-name">Plant ROI Analysis</span></div>
+        <div class="uc-right"><span class="uc-tests">19 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Analyzes historical device data for ROI verification, focusing on OffGrid (battery backup) usage during grid outages.</div>
+        <div class="uc-features"><h4>Features</h4><ul>
+          <li>Tracks OffGrid events (battery backup mode)</li>
+          <li>Calculates total backup hours, energy provided, cost savings</li>
+          <li>Monthly breakdown with peak load analysis</li>
+          <li>Works for any plant by selecting customer</li>
+        </ul></div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>Scripts:</strong> check_plant_roi.py, analyze_plant_roi.py</div>
+          <div class="meta-item"><strong>Test file:</strong> test_uc11_plant_roi.py</div>
+        </div>
+
+        <!-- Plant ROI Selector -->
+        <div class="roi-section">
+          <h4>ROI Report Viewer</h4>
+          <div class="roi-controls">
+            <select id="roi-plant-select" class="roi-select">
+              <option value="">-- Select a plant --</option>
+              <option value="abeetha-365days">Abeetha - 365 days</option>
+              <option value="abeetha-7days">Abeetha - 7 days</option>
+              <option value="abeetha-2024">Abeetha - 2024</option>
+              <option value="abeetha-2023">Abeetha - 2023</option>
+            </select>
+            <button class="roi-btn" onclick="loadROIReport()">View Report</button>
+          </div>
+          <div id="roi-output" class="roi-output"></div>
+          <div class="roi-note">Reports are pre-generated from roi/*.txt files. To generate new reports, run:<br>
+            <code>py check_plant_roi.py --customer &lt;name&gt; --days 365</code> then <code>py analyze_plant_roi.py --input roi/&lt;file&gt;.csv</code></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Infrastructure -->
+  <div class="category">
+    <div class="category-title">Infrastructure</div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">BVT</span><span class="uc-name">Build Verification Tests</span></div>
+        <div class="uc-right"><span class="uc-tests">14 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Verifies centralized credentials configuration across all scripts. Prevents hardcoded path regressions.</div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>Config:</strong> config.py, common_config.sh</div>
+          <div class="meta-item"><strong>Test file:</strong> test_centralized_config.py</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">API</span><span class="uc-name">ShineMonitor API Tests</span></div>
+        <div class="uc-right"><span class="uc-tests">9 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Integration tests for ShineMonitor API endpoints. Runs in GitHub Actions (Linux), skipped on Windows.</div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>Environment:</strong> GitHub Actions only</div>
+          <div class="meta-item"><strong>Test file:</strong> test_shinemonitor_api.py</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Workflows -->
+  <div class="category">
+    <div class="category-title">GitHub Workflows</div>
+
+    <div class="workflow-card">
+      <h3>ShineMonitor Daily Monitor</h3>
+      <div class="wf-detail"><strong>File:</strong> trigger-shinemonitor.yml</div>
+      <div class="wf-detail"><strong>Schedule:</strong> 6x daily (02:30, 06:30, 10:30, 14:30, 18:30, 22:30 UTC)</div>
+      <div class="wf-detail"><strong>Triggers:</strong> Schedule, Push, Manual</div>
+      <div class="wf-detail"><strong>UCs:</strong> UC1, UC3-UC9</div>
+    </div>
+
+    <div class="workflow-card">
+      <h3>ShineMonitor Weekly Reports</h3>
+      <div class="wf-detail"><strong>File:</strong> trigger-customer-reports.yml</div>
+      <div class="wf-detail"><strong>Schedule:</strong> Sunday 04:00 UTC</div>
+      <div class="wf-detail"><strong>Triggers:</strong> Schedule, Push, Manual</div>
+      <div class="wf-detail"><strong>UCs:</strong> UC2, UC8</div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- DessMonitor Tab -->
+<div id="tab-dess" class="platform-content">
+<div class="content">
+
+  <div class="summary-grid">
+    <div class="summary-card"><div class="label">Use Cases</div><div class="value dess-accent">11</div><div class="sub">UC1-UC11</div></div>
+    <div class="summary-card"><div class="label">Tests</div><div class="value dess-accent">49</div><div class="sub">All passing</div></div>
+    <div class="summary-card"><div class="label">Workflows</div><div class="value dess-accent">2</div><div class="sub">Daily + Weekly</div></div>
+    <div class="summary-card"><div class="label">Schedule</div><div class="value dess-accent" style="font-size:18px">6x/day</div><div class="sub">Offset from ShineMonitor</div></div>
+  </div>
+
+  <!-- Production Monitoring -->
+  <div class="category">
+    <div class="category-title">Production Monitoring</div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC1</span><span class="uc-name">Admin Production Alerts</span></div>
+        <div class="uc-right"><span class="uc-tests">15 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Monitors all DessMonitor solar plants for production anomalies and sends system-wide alerts to admin.</div>
+        <div class="uc-features"><h4>Features</h4><ul>
+          <li>RED alert: Production &lt; 20% of baseline for 3 consecutive days</li>
+          <li>ORANGE alert: Production &lt; 40% of baseline for 3 consecutive months</li>
+          <li>Auto-ignore: Plants with 0 production for 1 month</li>
+          <li>Uses --platform dessmonitor flag for anomaly detection</li>
+        </ul></div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>Workflow:</strong> trigger-dessmonitor.yml</div>
+          <div class="meta-item"><strong>Schedule:</strong> 6x daily (offset from ShineMonitor)</div>
+          <div class="meta-item"><strong>State:</strong> state/dessmonitor_alerts_state.json</div>
+          <div class="meta-item"><strong>Test file:</strong> test_dessmonitor_integration.py</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC2</span><span class="uc-name">Customer Weekly Reports</span></div>
+        <div class="uc-right"><span class="uc-tests">4 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Generates personalized weekly production reports for DessMonitor customers every Sunday.</div>
+        <div class="uc-features"><h4>Features</h4><ul>
+          <li>Weekly, monthly, yearly production totals</li>
+          <li>Platform-specific CSV filtering (dessmonitor- prefix)</li>
+          <li>Separate workflow from ShineMonitor reports</li>
+        </ul></div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>Workflow:</strong> trigger-dessmonitor-weekly-reports.yml</div>
+          <div class="meta-item"><strong>Schedule:</strong> Sunday 04:00 UTC</div>
+          <div class="meta-item"><strong>Test file:</strong> test_customer_weekly.py (platform tests)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Device Alarms -->
+  <div class="category">
+    <div class="category-title">Device Alarms &amp; Notifications</div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC3</span><span class="uc-name">Device Alarm Notifications</span></div>
+        <div class="uc-right"><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Monitors device-level warnings from DessMonitor API and sends alarm notifications to admin and customers.</div>
+        <div class="uc-features"><h4>Features</h4><ul>
+          <li>Fetches UNHANDLED device alarms via check_dessmonitor_device_alarms.sh</li>
+          <li>3-send rule: each alarm sent 3 times, then auto-ignored</li>
+          <li>4-hour interval between sends to prevent spam</li>
+          <li>Admin + customer device alarm emails</li>
+        </ul></div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>Workflow:</strong> trigger-dessmonitor.yml</div>
+          <div class="meta-item"><strong>Script:</strong> check_dessmonitor_device_alarms.sh</div>
+          <div class="meta-item"><strong>State:</strong> state/dessmonitor_device_alarms_state.json</div>
+          <div class="meta-item"><strong>Test file:</strong> test_dessmonitor_integration.py</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC4</span><span class="uc-name">Test Customer Email Control</span></div>
+        <div class="uc-right"><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Controls which DessMonitor customers receive emails based on trigger type.</div>
+        <div class="uc-features"><h4>Features</h4><ul>
+          <li>Scheduled runs: all customers receive emails</li>
+          <li>Push/manual runs: only test customer (MifrazMarsoon) receives emails</li>
+          <li>Customer device alarm emails with platform filtering</li>
+        </ul></div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>Test customer:</strong> MifrazMarsoon</div>
+          <div class="meta-item"><strong>Workflow:</strong> trigger-dessmonitor.yml</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC5</span><span class="uc-name">Test Mode Filter</span></div>
+        <div class="uc-right"><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Filters DessMonitor alarms to test customer only in test mode (push/manual triggers).</div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>Part of:</strong> UC3 Device Alarms</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC6</span><span class="uc-name">Log Summary Counts</span></div>
+        <div class="uc-right"><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Logs DessMonitor alarm summary counts in GitHub Actions for admin visibility.</div>
+        <div class="uc-features"><h4>Output</h4><ul>
+          <li>"Summary: X alarms from Y customers affecting Z plants"</li>
+        </ul></div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>Part of:</strong> UC3 Device Alarms</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC7</span><span class="uc-name">State JSON Enhancement</span></div>
+        <div class="uc-right"><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Human-readable fields (customer, plant, message) in DessMonitor device alarm state file.</div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>State:</strong> state/dessmonitor_device_alarms_state.json</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC8</span><span class="uc-name">Weekly Report Schedule Filter</span></div>
+        <div class="uc-right"><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Controls when DessMonitor customer emails are sent based on trigger type.</div>
+        <div class="uc-features"><h4>Rules</h4><ul>
+          <li>Admin emails: sent on ALL triggers</li>
+          <li>Customer emails: only on scheduled runs (Sunday)</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- System Optimization -->
+  <div class="category">
+    <div class="category-title">System Optimization</div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC9</span><span class="uc-name">Admin Email Optimization</span></div>
+        <div class="uc-right"><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Hash-based duplicate detection for DessMonitor admin emails. Only sends when alert state changes.</div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>State:</strong> state/dessmonitor_admin_email_state.txt</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Multi-Platform -->
+  <div class="category">
+    <div class="category-title">Platform Integration (UC10)</div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC10</span><span class="uc-name">DessMonitor Platform Integration</span></div>
+        <div class="uc-right"><span class="uc-tests">49 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Core platform integration enabling DessMonitor to run in parallel with ShineMonitor.</div>
+        <div class="uc-features"><h4>Features</h4><ul>
+          <li>Separate API integration (different endpoint and auth flow)</li>
+          <li>Platform-specific credentials, CSV naming, state files</li>
+          <li>CSV prefix: dessmonitor-{label}-{plant}-YYYY-MM.csv</li>
+          <li>Anomaly detection with --platform flag</li>
+          <li>Weekly reports with platform filtering</li>
+          <li>Backward compatible with existing ShineMonitor data</li>
+        </ul></div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>Test customer:</strong> MifrazMarsoon</div>
+          <div class="meta-item"><strong>Test files:</strong> test_dessmonitor_integration.py, test_dessmonitor_api.py</div>
+          <div class="meta-item"><strong>Workflows:</strong> trigger-dessmonitor.yml, trigger-dessmonitor-weekly-reports.yml</div>
+          <div class="meta-item"><strong>State:</strong> state/dessmonitor_alerts_state.json</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analytics -->
+  <div class="category">
+    <div class="category-title">Analytics &amp; ROI</div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">UC11</span><span class="uc-name">Plant ROI Analysis</span></div>
+        <div class="uc-right"><span class="uc-status" style="background:#1e3a5f;color:#60a5fa">Planned</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">ROI analysis for DessMonitor plants. Planned - requires DessMonitor device-level data API integration.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Infrastructure -->
+  <div class="category">
+    <div class="category-title">Infrastructure</div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">BVT</span><span class="uc-name">Build Verification Tests</span></div>
+        <div class="uc-right"><span class="uc-tests">14 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Verifies centralized credentials configuration across all scripts including DessMonitor.</div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>Test file:</strong> test_centralized_config.py</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="uc-card" onclick="toggleCard(this)">
+      <div class="uc-header">
+        <div class="uc-left"><span class="uc-num">API</span><span class="uc-name">DessMonitor API Tests</span></div>
+        <div class="uc-right"><span class="uc-tests">13 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+      </div>
+      <div class="uc-details">
+        <div class="uc-desc">Integration tests for DessMonitor API endpoints and bash scripts. Runs in GitHub Actions (Linux).</div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>Environment:</strong> GitHub Actions only</div>
+          <div class="meta-item"><strong>Test file:</strong> test_dessmonitor_api.py</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Workflows -->
+  <div class="category">
+    <div class="category-title">GitHub Workflows</div>
+
+    <div class="workflow-card">
+      <h3>DessMonitor Daily Monitor</h3>
+      <div class="wf-detail"><strong>File:</strong> trigger-dessmonitor.yml</div>
+      <div class="wf-detail"><strong>Schedule:</strong> 6x daily (03:00, 07:00, 11:00, 15:00, 19:00, 23:00 UTC)</div>
+      <div class="wf-detail"><strong>Triggers:</strong> Schedule, Push, Manual</div>
+      <div class="wf-detail"><strong>UCs:</strong> UC1, UC3-UC9, UC10</div>
+    </div>
+
+    <div class="workflow-card">
+      <h3>DessMonitor Weekly Reports</h3>
+      <div class="wf-detail"><strong>File:</strong> trigger-dessmonitor-weekly-reports.yml</div>
+      <div class="wf-detail"><strong>Schedule:</strong> Sunday 04:00 UTC</div>
+      <div class="wf-detail"><strong>Triggers:</strong> Schedule, Push, Manual</div>
+      <div class="wf-detail"><strong>UCs:</strong> UC2, UC8, UC10</div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+// Tab switching
+function switchTab(platform) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active', 'active-dess'));
+  document.querySelectorAll('.platform-content').forEach(c => c.classList.remove('visible'));
+
+  if (platform === 'shine') {
+    document.querySelectorAll('.tab')[0].classList.add('active');
+    document.getElementById('tab-shine').classList.add('visible');
+  } else {
+    document.querySelectorAll('.tab')[1].classList.add('active-dess');
+    document.getElementById('tab-dess').classList.add('visible');
+  }
+  localStorage.setItem('activeTab', platform);
+}
+
+// Expand/collapse UC cards
+function toggleCard(card) {
+  card.classList.toggle('expanded');
+}
+
+// ROI report data (embedded from roi/*.txt files)
+const roiReports = {
+  'abeetha-365days': `======================================================================
+PLANT ROI ANALYSIS: Abeetha - 540w x4/ 3kw @ lipo4
+======================================================================
+
+Period: 2025-01-18 to 2026-01-18 (366 days)
+Total data points: 98,327
+
+----------------------------------------------------------------------
+OFFGRID BACKUP SUMMARY
+----------------------------------------------------------------------
+
+  Total OffGrid Time:     68.8 hours
+  Total OffGrid Energy:   12.02 kWh
+  Number of Events:       72
+  Average Event Duration: 56.5 minutes
+  Longest Event:          1752.7 minutes
+  Peak Load:              2716 W
+  Average Load:           175 W
+
+----------------------------------------------------------------------
+TIME DISTRIBUTION
+----------------------------------------------------------------------
+
+  Grid-Tie:  99.2% (8118.2 hours)
+  OffGrid:   0.8% (68.8 hours)
+
+----------------------------------------------------------------------
+MONTHLY BREAKDOWN
+----------------------------------------------------------------------
+
+  Month      | OffGrid Hrs | Energy (kWh) | Events | Peak Load
+  -----------|-------------|--------------|--------|----------
+  2025-01    |      0.0    |      0.00    |     0   |     0 W
+  2025-02    |     48.0    |      5.06    |    14   |  1314 W
+  2025-03    |      1.6    |      0.34    |     6   |   353 W
+  2025-04    |      0.0    |      0.00    |     0   |     0 W
+  2025-05    |      3.3    |      1.19    |     5   |  1583 W
+  2025-06    |      1.5    |      1.05    |     8   |  1877 W
+  2025-07    |      0.7    |      0.08    |     6   |   264 W
+  2025-08    |      0.3    |      0.17    |     3   |  1026 W
+  2025-09    |      7.7    |      2.32    |     8   |  1091 W
+  2025-10    |      1.1    |      0.40    |     6   |  2649 W
+  2025-11    |      2.6    |      0.82    |    12   |  1046 W
+  2025-12    |      0.2    |      0.01    |     2   |    29 W
+  2026-01    |      1.8    |      0.57    |     2   |  2716 W
+
+----------------------------------------------------------------------
+VALUE ESTIMATION
+----------------------------------------------------------------------
+
+  Energy provided by battery:  12.02 kWh
+  Est. electricity rate:       Rs. 20/kWh
+  Est. cost savings:           Rs. 240
+
+----------------------------------------------------------------------
+RECENT OFFGRID EVENTS (Last 10)
+----------------------------------------------------------------------
+
+  2026-01-18 16:18 - 17:06
+    Duration: 53 min | Avg Load: 199W | Peak: 208W | Energy: 183Wh
+
+  2026-01-18 15:14 - 16:01
+    Duration: 52 min | Avg Load: 423W | Peak: 2716W | Energy: 388Wh
+
+  2025-12-14 14:30 - 14:30
+    Duration: 5 min | Avg Load: 28W | Peak: 28W | Energy: 2Wh
+
+  2025-12-14 14:05 - 14:10
+    Duration: 10 min | Avg Load: 28W | Peak: 29W | Energy: 5Wh
+
+  2025-11-15 10:54 - 10:59
+    Duration: 10 min | Avg Load: 919W | Peak: 924W | Energy: 153Wh
+
+======================================================================
+Generated by UC11: Plant ROI Verification Tool
+======================================================================`,
+
+  'abeetha-7days': `======================================================================
+PLANT ROI ANALYSIS: Abeetha - 540w x4/ 3kw @ lipo4
+======================================================================
+
+Period: 2026-01-11 to 2026-01-18 (8 days)
+Total data points: 2,278
+
+----------------------------------------------------------------------
+OFFGRID BACKUP SUMMARY
+----------------------------------------------------------------------
+
+  Total OffGrid Time:     1.8 hours
+  Total OffGrid Energy:   0.57 kWh
+  Number of Events:       2
+  Average Event Duration: 52.6 minutes
+  Longest Event:          53.4 minutes
+  Peak Load:              2716 W
+  Average Load:           311 W
+
+----------------------------------------------------------------------
+TIME DISTRIBUTION
+----------------------------------------------------------------------
+
+  Grid-Tie:  99.0% (187.9 hours)
+  OffGrid:   1.0% (1.8 hours)
+
+----------------------------------------------------------------------
+MONTHLY BREAKDOWN
+----------------------------------------------------------------------
+
+  Month      | OffGrid Hrs | Energy (kWh) | Events | Peak Load
+  -----------|-------------|--------------|--------|----------
+  2026-01    |      1.8    |      0.57    |     2   |  2716 W
+
+----------------------------------------------------------------------
+VALUE ESTIMATION
+----------------------------------------------------------------------
+
+  Energy provided by battery:  0.57 kWh
+  Est. electricity rate:       Rs. 20/kWh
+  Est. cost savings:           Rs. 11
+
+======================================================================
+Generated by UC11: Plant ROI Verification Tool
+======================================================================`,
+
+  'abeetha-2024': `======================================================================
+PLANT ROI ANALYSIS: Abeetha 2024
+======================================================================
+
+Period: 2024-03-02 to 2024-12-31 (305 days)
+Total data points: 46,851
+
+----------------------------------------------------------------------
+OFFGRID BACKUP SUMMARY
+----------------------------------------------------------------------
+
+  Total OffGrid Time:     24.6 hours
+  Total OffGrid Energy:   6.25 kWh
+  Number of Events:       44
+  Average Event Duration: 33.8 minutes
+  Longest Event:          275.6 minutes
+  Peak Load:              1577 W
+  Average Load:           254 W
+
+----------------------------------------------------------------------
+TIME DISTRIBUTION
+----------------------------------------------------------------------
+
+  Grid-Tie:  99.4% (3879.2 hours)
+  OffGrid:   0.6% (24.6 hours)
+
+----------------------------------------------------------------------
+MONTHLY BREAKDOWN
+----------------------------------------------------------------------
+
+  Month      | OffGrid Hrs | Energy (kWh) | Events | Peak Load
+  -----------|-------------|--------------|--------|----------
+  2024-03    |      4.8    |      0.78    |     8   |   554 W
+  2024-04    |      3.2    |      0.76    |    13   |  1130 W
+  2024-05    |      8.2    |      2.10    |    14   |  1217 W
+  2024-06    |      0.1    |      0.01    |     1   |   139 W
+  2024-07    |      7.0    |      2.14    |     4   |  1577 W
+  2024-11    |      1.4    |      0.45    |     4   |   972 W
+  2024-12    |      0.0    |      0.00    |     0   |     0 W
+
+----------------------------------------------------------------------
+VALUE ESTIMATION
+----------------------------------------------------------------------
+
+  Energy provided by battery:  6.25 kWh
+  Est. electricity rate:       Rs. 20/kWh
+  Est. cost savings:           Rs. 125
+
+======================================================================
+Generated by UC11: Plant ROI Verification Tool
+======================================================================`,
+
+  'abeetha-2023': `======================================================================
+PLANT ROI ANALYSIS: Abeetha 2023
+======================================================================
+
+Period: 2023-03-06 to 2023-10-26 (235 days)
+Total data points: 64,074
+
+----------------------------------------------------------------------
+OFFGRID BACKUP SUMMARY
+----------------------------------------------------------------------
+
+  Total OffGrid Time:     55.3 hours
+  Total OffGrid Energy:   15.68 kWh
+  Number of Events:       60
+  Average Event Duration: 54.4 minutes
+  Longest Event:          461.6 minutes
+  Peak Load:              3159 W
+  Average Load:           283 W
+
+----------------------------------------------------------------------
+TIME DISTRIBUTION
+----------------------------------------------------------------------
+
+  Grid-Tie:  99.0% (5278.8 hours)
+  OffGrid:   1.0% (55.3 hours)
+
+----------------------------------------------------------------------
+MONTHLY BREAKDOWN
+----------------------------------------------------------------------
+
+  Month      | OffGrid Hrs | Energy (kWh) | Events | Peak Load
+  -----------|-------------|--------------|--------|----------
+  2023-03    |     14.6    |      3.75    |    10   |  3159 W
+  2023-04    |      0.8    |      0.13    |     6   |   278 W
+  2023-05    |     13.8    |      4.00    |    16   |  2048 W
+  2023-06    |      8.0    |      2.80    |     8   |  1296 W
+  2023-07    |      0.8    |      0.25    |     5   |  1228 W
+  2023-08    |      0.6    |      0.21    |     7   |  1133 W
+  2023-09    |     16.7    |      4.54    |     7   |  1669 W
+  2023-10    |      0.1    |      0.01    |     1   |   122 W
+
+----------------------------------------------------------------------
+VALUE ESTIMATION
+----------------------------------------------------------------------
+
+  Energy provided by battery:  15.68 kWh
+  Est. electricity rate:       Rs. 20/kWh
+  Est. cost savings:           Rs. 314
+
+======================================================================
+Generated by UC11: Plant ROI Verification Tool
+======================================================================`,
+};
+
+function loadROIReport() {
+  const select = document.getElementById('roi-plant-select');
+  const output = document.getElementById('roi-output');
+  const key = select.value;
+
+  if (!key) {
+    output.classList.remove('visible');
+    return;
+  }
+
+  output.textContent = roiReports[key] || 'Report not found.';
+  output.classList.add('visible');
+}
+
+// Restore last active tab
+const savedTab = localStorage.getItem('activeTab');
+if (savedTab) switchTab(savedTab);
+</script>
+
+</body>
+</html>
