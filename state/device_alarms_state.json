@@ -99,10 +99,10 @@
     "message": "Solar charger stops due to high PV voltage"
   },
   "1187499:D70000210184361276:682405c8d7b31d268722c52e": {
-    "send_count": 29,
+    "send_count": 30,
     "first_seen": "2026-01-12T00:26:33.691440",
     "ignored": true,
-    "last_sent": "2026-01-25T15:28:00.741508",
+    "last_sent": "2026-02-01T23:33:46.801671",
     "customer": "Gayan-IMH",
     "plant": "imbulgoda  3kw",
     "message": "Inverter over current protection error"
@@ -357,5 +357,14 @@
     "customer": "Sohan",
     "plant": "Must PV1800 3024 Pro",
     "message": "battery voltage is too low"
+  },
+  "1058467:D70000210184951128:697ff6179127112972ccb02b": {
+    "send_count": 1,
+    "first_seen": "2026-02-02T04:48:57.209138",
+    "ignored": false,
+    "last_sent": "2026-02-02T04:48:57.209138",
+    "customer": "Sohan",
+    "plant": "Must PV1800 3024 Pro",
+    "message": "Low battery"
   }
 }
