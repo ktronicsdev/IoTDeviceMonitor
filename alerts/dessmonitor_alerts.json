@@ -1,6 +1,34 @@
 {
-  "generated_at": "2026-02-03T04:31:58.105779Z",
-  "alerts": [],
+  "generated_at": "2026-02-03T08:10:58.381058Z",
+  "alerts": [
+    {
+      "severity": "RED",
+      "plant_key": "dessmonitor-mifrazmarsoon-plant",
+      "today": "2026-02-03",
+      "baseline_avg_kwh_per_day": 14.1456,
+      "threshold_kwh_per_day": 2.8291,
+      "rule": "< 20.0% baseline for 3 consecutive days",
+      "window": [
+        "2026-02-01",
+        "2026-02-02",
+        "2026-02-03"
+      ],
+      "details": [
+        {
+          "date": "2026-02-01",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-02-02",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-02-03",
+          "kwh": 0.0
+        }
+      ]
+    }
+  ],
   "suppressed": [],
   "ignored": []
 }
