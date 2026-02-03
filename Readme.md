@@ -620,13 +620,16 @@ The project includes comprehensive integration tests covering all business logic
 cd src/test/java/org/ktronics/scripts
 py -m pytest integration/ -v
 
-# Run specific test suite
+# Run specific test suite - ShineMonitor
 py -m pytest integration/test_admin_alerts.py -v      # UC1: Admin alerts
 py -m pytest integration/test_customer_weekly.py -v   # UC2: Customer reports
 py -m pytest integration/test_device_alarms.py -v     # UC3: Device alarms
 py -m pytest integration/test_centralized_config.py -v # BVT: Config tests
 py -m pytest integration/test_uc9_admin_email.py -v    # UC9: Email optimization
-py -m pytest integration/test_dessmonitor_integration.py -v # UC10: DessMonitor
+py -m pytest integration/test_uc11_plant_roi.py -v     # UC11: Plant ROI
+
+# Run specific test suite - DessMonitor
+py -m pytest integration/test_dessmonitor_*.py -v     # All DessMonitor tests (112)
 ```
 
 See [src/test/java/org/ktronics/scripts/README.md](src/test/java/org/ktronics/scripts/README.md) for detailed test documentation.

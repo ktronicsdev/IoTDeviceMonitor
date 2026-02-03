@@ -428,7 +428,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
   <div class="summary-grid">
     <div class="summary-card"><div class="label">Use Cases</div><div class="value dess-accent">11</div><div class="sub">UC1-UC11</div></div>
-    <div class="summary-card"><div class="label">Tests</div><div class="value dess-accent">65</div><div class="sub">All passing</div></div>
+    <div class="summary-card"><div class="label">Tests</div><div class="value dess-accent">112</div><div class="sub">56 pass, 56 stub</div></div>
     <div class="summary-card"><div class="label">Workflows</div><div class="value dess-accent">2</div><div class="sub">Daily + Weekly</div></div>
     <div class="summary-card"><div class="label">Schedule</div><div class="value dess-accent" style="font-size:18px">6x/day</div><div class="sub">Offset from ShineMonitor</div></div>
   </div>
@@ -440,7 +440,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="uc-card" onclick="toggleCard(this)">
       <div class="uc-header">
         <div class="uc-left"><span class="uc-num">UC1</span><span class="uc-name">Admin Production Alerts</span></div>
-        <div class="uc-right"><span class="uc-tests">15 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+        <div class="uc-right"><span class="uc-tests">19 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
       </div>
       <div class="uc-details">
         <div class="uc-desc">Monitors all DessMonitor solar plants for production anomalies and sends system-wide alerts to admin.</div>
@@ -454,7 +454,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
           <div class="meta-item"><strong>Workflow:</strong> trigger-dessmonitor.yml</div>
           <div class="meta-item"><strong>Schedule:</strong> 6x daily (offset from ShineMonitor)</div>
           <div class="meta-item"><strong>State:</strong> state/dessmonitor_alerts_state.json</div>
-          <div class="meta-item"><strong>Test file:</strong> test_dessmonitor_integration.py</div>
+          <div class="meta-item"><strong>Test file:</strong> test_dessmonitor_admin_alerts.py</div>
         </div>
       </div>
     </div>
@@ -462,7 +462,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="uc-card" onclick="toggleCard(this)">
       <div class="uc-header">
         <div class="uc-left"><span class="uc-num">UC2</span><span class="uc-name">Customer Weekly Reports</span></div>
-        <div class="uc-right"><span class="uc-tests">4 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+        <div class="uc-right"><span class="uc-tests">15 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
       </div>
       <div class="uc-details">
         <div class="uc-desc">Generates personalized weekly production reports for DessMonitor customers every Sunday.</div>
@@ -474,7 +474,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
         <div class="uc-meta-grid">
           <div class="meta-item"><strong>Workflow:</strong> trigger-dessmonitor-weekly-reports.yml</div>
           <div class="meta-item"><strong>Schedule:</strong> Sunday 04:00 UTC</div>
-          <div class="meta-item"><strong>Test file:</strong> test_customer_weekly.py (platform tests)</div>
+          <div class="meta-item"><strong>Test file:</strong> test_dessmonitor_data_collection.py</div>
         </div>
       </div>
     </div>
@@ -487,7 +487,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="uc-card" onclick="toggleCard(this)">
       <div class="uc-header">
         <div class="uc-left"><span class="uc-num">UC3</span><span class="uc-name">Device Alarm Notifications</span></div>
-        <div class="uc-right"><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+        <div class="uc-right"><span class="uc-tests">19 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
       </div>
       <div class="uc-details">
         <div class="uc-desc">Monitors device-level warnings from DessMonitor API and sends alarm notifications to admin and customers.</div>
@@ -501,7 +501,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
           <div class="meta-item"><strong>Workflow:</strong> trigger-dessmonitor.yml</div>
           <div class="meta-item"><strong>Script:</strong> check_dessmonitor_device_alarms.sh</div>
           <div class="meta-item"><strong>State:</strong> state/dessmonitor_device_alarms_state.json</div>
-          <div class="meta-item"><strong>Test file:</strong> test_dessmonitor_integration.py</div>
+          <div class="meta-item"><strong>Test file:</strong> test_dessmonitor_device_alarms.py</div>
         </div>
       </div>
     </div>
