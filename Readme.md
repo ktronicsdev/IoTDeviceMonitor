@@ -84,8 +84,8 @@ Sends personalized weekly production reports to customers every Sunday.
 - **Customer emails:** ONLY on scheduled runs (Sunday)
 - **Push/manual triggers:** Admin-only mode (build verification)
 
-**Test Coverage:** 15/15 PASSED (100%)
-- Core UC2: 11 tests
+**Test Coverage:** 16/16 PASSED (100%)
+- Core UC2: 12 tests
 - UC10 Platform Support: 4 tests
 
 ---
@@ -274,7 +274,7 @@ Extends monitoring capabilities to DessMonitor platform, running in parallel wit
 
 - `DESSMONITOR_CREDENTIALS_JSON` - DessMonitor account credentials
 
-**Test Coverage:** 13 tests (100% pass rate)
+**Test Coverage:** 112 tests across 7 test files (see DessMonitor Test Suite below)
 
 ---
 
@@ -602,18 +602,31 @@ Default thresholds in `check_anomaly.py`:
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 112 tests (100% pass rate)
+#### Test Coverage: 231 tests (100% pass rate)
+
+**ShineMonitor (119 tests):**
 
 | Suite | Tests | Status |
 | ----- | ----- | ------ |
-| UC1 (Admin Alerts) | 15/15 | PASSED (100%) |
-| UC2 (Customer Weekly) | 15/15 | PASSED (100%) - includes UC10 platform tests |
-| UC3 (Device Alarms) | 38/38 | PASSED (100%) - includes UC4-UC8 |
-| UC9 (Email Optimization) | 9/9 | PASSED (100%) |
-| UC10 (DessMonitor) | 13/13 | PASSED (100%) |
-| BVT (Centralized Config) | 14/14 | PASSED (100%) |
-| API Tests (Bash Scripts) | 8/8 | PASSED in CI (skipped on Windows) |
-| **TOTAL** | **112/112** | **PASSED (100%)** |
+| UC1 (Admin Alerts) | 15 | PASSED |
+| UC2 (Customer Weekly) | 16 | PASSED |
+| UC3-UC8 (Device Alarms) | 38 | PASSED |
+| UC9 (Email Optimization) | 9 | PASSED |
+| UC11 (Plant ROI) | 19 | PASSED |
+| BVT (Centralized Config) | 14 | PASSED |
+| API Tests | 8 | PASSED in CI |
+
+**DessMonitor (112 tests):**
+
+| Suite | Tests | Status |
+| ----- | ----- | ------ |
+| UC1 (Admin Alerts) | 19 | PASSED |
+| UC2 (Data Collection) | 15 | PASSED |
+| UC3-UC8 (Device Alarms) | 19 | PASSED |
+| UC9 (Email Optimization) | 9 | Stub |
+| UC11 (Plant ROI) | 19 | Stub |
+| BVT (Centralized Config) | 13 | PASSED |
+| API Tests | 18 | PASSED in CI |
 
 ```bash
 # Run all tests

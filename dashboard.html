@@ -142,7 +142,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="uc-card" onclick="toggleCard(this)">
       <div class="uc-header">
         <div class="uc-left"><span class="uc-num">UC2</span><span class="uc-name">Customer Weekly Reports</span></div>
-        <div class="uc-right"><span class="uc-tests">15 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+        <div class="uc-right"><span class="uc-tests">16 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
       </div>
       <div class="uc-details">
         <div class="uc-desc">Generates personalized weekly production reports for each customer every Sunday.</div>
@@ -386,7 +386,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="uc-card" onclick="toggleCard(this)">
       <div class="uc-header">
         <div class="uc-left"><span class="uc-num">API</span><span class="uc-name">ShineMonitor API Tests</span></div>
-        <div class="uc-right"><span class="uc-tests">9 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+        <div class="uc-right"><span class="uc-tests">8 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
       </div>
       <div class="uc-details">
         <div class="uc-desc">Integration tests for ShineMonitor API endpoints. Runs in GitHub Actions (Linux), skipped on Windows.</div>
@@ -589,12 +589,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="uc-card" onclick="toggleCard(this)">
       <div class="uc-header">
         <div class="uc-left"><span class="uc-num">UC9</span><span class="uc-name">Admin Email Optimization</span></div>
-        <div class="uc-right"><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+        <div class="uc-right"><span class="uc-tests">9 tests</span><span class="uc-status">Stub</span><span class="expand-icon">&#9662;</span></div>
       </div>
       <div class="uc-details">
         <div class="uc-desc">Hash-based duplicate detection for DessMonitor admin emails. Only sends when alert state changes.</div>
         <div class="uc-meta-grid">
           <div class="meta-item"><strong>State:</strong> state/dessmonitor_admin_email_state.txt</div>
+          <div class="meta-item"><strong>Test file:</strong> test_dessmonitor_uc9_admin_email.py</div>
         </div>
       </div>
     </div>
@@ -636,10 +637,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="uc-card" onclick="toggleCard(this)">
       <div class="uc-header">
         <div class="uc-left"><span class="uc-num">UC11</span><span class="uc-name">Plant ROI Analysis</span></div>
-        <div class="uc-right"><span class="uc-status" style="background:#1e3a5f;color:#60a5fa">Planned</span><span class="expand-icon">&#9662;</span></div>
+        <div class="uc-right"><span class="uc-tests">19 tests</span><span class="uc-status">Stub</span><span class="expand-icon">&#9662;</span></div>
       </div>
       <div class="uc-details">
-        <div class="uc-desc">ROI analysis for DessMonitor plants. Planned - requires DessMonitor device-level data API integration.</div>
+        <div class="uc-desc">ROI analysis for DessMonitor plants. Stub tests - requires DessMonitor device-level data API integration.</div>
+        <div class="uc-meta-grid">
+          <div class="meta-item"><strong>Test file:</strong> test_dessmonitor_uc11_plant_roi.py</div>
+        </div>
       </div>
     </div>
   </div>
@@ -651,12 +655,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="uc-card" onclick="toggleCard(this)">
       <div class="uc-header">
         <div class="uc-left"><span class="uc-num">BVT</span><span class="uc-name">Build Verification Tests</span></div>
-        <div class="uc-right"><span class="uc-tests">14 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+        <div class="uc-right"><span class="uc-tests">13 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
       </div>
       <div class="uc-details">
         <div class="uc-desc">Verifies centralized credentials configuration across all scripts including DessMonitor.</div>
         <div class="uc-meta-grid">
-          <div class="meta-item"><strong>Test file:</strong> test_centralized_config.py</div>
+          <div class="meta-item"><strong>Test file:</strong> test_dessmonitor_centralized_config.py</div>
         </div>
       </div>
     </div>
@@ -664,7 +668,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="uc-card" onclick="toggleCard(this)">
       <div class="uc-header">
         <div class="uc-left"><span class="uc-num">API</span><span class="uc-name">DessMonitor API Tests</span></div>
-        <div class="uc-right"><span class="uc-tests">13 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+        <div class="uc-right"><span class="uc-tests">18 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
       </div>
       <div class="uc-details">
         <div class="uc-desc">Integration tests for DessMonitor API endpoints and bash scripts. Runs in GitHub Actions (Linux).</div>
