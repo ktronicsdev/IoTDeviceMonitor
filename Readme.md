@@ -623,7 +623,7 @@ The project includes comprehensive integration tests covering all business logic
 | UC1 (Admin Alerts) | 19 | PASSED |
 | UC2 (Data Collection) | 15 | PASSED |
 | UC3-UC8 (Device Alarms) | 19 | PASSED |
-| UC9 (Email Optimization) | 9 | Stub |
+| UC9 (Email Optimization) | 9 | PASSED |
 | UC11 (Plant ROI) | 19 | Stub |
 | BVT (Centralized Config) | 13 | PASSED |
 | API Tests | 18 | PASSED in CI |
