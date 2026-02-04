@@ -98,8 +98,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 </div>
 
 <div class="tabs">
-  <div class="tab active" onclick="switchTab('shine')">ShineMonitor <span class="badge">11 UCs</span></div>
-  <div class="tab" onclick="switchTab('dess')">DessMonitor <span class="badge">11 UCs</span></div>
+  <div class="tab active" onclick="switchTab('shine')">ShineMonitor <span class="badge">10 UCs</span></div>
+  <div class="tab" onclick="switchTab('dess')">DessMonitor <span class="badge">10 UCs</span></div>
 </div>
 
 <!-- ShineMonitor Tab -->
@@ -107,7 +107,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div class="content">
 
   <div class="summary-grid">
-    <div class="summary-card"><div class="label">Use Cases</div><div class="value shine-accent">11</div><div class="sub">UC1-UC11</div></div>
+    <div class="summary-card"><div class="label">Use Cases</div><div class="value shine-accent">10</div><div class="sub">UC1-UC9, UC11</div></div>
     <div class="summary-card"><div class="label">Tests</div><div class="value shine-accent">119</div><div class="sub">All passing</div></div>
     <div class="summary-card"><div class="label">Workflows</div><div class="value shine-accent">2</div><div class="sub">Daily + Weekly</div></div>
     <div class="summary-card"><div class="label">Schedule</div><div class="value shine-accent" style="font-size:18px">6x/day</div><div class="sub">Every 4 hours</div></div>
@@ -297,31 +297,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
   </div>
 
   <!-- Multi-Platform -->
-  <div class="category">
-    <div class="category-title">Multi-Platform Support</div>
-
-    <div class="uc-card" onclick="toggleCard(this)">
-      <div class="uc-header">
-        <div class="uc-left"><span class="uc-num">UC10</span><span class="uc-name">DessMonitor Multi-Platform</span></div>
-        <div class="uc-right"><span class="uc-tests">65 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
-      </div>
-      <div class="uc-details">
-        <div class="uc-desc">Extends the monitoring system to DessMonitor platform, running in parallel with ShineMonitor.</div>
-        <div class="uc-features"><h4>Features</h4><ul>
-          <li>Separate API integration (different endpoint and auth flow)</li>
-          <li>Platform-specific credentials, CSV naming, state files</li>
-          <li>CSV prefix: dessmonitor-{label}-{plant}-YYYY-MM.csv</li>
-          <li>Anomaly detection with --platform flag</li>
-          <li>Weekly reports with platform filtering</li>
-        </ul></div>
-        <div class="uc-meta-grid">
-          <div class="meta-item"><strong>Workflows:</strong> trigger-dessmonitor.yml, trigger-dessmonitor-weekly-reports.yml</div>
-          <div class="meta-item"><strong>Test files:</strong> test_dessmonitor_integration.py, test_dessmonitor_api.py</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Analytics -->
   <div class="category">
     <div class="category-title">Analytics &amp; ROI</div>
@@ -427,7 +402,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div class="content">
 
   <div class="summary-grid">
-    <div class="summary-card"><div class="label">Use Cases</div><div class="value dess-accent">11</div><div class="sub">UC1-UC11</div></div>
+    <div class="summary-card"><div class="label">Use Cases</div><div class="value dess-accent">10</div><div class="sub">UC1-UC9, UC11</div></div>
     <div class="summary-card"><div class="label">Tests</div><div class="value dess-accent">112</div><div class="sub">56 pass, 56 stub</div></div>
     <div class="summary-card"><div class="label">Workflows</div><div class="value dess-accent">2</div><div class="sub">Daily + Weekly</div></div>
     <div class="summary-card"><div class="label">Schedule</div><div class="value dess-accent" style="font-size:18px">6x/day</div><div class="sub">Offset from ShineMonitor</div></div>
@@ -509,7 +484,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="uc-card" onclick="toggleCard(this)">
       <div class="uc-header">
         <div class="uc-left"><span class="uc-num">UC4</span><span class="uc-name">Test Customer Email Control</span></div>
-        <div class="uc-right"><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+        <div class="uc-right"><span class="uc-tests">3 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
       </div>
       <div class="uc-details">
         <div class="uc-desc">Controls which DessMonitor customers receive emails based on trigger type.</div>
@@ -528,7 +503,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="uc-card" onclick="toggleCard(this)">
       <div class="uc-header">
         <div class="uc-left"><span class="uc-num">UC5</span><span class="uc-name">Test Mode Filter</span></div>
-        <div class="uc-right"><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+        <div class="uc-right"><span class="uc-tests">2 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
       </div>
       <div class="uc-details">
         <div class="uc-desc">Filters DessMonitor alarms to test customer only in test mode (push/manual triggers).</div>
@@ -541,7 +516,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="uc-card" onclick="toggleCard(this)">
       <div class="uc-header">
         <div class="uc-left"><span class="uc-num">UC6</span><span class="uc-name">Log Summary Counts</span></div>
-        <div class="uc-right"><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+        <div class="uc-right"><span class="uc-tests">1 test</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
       </div>
       <div class="uc-details">
         <div class="uc-desc">Logs DessMonitor alarm summary counts in GitHub Actions for admin visibility.</div>
@@ -557,7 +532,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="uc-card" onclick="toggleCard(this)">
       <div class="uc-header">
         <div class="uc-left"><span class="uc-num">UC7</span><span class="uc-name">State JSON Enhancement</span></div>
-        <div class="uc-right"><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+        <div class="uc-right"><span class="uc-tests">1 test</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
       </div>
       <div class="uc-details">
         <div class="uc-desc">Human-readable fields (customer, plant, message) in DessMonitor device alarm state file.</div>
@@ -570,7 +545,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="uc-card" onclick="toggleCard(this)">
       <div class="uc-header">
         <div class="uc-left"><span class="uc-num">UC8</span><span class="uc-name">Weekly Report Schedule Filter</span></div>
-        <div class="uc-right"><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
+        <div class="uc-right"><span class="uc-tests">2 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
       </div>
       <div class="uc-details">
         <div class="uc-desc">Controls when DessMonitor customer emails are sent based on trigger type.</div>
@@ -596,35 +571,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
         <div class="uc-meta-grid">
           <div class="meta-item"><strong>State:</strong> state/dessmonitor_admin_email_state.txt</div>
           <div class="meta-item"><strong>Test file:</strong> test_dessmonitor_uc9_admin_email.py</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Multi-Platform -->
-  <div class="category">
-    <div class="category-title">Platform Integration (UC10)</div>
-
-    <div class="uc-card" onclick="toggleCard(this)">
-      <div class="uc-header">
-        <div class="uc-left"><span class="uc-num">UC10</span><span class="uc-name">DessMonitor Platform Integration</span></div>
-        <div class="uc-right"><span class="uc-tests">65 tests</span><span class="uc-status">Production</span><span class="expand-icon">&#9662;</span></div>
-      </div>
-      <div class="uc-details">
-        <div class="uc-desc">Core platform integration enabling DessMonitor to run in parallel with ShineMonitor.</div>
-        <div class="uc-features"><h4>Features</h4><ul>
-          <li>Separate API integration (different endpoint and auth flow)</li>
-          <li>Platform-specific credentials, CSV naming, state files</li>
-          <li>CSV prefix: dessmonitor-{label}-{plant}-YYYY-MM.csv</li>
-          <li>Anomaly detection with --platform flag</li>
-          <li>Weekly reports with platform filtering</li>
-          <li>Backward compatible with existing ShineMonitor data</li>
-        </ul></div>
-        <div class="uc-meta-grid">
-          <div class="meta-item"><strong>Test customer:</strong> MifrazMarsoon</div>
-          <div class="meta-item"><strong>Test files:</strong> test_dessmonitor_integration.py, test_dessmonitor_api.py</div>
-          <div class="meta-item"><strong>Workflows:</strong> trigger-dessmonitor.yml, trigger-dessmonitor-weekly-reports.yml</div>
-          <div class="meta-item"><strong>State:</strong> state/dessmonitor_alerts_state.json</div>
         </div>
       </div>
     </div>
@@ -689,7 +635,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       <div class="wf-detail"><strong>File:</strong> trigger-dessmonitor.yml</div>
       <div class="wf-detail"><strong>Schedule:</strong> 6x daily (03:00, 07:00, 11:00, 15:00, 19:00, 23:00 UTC)</div>
       <div class="wf-detail"><strong>Triggers:</strong> Schedule, Push, Manual</div>
-      <div class="wf-detail"><strong>UCs:</strong> UC1, UC3-UC9, UC10</div>
+      <div class="wf-detail"><strong>UCs:</strong> UC1, UC3-UC9, UC11</div>
     </div>
 
     <div class="workflow-card">
@@ -697,7 +643,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       <div class="wf-detail"><strong>File:</strong> trigger-dessmonitor-weekly-reports.yml</div>
       <div class="wf-detail"><strong>Schedule:</strong> Sunday 04:00 UTC</div>
       <div class="wf-detail"><strong>Triggers:</strong> Schedule, Push, Manual</div>
-      <div class="wf-detail"><strong>UCs:</strong> UC2, UC8, UC10</div>
+      <div class="wf-detail"><strong>UCs:</strong> UC2, UC8, UC11</div>
     </div>
   </div>
 
