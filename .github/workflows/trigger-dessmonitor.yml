@@ -366,6 +366,6 @@ jobs:
           else
             git commit -m "Update DessMonitor data & alerts"
             # Pull with rebase to handle concurrent workflow pushes (e.g., ShineMonitor)
-            git pull --rebase origin main || true
+            git pull --rebase --autostash origin main || true
             git push
           fi
