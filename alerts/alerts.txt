@@ -14,8 +14,8 @@
 │
 │ 🔴 [RED] muadh-muadh-solar
 │
-│   Issue: Production dropped 100.0% below normal
-│   Normal: 4.73 kWh/day  →  Current: 0.00 kWh/day
+│   Issue: Production dropped 95.8% below normal
+│   Normal: 4.73 kWh/day  →  Current: 0.20 kWh/day
 │   Rule: < 20.0% baseline for 3 consecutive days
 │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -39,7 +39,7 @@
 │   Recent Production:
 │     2026-02-14: 0.0000 kWh (0.0% of baseline)
 │     2026-02-15: 0.0000 kWh (0.0% of baseline)
-│     2026-02-16: 0.0000 kWh (0.0% of baseline)
+│     2026-02-16: 0.2000 kWh (4.2% of baseline)
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
