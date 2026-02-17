@@ -521,10 +521,10 @@
     "message": "battery voltage is too low"
   },
   "1058467:D70000210184951128:6993d3f6912711297285f61d": {
-    "send_count": 1,
+    "send_count": 2,
     "first_seen": "2026-02-17T04:44:18.357257",
     "ignored": false,
-    "last_sent": "2026-02-17T04:44:18.357257",
+    "last_sent": "2026-02-17T11:23:47.355561",
     "customer": "Sohan",
     "plant": "Must PV1800 3024 Pro",
     "message": "battery voltage is too low"
