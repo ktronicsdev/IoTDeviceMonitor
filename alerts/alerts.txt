@@ -2,46 +2,13 @@
 ║                                                                              ║
 ║                      [SHINEMONITOR] PRODUCTION MONITOR                       ║
 ║                                                                              ║
-║                            ⚠ ATTENTION REQUIRED ⚠                            ║
+║                          ✓ ALL SYSTEMS OPERATIONAL                           ║
 ║                                                                              ║
-║                        Status: 1 CRITICAL, 0 WARNING                         ║
+║                          Status: NO ALERTS DETECTED                          ║
 ║                                                                              ║
 ║               Date: 2026-02-17  |  Total Plants Monitored: 23                ║
 ║                                                                              ║
 ================================================================================
-
-┌─ ALERT SUMMARY ──────────────────────────────────────────────────────────────┐
-│
-│ 🔴 [RED] muadh-muadh-solar
-│
-│   Issue: Production dropped 84.0% below normal
-│   Normal: 4.37 kWh/day  →  Current: 0.70 kWh/day
-│   Rule: < 20.0% baseline for 3 consecutive days
-│
-└──────────────────────────────────────────────────────────────────────────────┘
-
-┌─ RECOMMENDED ACTIONS ────────────────────────────────────────────────────────┐
-│
-│ muadh-muadh-solar:
-│   1. Check inverter status and error codes
-│   2. Verify grid connection and breaker status
-│   3. Inspect panels for shading or physical damage
-│   4. Contact maintenance team if issue persists
-│
-└──────────────────────────────────────────────────────────────────────────────┘
-
-┌─ DETAILED BREAKDOWN ─────────────────────────────────────────────────────────┐
-│
-│ [RED] muadh-muadh-solar
-│
-│   Baseline (avg/day): 4.3714 kWh
-│   Alert Threshold: < 0.8743 kWh/day
-│   Recent Production:
-│     2026-02-15: 0.0000 kWh (0.0% of baseline)
-│     2026-02-16: 0.2000 kWh (4.6% of baseline)
-│     2026-02-17: 0.7000 kWh (16.0% of baseline)
-│
-└──────────────────────────────────────────────────────────────────────────────┘
 
 ┌─ ADDITIONAL INFORMATION ────────────────────────────────────────────────────┐
 │
