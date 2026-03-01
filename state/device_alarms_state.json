@@ -636,5 +636,14 @@
     "customer": "Sohan",
     "plant": "Must PV1800 3024 Pro",
     "message": "Low battery"
+  },
+  "1058467:D70000210184951128:69a3dd7c9127112972c26d2a": {
+    "send_count": 1,
+    "first_seen": "2026-03-01T07:21:25.293913",
+    "ignored": false,
+    "last_sent": "2026-03-01T07:21:25.293913",
+    "customer": "Sohan",
+    "plant": "Must PV1800 3024 Pro",
+    "message": "Overload time out"
   }
 }
