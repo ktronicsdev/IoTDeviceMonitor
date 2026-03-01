@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-02-28T22:56:36.362535Z",
+  "generated_at": "2026-03-01T04:47:43.051185Z",
   "alerts": [],
   "suppressed": [],
   "ignored": [
@@ -7,35 +7,35 @@
       "plant_key": "abeetha-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-02"
+        "2026-03"
       ]
     },
     {
       "plant_key": "chamila-chamila-119h",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-02"
+        "2026-03"
       ]
     },
     {
       "plant_key": "chandika-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-02"
+        "2026-03"
       ]
     },
     {
       "plant_key": "lahiru-ryan-lahiru-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-02"
+        "2026-03"
       ]
     },
     {
       "plant_key": "samurdi-kohuwala",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-02"
+        "2026-03"
       ]
     }
   ]
