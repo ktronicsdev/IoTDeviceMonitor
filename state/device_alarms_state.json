@@ -647,10 +647,10 @@
     "message": "Overload time out"
   },
   "1058467:D70000210184951128:69a6357e91271129729710bd": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-03-03T04:37:08.775462",
-    "ignored": false,
-    "last_sent": "2026-03-03T11:16:57.574643",
+    "ignored": true,
+    "last_sent": "2026-03-03T15:21:44.943536",
     "customer": "Sohan",
     "plant": "Must PV1800 3024 Pro",
     "message": "battery voltage is too low"
