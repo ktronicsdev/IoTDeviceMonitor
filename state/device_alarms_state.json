@@ -656,19 +656,19 @@
     "message": "battery voltage is too low"
   },
   "1058467:D70000210184951128:69a78d70912711297234fd94": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-03-04T04:33:13.800425",
-    "ignored": false,
-    "last_sent": "2026-03-04T11:13:09.192686",
+    "ignored": true,
+    "last_sent": "2026-03-04T15:14:37.805003",
     "customer": "Sohan",
     "plant": "Must PV1800 3024 Pro",
     "message": "battery voltage is too low"
   },
   "1265054:D70000210187315453:69a7a30a91271129724eca00": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-03-04T04:33:13.800425",
-    "ignored": false,
-    "last_sent": "2026-03-04T11:13:09.192686",
+    "ignored": true,
+    "last_sent": "2026-03-04T15:14:37.805003",
     "customer": "Upulatheja",
     "plant": "3kw Pro Kadawath",
     "message": "Inverter over current protection error"
