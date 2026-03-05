@@ -672,5 +672,14 @@
     "customer": "Upulatheja",
     "plant": "3kw Pro Kadawath",
     "message": "Inverter over current protection error"
+  },
+  "1058467:D70000210184951128:69a8f0199127112972dfd334": {
+    "send_count": 1,
+    "first_seen": "2026-03-05T04:35:12.312110",
+    "ignored": false,
+    "last_sent": "2026-03-05T04:35:12.312110",
+    "customer": "Sohan",
+    "plant": "Must PV1800 3024 Pro",
+    "message": "battery voltage is too low"
   }
 }
