@@ -1,4 +1,10 @@
 {
+  "dessmonitor-dushanthatiqri-plant:RED": {
+    "first_seen": "2026-03-08",
+    "ignored_date": null,
+    "last_sent": "2026-03-08",
+    "send_count": 1
+  },
   "red_sent": {
     "ganishka-ganishka-home-3kw": {
       "last_sent": "2026-01-02T18:35:57.725487Z",

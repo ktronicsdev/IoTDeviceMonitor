@@ -710,10 +710,10 @@
     "message": "Low battery"
   },
   "1058467:D70000210184951128:69acc6629127112972862236": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-03-08T04:37:49.800959",
-    "ignored": false,
-    "last_sent": "2026-03-08T11:02:03.777774",
+    "ignored": true,
+    "last_sent": "2026-03-08T19:06:08.505695",
     "customer": "Sohan",
     "plant": "Must PV1800 3024 Pro",
     "message": "Low battery"
