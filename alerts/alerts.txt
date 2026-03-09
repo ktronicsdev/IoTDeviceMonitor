@@ -2,13 +2,46 @@
 ║                                                                              ║
 ║                      [SHINEMONITOR] PRODUCTION MONITOR                       ║
 ║                                                                              ║
-║                          ✓ ALL SYSTEMS OPERATIONAL                           ║
+║                            ⚠ ATTENTION REQUIRED ⚠                            ║
 ║                                                                              ║
-║                          Status: NO ALERTS DETECTED                          ║
+║                        Status: 1 CRITICAL, 0 WARNING                         ║
 ║                                                                              ║
 ║               Date: 2026-03-09  |  Total Plants Monitored: 23                ║
 ║                                                                              ║
 ================================================================================
+
+┌─ ALERT SUMMARY ──────────────────────────────────────────────────────────────┐
+│
+│ 🔴 [RED] dessmonitor-mifrazmarsoon-plant
+│
+│   Issue: Production dropped 100.0% below normal
+│   Normal: 8.70 kWh/day  →  Current: 0.00 kWh/day
+│   Rule: < 20.0% baseline for 3 consecutive days
+│
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ RECOMMENDED ACTIONS ────────────────────────────────────────────────────────┐
+│
+│ dessmonitor-mifrazmarsoon-plant:
+│   1. Check inverter status and error codes
+│   2. Verify grid connection and breaker status
+│   3. Inspect panels for shading or physical damage
+│   4. Contact maintenance team if issue persists
+│
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ DETAILED BREAKDOWN ─────────────────────────────────────────────────────────┐
+│
+│ [RED] dessmonitor-mifrazmarsoon-plant
+│
+│   Baseline (avg/day): 8.6978 kWh
+│   Alert Threshold: < 1.7396 kWh/day
+│   Recent Production:
+│     2026-03-07: 0.0000 kWh (0.0% of baseline)
+│     2026-03-08: 0.0000 kWh (0.0% of baseline)
+│     2026-03-09: 0.0000 kWh (0.0% of baseline)
+│
+└──────────────────────────────────────────────────────────────────────────────┘
 
 ┌─ ADDITIONAL INFORMATION ────────────────────────────────────────────────────┐
 │
