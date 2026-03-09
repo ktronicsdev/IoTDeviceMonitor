@@ -1,1 +1,8 @@
-{}
+{
+  "dessmonitor-mifrazmarsoon-plant:RED": {
+    "first_seen": "2026-03-09",
+    "ignored_date": null,
+    "last_sent": "2026-03-09",
+    "send_count": 1
+  }
+}
