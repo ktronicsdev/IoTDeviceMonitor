@@ -1,34 +1,6 @@
 {
-  "generated_at": "2026-03-13T07:42:49.594828Z",
-  "alerts": [
-    {
-      "severity": "RED",
-      "plant_key": "dessmonitor-dushanthatiqri-plant",
-      "today": "2026-03-13",
-      "baseline_avg_kwh_per_day": 2.1357,
-      "threshold_kwh_per_day": 0.4271,
-      "rule": "< 20.0% baseline for 3 consecutive days",
-      "window": [
-        "2026-03-11",
-        "2026-03-12",
-        "2026-03-13"
-      ],
-      "details": [
-        {
-          "date": "2026-03-11",
-          "kwh": 0.0
-        },
-        {
-          "date": "2026-03-12",
-          "kwh": 0.0
-        },
-        {
-          "date": "2026-03-13",
-          "kwh": 0.0
-        }
-      ]
-    }
-  ],
+  "generated_at": "2026-03-13T11:32:58.318939Z",
+  "alerts": [],
   "suppressed": [],
   "ignored": []
 }
