@@ -791,10 +791,10 @@
     "message": "Inverter bus voltage is too low"
   },
   "1058467:D70000210184951128:69bb55589127112972086f9c": {
-    "send_count": 1,
+    "send_count": 2,
     "first_seen": "2026-03-19T04:45:03.938277",
     "ignored": false,
-    "last_sent": "2026-03-19T04:45:03.938277",
+    "last_sent": "2026-03-19T11:19:46.004800",
     "customer": "Sohan",
     "plant": "Must PV1800 3024 Pro",
     "message": "battery voltage is too low"
