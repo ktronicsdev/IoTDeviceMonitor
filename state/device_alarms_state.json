@@ -782,12 +782,21 @@
     "message": "battery voltage is too low"
   },
   "1116664:D70000210150900869:69ba9a68912711297257eb58": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-03-18T15:58:36.045449",
-    "ignored": false,
-    "last_sent": "2026-03-18T23:04:50.047445",
+    "ignored": true,
+    "last_sent": "2026-03-19T04:45:03.938277",
     "customer": "Ravindra",
     "plant": "Ravindra 3kw",
     "message": "Inverter bus voltage is too low"
+  },
+  "1058467:D70000210184951128:69bb55589127112972086f9c": {
+    "send_count": 1,
+    "first_seen": "2026-03-19T04:45:03.938277",
+    "ignored": false,
+    "last_sent": "2026-03-19T04:45:03.938277",
+    "customer": "Sohan",
+    "plant": "Must PV1800 3024 Pro",
+    "message": "battery voltage is too low"
   }
 }
