@@ -1,6 +1,34 @@
 {
-  "generated_at": "2026-03-21T23:00:17.086363Z",
-  "alerts": [],
+  "generated_at": "2026-03-22T04:45:59.522220Z",
+  "alerts": [
+    {
+      "severity": "RED",
+      "plant_key": "upulatheja-3kw-pro-kadawath",
+      "today": "2026-03-22",
+      "baseline_avg_kwh_per_day": 6.3214,
+      "threshold_kwh_per_day": 1.2643,
+      "rule": "< 20.0% baseline for 3 consecutive days",
+      "window": [
+        "2026-03-20",
+        "2026-03-21",
+        "2026-03-22"
+      ],
+      "details": [
+        {
+          "date": "2026-03-20",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-03-21",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-03-22",
+          "kwh": 0.0
+        }
+      ]
+    }
+  ],
   "suppressed": [],
   "ignored": [
     {
