@@ -836,12 +836,21 @@
     "message": "Low battery"
   },
   "1362045:D70000210187684087:69c12bab91271129722eb1f5": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-03-23T15:44:13.640682",
-    "ignored": false,
-    "last_sent": "2026-03-23T23:06:35.329866",
+    "ignored": true,
+    "last_sent": "2026-03-24T04:43:21.317974",
     "customer": "Jeremy",
     "plant": "JEREMY PLANT",
     "message": "Inverter over current protection error"
+  },
+  "1058467:D70000210184951128:69c1dd4a9127112972dea463": {
+    "send_count": 1,
+    "first_seen": "2026-03-24T04:43:21.317974",
+    "ignored": false,
+    "last_sent": "2026-03-24T04:43:21.317974",
+    "customer": "Sohan",
+    "plant": "Must PV1800 3024 Pro",
+    "message": "Low battery"
   }
 }
