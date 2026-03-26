@@ -4,24 +4,35 @@
 ║                                                                              ║
 ║                            ⚠ ATTENTION REQUIRED ⚠                            ║
 ║                                                                              ║
-║                        Status: 1 CRITICAL, 0 WARNING                         ║
+║                        Status: 2 CRITICAL, 0 WARNING                         ║
 ║                                                                              ║
-║               Date: 2026-03-25  |  Total Plants Monitored: 23                ║
+║               Date: 2026-03-26  |  Total Plants Monitored: 23                ║
 ║                                                                              ║
 ================================================================================
 
 ┌─ ALERT SUMMARY ──────────────────────────────────────────────────────────────┐
 │
+│ 🔴 [RED] chamila-chamila-119h
+│
+│   Issue: Production dropped 100.0% below normal
+│   Normal: 0.22 kWh/day  →  Current: 0.00 kWh/day
+│   Rule: < 20.0% baseline for 3 consecutive days
+│
 │ 🔴 [RED] upulatheja-3kw-pro-kadawath
 │
 │   Issue: Production dropped 100.0% below normal
-│   Normal: 4.96 kWh/day  →  Current: 0.00 kWh/day
+│   Normal: 4.49 kWh/day  →  Current: 0.00 kWh/day
 │   Rule: < 20.0% baseline for 3 consecutive days
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
 ┌─ RECOMMENDED ACTIONS ────────────────────────────────────────────────────────┐
 │
+│ chamila-chamila-119h:
+│   1. Check inverter status and error codes
+│   2. Verify grid connection and breaker status
+│   3. Inspect panels for shading or physical damage
+│   4. Contact maintenance team if issue persists
 │ upulatheja-3kw-pro-kadawath:
 │   1. Check inverter status and error codes
 │   2. Verify grid connection and breaker status
@@ -32,14 +43,23 @@
 
 ┌─ DETAILED BREAKDOWN ─────────────────────────────────────────────────────────┐
 │
-│ [RED] upulatheja-3kw-pro-kadawath
+│ [RED] chamila-chamila-119h
 │
-│   Baseline (avg/day): 4.9643 kWh
-│   Alert Threshold: < 0.9929 kWh/day
+│   Baseline (avg/day): 0.2214 kWh
+│   Alert Threshold: < 0.0443 kWh/day
 │   Recent Production:
-│     2026-03-23: 0.0000 kWh (0.0% of baseline)
 │     2026-03-24: 0.0000 kWh (0.0% of baseline)
 │     2026-03-25: 0.0000 kWh (0.0% of baseline)
+│     2026-03-26: 0.0000 kWh (0.0% of baseline)
+│
+│ [RED] upulatheja-3kw-pro-kadawath
+│
+│   Baseline (avg/day): 4.4929 kWh
+│   Alert Threshold: < 0.8986 kWh/day
+│   Recent Production:
+│     2026-03-24: 0.0000 kWh (0.0% of baseline)
+│     2026-03-25: 0.0000 kWh (0.0% of baseline)
+│     2026-03-26: 0.0000 kWh (0.0% of baseline)
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 

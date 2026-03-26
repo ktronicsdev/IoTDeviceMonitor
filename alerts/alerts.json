@@ -1,29 +1,56 @@
 {
-  "generated_at": "2026-03-25T23:13:45.433911Z",
+  "generated_at": "2026-03-26T05:06:31.561841Z",
   "alerts": [
     {
       "severity": "RED",
-      "plant_key": "upulatheja-3kw-pro-kadawath",
-      "today": "2026-03-25",
-      "baseline_avg_kwh_per_day": 4.9643,
-      "threshold_kwh_per_day": 0.9929,
+      "plant_key": "chamila-chamila-119h",
+      "today": "2026-03-26",
+      "baseline_avg_kwh_per_day": 0.2214,
+      "threshold_kwh_per_day": 0.0443,
       "rule": "< 20.0% baseline for 3 consecutive days",
       "window": [
-        "2026-03-23",
         "2026-03-24",
-        "2026-03-25"
+        "2026-03-25",
+        "2026-03-26"
       ],
       "details": [
-        {
-          "date": "2026-03-23",
-          "kwh": 0.0
-        },
         {
           "date": "2026-03-24",
           "kwh": 0.0
         },
         {
           "date": "2026-03-25",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-03-26",
+          "kwh": 0.0
+        }
+      ]
+    },
+    {
+      "severity": "RED",
+      "plant_key": "upulatheja-3kw-pro-kadawath",
+      "today": "2026-03-26",
+      "baseline_avg_kwh_per_day": 4.4929,
+      "threshold_kwh_per_day": 0.8986,
+      "rule": "< 20.0% baseline for 3 consecutive days",
+      "window": [
+        "2026-03-24",
+        "2026-03-25",
+        "2026-03-26"
+      ],
+      "details": [
+        {
+          "date": "2026-03-24",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-03-25",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-03-26",
           "kwh": 0.0
         }
       ]
