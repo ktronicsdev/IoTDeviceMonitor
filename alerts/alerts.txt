@@ -6,7 +6,7 @@
 ║                                                                              ║
 ║                        Status: 2 CRITICAL, 0 WARNING                         ║
 ║                                                                              ║
-║               Date: 2026-03-26  |  Total Plants Monitored: 23                ║
+║               Date: 2026-03-27  |  Total Plants Monitored: 23                ║
 ║                                                                              ║
 ================================================================================
 
@@ -21,7 +21,7 @@
 │ 🔴 [RED] upulatheja-3kw-pro-kadawath
 │
 │   Issue: Production dropped 100.0% below normal
-│   Normal: 4.49 kWh/day  →  Current: 0.00 kWh/day
+│   Normal: 4.05 kWh/day  →  Current: 0.00 kWh/day
 │   Rule: < 20.0% baseline for 3 consecutive days
 │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -48,18 +48,18 @@
 │   Baseline (avg/day): 0.2214 kWh
 │   Alert Threshold: < 0.0443 kWh/day
 │   Recent Production:
-│     2026-03-24: 0.0000 kWh (0.0% of baseline)
 │     2026-03-25: 0.0000 kWh (0.0% of baseline)
 │     2026-03-26: 0.0000 kWh (0.0% of baseline)
+│     2026-03-27: 0.0000 kWh (0.0% of baseline)
 │
 │ [RED] upulatheja-3kw-pro-kadawath
 │
-│   Baseline (avg/day): 4.4929 kWh
-│   Alert Threshold: < 0.8986 kWh/day
+│   Baseline (avg/day): 4.0500 kWh
+│   Alert Threshold: < 0.8100 kWh/day
 │   Recent Production:
-│     2026-03-24: 0.0000 kWh (0.0% of baseline)
 │     2026-03-25: 0.0000 kWh (0.0% of baseline)
 │     2026-03-26: 0.0000 kWh (0.0% of baseline)
+│     2026-03-27: 0.0000 kWh (0.0% of baseline)
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
