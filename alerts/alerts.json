@@ -1,89 +1,48 @@
 {
-  "generated_at": "2026-03-31T23:08:43.953966Z",
-  "alerts": [
-    {
-      "severity": "RED",
-      "plant_key": "chamila-chamila-119h",
-      "today": "2026-03-31",
-      "baseline_avg_kwh_per_day": 0.2214,
-      "threshold_kwh_per_day": 0.0443,
-      "rule": "< 20.0% baseline for 3 consecutive days",
-      "window": [
-        "2026-03-29",
-        "2026-03-30",
-        "2026-03-31"
-      ],
-      "details": [
-        {
-          "date": "2026-03-29",
-          "kwh": 0.0
-        },
-        {
-          "date": "2026-03-30",
-          "kwh": 0.0
-        },
-        {
-          "date": "2026-03-31",
-          "kwh": 0.0
-        }
-      ]
-    },
-    {
-      "severity": "RED",
-      "plant_key": "upulatheja-3kw-pro-kadawath",
-      "today": "2026-03-31",
-      "baseline_avg_kwh_per_day": 2.3286,
-      "threshold_kwh_per_day": 0.4657,
-      "rule": "< 20.0% baseline for 3 consecutive days",
-      "window": [
-        "2026-03-29",
-        "2026-03-30",
-        "2026-03-31"
-      ],
-      "details": [
-        {
-          "date": "2026-03-29",
-          "kwh": 0.0
-        },
-        {
-          "date": "2026-03-30",
-          "kwh": 0.0
-        },
-        {
-          "date": "2026-03-31",
-          "kwh": 0.0
-        }
-      ]
-    }
-  ],
+  "generated_at": "2026-04-01T05:25:47.061146Z",
+  "alerts": [],
   "suppressed": [],
   "ignored": [
     {
       "plant_key": "abeetha-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-03"
+        "2026-04"
+      ]
+    },
+    {
+      "plant_key": "chamila-chamila-119h",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-04"
       ]
     },
     {
       "plant_key": "chandika-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-03"
+        "2026-04"
       ]
     },
     {
       "plant_key": "lahiru-ryan-lahiru-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-03"
+        "2026-04"
       ]
     },
     {
       "plant_key": "samurdi-kohuwala",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-03"
+        "2026-04"
+      ]
+    },
+    {
+      "plant_key": "upulatheja-3kw-pro-kadawath",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-04"
       ]
     }
   ]
