@@ -6,7 +6,7 @@
 ║                                                                              ║
 ║                        Status: 1 CRITICAL, 0 WARNING                         ║
 ║                                                                              ║
-║               Date: 2026-04-06  |  Total Plants Monitored: 23                ║
+║               Date: 2026-04-07  |  Total Plants Monitored: 23                ║
 ║                                                                              ║
 ================================================================================
 
@@ -15,7 +15,7 @@
 │ 🔴 [RED] sohan-must-pv1800-3024-pro
 │
 │   Issue: Production dropped 100.0% below normal
-│   Normal: 8.01 kWh/day  →  Current: 0.00 kWh/day
+│   Normal: 7.36 kWh/day  →  Current: 0.00 kWh/day
 │   Rule: < 20.0% baseline for 3 consecutive days
 │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -34,12 +34,12 @@
 │
 │ [RED] sohan-must-pv1800-3024-pro
 │
-│   Baseline (avg/day): 8.0143 kWh
-│   Alert Threshold: < 1.6029 kWh/day
+│   Baseline (avg/day): 7.3571 kWh
+│   Alert Threshold: < 1.4714 kWh/day
 │   Recent Production:
-│     2026-04-04: 0.0000 kWh (0.0% of baseline)
 │     2026-04-05: 0.0000 kWh (0.0% of baseline)
 │     2026-04-06: 0.0000 kWh (0.0% of baseline)
+│     2026-04-07: 0.0000 kWh (0.0% of baseline)
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
