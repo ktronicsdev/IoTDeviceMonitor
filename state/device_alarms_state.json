@@ -924,5 +924,14 @@
     "customer": "Gayan-IMH",
     "plant": "imbulgoda  3kw",
     "message": "Low battery"
+  },
+  "1187499:D70000210184361276:69d8445d9127112972d7da7b": {
+    "send_count": 1,
+    "first_seen": "2026-04-10T05:24:35.256950",
+    "ignored": false,
+    "last_sent": "2026-04-10T05:24:35.256950",
+    "customer": "Gayan-IMH",
+    "plant": "imbulgoda  3kw",
+    "message": "Bus soft start failed"
   }
 }
