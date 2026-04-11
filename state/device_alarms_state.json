@@ -933,5 +933,14 @@
     "customer": "Gayan-IMH",
     "plant": "imbulgoda  3kw",
     "message": "Bus soft start failed"
+  },
+  "1187499:D70000210184361276:69d995b5912711297270dfdc": {
+    "send_count": 1,
+    "first_seen": "2026-04-11T04:43:54.775340",
+    "ignored": false,
+    "last_sent": "2026-04-11T04:43:54.775340",
+    "customer": "Gayan-IMH",
+    "plant": "imbulgoda  3kw",
+    "message": "Bus soft start failed"
   }
 }
