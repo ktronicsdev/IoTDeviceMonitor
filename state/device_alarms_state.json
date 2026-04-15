@@ -953,10 +953,10 @@
     "message": "battery voltage is too high"
   },
   "1101493:D70000210186250779:69dfac1e9127112972080452": {
-    "send_count": 1,
+    "send_count": 2,
     "first_seen": "2026-04-15T15:58:44.886821",
     "ignored": false,
-    "last_sent": "2026-04-15T15:58:44.886821",
+    "last_sent": "2026-04-15T20:01:53.357240",
     "customer": "Abeetha",
     "plant": "PLANT",
     "message": "battery voltage is too high"
