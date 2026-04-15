@@ -1,29 +1,29 @@
 {
-  "generated_at": "2026-04-14T23:16:50.474183Z",
+  "generated_at": "2026-04-15T05:23:12.468841Z",
   "alerts": [
     {
       "severity": "RED",
       "plant_key": "sohan-must-pv1800-3024-pro",
-      "today": "2026-04-14",
-      "baseline_avg_kwh_per_day": 2.7143,
-      "threshold_kwh_per_day": 0.5429,
+      "today": "2026-04-15",
+      "baseline_avg_kwh_per_day": 2.0,
+      "threshold_kwh_per_day": 0.4,
       "rule": "< 20.0% baseline for 3 consecutive days",
       "window": [
-        "2026-04-12",
         "2026-04-13",
-        "2026-04-14"
+        "2026-04-14",
+        "2026-04-15"
       ],
       "details": [
-        {
-          "date": "2026-04-12",
-          "kwh": 0.0
-        },
         {
           "date": "2026-04-13",
           "kwh": 0.0
         },
         {
           "date": "2026-04-14",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-04-15",
           "kwh": 0.0
         }
       ]
