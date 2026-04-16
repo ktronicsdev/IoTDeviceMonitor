@@ -953,12 +953,21 @@
     "message": "battery voltage is too high"
   },
   "1101493:D70000210186250779:69dfac1e9127112972080452": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-04-15T15:58:44.886821",
-    "ignored": false,
-    "last_sent": "2026-04-15T20:01:53.357240",
+    "ignored": true,
+    "last_sent": "2026-04-16T05:27:08.854969",
     "customer": "Abeetha",
     "plant": "PLANT",
     "message": "battery voltage is too high"
+  },
+  "1113903:D70000210234739721:69e0302a91271129726eda3d": {
+    "send_count": 1,
+    "first_seen": "2026-04-16T05:27:08.854969",
+    "ignored": false,
+    "last_sent": "2026-04-16T05:27:08.854969",
+    "customer": "Ganishka",
+    "plant": "Ganishka home 3kw",
+    "message": "Solar charger stops due to low battery"
   }
 }

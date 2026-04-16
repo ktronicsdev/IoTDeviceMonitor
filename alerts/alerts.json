@@ -1,23 +1,19 @@
 {
-  "generated_at": "2026-04-15T23:19:04.936948Z",
+  "generated_at": "2026-04-16T05:26:42.075886Z",
   "alerts": [
     {
       "severity": "RED",
       "plant_key": "sohan-must-pv1800-3024-pro",
-      "today": "2026-04-15",
-      "baseline_avg_kwh_per_day": 2.0,
-      "threshold_kwh_per_day": 0.4,
+      "today": "2026-04-16",
+      "baseline_avg_kwh_per_day": 1.3357,
+      "threshold_kwh_per_day": 0.2671,
       "rule": "< 20.0% baseline for 3 consecutive days",
       "window": [
-        "2026-04-13",
         "2026-04-14",
-        "2026-04-15"
+        "2026-04-15",
+        "2026-04-16"
       ],
       "details": [
-        {
-          "date": "2026-04-13",
-          "kwh": 0.0
-        },
         {
           "date": "2026-04-14",
           "kwh": 0.0
@@ -25,11 +21,39 @@
         {
           "date": "2026-04-15",
           "kwh": 0.0
+        },
+        {
+          "date": "2026-04-16",
+          "kwh": 0.0
         }
       ]
     }
   ],
-  "suppressed": [],
+  "suppressed": [
+    {
+      "plant_key": "ganishka-ganishka-home-3kw",
+      "reason": "suppressed: 0 kWh for 3 days and red already sent",
+      "window": [
+        "2026-04-14",
+        "2026-04-15",
+        "2026-04-16"
+      ],
+      "zero_run": [
+        {
+          "date": "2026-04-14",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-04-15",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-04-16",
+          "kwh": 0.0
+        }
+      ]
+    }
+  ],
   "ignored": [
     {
       "plant_key": "abeetha-plant",
