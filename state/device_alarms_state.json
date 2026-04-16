@@ -962,19 +962,19 @@
     "message": "battery voltage is too high"
   },
   "1113903:D70000210234739721:69e0302a91271129726eda3d": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-04-16T05:27:08.854969",
-    "ignored": false,
-    "last_sent": "2026-04-16T16:14:11.599277",
+    "ignored": true,
+    "last_sent": "2026-04-16T23:19:35.477190",
     "customer": "Ganishka",
     "plant": "Ganishka home 3kw",
     "message": "Solar charger stops due to low battery"
   },
   "1116664:D70000210150900869:69e0d82c912711297267a93e": {
-    "send_count": 1,
+    "send_count": 2,
     "first_seen": "2026-04-16T16:14:11.599277",
     "ignored": false,
-    "last_sent": "2026-04-16T16:14:11.599277",
+    "last_sent": "2026-04-16T23:19:35.477190",
     "customer": "Ravindra",
     "plant": "Ravindra 3kw",
     "message": "Inverter bus voltage is too low"
