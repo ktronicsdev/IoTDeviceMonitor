@@ -980,10 +980,10 @@
     "message": "Inverter bus voltage is too low"
   },
   "1187499:D70000210184361276:69e1c78d91271129725c8bcb": {
-    "send_count": 1,
+    "send_count": 2,
     "first_seen": "2026-04-17T08:26:07.678157",
     "ignored": false,
-    "last_sent": "2026-04-17T08:26:07.678157",
+    "last_sent": "2026-04-17T15:48:22.348674",
     "customer": "Gayan-IMH",
     "plant": "imbulgoda  3kw",
     "message": "Low battery"
