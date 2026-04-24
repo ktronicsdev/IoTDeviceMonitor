@@ -1,26 +1,26 @@
 {
-  "generated_at": "2026-04-23T23:23:15.474520Z",
+  "generated_at": "2026-04-24T05:31:13.443161Z",
   "alerts": [],
   "suppressed": [
     {
       "plant_key": "ganishka-ganishka-home-3kw",
       "reason": "suppressed: 0 kWh for 3 days and red already sent",
       "window": [
-        "2026-04-21",
         "2026-04-22",
-        "2026-04-23"
+        "2026-04-23",
+        "2026-04-24"
       ],
       "zero_run": [
-        {
-          "date": "2026-04-21",
-          "kwh": 0.0
-        },
         {
           "date": "2026-04-22",
           "kwh": 0.0
         },
         {
           "date": "2026-04-23",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-04-24",
           "kwh": 0.0
         }
       ]
