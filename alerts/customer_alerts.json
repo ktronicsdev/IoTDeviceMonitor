@@ -1,3 +1,19 @@
 {
-  "customer_alerts": {}
+  "customer_alerts": {
+    "Gayan-IMH": {
+      "email": "pcgayan@gmail.com",
+      "alerts": [
+        {
+          "plant": "gayan-imh-imbulgoda-3kw",
+          "level": "RED",
+          "issue": "< 20.0% baseline for 3 consecutive days",
+          "normal": 4.2643,
+          "current": {
+            "date": "2026-04-30",
+            "kwh": 0.0
+          }
+        }
+      ]
+    }
+  }
 }

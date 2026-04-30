@@ -1,26 +1,54 @@
 {
-  "generated_at": "2026-04-29T23:25:08.648728Z",
-  "alerts": [],
-  "suppressed": [
+  "generated_at": "2026-04-30T05:57:43.150391Z",
+  "alerts": [
     {
-      "plant_key": "ganishka-ganishka-home-3kw",
-      "reason": "suppressed: 0 kWh for 3 days and red already sent",
+      "severity": "RED",
+      "plant_key": "gayan-imh-imbulgoda-3kw",
+      "today": "2026-04-30",
+      "baseline_avg_kwh_per_day": 4.2643,
+      "threshold_kwh_per_day": 0.8529,
+      "rule": "< 20.0% baseline for 3 consecutive days",
       "window": [
-        "2026-04-27",
         "2026-04-28",
-        "2026-04-29"
+        "2026-04-29",
+        "2026-04-30"
       ],
-      "zero_run": [
-        {
-          "date": "2026-04-27",
-          "kwh": 0.0
-        },
+      "details": [
         {
           "date": "2026-04-28",
           "kwh": 0.0
         },
         {
           "date": "2026-04-29",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-04-30",
+          "kwh": 0.0
+        }
+      ]
+    }
+  ],
+  "suppressed": [
+    {
+      "plant_key": "ganishka-ganishka-home-3kw",
+      "reason": "suppressed: 0 kWh for 3 days and red already sent",
+      "window": [
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30"
+      ],
+      "zero_run": [
+        {
+          "date": "2026-04-28",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-04-29",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-04-30",
           "kwh": 0.0
         }
       ]
