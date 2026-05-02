@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-01T23:24:22.292325Z",
+  "generated_at": "2026-05-02T05:34:43.252313Z",
   "alerts": [],
   "suppressed": [],
   "ignored": [
@@ -40,13 +40,6 @@
     },
     {
       "plant_key": "samurdi-kohuwala",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-05"
-      ]
-    },
-    {
-      "plant_key": "sandamalsilva-my-home",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
         "2026-05"

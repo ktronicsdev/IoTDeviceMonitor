@@ -6,7 +6,7 @@
 ║                                                                              ║
 ║                          Status: NO ALERTS DETECTED                          ║
 ║                                                                              ║
-║               Date: 2026-05-01  |  Total Plants Monitored: 23                ║
+║               Date: 2026-05-02  |  Total Plants Monitored: 23                ║
 ║                                                                              ║
 ================================================================================
 
@@ -24,8 +24,6 @@
 │   • lahiru-ryan-lahiru-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • samurdi-kohuwala
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│   • sandamalsilva-my-home
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • upulatheja-3kw-pro-kadawath
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
