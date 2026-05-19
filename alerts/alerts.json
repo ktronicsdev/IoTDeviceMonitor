@@ -1,6 +1,34 @@
 {
-  "generated_at": "2026-05-18T23:44:01.984922Z",
-  "alerts": [],
+  "generated_at": "2026-05-19T10:38:30.466816Z",
+  "alerts": [
+    {
+      "severity": "RED",
+      "plant_key": "muadh-muadh-solar",
+      "today": "2026-05-19",
+      "baseline_avg_kwh_per_day": 5.6643,
+      "threshold_kwh_per_day": 1.1329,
+      "rule": "< 20.0% baseline for 3 consecutive days",
+      "window": [
+        "2026-05-17",
+        "2026-05-18",
+        "2026-05-19"
+      ],
+      "details": [
+        {
+          "date": "2026-05-17",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-05-18",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-05-19",
+          "kwh": 0.0
+        }
+      ]
+    }
+  ],
   "suppressed": [],
   "ignored": [
     {
