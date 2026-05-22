@@ -1016,10 +1016,10 @@
     "message": "battery voltage is too high"
   },
   "1053849:D70000210151320902:6a0fa768912711297226b339": {
-    "send_count": 1,
+    "send_count": 2,
     "first_seen": "2026-05-22T06:42:20.874577",
     "ignored": false,
-    "last_sent": "2026-05-22T06:42:20.874577",
+    "last_sent": "2026-05-22T12:50:23.358473",
     "customer": "Namila-Waragoda",
     "plant": "Namila Plant",
     "message": "Low battery"
