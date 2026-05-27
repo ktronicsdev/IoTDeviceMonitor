@@ -1,34 +1,6 @@
 {
-  "generated_at": "2026-05-26T23:49:39.346037Z",
-  "alerts": [
-    {
-      "severity": "RED",
-      "plant_key": "muadh-muadh-solar",
-      "today": "2026-05-26",
-      "baseline_avg_kwh_per_day": 2.6643,
-      "threshold_kwh_per_day": 0.5329,
-      "rule": "< 20.0% baseline for 3 consecutive days",
-      "window": [
-        "2026-05-24",
-        "2026-05-25",
-        "2026-05-26"
-      ],
-      "details": [
-        {
-          "date": "2026-05-24",
-          "kwh": 0.0
-        },
-        {
-          "date": "2026-05-25",
-          "kwh": 0.0
-        },
-        {
-          "date": "2026-05-26",
-          "kwh": 0.0
-        }
-      ]
-    }
-  ],
+  "generated_at": "2026-05-27T06:59:08.782079Z",
+  "alerts": [],
   "suppressed": [],
   "ignored": [
     {
@@ -40,13 +12,6 @@
     },
     {
       "plant_key": "chamila-chamila-119h",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-05"
-      ]
-    },
-    {
-      "plant_key": "chandika-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
         "2026-05"

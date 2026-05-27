@@ -1,10 +1,4 @@
 {
-  "muadh-muadh-solar:RED": {
-    "first_seen": "2026-05-19",
-    "ignored_date": "2026-05-22",
-    "last_sent": "2026-05-21",
-    "send_count": 16
-  },
   "red_sent": {
     "ganishka-ganishka-home-3kw": {
       "last_sent": "2026-01-02T18:35:57.725487Z",
