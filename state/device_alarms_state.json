@@ -1025,10 +1025,10 @@
     "message": "Low battery"
   },
   "1101493:D70000210186250779:6a1666e1912711297262d869": {
-    "send_count": 1,
+    "send_count": 2,
     "first_seen": "2026-05-27T06:59:45.620042",
     "ignored": false,
-    "last_sent": "2026-05-27T06:59:45.620042",
+    "last_sent": "2026-05-27T14:08:17.659205",
     "customer": "Abeetha",
     "plant": "PLANT",
     "message": "battery voltage is too high"
