@@ -1032,5 +1032,14 @@
     "customer": "Abeetha",
     "plant": "PLANT",
     "message": "battery voltage is too high"
+  },
+  "1090495:D70000210185485733:6a18a746912711297251071d": {
+    "send_count": 1,
+    "first_seen": "2026-05-28T20:49:15.528765",
+    "ignored": false,
+    "last_sent": "2026-05-28T20:49:15.528765",
+    "customer": "Samurdi",
+    "plant": "kohuwala",
+    "message": "Inverter radiator over temperature"
   }
 }
