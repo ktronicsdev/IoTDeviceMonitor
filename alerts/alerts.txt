@@ -6,7 +6,7 @@
 ║                                                                              ║
 ║                          Status: NO ALERTS DETECTED                          ║
 ║                                                                              ║
-║               Date: 2026-05-28  |  Total Plants Monitored: 23                ║
+║               Date: 2026-05-29  |  Total Plants Monitored: 23                ║
 ║                                                                              ║
 ================================================================================
 
@@ -18,8 +18,6 @@
 │   • chamila-chamila-119h
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • ganishka-ganishka-home-3kw
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│   • lahiru-ryan-lahiru-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • samurdi-kohuwala
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)

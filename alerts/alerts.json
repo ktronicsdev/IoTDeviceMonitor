@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-28T23:58:42.552967Z",
+  "generated_at": "2026-05-29T06:52:15.475200Z",
   "alerts": [],
   "suppressed": [],
   "ignored": [
@@ -19,13 +19,6 @@
     },
     {
       "plant_key": "ganishka-ganishka-home-3kw",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-05"
-      ]
-    },
-    {
-      "plant_key": "lahiru-ryan-lahiru-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
         "2026-05"
