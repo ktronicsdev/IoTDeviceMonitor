@@ -1,17 +1,10 @@
 {
-  "generated_at": "2026-05-30T06:10:40.242942Z",
+  "generated_at": "2026-05-30T09:12:21.165902Z",
   "alerts": [],
   "suppressed": [],
   "ignored": [
     {
       "plant_key": "abeetha-plant",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-05"
-      ]
-    },
-    {
-      "plant_key": "chamila-chamila-119h",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
         "2026-05"

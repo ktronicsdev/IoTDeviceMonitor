@@ -1041,5 +1041,14 @@
     "customer": "Samurdi",
     "plant": "kohuwala",
     "message": "Inverter radiator over temperature"
+  },
+  "1101493:D70000210186250779:6a1aa95291271129729853a7": {
+    "send_count": 1,
+    "first_seen": "2026-05-30T09:12:53.708727",
+    "ignored": false,
+    "last_sent": "2026-05-30T09:12:53.708727",
+    "customer": "Abeetha",
+    "plant": "PLANT",
+    "message": "battery voltage is too high"
   }
 }
