@@ -1061,10 +1061,10 @@
     "message": "battery voltage is too high"
   },
   "1053849:D70000210151320902:6a269ea29127112972389204": {
-    "send_count": 1,
+    "send_count": 2,
     "first_seen": "2026-06-08T11:41:05.954082",
     "ignored": false,
-    "last_sent": "2026-06-08T11:41:05.954082",
+    "last_sent": "2026-06-08T17:47:17.814286",
     "customer": "Namila-Waragoda",
     "plant": "Namila Plant",
     "message": "Inverter grid under frequency"
