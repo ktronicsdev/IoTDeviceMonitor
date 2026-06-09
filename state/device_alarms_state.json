@@ -1086,5 +1086,14 @@
     "customer": "Abeetha",
     "plant": "PLANT",
     "message": "battery voltage is too high"
+  },
+  "1101493:D70000210186250779:6a2848509127112972668648": {
+    "send_count": 1,
+    "first_seen": "2026-06-09T17:17:43.080751",
+    "ignored": false,
+    "last_sent": "2026-06-09T17:17:43.080751",
+    "customer": "Abeetha",
+    "plant": "PLANT",
+    "message": "battery voltage is too high"
   }
 }
