@@ -1068,5 +1068,14 @@
     "customer": "Namila-Waragoda",
     "plant": "Namila Plant",
     "message": "Inverter grid under frequency"
+  },
+  "1101493:D70000210186250779:6a27e89e9127112972c74245": {
+    "send_count": 1,
+    "first_seen": "2026-06-09T10:20:11.774674",
+    "ignored": false,
+    "last_sent": "2026-06-09T10:20:11.774674",
+    "customer": "Abeetha",
+    "plant": "PLANT",
+    "message": "battery voltage is too high"
   }
 }
