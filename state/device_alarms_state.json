@@ -1133,10 +1133,10 @@
     "message": "battery voltage is too high"
   },
   "1101493:D70000210186250779:6a2a2c0591271129727fa71b": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-06-11T07:26:43.024105",
-    "ignored": false,
-    "last_sent": "2026-06-11T14:26:06.245122",
+    "ignored": true,
+    "last_sent": "2026-06-11T20:53:34.538429",
     "customer": "Abeetha",
     "plant": "PLANT",
     "message": "Inverter over current protection error"
