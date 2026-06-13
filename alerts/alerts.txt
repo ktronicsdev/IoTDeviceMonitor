@@ -52,8 +52,6 @@
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • ganishka-ganishka-home-3kw
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│   • lahiru-ryan-lahiru-plant
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • samurdi-kohuwala
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • upulatheja-3kw-pro-kadawath
