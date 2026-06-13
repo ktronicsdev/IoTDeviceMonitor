@@ -1140,5 +1140,14 @@
     "customer": "Abeetha",
     "plant": "PLANT",
     "message": "Inverter over current protection error"
+  },
+  "1101493:D70000210186250779:6a2cc1339127112972a739a5": {
+    "send_count": 1,
+    "first_seen": "2026-06-13T06:48:05.513999",
+    "ignored": false,
+    "last_sent": "2026-06-13T06:48:05.513999",
+    "customer": "Abeetha",
+    "plant": "PLANT",
+    "message": "Inverter over current protection error"
   }
 }
