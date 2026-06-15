@@ -6,7 +6,7 @@
 ║                                                                              ║
 ║                        Status: 1 CRITICAL, 0 WARNING                         ║
 ║                                                                              ║
-║               Date: 2026-06-14  |  Total Plants Monitored: 23                ║
+║               Date: 2026-06-15  |  Total Plants Monitored: 23                ║
 ║                                                                              ║
 ================================================================================
 
@@ -15,7 +15,7 @@
 │ 🔴 [RED] anuradha-gajanayaka-plant
 │
 │   Issue: Production dropped 100.0% below normal
-│   Normal: 6.50 kWh/day  →  Current: 0.00 kWh/day
+│   Normal: 6.02 kWh/day  →  Current: 0.00 kWh/day
 │   Rule: < 20.0% baseline for 3 consecutive days
 │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -34,12 +34,12 @@
 │
 │ [RED] anuradha-gajanayaka-plant
 │
-│   Baseline (avg/day): 6.5000 kWh
-│   Alert Threshold: < 1.3000 kWh/day
+│   Baseline (avg/day): 6.0214 kWh
+│   Alert Threshold: < 1.2043 kWh/day
 │   Recent Production:
-│     2026-06-12: 0.0000 kWh (0.0% of baseline)
 │     2026-06-13: 0.0000 kWh (0.0% of baseline)
 │     2026-06-14: 0.0000 kWh (0.0% of baseline)
+│     2026-06-15: 0.0000 kWh (0.0% of baseline)
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
