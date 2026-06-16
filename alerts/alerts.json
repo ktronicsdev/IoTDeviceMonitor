@@ -1,29 +1,29 @@
 {
-  "generated_at": "2026-06-15T21:41:28.228253Z",
+  "generated_at": "2026-06-16T00:19:02.274598Z",
   "alerts": [
     {
       "severity": "RED",
       "plant_key": "anuradha-gajanayaka-plant",
-      "today": "2026-06-15",
-      "baseline_avg_kwh_per_day": 6.0214,
-      "threshold_kwh_per_day": 1.2043,
+      "today": "2026-06-16",
+      "baseline_avg_kwh_per_day": 5.4786,
+      "threshold_kwh_per_day": 1.0957,
       "rule": "< 20.0% baseline for 3 consecutive days",
       "window": [
-        "2026-06-13",
         "2026-06-14",
-        "2026-06-15"
+        "2026-06-15",
+        "2026-06-16"
       ],
       "details": [
-        {
-          "date": "2026-06-13",
-          "kwh": 0.0
-        },
         {
           "date": "2026-06-14",
           "kwh": 0.0
         },
         {
           "date": "2026-06-15",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-06-16",
           "kwh": 0.0
         }
       ]
