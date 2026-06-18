@@ -1,29 +1,29 @@
 {
-  "generated_at": "2026-06-17T20:45:10.261886Z",
+  "generated_at": "2026-06-18T00:06:53.069819Z",
   "alerts": [
     {
       "severity": "RED",
       "plant_key": "anuradha-gajanayaka-plant",
-      "today": "2026-06-17",
-      "baseline_avg_kwh_per_day": 4.9143,
-      "threshold_kwh_per_day": 0.9829,
+      "today": "2026-06-18",
+      "baseline_avg_kwh_per_day": 4.3857,
+      "threshold_kwh_per_day": 0.8771,
       "rule": "< 20.0% baseline for 3 consecutive days",
       "window": [
-        "2026-06-15",
         "2026-06-16",
-        "2026-06-17"
+        "2026-06-17",
+        "2026-06-18"
       ],
       "details": [
-        {
-          "date": "2026-06-15",
-          "kwh": 0.0
-        },
         {
           "date": "2026-06-16",
           "kwh": 0.0
         },
         {
           "date": "2026-06-17",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-06-18",
           "kwh": 0.0
         }
       ]
@@ -31,26 +31,26 @@
     {
       "severity": "RED",
       "plant_key": "lahiru-ryan-lahiru-plant",
-      "today": "2026-06-17",
+      "today": "2026-06-18",
       "baseline_avg_kwh_per_day": 0.7571,
       "threshold_kwh_per_day": 0.1514,
       "rule": "< 20.0% baseline for 3 consecutive days",
       "window": [
-        "2026-06-15",
         "2026-06-16",
-        "2026-06-17"
+        "2026-06-17",
+        "2026-06-18"
       ],
       "details": [
-        {
-          "date": "2026-06-15",
-          "kwh": 0.0
-        },
         {
           "date": "2026-06-16",
           "kwh": 0.0
         },
         {
           "date": "2026-06-17",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-06-18",
           "kwh": 0.0
         }
       ]
