@@ -56,3 +56,6 @@ scripts/test/poll_github_actions.py
 
 # ROI analysis data (UC11 - customer-specific data)
 roi/
+
+# PH1000 reference docs (large binaries, local only) — root folder only, not site/ph1000
+/ph1000/

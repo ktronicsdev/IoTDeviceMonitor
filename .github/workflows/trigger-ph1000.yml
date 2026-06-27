@@ -1,0 +1,70 @@
+name: PH1000 Live Dashboard
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # ~every 5 min (GitHub schedules are best-effort / often delayed)
+  workflow_dispatch: {}
+
+# Only contents:write — publishes to the dedicated `ph1000-live` branch, NOT main,
+# so it never triggers trigger-shinemonitor.yml / trigger-dessmonitor.yml (which watch main).
+permissions:
+  contents: write
+
+concurrency:
+  group: ph1000-live
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (main — scripts + dashboard template)
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Create credentials.json from secret
+        shell: bash
+        run: |
+          set -e
+          mkdir -p src/main/java/org/ktronics/config
+          cat <<'EOF' > src/main/java/org/ktronics/config/credentials.json
+          ${{ secrets.SHINEMONITOR_CREDENTIALS_JSON }}
+          EOF
+          chmod 600 src/main/java/org/ktronics/config/credentials.json
+
+      - name: Fetch PH1000 telemetry -> dashboard JSON
+        shell: bash
+        run: |
+          set +e   # fail-soft: stays a green no-op until Mifanza is in the secret
+          mkdir -p publish/data
+          python3 src/main/java/org/ktronics/scripts/check_ph1000.py \
+            --customer Mifanza \
+            --json-out publish/ph1000_live.json \
+            --data-dir publish/data \
+            --history-days 7 2>&1
+          cp site/ph1000/index.html publish/index.html 2>/dev/null || true
+          exit 0
+
+      - name: Publish to ph1000-live branch (rolling, force-push — no history bloat)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          if [ ! -f publish/ph1000_live.json ]; then
+            echo "No dashboard JSON produced (Mifanza not configured in SHINEMONITOR_CREDENTIALS_JSON yet?) — skipping publish."
+            exit 0
+          fi
+          cd publish
+          git init -q
+          git checkout -q -b ph1000-live
+          git add -A
+          git -c user.email="actions@users.noreply.github.com" \
+              -c user.name="ph1000-bot" \
+              commit -q -m "PH1000 live update"
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ph1000-live
+          echo "Published to ph1000-live (Pages serves from this branch root)."

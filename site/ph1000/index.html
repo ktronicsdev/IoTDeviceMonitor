@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PH1000 Inverter — Mifanza</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --panel2:#243450; --txt:#e2e8f0; --muted:#94a3b8;
+    --green:#22c55e; --red:#ef4444; --amber:#f59e0b; --blue:#3b82f6; --pv:#eab308; --load:#a855f7;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt)}
+  header{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:16px 22px;background:linear-gradient(90deg,#1e3a8a,#0f172a)}
+  header h1{font-size:20px;margin:0}
+  .pn{color:var(--muted);font-size:12px}
+  .badge{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600}
+  .online{background:rgba(34,197,94,.15);color:var(--green);border:1px solid var(--green)}
+  .offline{background:rgba(239,68,68,.15);color:var(--red);border:1px solid var(--red)}
+  .stale{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid var(--amber)}
+  .upd{margin-left:auto;color:var(--muted);font-size:12px;text-align:right}
+  .note{margin:14px 22px 0;padding:10px 14px;background:rgba(245,158,11,.08);border-left:3px solid var(--amber);
+        border-radius:6px;color:#fde68a;font-size:13px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;padding:18px 22px}
+  .card{background:var(--panel);border:1px solid #334155;border-radius:12px;padding:16px}
+  .card .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+  .card .value{font-size:30px;font-weight:700;margin-top:6px}
+  .card .unit{font-size:15px;color:var(--muted);font-weight:500}
+  .card .sub{font-size:12px;margin-top:4px}
+  .est{display:inline-block;margin-left:6px;font-size:10px;color:#fde68a;border:1px solid var(--amber);
+       padding:1px 6px;border-radius:999px;vertical-align:middle}
+  .na{color:var(--muted);font-size:18px;font-weight:600;margin-top:10px}
+  .charging{color:var(--green)} .discharging{color:var(--amber)} .idle{color:var(--muted)}
+  .chartwrap{background:var(--panel);border:1px solid #334155;border-radius:12px;margin:6px 22px 24px;padding:16px}
+  .chartwrap h2{font-size:14px;margin:0 0 10px;color:var(--muted)}
+  footer{color:var(--muted);font-size:11px;text-align:center;padding:0 22px 24px}
+  canvas{max-height:340px}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>PH1000 Inverter <span id="alias"></span></h1>
+    <div class="pn" id="pn"></div>
+  </div>
+  <span id="status" class="badge offline">—</span>
+  <div class="upd">
+    <div id="devupd">device: —</div>
+    <div id="pollupd">page: —</div>
+  </div>
+</header>
+
+<div class="note">
+  ShineMonitor's cloud telemetry for this inverter is partly mis-mapped. Battery V/A/W and PInverter
+  are <b>measured</b>; PV &amp; Load power are <b>estimated</b> from the energy balance; SOC is not
+  available from the cloud (needs the BMS).
+</div>
+
+<div class="grid" id="cards"></div>
+
+<div class="chartwrap">
+  <h2>Last 7 days — power (W)</h2>
+  <canvas id="chart"></canvas>
+</div>
+
+<footer id="foot"></footer>
+
+<script>
+const DATA_URL = "ph1000_live.json"; // published next to index.html on the ph1000-live branch
+let chart;
+
+const fmt = (v) => (v===null||v===undefined||v==="") ? "—" : v;
+const num = (v) => { const n = parseFloat(v); return isNaN(n) ? null : n; };
+
+function card(label, value, unit, opts={}){
+  const est = opts.est ? '<span class="est">est</span>' : '';
+  if(opts.na) return `<div class="card"><div class="label">${label}</div><div class="na">N/A</div>
+      <div class="sub">${opts.na}</div></div>`;
+  const sub = opts.sub ? `<div class="sub ${opts.subClass||''}">${opts.sub}</div>` : '';
+  return `<div class="card"><div class="label">${label}${est}</div>
+    <div class="value">${fmt(value)} <span class="unit">${unit||''}</span></div>${sub}</div>`;
+}
+
+function render(d){
+  document.getElementById('alias').textContent = d.device.alias ? `· ${d.device.alias}` : '';
+  document.getElementById('pn').textContent = `PN ${d.device.pn} · devcode ${d.device.devcode}`;
+
+  // health badge (online + staleness of device last_update)
+  const st = document.getElementById('status');
+  let stale = false;
+  if(d.device.last_update){
+    const ageMin = (Date.now() - new Date(d.device.last_update.replace(' ','T')+'Z').getTime())/60000;
+    stale = ageMin > 30;
+  }
+  st.className = 'badge ' + (!d.device.online ? 'offline' : stale ? 'stale' : 'online');
+  st.textContent = !d.device.online ? 'Offline' : stale ? 'Stale' : 'Online';
+  document.getElementById('devupd').textContent = 'device: ' + fmt(d.device.last_update);
+  document.getElementById('pollupd').textContent = 'page: ' + new Date().toLocaleTimeString();
+
+  const L = d.latest;
+  const bw = num(L.battery_w && L.battery_w.value);
+  const flow = bw===null ? '' : bw>0 ? 'charging' : bw<0 ? 'discharging' : 'idle';
+  const cards = [
+    card('Battery Power', L.battery_w&&L.battery_w.value, 'W',
+         {sub: flow?`▲ ${flow}`:'', subClass: flow}),
+    card('Battery Voltage', L.battery_v&&L.battery_v.value, 'V'),
+    card('Battery Current', L.battery_a&&L.battery_a.value, 'A',
+         {sub:'+ charge / − discharge'}),
+    card('PV Power', L.pv_power_w_est&&L.pv_power_w_est.value, 'W', {est:true}),
+    card('Load Power', L.load_power_w_est&&L.load_power_w_est.value, 'W', {est:true}),
+    card('PInverter', L.pinverter_w&&L.pinverter_w.value, 'W'),
+    card('Work State', L.work_state&&L.work_state.value, ''),
+    card('Battery SOC', null, '', {na:'needs BMS'}),
+  ];
+  document.getElementById('cards').innerHTML = cards.join('');
+
+  // chart
+  const s = d.series7d || [];
+  const labels = s.map(r=>r.timestamp);
+  const ds = (key,color,dash)=>({label:key, data:s.map(r=>num(r[key])), borderColor:color,
+      backgroundColor:color, borderWidth:1.4, pointRadius:0, tension:.25, borderDash:dash||[]});
+  const cfg = {type:'line', data:{labels, datasets:[
+      ds('battery_w','#3b82f6'),
+      ds('pinverter_w','#22c55e'),
+      ds('pv_power_w_est','#eab308',[5,3]),
+      ds('load_power_w_est','#a855f7',[5,3]),
+    ]},
+    options:{responsive:true, interaction:{mode:'index',intersect:false},
+      scales:{x:{ticks:{color:'#94a3b8',maxTicksLimit:10},grid:{color:'#1f2b40'}},
+              y:{ticks:{color:'#94a3b8'},grid:{color:'#1f2b40'}}},
+      plugins:{legend:{labels:{color:'#cbd5e1'}}}}};
+  if(chart){chart.data=cfg.data; chart.update();} else { chart=new Chart(document.getElementById('chart'),cfg); }
+
+  document.getElementById('foot').textContent =
+    `${s.length} points · dashed = estimated · generated ${d.last_updated}`;
+}
+
+async function load(){
+  try{
+    const r = await fetch(DATA_URL + '?t=' + Date.now(), {cache:'no-store'});
+    render(await r.json());
+  }catch(e){ console.error(e); document.getElementById('foot').textContent = 'load error: '+e; }
+}
+load();
+setInterval(load, 60000); // re-fetch the committed JSON every 60s
+</script>
+</body>
+</html>
