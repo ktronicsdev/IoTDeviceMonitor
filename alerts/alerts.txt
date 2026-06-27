@@ -4,19 +4,13 @@
 ║                                                                              ║
 ║                            ⚠ ATTENTION REQUIRED ⚠                            ║
 ║                                                                              ║
-║                        Status: 2 CRITICAL, 0 WARNING                         ║
+║                        Status: 1 CRITICAL, 0 WARNING                         ║
 ║                                                                              ║
-║               Date: 2026-06-26  |  Total Plants Monitored: 23                ║
+║               Date: 2026-06-27  |  Total Plants Monitored: 23                ║
 ║                                                                              ║
 ================================================================================
 
 ┌─ ALERT SUMMARY ──────────────────────────────────────────────────────────────┐
-│
-│ 🔴 [RED] anuradha-gajanayaka-plant
-│
-│   Issue: Production dropped 100.0% below normal
-│   Normal: 0.50 kWh/day  →  Current: 0.00 kWh/day
-│   Rule: < 20.0% baseline for 3 consecutive days
 │
 │ 🔴 [RED] lahiru-ryan-lahiru-plant
 │
@@ -28,11 +22,6 @@
 
 ┌─ RECOMMENDED ACTIONS ────────────────────────────────────────────────────────┐
 │
-│ anuradha-gajanayaka-plant:
-│   1. Check inverter status and error codes
-│   2. Verify grid connection and breaker status
-│   3. Inspect panels for shading or physical damage
-│   4. Contact maintenance team if issue persists
 │ lahiru-ryan-lahiru-plant:
 │   1. Check inverter status and error codes
 │   2. Verify grid connection and breaker status
@@ -43,23 +32,14 @@
 
 ┌─ DETAILED BREAKDOWN ─────────────────────────────────────────────────────────┐
 │
-│ [RED] anuradha-gajanayaka-plant
-│
-│   Baseline (avg/day): 0.5000 kWh
-│   Alert Threshold: < 0.1000 kWh/day
-│   Recent Production:
-│     2026-06-24: 0.0000 kWh (0.0% of baseline)
-│     2026-06-25: 0.0000 kWh (0.0% of baseline)
-│     2026-06-26: 0.0000 kWh (0.0% of baseline)
-│
 │ [RED] lahiru-ryan-lahiru-plant
 │
 │   Baseline (avg/day): 0.7571 kWh
 │   Alert Threshold: < 0.1514 kWh/day
 │   Recent Production:
-│     2026-06-24: 0.0000 kWh (0.0% of baseline)
 │     2026-06-25: 0.0000 kWh (0.0% of baseline)
 │     2026-06-26: 0.0000 kWh (0.0% of baseline)
+│     2026-06-27: 0.0000 kWh (0.0% of baseline)
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
