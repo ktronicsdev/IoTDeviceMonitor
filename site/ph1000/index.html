@@ -155,17 +155,24 @@ function render(d){
     card('Battery SOC', '<span class="na">N/A</span>', 'needs BMS'),
   ].join('');
 
-  // chart
+  // chart — same labels as the reference (Production/PV/Battery/Grid/Consumption/SOC)
   const s=d.series7d||[];
-  const ds=(key,color,dash)=>({label:key.replace('_w_est',' (est)').replace('_w',''),
-     data:s.map(r=>num(r[key])), borderColor:color, backgroundColor:color, borderWidth:1.4,
-     pointRadius:0, tension:.25, spanGaps:true, borderDash:dash||[]});
+  const ds=(label,key,color,o={})=>({label, data:s.map(r=>num(r[key])),
+     borderColor:color, backgroundColor:color, borderWidth:1.5, pointRadius:0,
+     tension:.25, spanGaps:true, borderDash:o.dash||[], yAxisID:o.axis||'y'});
   const cfg={type:'line', data:{labels:s.map(r=>r.timestamp), datasets:[
-     ds('pv_power_w_est','#f5a623',[5,3]), ds('load_power_w_est','#a855f7',[5,3]),
-     ds('battery_w','#10b981'), ds('pinverter_w','#3b82f6')]},
+     ds('PV','pinverter_w','#22c55e'),
+     ds('Battery','battery_w','#3b82f6'),
+     ds('Grid','__na__','#ec4899'),
+     ds('Consumption','load_power_w_est','#eab308'),
+     ds('SOC','__na__','#1e3a8a',{axis:'y1',dash:[4,4]})]},
    options:{responsive:true, interaction:{mode:'index',intersect:false},
      scales:{x:{ticks:{color:'#8a94a6',maxTicksLimit:9},grid:{color:'#eef1f6'}},
-             y:{ticks:{color:'#8a94a6'},grid:{color:'#eef1f6'}}},
+             y:{position:'left',title:{display:true,text:'kW / W',color:'#8a94a6'},
+                ticks:{color:'#8a94a6'},grid:{color:'#eef1f6'}},
+             y1:{position:'right',min:0,max:100,grid:{drawOnChartArea:false},
+                 title:{display:true,text:'SOC %',color:'#8a94a6'},
+                 ticks:{color:'#8a94a6',callback:v=>v+'%'}}},
      plugins:{legend:{labels:{color:'#5b6b85',usePointStyle:true,boxWidth:8}}}}};
   if(chart){chart.data=cfg.data;chart.update();} else chart=new Chart(document.getElementById('chart'),cfg);
 
