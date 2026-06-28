@@ -41,6 +41,10 @@ jobs:
       - name: Fetch PH1000 telemetry -> dashboard JSON
         shell: bash
         env:
+          # Self-renewing BMS auth: refreshToken + identityId mint a fresh iotToken each run
+          # (pure Python via /account/checkOrRefreshSession). BMS_IOT_TOKEN is a static fallback.
+          BMS_IOT_REFRESH: ${{ secrets.BMS_IOT_REFRESH }}
+          BMS_IOT_IDENTITY: ${{ secrets.BMS_IOT_IDENTITY }}
           BMS_IOT_TOKEN: ${{ secrets.BMS_IOT_TOKEN }}
           BMS_APPSECRET: ${{ secrets.BMS_APPSECRET }}
         run: |

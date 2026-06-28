@@ -138,23 +138,40 @@ state, soh, remaining_ah, full_ah, cycles, max_temp, min_temp, …}]}`). The
 into `ph1000_live.json` every ~10 min, and the dashboard renders a **Battery Profile** pane
 (B1 master + B2 slave) plus a **Live SOC = average(B1, B2)**.
 
-**Auth state (current):** the fetcher signs the Aliyun gateway itself (§4) using `appKey`
-(public) + `appSecret` (GitHub secret `BMS_APPSECRET`), and authenticates with a **session
-`iotToken`** supplied via the `BMS_IOT_TOKEN` secret (≈ valid until expiry). Fully-automated
-re-login (§3.1→4) is **not yet wired** because the **pace-power login request signature is in
-native code** (`libpace.so`, not the plaintext form params) — cracking that is the remaining work
-to make the token self-renewing.
+### Self-renewing auth (solved — no app, no native code)
 
-**Fail-soft contract:** when the token expires (or any auth/API error), the fetcher emits
-`{"ok": false, "packs": []}`. The dashboard then **hides the Battery Profile pane** and **falls
-back to the voltage-based SOC curve** (`socFromV`) — so the page degrades gracefully, never
-showing stale battery data. Re-arming is a single `gh secret set BMS_IOT_TOKEN` with a fresh
-token until the native re-auth is solved.
+The fetcher signs the Aliyun gateway itself (§4) with `appKey` (public) + `appSecret`. For the
+**session token it self-renews**: the createSession response (§3.4) also returns a long-lived
+**`refreshToken`** (~200 h) and **`identityId`**, and the SDK refreshes the 20 h `iotToken` by
+POSTing to **`/account/checkOrRefreshSession`** with body
+`{"request":{"identityId":<id>,"refreshToken":<rt>}}` (apiVer `1.0.4`). That call is signed with
+the **same APIGW HMAC we already replicate**, so it runs in pure Python — the native pace-power
+login signature (`libpace.so`) is **only needed for the one-time bootstrap**, never per-run.
+
+So each run `check_ph1000_bms.py`:
+1. calls `refresh_iot_token(refreshToken, identityId)` → a fresh `iotToken` (while still valid it
+   returns the current one; near expiry it issues a new one),
+2. fetches both packs (§3.6) and decodes §5.
+
+Endpoint discovery: `IoTCredentialUtils.getRefreshIoTCredentialRequest()` (Frida) revealed the
+path/params; verified with a pure-Python `code:200` round-trip. The same Frida getter
+(`IoTCredentialManageImpl.getInstance(ctx).getIoTRefreshToken()`) re-bootstraps the refreshToken
+should the ~200 h window ever lapse — see the local helper noted below.
+
+**Secrets** (GitHub, never committed): `BMS_IOT_REFRESH` (refreshToken), `BMS_IOT_IDENTITY`
+(identityId), `BMS_APPSECRET`. `BMS_IOT_TOKEN` is now an optional static fallback.
+
+**Fail-soft contract:** on any auth/API error (e.g. the refreshToken finally expires) the fetcher
+emits `{"ok": false, "packs": []}`; the dashboard then **hides the Battery Profile pane** and
+**falls back to the voltage-based SOC curve** (`socFromV`) — never showing stale battery data.
 
 ```bash
-BMS_IOT_TOKEN=<token> BMS_APPSECRET=<secret> \
+# self-renewing (preferred)
+BMS_IOT_REFRESH=<rt> BMS_IOT_IDENTITY=<id> BMS_APPSECRET=<secret> \
   python check_ph1000_bms.py --out bms.json
+# static fallback
+BMS_IOT_TOKEN=<token> BMS_APPSECRET=<secret> python check_ph1000_bms.py --out bms.json
 ```
 
-Secrets are **never** committed: `appSecret`, the account password, and `iotToken` live only in
-GitHub secrets and the gitignored `ph1000/BMS_PROGRESS.md`.
+`appSecret`, the account password, the refreshToken and tokens live only in GitHub secrets and the
+gitignored `ph1000/BMS_PROGRESS.md` — never committed.

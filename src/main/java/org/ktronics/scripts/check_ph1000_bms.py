@@ -34,6 +34,12 @@ APPSECRET = os.environ.get("BMS_APPSECRET", "").encode()    # secret (GitHub sec
 HOST = os.environ.get("BMS_HOST", "ap-southeast-1.api-iot.aliyuncs.com")
 ACCEPT = "application/json; charset=utf-8"
 
+# Self-renewal credentials (preferred over a static session token). The Aliyun IoT
+# `refreshToken` (~200 h) + `identityId` mint a fresh `iotToken` every run via
+# /account/checkOrRefreshSession — pure Python, no app/native code. See README_BMS.md §6.
+REFRESH_TOKEN = os.environ.get("BMS_IOT_REFRESH", "")
+IDENTITY_ID = os.environ.get("BMS_IOT_IDENTITY", "")
+
 # Mifanza packs: B1 = master, B2 = slave (iotIds from the cracked device list).
 PACKS = [
     {"name": "Mifanza B1", "role": "master", "iotId": "zOLiPD3fRlynsamRRui2000000"},
@@ -106,6 +112,22 @@ def decode_wifi_band(hexstr):
     }
 
 
+def refresh_iot_token(refresh_token, identity_id, cur_token=""):
+    """Mint a fresh iotToken from the (long-lived) refreshToken + identityId.
+
+    Calls /account/checkOrRefreshSession (the same endpoint the PACEEX app's SDK uses):
+    while the current token is valid it returns it unchanged; near expiry it issues a new
+    one. Returns (iotToken, refreshToken) — the refreshToken may rotate, so callers should
+    persist the returned one. Pure APIGW-HMAC signed; needs no app/native signature.
+    """
+    d = {"request": {"identityId": identity_id, "refreshToken": refresh_token}}
+    r = _octet_call("/account/checkOrRefreshSession", d, "1.0.4", cur_token)
+    if r.get("code") != 200:
+        raise RuntimeError("checkOrRefreshSession code %s" % r.get("code"))
+    data = r["data"]
+    return data["iotToken"], data.get("refreshToken", refresh_token)
+
+
 def fetch_pack(pack, iot_token):
     resp = _octet_call("/thing/properties/get", {"iotId": pack["iotId"]}, "1.0.0", iot_token)
     if resp.get("code") != 200:
@@ -123,12 +145,26 @@ def main():
     args = ap.parse_args()
 
     out = {"ok": False, "packs": [], "generated": formatdate(usegmt=True)}
-    if not args.token:
-        print("[BMS] no BMS_IOT_TOKEN -> skipping (dashboard falls back to voltage SOC)")
+
+    # Preferred: self-renew the iotToken from the long-lived refreshToken (no app needed).
+    token = args.token
+    if REFRESH_TOKEN and IDENTITY_ID:
+        try:
+            token, new_rt = refresh_iot_token(REFRESH_TOKEN, IDENTITY_ID, args.token)
+            print("[BMS] iotToken refreshed via checkOrRefreshSession")
+            if new_rt and new_rt != REFRESH_TOKEN:
+                # refreshToken rotated — surface it so the operator can update the secret.
+                print("[BMS] NOTE: refreshToken rotated -> update BMS_IOT_REFRESH secret to: %s" % new_rt)
+        except (urllib.error.HTTPError, urllib.error.URLError, KeyError, RuntimeError) as e:
+            print("[BMS] refresh failed (%s) -> falling back to static BMS_IOT_TOKEN" % e)
+
+    if not token:
+        print("[BMS] no token (set BMS_IOT_REFRESH+BMS_IOT_IDENTITY, or BMS_IOT_TOKEN) "
+              "-> dashboard falls back to voltage SOC")
     else:
         try:
             for p in PACKS:
-                d = fetch_pack(p, args.token)
+                d = fetch_pack(p, token)
                 out["packs"].append(d)
                 print("[BMS] %s: SOC %d%% %.2fV %.2fA %s temp %.1f/%.1f cyc %d"
                       % (d["name"], d["soc"], d["voltage"], d["current"], d["state"],
