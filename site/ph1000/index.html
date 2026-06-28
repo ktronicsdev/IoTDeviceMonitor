@@ -342,9 +342,9 @@ function renderLive(){
     card('Load Power',W(load)+'<span class="est">est</span>',''),
     card('Battery Power',W(bw),flow&&flow!=='idle'?'▲ '+flow:'',flow),
     card('Battery',(bv??'—')+' <small>V</small>',(ba??'—')+' A'),
-    (bmsAvgSoc()!=null
-      ? card('Battery SOC', bmsAvgSoc()+' <small>%</small>', 'BMS')
-      : card('Battery SOC',(socFromV(bv)??'—')+' <small>%</small><span class="est">est</span>','')),
+    // Always voltage-based so the headline SOC matches the Power Profile / Flow Graph and never
+    // shows a stale BMS value; the Battery Profile pane below still shows true per-pack BMS data.
+    card('Battery SOC',(socFromV(bv)??'—')+' <small>%</small><span class="est">est</span>',''),
     `<div class="m" style="display:flex;align-items:center;justify-content:center;padding:14px">
       <svg viewBox="0 0 660 150" style="width:100%;max-height:60px" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ktronics">
         <rect x="14" y="16" width="35" height="118" fill="#1C9AD6"/>
