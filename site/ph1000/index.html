@@ -254,7 +254,7 @@ function renderLive(){
     card('Load Power',W(load)+'<span class="est">est</span>',''),
     card('Battery Power',W(bw),flow&&flow!=='idle'?'▲ '+flow:'',flow),
     card('Battery',(bv??'—')+' <small>V</small>',(ba??'—')+' A'),
-    card('Battery SOC',(socFromV(bv)??'—')+' <small>%</small><span class="est">est</span>','from voltage'),
+    card('Battery SOC',(socFromV(bv)??'—')+' <small>%</small><span class="est">est</span>',''),
   ].join('');
   document.getElementById('foot').textContent=`${(DATA.series7d||[]).length} points · PV & Load are energy-balance estimates · generated ${DATA.last_updated}`;
 }
