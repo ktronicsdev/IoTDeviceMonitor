@@ -40,6 +40,9 @@ jobs:
 
       - name: Fetch PH1000 telemetry -> dashboard JSON
         shell: bash
+        env:
+          BMS_IOT_TOKEN: ${{ secrets.BMS_IOT_TOKEN }}
+          BMS_APPSECRET: ${{ secrets.BMS_APPSECRET }}
         run: |
           set +e   # fail-soft: stays a green no-op until Mifanza is in the secret
           mkdir -p publish/data
@@ -48,6 +51,19 @@ jobs:
             --json-out publish/ph1000_live.json \
             --data-dir publish/data \
             --history-days 7 2>&1
+          # BMS (Hystorix) — true SOC/V/cells; fails soft when the token expires
+          # (dashboard then hides the battery pane + falls back to voltage SOC).
+          python3 src/main/java/org/ktronics/scripts/check_ph1000_bms.py --out publish/bms.json 2>&1 || true
+          python3 - <<'PY' || true
+          import json
+          try:
+              d = json.load(open('publish/ph1000_live.json'))
+              d['bms'] = json.load(open('publish/bms.json'))
+              json.dump(d, open('publish/ph1000_live.json', 'w'), indent=2, default=str)
+              print('[merge] bms ok=%s packs=%d' % (d['bms'].get('ok'), len(d['bms'].get('packs', []))))
+          except Exception as e:
+              print('[merge] skipped:', e)
+          PY
           cp site/ph1000/index.html publish/index.html 2>/dev/null || true
           exit 0
 

@@ -116,6 +116,12 @@
   <!-- Live -->
   <div class="card"><div class="ch"><h2>Live</h2></div><div class="metrics" id="metrics"></div></div>
 
+  <!-- Battery Profile (BMS) — shown only when the BMS token is valid -->
+  <div class="card full" id="bmscard" style="display:none">
+    <div class="ch"><h2>Battery Profile</h2><span class="sel" style="color:var(--muted)">live BMS · Hystorix</span></div>
+    <div id="bmsbody" style="display:grid;grid-template-columns:1fr 1fr;gap:14px"></div>
+  </div>
+
   <!-- Power Profile (per day) -->
   <div class="card full">
     <div class="ch"><h2>Power Profile</h2>
@@ -254,14 +260,44 @@ function renderLive(){
     card('Load Power',W(load)+'<span class="est">est</span>',''),
     card('Battery Power',W(bw),flow&&flow!=='idle'?'▲ '+flow:'',flow),
     card('Battery',(bv??'—')+' <small>V</small>',(ba??'—')+' A'),
-    card('Battery SOC',(socFromV(bv)??'—')+' <small>%</small><span class="est">est</span>',''),
+    (bmsAvgSoc()!=null
+      ? card('Battery SOC', bmsAvgSoc()+' <small>%</small>', 'BMS')
+      : card('Battery SOC',(socFromV(bv)??'—')+' <small>%</small><span class="est">est</span>','')),
   ].join('');
   document.getElementById('foot').textContent=`${(DATA.series7d||[]).length} points · PV & Load are energy-balance estimates · generated ${DATA.last_updated}`;
 }
 
+function bmsAvgSoc(){
+  const b=DATA&&DATA.bms; if(!b||!b.ok||!(b.packs||[]).length) return null;
+  return Math.round(b.packs.reduce((a,p)=>a+(p.soc||0),0)/b.packs.length);
+}
+function renderBMS(){
+  const card=document.getElementById('bmscard'); const b=DATA&&DATA.bms;
+  if(!b||!b.ok||!(b.packs||[]).length){ card.style.display='none'; return; }   // token expired -> hide
+  card.style.display='';
+  const sc=s=>s==='charging'?'charging':s==='discharging'?'discharging':'';
+  document.getElementById('bmsbody').innerHTML=b.packs.map(p=>`
+    <div class="m" style="padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <div style="font-weight:700;font-size:15px">${p.name} <span style="color:var(--muted);font-size:11px;font-weight:500">${p.role||''}</span></div>
+        <div style="font-size:26px;font-weight:800">${p.soc}<small style="font-size:13px;color:var(--muted)">%</small></div>
+      </div>
+      <div style="height:6px;background:#222c3b;border-radius:4px;margin:9px 0;overflow:hidden">
+        <div style="height:100%;width:${Math.max(0,Math.min(100,p.soc))}%;background:linear-gradient(90deg,#22c55e,#16a34a)"></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px 16px;font-size:12.5px;margin-top:8px">
+        <div>Voltage <b>${p.voltage} V</b></div>
+        <div>Current <b class="${sc(p.state)}">${p.current} A</b></div>
+        <div>State <b class="${sc(p.state)}">${p.state}</b></div>
+        <div>SOH <b>${p.soh}%</b></div>
+        <div>Capacity <b>${p.remaining_ah} / ${p.full_ah} Ah</b></div>
+        <div>Cycles <b>${p.cycles}</b></div>
+        <div>Temperature <b>${p.min_temp}–${p.max_temp} °C</b></div>
+        <div>Cells <b>${p.low_cell_mv}–${p.high_cell_mv} mV</b></div>
+      </div></div>`).join('');
+}
 async function load(){
   try{ const r=await fetch(DATA_URL+'?t='+Date.now(),{cache:'no-store'}); DATA=await r.json();
-       renderLive(); renderProfile(); renderHistory(); }
+       renderLive(); renderBMS(); renderProfile(); renderHistory(); }
   catch(e){ document.getElementById('foot').textContent='load error: '+e; }
 }
 document.getElementById('pp_prev').onclick=()=>{ if(dayIdx>0){dayIdx--;renderProfile();} };

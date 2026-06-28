@@ -19,6 +19,7 @@ SCRIPTS = SRC / "main" / "java" / "org" / "ktronics" / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
 import check_ph1000 as m  # noqa: E402
+import check_ph1000_bms as bms  # noqa: E402
 
 # The real Data Details title order observed for this PH1000 (dat.title).
 PH1000_TITLES = [
@@ -155,6 +156,26 @@ class TestAccountOptIn:
     def test_customer_filter_overrides_flag(self, tmp_path):
         _, accts = m.load_ph1000_accounts(self._creds(tmp_path), customer="Other")
         assert [a[0] for a in accts] == ["Other"]
+
+
+class TestBMSDecode:
+    # captured Hystorix WIFI_Band frame; offsets validated against the live PACEEX app.
+    FRAME = ("9A00000A000000330100000485000014ED0000156F0000271000002710376400000001"
+             "000000000000000001090D1501100D1101020BF701040BF55F2B9D")
+
+    def test_decode_wifi_band(self):
+        d = bms.decode_wifi_band(self.FRAME)
+        assert d["soc"] == 55
+        assert d["soh"] == 100
+        assert d["voltage"] == 53.57
+        assert d["remaining_ah"] == 54.87
+        assert d["full_ah"] == 100.0
+        assert d["current"] == 11.57
+        assert d["cycles"] == 0
+        assert d["state"] == "charging"          # current > 0
+
+    def test_decode_short_frame_returns_none(self):
+        assert bms.decode_wifi_band("9A00") is None
 
 
 class TestLiveParsing:
