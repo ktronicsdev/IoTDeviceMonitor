@@ -137,6 +137,7 @@ DEFAULT_DEVCODE = "697"
 DEFAULT_DEVADDR = "4"
 
 LIVE_ACTION = "queryDeviceLastData"  # the SP variant returns almost nothing here
+HISTORY_PAGESIZE = 100               # queryDeviceDataOneDayPaging caps each page at 100 rows
 
 # Reliable canonical field -> candidate parameter/column title substrings (lowercase).
 # The real battery current/power are the "Charger Current"/"Charger Power" columns.
@@ -433,10 +434,12 @@ def fetch_history(token, secret, device, days):
         date_str = d.strftime("%Y-%m-%d")
         page = 0
         idx = None
-        while True:
+        # The API caps each page at HISTORY_PAGESIZE rows (it ignores a larger pagesize)
+        # and returns them newest-first, so we must page through to get the WHOLE day.
+        while page < 20:                                  # safety bound (~2000 pts/day)
             resp = api_call(token, secret, "queryDeviceDataOneDayPaging",
                             f"{_device_params(device)}&date={date_str}"
-                            f"&page={page}&pagesize=150")
+                            f"&page={page}&pagesize={HISTORY_PAGESIZE}")
             if resp.get("err") != 0:
                 break
             dat = resp.get("dat", {})
@@ -464,7 +467,7 @@ def fetch_history(token, secret, device, days):
                 row["load_power_w_est"] = load
                 rows.append(row)
 
-            if len(page_rows) < 150:
+            if len(page_rows) < HISTORY_PAGESIZE:        # short page => last page of the day
                 break
             page += 1
             time.sleep(0.1)
