@@ -1,29 +1,56 @@
 {
-  "generated_at": "2026-06-27T23:42:10.658031Z",
+  "generated_at": "2026-06-28T01:28:15.947099Z",
   "alerts": [
     {
       "severity": "RED",
-      "plant_key": "lahiru-ryan-lahiru-plant",
-      "today": "2026-06-27",
-      "baseline_avg_kwh_per_day": 0.7571,
-      "threshold_kwh_per_day": 0.1514,
+      "plant_key": "chamila-chamila-119h",
+      "today": "2026-06-28",
+      "baseline_avg_kwh_per_day": 0.2214,
+      "threshold_kwh_per_day": 0.0443,
       "rule": "< 20.0% baseline for 3 consecutive days",
       "window": [
-        "2026-06-25",
         "2026-06-26",
-        "2026-06-27"
+        "2026-06-27",
+        "2026-06-28"
       ],
       "details": [
-        {
-          "date": "2026-06-25",
-          "kwh": 0.0
-        },
         {
           "date": "2026-06-26",
           "kwh": 0.0
         },
         {
           "date": "2026-06-27",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-06-28",
+          "kwh": 0.0
+        }
+      ]
+    },
+    {
+      "severity": "RED",
+      "plant_key": "lahiru-ryan-lahiru-plant",
+      "today": "2026-06-28",
+      "baseline_avg_kwh_per_day": 0.7571,
+      "threshold_kwh_per_day": 0.1514,
+      "rule": "< 20.0% baseline for 3 consecutive days",
+      "window": [
+        "2026-06-26",
+        "2026-06-27",
+        "2026-06-28"
+      ],
+      "details": [
+        {
+          "date": "2026-06-26",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-06-27",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-06-28",
           "kwh": 0.0
         }
       ]
