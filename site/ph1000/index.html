@@ -54,8 +54,20 @@
 </style>
 </head>
 <body>
+<div id="gate" style="position:fixed;inset:0;z-index:1000;background:#eef1f6;display:flex;align-items:center;justify-content:center">
+  <div style="background:#fff;border:1px solid #e6e9f0;border-radius:14px;padding:26px 24px;width:300px;box-shadow:0 6px 24px rgba(16,24,40,.10)">
+    <div style="font-size:18px;font-weight:700">Mifanza 5KW</div>
+    <div style="color:#8a94a6;font-size:13px;margin:2px 0 16px">PH1000 dashboard — sign in</div>
+    <input id="gu" placeholder="Username" autocomplete="username"
+       style="width:100%;padding:9px 11px;border:1px solid #e3e8f0;border-radius:8px;margin-bottom:10px;font-size:14px">
+    <input id="gp" type="password" placeholder="Password" autocomplete="current-password"
+       style="width:100%;padding:9px 11px;border:1px solid #e3e8f0;border-radius:8px;font-size:14px">
+    <button id="gb" style="width:100%;margin-top:14px;padding:9px;border:0;border-radius:8px;background:#2563eb;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Sign in</button>
+    <div id="gerr" style="color:#ef4444;font-size:12px;margin-top:8px;display:none">Incorrect credentials</div>
+  </div>
+</div>
 <header>
-  <h1>PH1000 <span id="alias" style="color:var(--muted);font-weight:500"></span></h1>
+  <h1>Mifanza 5KW <span id="alias" style="color:var(--muted);font-weight:500"></span></h1>
   <span id="status"><span class="dot off"></span>—</span>
   <span class="pill" id="pn"></span>
   <span class="upd" id="upd">—</span>
@@ -113,7 +125,8 @@
 
   <!-- Generation & Usage History -->
   <div class="card full">
-    <div class="ch"><h2>Generation &amp; Usage History</h2><span class="sel" style="color:var(--muted)">daily kWh (this month)</span></div>
+    <div class="ch"><h2>Generation &amp; Usage History</h2>
+      <div class="sel"><button id="hm_prev">‹</button><span class="d" id="hm_month">—</span><button id="hm_next">›</button></div></div>
     <canvas id="hist"></canvas>
   </div>
 </div>
@@ -121,9 +134,13 @@
 
 <script>
 const DATA_URL = "https://raw.githubusercontent.com/ktronicsdev/IoTDeviceMonitor/ph1000-live/ph1000_live.json";
-let chart, hist, DATA=null, dayIdx=null, days=[];
+let chart, hist, DATA=null, dayIdx=null, days=[], monthSel=null;
+const shiftMonth=(ym,delta)=>{ let [y,m]=ym.split('-').map(Number); m+=delta;
+  while(m<1){m+=12;y--;} while(m>12){m-=12;y++;} return y+'-'+String(m).padStart(2,'0'); };
 const num = v => { const n=parseFloat(v); return isNaN(n)?null:n; };
 const W = v => v===null||v===undefined||v===""?"—":Math.round(v).toLocaleString()+" W";
+// SOC estimate from battery voltage: 48V = 20%, 56.5V = 100% (linear), clamped 0-100.
+const socFromV = v => v==null?null:Math.round(Math.max(0,Math.min(100, 20+(v-48)*80/8.5)));
 const show = (id,on) => { const e=document.getElementById(id); if(e) e.style.display=on?'':'none'; };
 const ts = s => new Date(String(s).replace(' ','T'));
 
@@ -157,7 +174,9 @@ function renderProfile(){
   const cfg={type:'line',data:{labels:pts.map(r=>String(r.timestamp).slice(11,16)),datasets:[
      ds('PV','pinverter_w','#22c55e'),ds('Battery','battery_w','#3b82f6'),
      ds('Grid','__zero__','#ec4899'),ds('Consumption','load_power_w_est','#eab308'),
-     ds('SOC','__na__','#1e3a8a',{axis:'y1',dash:[4,4]})]},
+     {label:'SOC',data:pts.map(r=>socFromV(num(r.battery_v))),borderColor:'#1e3a8a',
+      backgroundColor:'#1e3a8a',borderWidth:1.5,pointRadius:0,tension:.25,spanGaps:true,
+      borderDash:[4,4],yAxisID:'y1'}]},
    options:{responsive:true,interaction:{mode:'index',intersect:false},
      scales:{x:{ticks:{color:'#8a94a6',maxTicksLimit:9},grid:{color:'#eef1f6'}},
        y:{position:'left',title:{display:true,text:'Power (W)',color:'#8a94a6'},ticks:{color:'#8a94a6'},grid:{color:'#eef1f6'}},
@@ -171,12 +190,13 @@ function renderHistory(){
   const g=groupDays(DATA.series7d||[]);
   const allDays=Object.keys(g).sort();
   if(!allDays.length) return;
-  const ym=allDays[allDays.length-1].slice(0,7);             // current month YYYY-MM
-  const [y,mo]=ym.split('-').map(Number);
-  const dim=new Date(y,mo,0).getDate();                       // days in month
+  if(monthSel===null) monthSel=allDays[allDays.length-1].slice(0,7);
+  document.getElementById('hm_month').textContent=monthSel;
+  const [y,mo]=monthSel.split('-').map(Number);
+  const dim=new Date(y,mo,0).getDate();                       // days in selected month
   const labels=[], E=[];
   for(let dd=1;dd<=dim;dd++){
-    const key=ym+'-'+String(dd).padStart(2,'0');
+    const key=monthSel+'-'+String(dd).padStart(2,'0');
     labels.push(String(dd));
     E.push(g[key]?dailyEnergy(g[key]):{prod:0,cons:0,chg:0,dis:0});
   }
@@ -196,7 +216,7 @@ function renderHistory(){
 
 function renderLive(){
   const L=DATA.latest, dev=DATA.device;
-  document.getElementById('alias').textContent='· '+(dev.alias||'Mifanza');
+  document.getElementById('alias').textContent='· PH1000 '+(dev.alias||'');
   document.getElementById('pn').textContent='devcode '+dev.devcode;
   let stale=false;
   if(dev.last_update){ const age=(Date.now()-ts(dev.last_update).getTime()-0)/60000; stale=age>15; }
@@ -221,7 +241,7 @@ function renderLive(){
     card('Load Power',W(load)+'<span class="est">est</span>',''),
     card('Battery Power',W(bw),flow&&flow!=='idle'?'▲ '+flow:'',flow),
     card('Battery',(bv??'—')+' <small>V</small>',(ba??'—')+' A'),
-    card('Battery SOC','<span class="na2">N/A</span>','needs BMS'),
+    card('Battery SOC',(socFromV(bv)??'—')+' <small>%</small><span class="est">est</span>','from voltage'),
   ].join('');
   document.getElementById('foot').textContent=`${(DATA.series7d||[]).length} points · PV & Load are energy-balance estimates · generated ${DATA.last_updated}`;
 }
@@ -233,6 +253,22 @@ async function load(){
 }
 document.getElementById('pp_prev').onclick=()=>{ if(dayIdx>0){dayIdx--;renderProfile();} };
 document.getElementById('pp_next').onclick=()=>{ if(dayIdx<days.length-1){dayIdx++;renderProfile();} };
+document.getElementById('hm_prev').onclick=()=>{ monthSel=shiftMonth(monthSel,-1); renderHistory(); };
+document.getElementById('hm_next').onclick=()=>{ monthSel=shiftMonth(monthSel, 1); renderHistory(); };
+// ---- light client-side gate (Mifanza credential; SHA-256, no plaintext in source) ----
+const PW_HASH='7b9ce106de4476760c494c04333d108f7f6fb73c4449ccaf555480a618578497';
+async function sha256(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+async function gateLogin(){
+  const u=document.getElementById('gu').value.trim().toLowerCase();
+  const ok=(u==='mifanza') && (await sha256(document.getElementById('gp').value))===PW_HASH;
+  if(ok){ sessionStorage.setItem('ph1000_auth','1'); document.getElementById('gate').style.display='none'; }
+  else { document.getElementById('gerr').style.display='block'; }
+}
+if(sessionStorage.getItem('ph1000_auth')==='1') document.getElementById('gate').style.display='none';
+document.getElementById('gb').onclick=gateLogin;
+document.getElementById('gp').addEventListener('keydown',e=>{if(e.key==='Enter')gateLogin();});
+
 load(); setInterval(load, 60000);
 </script>
 </body>

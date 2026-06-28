@@ -1,8 +1,10 @@
 name: PH1000 Live Dashboard
 
 on:
+    # GitHub throttles high-frequency crons; a local Task Scheduler job (every 10 min)
+    # is the reliable trigger. This schedule is just a best-effort backup.
   schedule:
-    - cron: "*/5 * * * *"   # ~every 5 min (GitHub schedules are best-effort / often delayed)
+    - cron: "*/10 * * * *"
   workflow_dispatch: {}
 
 # Only contents:write — publishes to the dedicated `ph1000-live` branch, NOT main,
