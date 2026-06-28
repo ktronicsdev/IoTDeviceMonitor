@@ -292,10 +292,10 @@ def energy_by_date_kwh(series):
             {d: v / 1000.0 for d, v in load_wh.items()})
 
 
-def build_plant_block(plant_info, series):
+def build_plant_block(plant_info, series, tz_offset=0):
     """Plant Profile block: profile + computed energy (daily/month/year/logged total) + gains."""
     pv_kwh, load_kwh = energy_by_date_kwh(series)
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today = (datetime.now(timezone.utc) + timedelta(seconds=tz_offset)).strftime("%Y-%m-%d")
     ym, yr = today[:7], today[:4]
     daily = round(pv_kwh.get(today, 0.0), 1)
     monthly = round(sum(v for d, v in pv_kwh.items() if d.startswith(ym)), 1)
@@ -423,11 +423,16 @@ def map_history_columns(titles):
     return idx
 
 
-def fetch_history(token, secret, device, days):
-    """Fetch the last `days` days of logged reliable fields. Returns (rows, titles)."""
+def fetch_history(token, secret, device, days, tz_offset=0):
+    """Fetch the last `days` days of logged reliable fields. Returns (rows, titles).
+
+    The device logs in its PLANT-LOCAL time (Sri Lanka, UTC+5:30), so "today" must be the
+    local date — otherwise late-UTC evening (= local next day) misses the local current day's
+    data. tz_offset is the plant timezone in seconds (from queryPlants address.timezone).
+    """
     rows = []
     sample_titles = None
-    today = datetime.now(timezone.utc).date()
+    today = (datetime.now(timezone.utc) + timedelta(seconds=tz_offset)).date()
 
     for offset in range(days - 1, -1, -1):
         d = today - timedelta(days=offset)
@@ -615,11 +620,13 @@ def process_account(token, secret, label, args):
     path = append_measured_csv(args.data_dir, label, device, measured_now)
     print(f"  Appended measured poll ({now_ts}) -> {path}")
 
-    history_rows, _ = fetch_history(token, secret, device, args.history_days)
+    # The device logs in plant-local time (SL = UTC+5:30); use it for "today" everywhere.
+    tz_off = int((plant.get("address", {}) or {}).get("timezone", 0) or 0)
+    history_rows, _ = fetch_history(token, secret, device, args.history_days, tz_off)
     measured_rows = load_measured_history(args.data_dir, label, device)
     series = merge_series(history_rows, measured_rows)
 
-    plant_block = build_plant_block(get_plant_info(token, secret, plant.get("pid")), series)
+    plant_block = build_plant_block(get_plant_info(token, secret, plant.get("pid")), series, tz_off)
     print(f"  Plant: {plant_block['name']} | today {plant_block['energy']['daily']} kWh | "
           f"logged total {plant_block['energy']['total']} kWh | gains Rs {plant_block['gains_lkr']}")
 
