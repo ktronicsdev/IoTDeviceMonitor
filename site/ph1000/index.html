@@ -72,17 +72,14 @@
         <path class="ln" d="M470,108 V152 H308"/>  <!-- Grid-> inverter RIGHT-UPPER -->
         <path class="ln" d="M90,272 V208 H252"/>   <!-- Battery <-> inverter LEFT-LOWER -->
         <path class="ln" d="M470,272 V208 H308"/>  <!-- Load <- inverter RIGHT-LOWER -->
-        <path class="ln" d="M280,208 V272"/>       <!-- UPS  <- inverter BOTTOM -->
         <!-- direction arrows -->
         <polygon class="arrow" points="244,148 252,152 244,156"/>   <!-- PV  ► in -->
         <polygon class="arrow" points="316,148 308,152 316,156"/>   <!-- Grid ◄ in -->
         <polygon class="arrow" points="308,204 316,208 308,212"/>   <!-- Load ► out -->
-        <polygon class="arrow" points="276,264 280,272 284,264"/>   <!-- UPS  ▼ -->
         <polygon id="a_batt" class="arrow" points="252,204 244,208 252,212"/> <!-- battery (dir set by JS) -->
         <!-- animated flow dots -->
         <circle r="4.5" class="fdot" id="d_pv"   style="display:none"><animateMotion dur="2.2s" repeatCount="indefinite" path="M90,108 V152 H252"/></circle>
         <circle r="4.5" class="fdot" id="d_load" style="display:none"><animateMotion dur="2.4s" repeatCount="indefinite" path="M308,208 H470 V272"/></circle>
-        <circle r="4.5" class="fdot" id="d_ups"  style="display:none"><animateMotion dur="1.8s" repeatCount="indefinite" path="M280,208 V272"/></circle>
         <circle r="4.5" class="fdot" id="d_chg"  style="display:none"><animateMotion dur="2.2s" repeatCount="indefinite" path="M252,208 H90 V272"/></circle>
         <circle r="4.5" class="fdot" id="d_dis"  style="display:none"><animateMotion dur="2.2s" repeatCount="indefinite" path="M90,272 V208 H252"/></circle>
       </svg>
@@ -91,16 +88,13 @@
         <div class="nlab">PV</div><div class="nval" id="n_pv">—</div></div>
       <div class="node" style="left:83.9%;top:22.2%">
         <div class="ic"><svg viewBox="0 0 24 24"><path d="M8 21l4-17 4 17M6 21h12M9.3 8h5.4M8.2 13h7.6"/></svg></div>
-        <div class="nlab">Grid</div><div class="nval na" id="n_grid">N/A</div></div>
+        <div class="nlab">Grid</div><div class="nval" id="n_grid">0 W</div></div>
       <div class="node" style="left:50%;top:50%">
         <div class="ic inv"><svg viewBox="0 0 24 24"><rect x="6" y="3.5" width="12" height="17" rx="1.5"/><rect x="9" y="8" width="6" height="6" rx="1"/><path d="M9 17.5h6"/></svg></div>
         <div class="nlab">Inverter</div></div>
       <div class="node" style="left:16.1%;top:83.3%">
         <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="8" width="16" height="9" rx="1.5"/><path d="M21 11v3"/><path d="M6.5 11v3M9.5 11v3M12.5 11v3"/></svg></div>
         <div class="nlab" id="n_battlab">Battery</div><div class="nval" id="n_batt">—</div></div>
-      <div class="node" style="left:50%;top:83.3%">
-        <div class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M9 20h6M12 16v4"/><path d="M7.5 10.5l2 2.5 2-4 1.8 3 2.2-2"/></svg></div>
-        <div class="nlab">UPS</div><div class="nval" id="n_ups">—</div></div>
       <div class="node" style="left:83.9%;top:83.3%">
         <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 11l8-6 8 6M6 9.5V19h12V9.5M10 19v-5h4v5"/></svg></div>
         <div class="nlab">Load</div><div class="nval" id="n_load">—</div></div>
@@ -144,7 +138,7 @@ function dailyEnergy(points){ // integrate W -> kWh
     const avg=k=>{const a=num(p[i][k]),b=num(p[i-1][k]); return a==null||b==null?null:(a+b)/2;};
     const pv=avg('pinverter_w'),ld=avg('load_power_w_est'),bw=avg('battery_w');
     if(pv>0) prod+=pv*dt; if(ld>0) cons+=ld*dt;
-    if(bw>0) chg+=bw*dt; if(bw<0) dis+=(-bw)*dt;
+    if(bw<0) chg+=(-bw)*dt; if(bw>0) dis+=bw*dt;   // ChargerPower<0 = charging
   }
   return {prod:prod/1000,cons:cons/1000,chg:chg/1000,dis:dis/1000};
 }
@@ -157,11 +151,12 @@ function renderProfile(){
   const day=days[dayIdx]||'—';
   document.getElementById('pp_date').textContent=day;
   const pts=(g[day]||[]).slice().sort((a,b)=>a.timestamp<b.timestamp?-1:1);
-  const ds=(label,key,color,o={})=>({label,data:pts.map(r=>num(r[key])),borderColor:color,
+  const ds=(label,key,color,o={})=>({label,
+     data:pts.map(r=>key==='__zero__'?0:(key==='__na__'?null:num(r[key]))),borderColor:color,
      backgroundColor:color,borderWidth:1.5,pointRadius:0,tension:.25,spanGaps:true,borderDash:o.dash||[],yAxisID:o.axis||'y'});
   const cfg={type:'line',data:{labels:pts.map(r=>String(r.timestamp).slice(11,16)),datasets:[
      ds('PV','pinverter_w','#22c55e'),ds('Battery','battery_w','#3b82f6'),
-     ds('Grid','__na__','#ec4899'),ds('Consumption','load_power_w_est','#eab308'),
+     ds('Grid','__zero__','#ec4899'),ds('Consumption','load_power_w_est','#eab308'),
      ds('SOC','__na__','#1e3a8a',{axis:'y1',dash:[4,4]})]},
    options:{responsive:true,interaction:{mode:'index',intersect:false},
      scales:{x:{ticks:{color:'#8a94a6',maxTicksLimit:9},grid:{color:'#eef1f6'}},
@@ -202,22 +197,20 @@ function renderLive(){
   const pv=num(L.pv_power_w_est&&L.pv_power_w_est.value),load=num(L.load_power_w_est&&L.load_power_w_est.value),
         bw=num(L.battery_w&&L.battery_w.value),bv=num(L.battery_v&&L.battery_v.value),
         ba=num(L.battery_a&&L.battery_a.value),pinv=num(L.pinverter_w&&L.pinverter_w.value);
-  const flow=bw===null?'':bw>0?'charging':bw<0?'discharging':'idle';
+  const flow=bw===null?'':bw<0?'charging':bw>0?'discharging':'idle';
   document.getElementById('n_pv').textContent=W(pv);
-  document.getElementById('n_ups').textContent=W(pinv);
   document.getElementById('n_load').textContent=W(load);
   document.getElementById('n_batt').innerHTML=(bv!==null?bv+' V':'—')+' · '+W(bw!==null?Math.abs(bw):null);
   document.getElementById('n_battlab').textContent='Battery'+(flow&&flow!=='idle'?' · '+flow:'');
-  show('d_pv',pv>0); show('d_ups',pinv>0); show('d_load',load>0); show('d_chg',bw>0); show('d_dis',bw<0);
-  document.getElementById('a_batt').setAttribute('points', bw>0?'252,204 244,208 252,212':'244,204 252,208 244,212');
+  show('d_pv',pv>0); show('d_load',load>0); show('d_chg',bw<0); show('d_dis',bw>0);
+  document.getElementById('a_batt').setAttribute('points', bw<0?'252,204 244,208 252,212':'244,204 252,208 244,212');
 
   const card=(l,v,s,sc)=>`<div class="m"><div class="l">${l}</div><div class="v">${v}</div>${s?`<div class="s ${sc||''}">${s}</div>`:''}</div>`;
   document.getElementById('metrics').innerHTML=[
     card('PV Power',W(pv)+'<span class="est">est</span>',''),
     card('Load Power',W(load)+'<span class="est">est</span>',''),
     card('Battery Power',W(bw),flow&&flow!=='idle'?'▲ '+flow:'',flow),
-    card('Battery',(bv??'—')+' <small>V</small>',(ba??'—')+' A · + chg / − dis'),
-    card('PInverter',W(pinv),''),
+    card('Battery',(bv??'—')+' <small>V</small>',(ba??'—')+' A'),
     card('Battery SOC','<span class="na2">N/A</span>','needs BMS'),
   ].join('');
   document.getElementById('foot').textContent=`${(DATA.series7d||[]).length} points · PV & Load are energy-balance estimates · generated ${DATA.last_updated}`;

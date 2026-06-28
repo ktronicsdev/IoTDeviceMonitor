@@ -210,37 +210,34 @@ def _match_field(title):
 
 
 def charge_state(battery_w):
-    """Label battery flow from signed battery power."""
+    """Label battery flow from signed Charger Power (< 0 = charging, > 0 = discharging)."""
     w = _to_float(battery_w)
     if w is None:
         return "unknown"
-    if w > 0:
-        return "charging"
     if w < 0:
-        return "discharging"
+        return "charging"      # ChargerPower < 0 -> power INTO the battery
+    if w > 0:
+        return "discharging"   # ChargerPower > 0 -> battery supplying the load
     return "idle"
 
 
-INVERTER_SELF_USE_W = 10  # the PH1000's own self-power draw (~10 W, per field obs.)
-
-
 def derive_energy_balance(battery_w, pinverter_w):
-    """Estimate PV power and load power from the two reliable fields.
+    """Estimate PV power and load power from PInverter and Charger Power.
 
-    Energy balance (signed Charger/Battery Power: + charging / - discharging):
-      * PInverter == 0 -> battery discharges to the load -> load = -ChargerPower.
-      * PInverter  > 0 -> PV powers the house, split between battery + load
-                          -> load = PInverter - ChargerPower, PV ~= PInverter.
-    Both cases unify to load = PInverter - ChargerPower, minus the inverter's own
-    ~10 W self-use, clamped >= 0. PV is taken as PInverter (confirmed = PV power).
-    These are ESTIMATES (the cloud's own PV/PLoad columns are broken); flag as such.
+    PV = PInverter (confirmed = PV power). Signed Charger/Battery Power
+    (ChargerPower < 0 = charging into battery, > 0 = discharging):
+      * PInverter > 0: PV charges the battery and feeds the load
+            -> Load = PV - charge = PInverter + ChargerPower   (e.g. 974 + (-542) = 432)
+      * PInverter == 0 (night): battery discharges to the load -> Load = ChargerPower.
+    Both unify to Load = max(0, PInverter + ChargerPower). ESTIMATES (the cloud's own
+    PV/PLoad columns are broken); flag as such.
     """
     cp = _to_float(battery_w)
     pinv = _to_float(pinverter_w)
     if cp is None or pinv is None:
         return None, None
     pv = pinv if pinv > 0 else 0.0
-    load = pinv - cp - INVERTER_SELF_USE_W
+    load = pinv + cp
     if load < 0:
         load = 0.0
     return pv, load

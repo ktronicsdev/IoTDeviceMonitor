@@ -49,12 +49,15 @@ Because the cloud's own PV/PLoad columns are broken, PV and load are estimated f
 reliable power fields (signed Charger/Battery Power: `+` charging, `−` discharging):
 
 ```
-load_power_w = max(0, PInverter − ChargerPower − 10)   # 10 W ≈ inverter self-use
-pv_power_w   = PInverter                                # PInverter = PV power (confirmed)
+pv_power_w   = PInverter                          # PInverter = PV power (confirmed)
+load_power_w = max(0, PInverter + ChargerPower)   # ChargerPower < 0 = charging
+                                                  # e.g. 974 + (-542) = 432 W
 ```
 
-Confirmed in the field: at dawn PInverter ramps 0→13→27→66→124→194→290 W as PV comes up
-(so `pv = PInverter`), and the inverter's own self-use draw is ~10 W.
+Signed ChargerPower: `< 0` = charging (power into the battery), `> 0` = discharging.
+- `PInverter > 0` (PV on): PV charges the battery and feeds the load →
+  `Load = PV − charge = PInverter + ChargerPower` (974 + (−542) = 432).
+- `PInverter = 0` (night): battery discharges to the load → `Load = ChargerPower`.
 
 Rationale (confirmed against real rows):
 - **PInverter = 0** → battery discharges to the house → `load ≈ |ChargerPower|`.

@@ -54,13 +54,14 @@ class TestColumnMapping:
 
 
 class TestEnergyBalanceDerivation:
-    # load = max(0, PInverter - ChargerPower - 10W inverter self-use); PV = PInverter
+    # PV = PInverter; Load = max(0, PInverter + ChargerPower)  (ChargerPower<0 = charging)
     @pytest.mark.parametrize("battery_w,pinverter,exp_pv,exp_load", [
-        (-1806, 2534, 2534, 4330),   # midday: PV + battery discharge feed a big load
-        (-707, 1008, 1008, 1705),    # afternoon
-        (388, 0, 0, 0),              # evening grid-charge: load clamps to 0
-        (-700, 0, 0, 690),           # night discharge: load = |discharge| - self-use
-        (500, 2000, 2000, 1490),     # daytime PV charging battery + load
+        (-542, 974, 974, 432),       # user's example: 974 + (-542) = 432
+        (-1806, 2534, 2534, 728),    # midday: PV charging hard, modest load
+        (-707, 1008, 1008, 301),     # afternoon
+        (388, 0, 0, 388),            # night: battery discharges -> load = discharge
+        (-700, 0, 0, 0),             # grid-charging at night, no PV/load
+        (500, 2000, 2000, 2500),     # PV + battery discharge both feed load
     ])
     def test_pv_and_load_estimates(self, battery_w, pinverter, exp_pv, exp_load):
         pv, load = m.derive_energy_balance(battery_w, pinverter)
@@ -72,14 +73,14 @@ class TestEnergyBalanceDerivation:
         assert m.derive_energy_balance(0, None) == (None, None)
 
     def test_load_never_negative(self):
-        _, load = m.derive_energy_balance(1000, 0)  # charging, PInverter 0
+        _, load = m.derive_energy_balance(-1000, 0)  # charging (ChargerPower<0), PInverter 0
         assert load == 0
 
 
 class TestChargeState:
     def test_states(self):
-        assert m.charge_state(336) == "charging"
-        assert m.charge_state(-707) == "discharging"
+        assert m.charge_state(-707) == "charging"      # ChargerPower < 0 -> into battery
+        assert m.charge_state(336) == "discharging"    # ChargerPower > 0 -> battery out
         assert m.charge_state(0) == "idle"
         assert m.charge_state(None) == "unknown"
 
@@ -94,15 +95,15 @@ class TestStatusLabel:
 class TestMeasuredRowAndMerge:
     def test_measured_row_from_live_includes_estimates(self):
         fields = {
-            "battery_v": {"value": "52.5"}, "battery_a": {"value": "6.4"},
-            "battery_w": {"value": "-700"}, "pinverter_w": {"value": "0"},
+            "battery_v": {"value": "52.8"}, "battery_a": {"value": "-10.2"},
+            "battery_w": {"value": "-542"}, "pinverter_w": {"value": "974"},
             "work_state": {"value": "OffGrid"},
         }
-        row = m.measured_row_from_live(fields, "2026-06-27 20:00:00")
+        row = m.measured_row_from_live(fields, "2026-06-28 07:59:47")
         assert row["source"] == "measured"
-        assert row["charge_state"] == "discharging"
-        assert row["pv_power_w_est"] == 0
-        assert row["load_power_w_est"] == 690  # night discharge: 700 - 10W self-use
+        assert row["charge_state"] == "charging"          # ChargerPower -542 -> charging
+        assert row["pv_power_w_est"] == 974               # PV = PInverter
+        assert row["load_power_w_est"] == 432             # 974 + (-542)
 
     def test_merge_measured_supersedes_derived(self):
         history = [{"timestamp": "2026-06-27 12:00:00", "source": "derived", "battery_w": 100}]
