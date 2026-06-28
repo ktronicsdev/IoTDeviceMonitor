@@ -3,6 +3,17 @@
 Live + 7-day telemetry for the **MUST PH1000** (PV18/PH18-family) hybrid inverter on the
 **Mifanza** account, feeding a GitHub Pages dashboard.
 
+## 🔗 Live dashboard
+
+**https://ktronicsdev.github.io/IoTDeviceMonitor/site/ph1000/**
+
+- Served from `main` (Pages) at `site/ph1000/index.html`; auto-refreshes every 60 s.
+- Live data published to the **`ph1000-live`** branch every ~5 min by
+  [`trigger-ph1000.yml`](../../../../../../.github/workflows/trigger-ph1000.yml); the page
+  fetches `ph1000_live.json` from that branch via `raw.githubusercontent.com`
+  (so the main Pages site is untouched and no 5-min commits hit `main`).
+- Freshness ≈ 5 min (workflow cadence) + GitHub raw CDN cache.
+
 - Device: `pn=D70000210150180785`, `devcode=697`, `devaddr=4`, `sn=08B40001`, serial `060030222800001`
 - Inverter family: **PH1000 / PH3000 / PH1800** (Modbus reg `20001`); MPPT charger: **PC1600**
 - Battery: **Hystorix** lithium pack with a **PACEEX/Hystorix BMS**

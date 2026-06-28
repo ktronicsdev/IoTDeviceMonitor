@@ -67,7 +67,9 @@
 <footer id="foot"></footer>
 
 <script>
-const DATA_URL = "ph1000_live.json"; // published next to index.html on the ph1000-live branch
+// Live data is published to the ph1000-live branch every ~5 min; fetched cross-origin
+// (raw.githubusercontent.com sends Access-Control-Allow-Origin: *).
+const DATA_URL = "https://raw.githubusercontent.com/ktronicsdev/IoTDeviceMonitor/ph1000-live/ph1000_live.json";
 let chart;
 
 const fmt = (v) => (v===null||v===undefined||v==="") ? "—" : v;
