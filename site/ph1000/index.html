@@ -146,10 +146,13 @@ const shiftMonth=(ym,delta)=>{ let [y,m]=ym.split('-').map(Number); m+=delta;
   while(m<1){m+=12;y--;} while(m>12){m-=12;y++;} return y+'-'+String(m).padStart(2,'0'); };
 const num = v => { const n=parseFloat(v); return isNaN(n)?null:n; };
 const W = v => v===null||v===undefined||v===""?"—":Math.round(v).toLocaleString()+" W";
-// SOC estimate from 16S LFP battery voltage (44.8-58.4V). Piecewise curve calibrated to
-// real points (BMS 52.3V≈37%, ~53.7V≈45%); LFP is flat mid-range so this is approximate.
-const SOC_TABLE=[[44.8,0],[48,8],[51.2,25],[52.3,37],[53.0,43],[53.7,48],[54.4,62],
-                 [55.0,78],[56.0,92],[58.4,100]];
+// SOC estimate from 16S LFP battery voltage. Calibrated to REAL Hystorix BMS readings logged
+// vs the inverter's live battery voltage (under charge): 53.53V→59%, 53.77V→80%, 53.88V→81%,
+// 54.1V→90%, plus LFP physics below the knee. At the top the pack holds ~54-55V while the
+// charge current tapers to ~0 (absorption/full), so 54V+ reads high. Voltage-only is still
+// approximate (it rises under charge, sags under load) — the BMS is the source of truth when up.
+const SOC_TABLE=[[48.0,0],[51.2,10],[52.0,20],[52.8,40],[53.2,50],[53.5,57],[53.8,80],
+                 [54.0,87],[54.2,92],[54.6,97],[55.2,100]];
 const socFromV = v => {
   if(v==null) return null;
   const t=SOC_TABLE;
