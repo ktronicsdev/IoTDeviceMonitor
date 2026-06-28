@@ -113,7 +113,7 @@
 
   <!-- Generation & Usage History -->
   <div class="card full">
-    <div class="ch"><h2>Generation &amp; Usage History</h2><span class="sel" style="color:var(--muted)">daily kWh (last 7 days)</span></div>
+    <div class="ch"><h2>Generation &amp; Usage History</h2><span class="sel" style="color:var(--muted)">daily kWh (this month)</span></div>
     <canvas id="hist"></canvas>
   </div>
 </div>
@@ -168,10 +168,20 @@ function renderProfile(){
 
 function renderHistory(){
   if(!DATA) return;
-  const g=groupDays(DATA.series7d||[]); const ds=Object.keys(g).sort();
-  const E=ds.map(d=>dailyEnergy(g[d]));
+  const g=groupDays(DATA.series7d||[]);
+  const allDays=Object.keys(g).sort();
+  if(!allDays.length) return;
+  const ym=allDays[allDays.length-1].slice(0,7);             // current month YYYY-MM
+  const [y,mo]=ym.split('-').map(Number);
+  const dim=new Date(y,mo,0).getDate();                       // days in month
+  const labels=[], E=[];
+  for(let dd=1;dd<=dim;dd++){
+    const key=ym+'-'+String(dd).padStart(2,'0');
+    labels.push(String(dd));
+    E.push(g[key]?dailyEnergy(g[key]):{prod:0,cons:0,chg:0,dis:0});
+  }
   const bar=(label,vals,color)=>({label,data:vals,backgroundColor:color,stack:'s',borderWidth:0,borderRadius:2});
-  const cfg={type:'bar',data:{labels:ds.map(d=>d.slice(5)),datasets:[
+  const cfg={type:'bar',data:{labels,datasets:[
      bar('Production',E.map(e=>+e.prod.toFixed(2)),'#22c55e'),
      bar('Discharge', E.map(e=>+e.dis.toFixed(2)),'#7dd3fc'),
      bar('Consumption',E.map(e=>-+e.cons.toFixed(2)),'#eab308'),
