@@ -519,9 +519,9 @@ if(sessionStorage.getItem('ph1000_auth')==='1') document.getElementById('gate').
 document.getElementById('gb').onclick=gateLogin;
 document.getElementById('gp').addEventListener('keydown',e=>{if(e.key==='Enter')gateLogin();});
 
-// Data publishes every ~10 min; poll every 3 min (API-first, fresh) so updates show promptly
+// Data publishes every ~10 min; poll every 5 min (API-first, fresh) so updates show promptly
 // while staying well under the 60/hr API rate limit. Raw fallback covers any overflow.
-load(); setInterval(load, 180000);
+load(); setInterval(load, 300000);
 </script>
 </body>
 </html>
