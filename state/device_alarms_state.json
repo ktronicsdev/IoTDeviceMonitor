@@ -1149,5 +1149,14 @@
     "customer": "Abeetha",
     "plant": "PLANT",
     "message": "Inverter over current protection error"
+  },
+  "1592739:D70000210150180785:6a3e7dbfc60c522ded78d170": {
+    "send_count": 1,
+    "first_seen": "2026-06-28T01:54:50.367794",
+    "ignored": false,
+    "last_sent": "2026-06-28T01:54:50.367794",
+    "customer": "Mifanza",
+    "plant": "Mifanza Solar System",
+    "message": "Solar charger battery voltage class error"
   }
 }

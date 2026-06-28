@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-28T01:28:15.947099Z",
+  "generated_at": "2026-06-28T01:54:16.965064Z",
   "alerts": [
     {
       "severity": "RED",
@@ -67,6 +67,13 @@
     },
     {
       "plant_key": "ganishka-ganishka-home-3kw",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-06"
+      ]
+    },
+    {
+      "plant_key": "mifanza-mifanza-solar-system",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
         "2026-06"

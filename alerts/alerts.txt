@@ -6,7 +6,7 @@
 ║                                                                              ║
 ║                        Status: 2 CRITICAL, 0 WARNING                         ║
 ║                                                                              ║
-║               Date: 2026-06-28  |  Total Plants Monitored: 23                ║
+║               Date: 2026-06-28  |  Total Plants Monitored: 24                ║
 ║                                                                              ║
 ================================================================================
 
@@ -69,6 +69,8 @@
 │   • abeetha-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • ganishka-ganishka-home-3kw
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│   • mifanza-mifanza-solar-system
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • samurdi-kohuwala
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
