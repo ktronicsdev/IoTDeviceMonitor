@@ -173,5 +173,15 @@ BMS_IOT_REFRESH=<rt> BMS_IOT_IDENTITY=<id> BMS_APPSECRET=<secret> \
 BMS_IOT_TOKEN=<token> BMS_APPSECRET=<secret> python check_ph1000_bms.py --out bms.json
 ```
 
+### Local re-bootstrap (belt-and-suspenders)
+
+[`refresh_bms_creds.py`](refresh_bms_creds.py) + [`harvest_bms_cred.js`](harvest_bms_cred.js)
+read the **current** credential straight from the running PACEEX app's memory
+(`IoTCredentialManageImpl.getInstance(ctx)` via Frida — no UI/network) and update the GitHub
+secrets. The Windows Task Scheduler job **`BMSCredsRefresh`** runs it every 5 days, so the
+~200 h refreshToken in the secrets never lapses even if it does not roll forward on its own.
+Needs BlueStacks + `frida-server` on the device + `gh` auth; it is the only piece that touches
+the app, and only as a periodic top-up — the per-run cloud refresh needs nothing local.
+
 `appSecret`, the account password, the refreshToken and tokens live only in GitHub secrets and the
 gitignored `ph1000/BMS_PROGRESS.md` — never committed.
