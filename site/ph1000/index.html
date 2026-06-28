@@ -197,7 +197,17 @@
   <span id="foot"></span><span style="white-space:nowrap">© Ktronics (Pvt) Ltd</span></div>
 
 <script>
-const DATA_URL = "https://raw.githubusercontent.com/ktronicsdev/IoTDeviceMonitor/ph1000-live/ph1000_live.json";
+// Data source. The raw.githubusercontent CDN caches 5 min AND ignores ?t= cache-busting, so it
+// can serve ~5-15 min stale data. The GitHub API contents endpoint returns the latest commit
+// immediately (60s cache only) — use it first for freshness, fall back to raw on any error
+// (e.g. the 60/hr API rate limit), so the page never breaks.
+const API_URL = "https://api.github.com/repos/ktronicsdev/IoTDeviceMonitor/contents/ph1000_live.json?ref=ph1000-live";
+const RAW_URL = "https://raw.githubusercontent.com/ktronicsdev/IoTDeviceMonitor/ph1000-live/ph1000_live.json";
+async function fetchData(){
+  try{ const r=await fetch(API_URL,{cache:'no-store',headers:{Accept:'application/vnd.github.raw'}});
+       if(r.ok) return await r.json(); }catch(e){}
+  const r2=await fetch(RAW_URL+'?t='+Date.now(),{cache:'no-store'}); return await r2.json();
+}
 let chart, hist, DATA=null, dayIdx=null, days=[], monthSel=null;
 const shiftMonth=(ym,delta)=>{ let [y,m]=ym.split('-').map(Number); m+=delta;
   while(m<1){m+=12;y--;} while(m>12){m-=12;y++;} return y+'-'+String(m).padStart(2,'0'); };
@@ -377,10 +387,12 @@ function renderBMS(){
     </div>`).join('');
 }
 async function load(){
-  try{ const r=await fetch(DATA_URL+'?t='+Date.now(),{cache:'no-store'}); DATA=await r.json();
+  try{ const j=await fetchData();
+       if(!j||!j.device) throw new Error('no data');
+       DATA=j;
        renderLive(); renderBMS(); renderProfile(); renderHistory();
        if(curTab==='profile') renderProfilePane(); if(curTab==='analysis') renderAnalysis(); }
-  catch(e){ document.getElementById('foot').textContent='load error: '+e; }
+  catch(e){ if(!DATA){ const f=document.getElementById('foot'); if(f) f.textContent='load error: '+e; } }
 }
 
 /* ---- Sri Lanka actual time (Asia/Colombo), ticking every second ---- */
@@ -507,7 +519,9 @@ if(sessionStorage.getItem('ph1000_auth')==='1') document.getElementById('gate').
 document.getElementById('gb').onclick=gateLogin;
 document.getElementById('gp').addEventListener('keydown',e=>{if(e.key==='Enter')gateLogin();});
 
-load(); setInterval(load, 60000);
+// Data publishes every ~10 min; poll every 3 min (API-first, fresh) so updates show promptly
+// while staying well under the 60/hr API rate limit. Raw fallback covers any overflow.
+load(); setInterval(load, 180000);
 </script>
 </body>
 </html>
