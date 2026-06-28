@@ -1,6 +1,6 @@
 # IoT Platform Integration Tests
 
-Test suite for ShineMonitor and DessMonitor IoT monitoring systems.
+Test suite for ShineMonitor, DessMonitor, and PH1000 inverter/BMS IoT monitoring systems.
 
 ## Quick Start
 
@@ -11,7 +11,7 @@ py -m pytest integration/ -v
 
 ## Test Summary
 
-**Total: 180 tests** (146 passed on Windows, 34 skipped - bash tests run in CI)
+**Total: 201 tests** (167 passed on Windows, 34 skipped - bash tests run in CI)
 
 ## Use Cases
 
@@ -28,6 +28,7 @@ py -m pytest integration/ -v
 | UC9  | Admin Email Optimization   | 10      | `test_uc9_admin_email.py`        |
 | UC10 | DessMonitor Multi-Platform | 50      | `test_dessmonitor_integration.py`|
 | UC11 | Plant ROI Analysis         | 19      | `test_uc11_plant_roi.py`         |
+| UC12 | PH1000 Inverter + BMS      | 21      | `test_ph1000.py`                 |
 | BVT  | Centralized Config         | 14      | `test_centralized_config.py`     |
 | API  | ShineMonitor API           | 9       | `test_shinemonitor_api.py`       |
 | API  | DessMonitor API            | 13      | `test_dessmonitor_api.py`        |
@@ -80,6 +81,16 @@ Calculates return on investment for solar plants:
 
 - Off-grid energy consumption tracking
 - Cost savings calculations
+
+### UC12: PH1000 Inverter + BMS
+
+Live MUST PH1000 inverter + Hystorix/PACEEX battery monitoring:
+
+- Cloud field mapping (Charger Current/Power = real battery current/power; garbage columns ignored)
+- Energy-balance derivation: `PV = PInverter`, `Load = max(0, PInverter + ChargerPower − 40 W)`
+- Charge-state sign logic (ChargerPower < 0 = charging)
+- BMS `WIFI_Band` hex-frame decode (SOC/V/A/SOH/capacity/cycles), validated against the live app
+- CSV append/dedup, account opt-in (`"ph1000": true`), dashboard JSON shape
 
 ## Run Specific Tests
 

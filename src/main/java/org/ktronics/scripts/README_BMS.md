@@ -104,27 +104,57 @@ The `octet-stream` bodies also set `Content-MD5 = base64(md5(body))` and a
 
 ---
 
-## 5. `WIFI_Band` hex decode (16S LFP frame)
+## 5. `WIFI_Band` hex decode (16S LFP frame) — **fully validated**
 
-The telemetry is a big-endian hex frame. Verified byte offsets against the live BMS readout
-(SOC 55%, 53.57 V, 100 Ah, SOH 100%, cells ~3349 mV):
+The telemetry is a big-endian hex frame. Every offset below was decoded in
+[`check_ph1000_bms.py`](check_ph1000_bms.py) (`decode_wifi_band`) and verified field-by-field
+against the live PACEEX app readout (B1: SOC 59 %, 53.53 V, +7.07 A; B2: SOC 55 %, 53.62 V,
+SOH 100 %, 100 Ah). A regression test pins these offsets ([`test_ph1000.py`](../../../../../test/java/org/ktronics/scripts/integration/test_ph1000.py) `TestBMSDecode`).
 
-| Field | Location | Scale |
+| Field | Location | Scale / encoding |
 |---|---|---|
-| Battery voltage | uint16 @ offset 15 | ÷100 → V |
-| Full / designed capacity | uint16 @ offset 23 / 27 | ÷100 → Ah |
-| **SOC** | byte @ offset 29 | % |
-| **SOH** | byte @ offset 30 | % |
-| Cell voltage(s) | uint16 @ offset 45, 49 | mV |
+| **Current** | int16 @ 11 | ÷100 → A (**signed**: + charge / − discharge) |
+| Battery voltage | uint16 @ 15 | ÷100 → V |
+| Remaining capacity | uint16 @ 19 | ÷100 → Ah |
+| Full capacity | uint16 @ 23 | ÷100 → Ah |
+| Designed capacity | uint16 @ 27 | ÷100 → Ah |
+| **SOC** | byte @ 29 | % |
+| **SOH** | byte @ 30 | % |
+| **Cycle count** | uint16 @ 31 | count |
+| Packs in parallel | uint16 @ 33 | count |
+| High / low cell | uint16 @ 45 / 49 | mV |
+| Max / min temp | uint16 @ 53 / 57 | `(raw − 2730) ÷ 10` → °C (0.1 K units) |
 
-(Remaining offsets — current, temps, cycles, remaining capacity — map similarly; refine with more
-samples or the PACE protocol sheet in `ph1000/`.)
+Frames shorter than 60 bytes decode to `None` (treated as no-data).
 
 ---
 
-## 6. Using it (sustainable, CI-friendly)
+## 6. The fetcher — `check_ph1000_bms.py` (**built & live**)
 
-The fetcher (planned `check_ph1000_bms.py`) needs only the **account email + password** and the
-**appKey/appSecret** (in `SHINEMONITOR_CREDENTIALS_JSON` / a new BMS secret) — no app or emulator.
-It runs steps §3.1→6 for both `iotId`s, decodes §5, and feeds **true SOC / V / cell data** into the
-PH1000 dashboard (replacing the rough voltage-curve estimate).
+[`check_ph1000_bms.py`](check_ph1000_bms.py) runs §3.6 (`/thing/properties/get`) for both pack
+`iotId`s, decodes §5, and writes a `bms` block (`{ok, packs:[{name, role, soc, voltage, current,
+state, soh, remaining_ah, full_ah, cycles, max_temp, min_temp, …}]}`). The
+[`trigger-ph1000.yml`](../../../../../../.github/workflows/trigger-ph1000.yml) workflow merges it
+into `ph1000_live.json` every ~10 min, and the dashboard renders a **Battery Profile** pane
+(B1 master + B2 slave) plus a **Live SOC = average(B1, B2)**.
+
+**Auth state (current):** the fetcher signs the Aliyun gateway itself (§4) using `appKey`
+(public) + `appSecret` (GitHub secret `BMS_APPSECRET`), and authenticates with a **session
+`iotToken`** supplied via the `BMS_IOT_TOKEN` secret (≈ valid until expiry). Fully-automated
+re-login (§3.1→4) is **not yet wired** because the **pace-power login request signature is in
+native code** (`libpace.so`, not the plaintext form params) — cracking that is the remaining work
+to make the token self-renewing.
+
+**Fail-soft contract:** when the token expires (or any auth/API error), the fetcher emits
+`{"ok": false, "packs": []}`. The dashboard then **hides the Battery Profile pane** and **falls
+back to the voltage-based SOC curve** (`socFromV`) — so the page degrades gracefully, never
+showing stale battery data. Re-arming is a single `gh secret set BMS_IOT_TOKEN` with a fresh
+token until the native re-auth is solved.
+
+```bash
+BMS_IOT_TOKEN=<token> BMS_APPSECRET=<secret> \
+  python check_ph1000_bms.py --out bms.json
+```
+
+Secrets are **never** committed: `appSecret`, the account password, and `iotToken` live only in
+GitHub secrets and the gitignored `ph1000/BMS_PROGRESS.md`.

@@ -36,10 +36,12 @@ live against the device and the SolarPowerMonitor PC tool:
 | **PV Voltage / Inverter Voltage / Grid Voltage** | ❌ nonsense (0.2 / 2055 / 1259) | ignored |
 | **PLoad** | ❌ 0 / broken | derived instead (see below) |
 | **Accumulated PV / Load / Sell / Self-Use (kWh)** | ❌ frozen (0/0/2/0 all day) | ignored |
-| **SOC** | ❌ not exposed correctly anywhere in cloud | needs BMS (see below) |
+| **SOC** | ❌ not exposed correctly anywhere in cloud | ✅ now read **direct from the BMS** ([README_BMS.md](README_BMS.md)) |
 
-> The correct full dataset (true PV power, load power, SOC) only exists at the inverter's **RS485
-> Modbus** port and the **BMS**, which a cloud GitHub Action cannot reach. See "Data sources".
+> True PV power and load power still only exist at the inverter's **RS485 Modbus** port (a cloud
+> Action can't reach it — see "Data sources"), so those stay estimated. **SOC is now live**: the
+> Hystorix/PACEEX BMS cloud API was cracked ([README_BMS.md](README_BMS.md)) and feeds true
+> per-pack SOC/V/A/cells via [`check_ph1000_bms.py`](check_ph1000_bms.py).
 
 ---
 
@@ -80,7 +82,7 @@ conversion losses.
 |---|---|---|
 | **ShineMonitor cloud** (`queryDeviceLastData`, `queryDeviceDataOneDayPaging`) | the reliable fields above (+ broken ones) | ✅ yes — **this module** |
 | **Inverter RS485 Modbus** (protocol below) | true PV/load/grid/SOC/energies, all registers | ❌ needs on-site ESP/Pi (e.g. [esphome-must-inverter](https://github.com/vladyspavlov/esphome-must-inverter)) |
-| **Hystorix/PACEEX BMS** (BLE or PACEEX WiFi cloud) | accurate **SOC, battery V, charge/discharge A, cycles** | ❌ BLE = on-site; PACEEX cloud = undocumented API + login |
+| **Hystorix/PACEEX BMS** (PACEEX WiFi cloud) | accurate **SOC, battery V, charge/discharge A, cells, cycles, temps** | ✅ **cracked & live** — [`check_ph1000_bms.py`](check_ph1000_bms.py), see [README_BMS.md](README_BMS.md) |
 
 Endpoints probed (Mifanza): `querySPDeviceLastData` returns almost nothing (PV voltage + work
 state only); `queryDeviceCtrlField` is settings-only; `querySPDeviceParEs` / energy-flow actions
@@ -145,10 +147,28 @@ gateway is added later.
 
 ---
 
-## Future: accurate SOC & full data
+## Battery BMS (live) — true SOC
 
-To get true SOC / load / PV (matching the SolarPowerMonitor PC tool), add an on-site reader:
-- **Inverter**: ESP32/ESP8266 running esphome-must-inverter on the RS485 port, or a Pi polling the
-  registers above.
-- **BMS**: PACEEX/Hystorix BMS over BLE, or its WiFi-cloud account (undocumented API).
-Push that data to the `ph1000-live` branch and the dashboard can consume it alongside the cloud feed.
+The Hystorix/PACEEX BMS cloud API was reverse-engineered (full write-up in
+[README_BMS.md](README_BMS.md)) and is now part of the pipeline:
+
+- [`check_ph1000_bms.py`](check_ph1000_bms.py) reads both packs (**B1 master**, **B2 slave**) —
+  true SOC, voltage, signed current (charge/discharge), SOH, remaining/full capacity, cycle count,
+  and cell/temperature data.
+- [`trigger-ph1000.yml`](../../../../../../.github/workflows/trigger-ph1000.yml) merges a `bms`
+  block into `ph1000_live.json`; the dashboard shows a **Battery Profile** pane and sets
+  **Live SOC = average(B1, B2)**.
+- **Graceful fallback:** if the BMS session token (`BMS_IOT_TOKEN` secret) expires, the fetcher
+  emits `ok:false` → the dashboard hides the Battery Profile pane and reverts the Live SOC to the
+  voltage-based estimate (`socFromV`). No stale battery data is ever shown.
+
+**Remaining work:** the BMS `iotToken` is currently a session secret. Fully-automated re-login is
+blocked by the **native** pace-power request signature (`libpace.so`) — cracking that (the next
+task) makes the token self-renewing. Until then, refresh with `gh secret set BMS_IOT_TOKEN`.
+
+## Future: accurate PV & load
+
+True PV / load power (matching the SolarPowerMonitor PC tool) still needs an on-site **inverter**
+RS485 reader (ESP32/ESP8266 running esphome-must-inverter, or a Pi polling the registers above);
+push that to the `ph1000-live` branch and the dashboard can consume it alongside the cloud feed,
+replacing the estimated PV/load.

@@ -336,6 +336,52 @@ py analyze_plant_roi.py --input roi/abeetha-device-data-365days.csv --customer "
 
 ---
 
+### UC12: PH1000 Inverter Live Dashboard + Battery BMS
+
+Live GitHub Pages dashboard for the **MUST PH1000** hybrid inverter (Mifanza "Mifanza 5KW" plant),
+with **true battery SOC** read directly from the cracked **Hystorix/PACEEX BMS** cloud API.
+
+**Implementation Status:** ✅ **IMPLEMENTED** (Session 16)
+
+**Live dashboard:** <https://ktronicsdev.github.io/IoTDeviceMonitor/site/ph1000/>
+(dark theme, energy-flow animation, per-day/per-month charts, Battery Profile pane, login-gated).
+
+**Architecture (isolated from main monitoring):**
+
+- [`trigger-ph1000.yml`](.github/workflows/trigger-ph1000.yml) publishes `ph1000_live.json` to a
+  dedicated **`ph1000-live` branch** (rolling force-push) — it **never commits to `main`**, so it
+  never triggers the ShineMonitor/DessMonitor workflows (no email spam / wasted CI).
+- The dashboard (served from `main` at `site/ph1000/`) fetches that JSON via
+  `raw.githubusercontent.com` and self-refreshes every 60 s.
+- Refresh cadence: a local **Windows Task Scheduler** job (`PH1000Refresh`, every 10 min) runs
+  `gh workflow run` — reliable where GitHub's `*/5` cron is throttled.
+
+**Inverter data ([`check_ph1000.py`](src/main/java/org/ktronics/scripts/check_ph1000.py)):**
+
+- ShineMonitor mis-parses devcode 697, so only verified fields are used: Battery Voltage,
+  Charger Current/Power (= **real** battery current/power), PInverter, work state.
+- Energy balance is **estimated** (flagged): `PV = PInverter`,
+  `Load = max(0, PInverter + ChargerPower − 40 W)` (40 W inverter self-use).
+
+**Battery BMS ([`check_ph1000_bms.py`](src/main/java/org/ktronics/scripts/check_ph1000_bms.py)):**
+
+- True per-pack telemetry (B1 master + B2 slave): SOC, voltage, signed current, SOH, capacity,
+  cycles, cells, temps — via the reverse-engineered Aliyun IoT / PACEEX API
+  (full write-up: [README_BMS.md](src/main/java/org/ktronics/scripts/README_BMS.md)).
+- **Live SOC = average(B1, B2)**. If the BMS session token expires the fetcher fails soft
+  (`ok:false`) → dashboard hides the Battery Profile pane and falls back to a voltage-based SOC.
+
+**Module docs:**
+
+- [README_PH1000.md](src/main/java/org/ktronics/scripts/README_PH1000.md) — inverter field map,
+  derivation rules, MUST Modbus reference.
+- [README_BMS.md](src/main/java/org/ktronics/scripts/README_BMS.md) — how the Hystorix BMS cloud
+  API was cracked (ADB root, Frida SSL-unpinning, Aliyun APIGW signing, `WIFI_Band` decode).
+
+**Test Coverage:** 21/21 PASSED (100%) — `test_ph1000.py`
+
+---
+
 ## Bug Fixes
 
 ### UC9: Hash Timestamp Bug (Session 14)
@@ -527,6 +573,8 @@ Configure these in GitHub Settings > Secrets:
 
 - `SHINEMONITOR_CREDENTIALS_JSON`: ShineMonitor account credentials
 - `DESSMONITOR_CREDENTIALS_JSON`: DessMonitor account credentials (UC10)
+- `BMS_IOT_TOKEN`: PH1000 battery BMS session token — Aliyun IoT (UC12; refresh when expired)
+- `BMS_APPSECRET`: PH1000 BMS Aliyun API-Gateway app secret (UC12)
 - `SMTP_HOST`: SMTP server (e.g., smtp.gmail.com)
 - `SMTP_PORT`: SMTP port (e.g., 587)
 - `SMTP_USER`: Email address for sending
@@ -559,6 +607,7 @@ Default thresholds in `check_anomaly.py`:
 ├── .github/workflows/
 │   ├── trigger-shinemonitor.yml       # ShineMonitor monitoring (6x daily)
 │   ├── trigger-dessmonitor.yml        # DessMonitor monitoring (6x daily) - UC10
+│   ├── trigger-ph1000.yml             # PH1000 live dashboard + BMS (~10 min) - UC12
 │   └── trigger-customer-reports.yml   # Weekly reports (Sunday)
 ├── src/main/java/org/ktronics/
 │   ├── config/
@@ -602,7 +651,13 @@ Default thresholds in `check_anomaly.py`:
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 231 tests (100% pass rate)
+#### Test Coverage: 252 tests (100% pass rate)
+
+**PH1000 Inverter + BMS (21 tests):**
+
+| Suite | Tests | Status |
+| ----- | ----- | ------ |
+| UC12 (PH1000 + BMS) | 21 | PASSED |
 
 **ShineMonitor (119 tests):**
 
