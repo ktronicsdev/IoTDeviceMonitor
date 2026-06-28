@@ -75,7 +75,14 @@ def _octet_call(path, d, api_ver, iot_token):
 
 
 def decode_wifi_band(hexstr):
-    """Decode the 16S-LFP `WIFI_Band` BMS frame (offsets validated against the live app)."""
+    """Decode the 16S-LFP `WIFI_Band` BMS frame.
+
+    Offsets validated byte-for-byte against the live PACEEX app ("Summary data"):
+    a fresh B1 frame decoded to SOC 80, 53.77 V, cycles 1, cells 3361/3357 mV,
+    temps 34.7/34.1 C, remaining 80.0 Ah — all matching the app. The tail holds
+    ``01 <cell-addr> <u16 value>`` records (addr 9/16 = high/low cell mV,
+    addr 2/4 = max/min temp in 0.1 K, => (raw-2730)/10 C).
+    """
     b = bytes.fromhex(hexstr)
     if len(b) < 60:
         return None
@@ -91,8 +98,7 @@ def decode_wifi_band(hexstr):
         "designed_ah": round(u16(27) / 100.0, 2),
         "soc": b[29],                                # %
         "soh": b[30],                                # %
-        "cycles": u16(31),
-        "packs_parallel": u16(33),
+        "cycles": u16(33),                           # @33 (the @31 next to it is reserved/0)
         "high_cell_mv": u16(45),
         "low_cell_mv": u16(49),
         "max_temp": round((u16(53) - 2730) / 10.0, 1),  # °C

@@ -116,12 +116,6 @@
   <!-- Live -->
   <div class="card"><div class="ch"><h2>Live</h2></div><div class="metrics" id="metrics"></div></div>
 
-  <!-- Battery Profile (BMS) — shown only when the BMS token is valid -->
-  <div class="card full" id="bmscard" style="display:none">
-    <div class="ch"><h2>Battery Profile</h2><span class="sel" style="color:var(--muted)">live BMS · Hystorix</span></div>
-    <div id="bmsbody" style="display:grid;grid-template-columns:1fr 1fr;gap:14px"></div>
-  </div>
-
   <!-- Power Profile (per day) -->
   <div class="card full">
     <div class="ch"><h2>Power Profile</h2>
@@ -134,6 +128,12 @@
     <div class="ch"><h2>Generation &amp; Usage History</h2>
       <div class="sel"><button id="hm_prev">‹</button><span class="d" id="hm_month">—</span><button id="hm_next">›</button></div></div>
     <canvas id="hist"></canvas>
+  </div>
+
+  <!-- Battery Profile (BMS) — shown only when the BMS token is valid -->
+  <div class="card full" id="bmscard" style="display:none">
+    <div class="ch"><h2>Battery Profile</h2><span class="sel" style="color:var(--muted)">live BMS · Hystorix</span></div>
+    <div id="bmsbody" style="display:grid;grid-template-columns:1fr 1fr;gap:14px"></div>
   </div>
 </div>
 <div class="foot" style="display:flex;justify-content:space-between;align-items:center;gap:14px">

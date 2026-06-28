@@ -171,8 +171,30 @@ class TestBMSDecode:
         assert d["remaining_ah"] == 54.87
         assert d["full_ah"] == 100.0
         assert d["current"] == 11.57
-        assert d["cycles"] == 0
+        assert d["cycles"] == 1                   # u16@33 (was mis-read at @31)
         assert d["state"] == "charging"          # current > 0
+        assert d["high_cell_mv"] == 3349
+        assert d["low_cell_mv"] == 3345
+        assert d["max_temp"] == 33.3
+        assert d["min_temp"] == 33.1
+
+    # second frame, captured live with the PACEEX "Summary data" screen open:
+    # app showed SOC 80, cycles 1, remaining 79.76 Ah, cells 3355/3352 mV, temps 34.7/34.1 C.
+    FRAME2 = ("9A00000A0000003301000003CE0000150100001F420000271000002710506400000001"
+              "000000000000000001090D2101100D1D01020C0501040BFF041E9D")
+
+    def test_decode_wifi_band_live_groundtruth(self):
+        d = bms.decode_wifi_band(self.FRAME2)
+        assert d["soc"] == 80                     # app: SOC 80%
+        assert d["soh"] == 100                    # app: SOH 100%
+        assert d["cycles"] == 1                   # app: Cycles 1
+        assert d["full_ah"] == 100.0
+        assert d["designed_ah"] == 100.0
+        assert d["high_cell_mv"] == 3361          # app: 3355 mV (drifts slightly between samples)
+        assert d["low_cell_mv"] == 3357           # app: 3352 mV
+        assert d["max_temp"] == 34.7              # app: 34.7 C
+        assert d["min_temp"] == 34.1              # app: 34.1 C
+        assert d["state"] == "charging"
 
     def test_decode_short_frame_returns_none(self):
         assert bms.decode_wifi_band("9A00") is None

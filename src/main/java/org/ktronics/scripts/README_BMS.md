@@ -106,10 +106,12 @@ The `octet-stream` bodies also set `Content-MD5 = base64(md5(body))` and a
 
 ## 5. `WIFI_Band` hex decode (16S LFP frame) — **fully validated**
 
-The telemetry is a big-endian hex frame. Every offset below was decoded in
-[`check_ph1000_bms.py`](check_ph1000_bms.py) (`decode_wifi_band`) and verified field-by-field
-against the live PACEEX app readout (B1: SOC 59 %, 53.53 V, +7.07 A; B2: SOC 55 %, 53.62 V,
-SOH 100 %, 100 Ah). A regression test pins these offsets ([`test_ph1000.py`](../../../../../test/java/org/ktronics/scripts/integration/test_ph1000.py) `TestBMSDecode`).
+The telemetry is a 62-byte big-endian hex frame. Every offset below was decoded in
+[`check_ph1000_bms.py`](check_ph1000_bms.py) (`decode_wifi_band`) and verified **byte-for-byte
+against a live capture**: with the PACEEX "Summary data" screen open, a fresh B1 frame
+(`9A…506400000001…090D2101100D1D01020C0501040BFF…`) decoded to SOC 80, 53.77 V, cycles 1,
+remaining 80.0 Ah, cells 3361/3357 mV, temps 34.7/34.1 °C — matching the app exactly. Two
+regression tests pin these offsets ([`test_ph1000.py`](../../../../../test/java/org/ktronics/scripts/integration/test_ph1000.py) `TestBMSDecode`).
 
 | Field | Location | Scale / encoding |
 |---|---|---|
@@ -120,10 +122,8 @@ SOH 100 %, 100 Ah). A regression test pins these offsets ([`test_ph1000.py`](../
 | Designed capacity | uint16 @ 27 | ÷100 → Ah |
 | **SOC** | byte @ 29 | % |
 | **SOH** | byte @ 30 | % |
-| **Cycle count** | uint16 @ 31 | count |
-| Packs in parallel | uint16 @ 33 | count |
-| High / low cell | uint16 @ 45 / 49 | mV |
-| Max / min temp | uint16 @ 53 / 57 | `(raw − 2730) ÷ 10` → °C (0.1 K units) |
+| **Cycle count** | uint16 @ **33** | count (the word @31 next to it is reserved/0) |
+| Tail: cell + temp records | `01 <addr> <u16>` from @44 | high/low cell mV @45/49 (addr 9/16); max/min temp @53/57 (addr 2/4), `(raw−2730)÷10` → °C |
 
 Frames shorter than 60 bytes decode to `None` (treated as no-data).
 
