@@ -51,12 +51,6 @@
   </div>
 </header>
 
-<div class="note">
-  ShineMonitor's cloud telemetry for this inverter is partly mis-mapped. Battery V/A/W and PInverter
-  are <b>measured</b>; PV &amp; Load power are <b>estimated</b> from the energy balance; SOC is not
-  available from the cloud (needs the BMS).
-</div>
-
 <div class="grid" id="cards"></div>
 
 <div class="chartwrap">
@@ -112,7 +106,6 @@ function render(d){
     card('PV Power', L.pv_power_w_est&&L.pv_power_w_est.value, 'W', {est:true}),
     card('Load Power', L.load_power_w_est&&L.load_power_w_est.value, 'W', {est:true}),
     card('PInverter', L.pinverter_w&&L.pinverter_w.value, 'W'),
-    card('Work State', L.work_state&&L.work_state.value, ''),
     card('Battery SOC', null, '', {na:'needs BMS'}),
   ];
   document.getElementById('cards').innerHTML = cards.join('');
