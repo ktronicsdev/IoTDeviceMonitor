@@ -366,14 +366,22 @@ function renderBMS(){
   if(!b||!b.ok||!(b.packs||[]).length){ card.style.display='none'; return; }   // token expired -> hide
   card.style.display='';
   const sc=s=>s==='charging'?'charging':s==='discharging'?'discharging':'';
-  document.getElementById('bmsbody').innerHTML=b.packs.map(p=>`
-    <div class="m" style="padding:16px">
+  document.getElementById('bmsbody').innerHTML=b.packs.map(p=>{
+    const age=ageMin(p.reported_ms);            // minutes old, or null
+    const stale = age!=null && age>120;          // >2 h => datalogger effectively offline
+    const lag   = age!=null && age>20;
+    const barBg = stale ? '#3a4150' : 'linear-gradient(90deg,#22c55e,#16a34a)';
+    const note  = age==null ? '' :
+      `data as of ${slClock(p.reported_ms)} SL · ${Math.round(age)} min ago` +
+      (stale ? ' · STALE — datalogger offline' : lag ? ' · datalogger lagging' : '');
+    return `
+    <div class="m" style="padding:16px;${stale?'opacity:.55':''}">
       <div style="display:flex;justify-content:space-between;align-items:baseline">
-        <div style="font-weight:700;font-size:15px">${p.name} <span style="color:var(--muted);font-size:11px;font-weight:500">${p.role||''}</span></div>
-        <div style="font-size:26px;font-weight:800">${p.soc}<small style="font-size:13px;color:var(--muted)">%</small></div>
+        <div style="font-weight:700;font-size:15px">${p.name} <span style="color:var(--muted);font-size:11px;font-weight:500">${p.role||''}</span>${stale?' <span style="color:var(--red);font-size:10px;border:1px solid var(--red);border-radius:6px;padding:0 5px;vertical-align:middle">STALE</span>':''}</div>
+        <div style="font-size:26px;font-weight:800;${stale?'color:var(--muted)':''}">${p.soc}<small style="font-size:13px;color:var(--muted)">%</small></div>
       </div>
       <div style="height:6px;background:#222c3b;border-radius:4px;margin:9px 0;overflow:hidden">
-        <div style="height:100%;width:${Math.max(0,Math.min(100,p.soc))}%;background:linear-gradient(90deg,#22c55e,#16a34a)"></div></div>
+        <div style="height:100%;width:${Math.max(0,Math.min(100,p.soc))}%;background:${barBg}"></div></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px 16px;font-size:12.5px;margin-top:8px">
         <div>Voltage <b>${p.voltage} V</b></div>
         <div>Current <b class="${sc(p.state)}">${p.current} A</b></div>
@@ -384,8 +392,8 @@ function renderBMS(){
         <div>Temperature <b>${p.min_temp}–${p.max_temp} °C</b></div>
         <div>Cells <b>${p.low_cell_mv}–${p.high_cell_mv} mV</b></div>
       </div>
-      ${p.reported_ms?`<div style="font-size:11px;margin-top:9px;color:${ageMin(p.reported_ms)>15?'var(--amber)':'var(--muted)'}">data as of ${slClock(p.reported_ms)} SL · ${Math.round(ageMin(p.reported_ms))} min ago${ageMin(p.reported_ms)>20?' · datalogger lagging':''}</div>`:''}
-    </div>`).join('');
+      ${age!=null?`<div style="font-size:11px;margin-top:9px;color:${stale?'var(--red)':lag?'var(--amber)':'var(--muted)'}">${note}</div>`:''}
+    </div>`;}).join('');
 }
 async function load(){
   try{ const j=await fetchData();
