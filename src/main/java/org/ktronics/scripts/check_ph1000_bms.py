@@ -132,8 +132,11 @@ def fetch_pack(pack, iot_token):
     resp = _octet_call("/thing/properties/get", {"iotId": pack["iotId"]}, "1.0.0", iot_token)
     if resp.get("code") != 200:
         raise RuntimeError("API code %s" % resp.get("code"))
-    wb = resp["data"]["WIFI_Band"]["value"]
-    data = decode_wifi_band(wb)
+    wb = resp["data"]["WIFI_Band"]
+    data = decode_wifi_band(wb["value"])
+    # `time` = when the pack's datalogger last pushed this frame (epoch ms). Packs report at
+    # different rates (B2 lags ~20-30 min), so surface it; the dashboard shows the data's age.
+    data["reported_ms"] = int(wb.get("time", 0)) or None
     data.update({"name": pack["name"], "role": pack["role"], "iotId": pack["iotId"]})
     return data
 

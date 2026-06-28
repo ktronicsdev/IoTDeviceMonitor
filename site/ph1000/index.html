@@ -241,6 +241,10 @@ function dailyEnergy(points){ // integrate W -> kWh
 
 const minOfDay = t => { const [h,m]=String(t).slice(11,16).split(':').map(Number); return (h||0)*60+(m||0); };
 const hhmm = v => { v=Math.round(v); return String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart(2,'0'); };
+const ageMin = ms => ms? (Date.now()-ms)/60000 : null;
+const slClock = ms => { const p=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Colombo',
+  hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).formatToParts(new Date(ms)).map(x=>[x.type,x.value]));
+  return `${p.hour}:${p.minute}:${p.second}`; };
 // Fixed full-day X axis (00:00-23:59) so the chart always shows the whole day.
 const DAY_X = {type:'linear',min:0,max:1440,offset:false,
   ticks:{color:'#8a94a6',stepSize:120,callback:hhmm,autoSkip:false},grid:{color:'#222c3b'}};
@@ -368,7 +372,9 @@ function renderBMS(){
         <div>Cycles <b>${p.cycles}</b></div>
         <div>Temperature <b>${p.min_temp}–${p.max_temp} °C</b></div>
         <div>Cells <b>${p.low_cell_mv}–${p.high_cell_mv} mV</b></div>
-      </div></div>`).join('');
+      </div>
+      ${p.reported_ms?`<div style="font-size:11px;margin-top:9px;color:${ageMin(p.reported_ms)>15?'var(--amber)':'var(--muted)'}">data as of ${slClock(p.reported_ms)} SL · ${Math.round(ageMin(p.reported_ms))} min ago${ageMin(p.reported_ms)>20?' · datalogger lagging':''}</div>`:''}
+    </div>`).join('');
 }
 async function load(){
   try{ const r=await fetch(DATA_URL+'?t='+Date.now(),{cache:'no-store'}); DATA=await r.json();
