@@ -221,7 +221,7 @@ def charge_state(battery_w):
     return "idle"
 
 
-INVERTER_SELF_USE_W = 40  # the PH1000's own standby/conversion draw (~40 W, per field obs.)
+INVERTER_SELF_USE_W = 10  # the PH1000's own self-power draw (~10 W, per field obs.)
 
 
 def derive_energy_balance(battery_w, pinverter_w):
@@ -232,8 +232,8 @@ def derive_energy_balance(battery_w, pinverter_w):
       * PInverter  > 0 -> PV powers the house, split between battery + load
                           -> load = PInverter - ChargerPower, PV ~= PInverter.
     Both cases unify to load = PInverter - ChargerPower, minus the inverter's own
-    ~40 W self-use, clamped >= 0. These are ESTIMATES (the cloud's own PV/PLoad
-    columns are broken); flag them as such.
+    ~10 W self-use, clamped >= 0. PV is taken as PInverter (confirmed = PV power).
+    These are ESTIMATES (the cloud's own PV/PLoad columns are broken); flag as such.
     """
     cp = _to_float(battery_w)
     pinv = _to_float(pinverter_w)
