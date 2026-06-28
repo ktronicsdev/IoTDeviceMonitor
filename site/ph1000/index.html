@@ -263,6 +263,14 @@ function renderLive(){
     (bmsAvgSoc()!=null
       ? card('Battery SOC', bmsAvgSoc()+' <small>%</small>', 'BMS')
       : card('Battery SOC',(socFromV(bv)??'—')+' <small>%</small><span class="est">est</span>','')),
+    `<div class="m" style="display:flex;align-items:center;justify-content:center;padding:14px">
+      <svg viewBox="0 0 360 120" style="width:100%;max-height:62px" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ktronics">
+        <rect x="40" y="12" width="316" height="96" rx="13" fill="#2AA9E1"/>
+        <polygon points="6,12 52,12 30,60 52,108 6,108 28,60" fill="#F7941D"/>
+        <polygon points="60,60 104,12 140,12 86,60 140,108 104,108" fill="#fff"/>
+        <text x="150" y="80" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="46" fill="#fff" letter-spacing="3">TRONICS</text>
+      </svg>
+    </div>`,
   ].join('');
   document.getElementById('foot').textContent=`${(DATA.series7d||[]).length} points · PV & Load are energy-balance estimates · generated ${DATA.last_updated}`;
 }
