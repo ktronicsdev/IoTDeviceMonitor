@@ -251,6 +251,75 @@ def status_label(status):
     return "Online" if str(status) == "0" else f"Offline ({status})"
 
 
+# Sri Lanka import tariff used for the "Gains" metric (Rs 25 per imported unit/kWh).
+GAINS_LKR_PER_KWH = 25.0
+CO2_KG_PER_KWH = 0.997  # ShineMonitor plant profit factor for this plant
+
+
+def get_plant_info(token, secret, plant_id):
+    """Plant profile (name, nominal power, CO2 factor, location, install date)."""
+    resp = api_call(token, secret, "queryPlantInfo", f"plantid={plant_id}")
+    return resp.get("dat", {}) if resp.get("err") == 0 else {}
+
+
+def energy_by_date_kwh(series):
+    """Integrate PV power (PInverter) and load estimate into kWh per calendar date.
+
+    ShineMonitor's accumulated energy counters are frozen at 0 for this PH1000, so we
+    reconstruct generation by integrating the 5-min power samples (trapezoid, gaps capped
+    at 15 min). Returns ({date: pv_kwh}, {date: load_kwh}).
+    """
+    from collections import defaultdict
+    pv_wh, load_wh = defaultdict(float), defaultdict(float)
+    prev = None
+    for r in sorted(series, key=lambda x: str(x.get("timestamp", ""))):
+        ts = str(r.get("timestamp", ""))
+        try:
+            dt = datetime.strptime(ts[:19], "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            continue
+        pv = _to_float(r.get("pinverter_w")) or 0.0
+        load = _to_float(r.get("load_power_w_est")) or 0.0
+        if prev is not None:
+            dh = (dt - prev[0]).total_seconds() / 3600.0
+            if 0 < dh <= 0.25:                       # cap gaps so outages don't inflate
+                d = prev[0].strftime("%Y-%m-%d")
+                pv_wh[d] += prev[1] * dh
+                load_wh[d] += prev[2] * dh
+        prev = (dt, pv, load)
+    return ({d: v / 1000.0 for d, v in pv_wh.items()},
+            {d: v / 1000.0 for d, v in load_wh.items()})
+
+
+def build_plant_block(plant_info, series):
+    """Plant Profile block: profile + computed energy (daily/month/year/logged total) + gains."""
+    pv_kwh, load_kwh = energy_by_date_kwh(series)
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    ym, yr = today[:7], today[:4]
+    daily = round(pv_kwh.get(today, 0.0), 1)
+    monthly = round(sum(v for d, v in pv_kwh.items() if d.startswith(ym)), 1)
+    yearly = round(sum(v for d, v in pv_kwh.items() if d.startswith(yr)), 1)
+    total = round(sum(pv_kwh.values()), 1)            # logged window only (no cloud lifetime)
+    profit = (plant_info or {}).get("profit", {}) or {}
+    co2_factor = _to_float(profit.get("co2")) or CO2_KG_PER_KWH
+    addr = (plant_info or {}).get("address", {}) or {}
+    return {
+        "name": (plant_info or {}).get("name", "Mifanza Solar System"),
+        "nominal_power_kw": _to_float((plant_info or {}).get("nominalPower")),
+        "design_company": (plant_info or {}).get("designCompany"),
+        "install": (plant_info or {}).get("install"),
+        "country": addr.get("country"),
+        "energy": {"daily": daily, "monthly": monthly, "yearly": yearly, "total": total,
+                   "logged_from_days": len(pv_kwh)},
+        "load_daily": round(load_kwh.get(today, 0.0), 1),
+        "gains_lkr": round(total * GAINS_LKR_PER_KWH, 1),
+        "gains_rate": GAINS_LKR_PER_KWH,
+        "co2_t": round(total * co2_factor / 1000.0, 2),
+        "energy_note": "Daily/period energy integrated from PInverter (PV power); the cloud's "
+                       "accumulated counters are frozen so there is no lifetime total.",
+    }
+
+
 def safe_slug(text):
     s = "".join(ch if ch.isalnum() else "-" for ch in str(text).lower())
     while "--" in s:
@@ -474,7 +543,7 @@ def load_measured_history(data_dir, label, device):
     return rows
 
 
-def write_json(json_out, device, last_update, latest_fields, series):
+def write_json(json_out, device, last_update, latest_fields, series, plant_block=None):
     # Add energy-balance estimates to the live snapshot (clearly flagged estimated).
     latest_fields = dict(latest_fields)
     pv, load = derive_energy_balance(
@@ -500,6 +569,8 @@ def write_json(json_out, device, last_update, latest_fields, series):
                        "for this PH1000; PV power, load power and SOC are not exposed.",
         "last_updated": datetime.now(timezone.utc).isoformat(),
     }
+    if plant_block:
+        payload["plant"] = plant_block
     Path(json_out).parent.mkdir(parents=True, exist_ok=True)
     with open(json_out, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, default=str)
@@ -545,8 +616,12 @@ def process_account(token, secret, label, args):
     measured_rows = load_measured_history(args.data_dir, label, device)
     series = merge_series(history_rows, measured_rows)
 
+    plant_block = build_plant_block(get_plant_info(token, secret, plant.get("pid")), series)
+    print(f"  Plant: {plant_block['name']} | today {plant_block['energy']['daily']} kWh | "
+          f"logged total {plant_block['energy']['total']} kWh | gains Rs {plant_block['gains_lkr']}")
+
     if args.json_out:
-        write_json(args.json_out, device, last_update, latest, series)
+        write_json(args.json_out, device, last_update, latest, series, plant_block)
         print(f"  Wrote dashboard JSON -> {args.json_out} "
               f"(latest={len(latest)} fields, series={len(series)} points)")
     return 0

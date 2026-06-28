@@ -51,6 +51,38 @@
   canvas{max-height:330px}
   .foot{max-width:1280px;margin:0 auto 26px;padding:0 18px;color:var(--muted);font-size:11px}
   @media(max-width:880px){.wrap{grid-template-columns:1fr}}
+
+  /* tabs */
+  .tabs{max-width:1280px;margin:14px auto 0;padding:0 18px;display:flex;gap:6px;flex-wrap:wrap}
+  .tabs button{background:#141c28;border:1px solid var(--line);color:#9fb3d1;border-radius:9px;
+    padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer}
+  .tabs button.active{background:#2563eb;border-color:#2563eb;color:#fff}
+  .tabpane{display:none} .tabpane.show{display:grid}
+  /* plant profile metric cards */
+  .pgrid{max-width:1280px;margin:16px auto;padding:0 18px;display:grid;
+    grid-template-columns:repeat(4,1fr);gap:16px}
+  @media(max-width:880px){.pgrid{grid-template-columns:repeat(2,1fr)}}
+  .pcard{border-radius:14px;padding:18px 18px 20px;color:#fff;min-height:118px;
+    display:flex;flex-direction:column;justify-content:space-between}
+  .pcard.energy{background:linear-gradient(135deg,#ef6a63,#e2554d)}
+  .pcard.benefit{background:linear-gradient(135deg,#3bb5b0,#2aa39d)}
+  .pcard .ph{display:flex;align-items:center;gap:9px;font-size:13px;opacity:.95}
+  .pcard .ph svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:1.7;opacity:.95}
+  .pcard .pv{font-size:26px;font-weight:800;margin-top:6px}
+  .pinfo{max-width:1280px;margin:0 auto 8px;padding:0 18px;color:var(--muted);font-size:12.5px;
+    display:flex;gap:18px;flex-wrap:wrap}
+  .pinfo b{color:#c2ccdb}
+  /* plant analysis param chips */
+  .params{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:#1a2230;border:1px solid var(--line);
+    border-radius:16px;padding:4px 6px 4px 11px;font-size:12px;color:#c2ccdb}
+  .chip i{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .chip button{background:none;border:0;color:#8a94a6;cursor:pointer;font-size:14px;line-height:1;padding:0 2px}
+  .chip.add{cursor:pointer;color:#7dd3fc;border-style:dashed} .chip.add:hover{background:#1e2737}
+  .addmenu{background:#141c28;border:1px solid var(--line);border-radius:10px;padding:6px;
+    display:none;position:absolute;z-index:20;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+  .addmenu div{padding:7px 10px;border-radius:7px;cursor:pointer;font-size:13px;color:#c2ccdb}
+  .addmenu div:hover{background:#1e2737}
 </style>
 </head>
 <body>
@@ -70,10 +102,16 @@
   <h1>Mifanza 5KW <span id="alias" style="color:var(--muted);font-weight:500"></span></h1>
   <span id="status"><span class="dot off"></span>—</span>
   <span class="pill" id="pn"></span>
-  <span class="upd" id="upd">—</span>
+  <span class="upd" id="sltime" style="margin-left:auto">Actual time (SL): —</span>
+  <span class="upd" id="upd" style="margin-left:14px">—</span>
 </header>
+<nav class="tabs">
+  <button data-tab="live" class="active">Live</button>
+  <button data-tab="profile">Plant Profile</button>
+  <button data-tab="analysis">Plant Analysis</button>
+</nav>
 
-<div class="wrap">
+<div class="wrap tabpane show" id="tab-live">
   <!-- Flow Graph -->
   <div class="card">
     <div class="ch"><h2>Flow Graph</h2></div>
@@ -136,6 +174,25 @@
     <div id="bmsbody" style="display:grid;grid-template-columns:1fr 1fr;gap:14px"></div>
   </div>
 </div>
+
+<!-- ===== Plant Profile tab ===== -->
+<div class="tabpane" id="tab-profile" style="display:none">
+  <div class="pinfo" id="plantinfo"></div>
+  <div class="pgrid" id="plantcards"></div>
+</div>
+
+<!-- ===== Plant Analysis tab ===== -->
+<div class="tabpane" id="tab-analysis" style="display:none">
+  <div class="wrap" style="margin-bottom:0">
+    <div class="card full">
+      <div class="ch"><h2>Plant Analysis</h2>
+        <div class="sel"><button id="an_prev">‹</button><span class="d" id="an_date">—</span><button id="an_next">›</button></div></div>
+      <div class="params" id="anparams" style="margin:4px 0 12px;position:relative"></div>
+      <canvas id="anchart"></canvas>
+    </div>
+  </div>
+</div>
+
 <div class="foot" style="display:flex;justify-content:space-between;align-items:center;gap:14px">
   <span id="foot"></span><span style="white-space:nowrap">© Ktronics (Pvt) Ltd</span></div>
 
@@ -182,6 +239,12 @@ function dailyEnergy(points){ // integrate W -> kWh
   return {prod:prod/1000,cons:cons/1000,chg:chg/1000,dis:dis/1000};
 }
 
+const minOfDay = t => { const [h,m]=String(t).slice(11,16).split(':').map(Number); return (h||0)*60+(m||0); };
+const hhmm = v => { v=Math.round(v); return String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart(2,'0'); };
+// Fixed full-day X axis (00:00-23:59) so the chart always shows the whole day.
+const DAY_X = {type:'linear',min:0,max:1440,offset:false,
+  ticks:{color:'#8a94a6',stepSize:120,callback:hhmm,autoSkip:false},grid:{color:'#222c3b'}};
+
 function renderProfile(){
   if(!DATA) return;
   const g=groupDays(DATA.series7d||[]);
@@ -191,20 +254,21 @@ function renderProfile(){
   document.getElementById('pp_date').textContent=day;
   const pts=(g[day]||[]).slice().sort((a,b)=>a.timestamp<b.timestamp?-1:1);
   const ds=(label,key,color,o={})=>({label,
-     data:pts.map(r=>key==='__zero__'?0:(key==='__na__'?null:num(r[key]))),borderColor:color,
+     data:pts.map(r=>({x:minOfDay(r.timestamp),y:key==='__zero__'?0:num(r[key])})),borderColor:color,
      backgroundColor:color,borderWidth:1.5,pointRadius:0,tension:.25,spanGaps:true,borderDash:o.dash||[],yAxisID:o.axis||'y'});
-  const cfg={type:'line',data:{labels:pts.map(r=>String(r.timestamp).slice(11,16)),datasets:[
+  const cfg={type:'line',data:{datasets:[
      ds('PV','pinverter_w','#22c55e'),ds('Battery','battery_w','#3b82f6'),
      ds('Grid','__zero__','#ec4899'),ds('Consumption','load_power_w_est','#eab308'),
-     {label:'SOC',data:pts.map(r=>socFromV(num(r.battery_v))),borderColor:'#1e3a8a',
+     {label:'SOC',data:pts.map(r=>({x:minOfDay(r.timestamp),y:socFromV(num(r.battery_v))})),borderColor:'#1e3a8a',
       backgroundColor:'#1e3a8a',borderWidth:1.5,pointRadius:0,tension:.25,spanGaps:true,
       borderDash:[4,4],yAxisID:'y1'}]},
    options:{responsive:true,interaction:{mode:'index',intersect:false},
-     scales:{x:{ticks:{color:'#8a94a6',maxTicksLimit:9},grid:{color:'#222c3b'}},
+     scales:{x:DAY_X,
        y:{position:'left',title:{display:true,text:'Power (W)',color:'#8a94a6'},ticks:{color:'#8a94a6'},grid:{color:'#222c3b'}},
        y1:{position:'right',min:0,max:100,grid:{drawOnChartArea:false},title:{display:true,text:'SOC %',color:'#8a94a6'},ticks:{color:'#8a94a6',callback:v=>v+'%'}}},
-     plugins:{legend:{labels:{color:'#aeb9cb',usePointStyle:false,boxWidth:9,boxHeight:9,font:{size:11}}}}}};
-  if(chart){chart.data=cfg.data;chart.update();} else chart=new Chart(document.getElementById('chart'),cfg);
+     plugins:{legend:{labels:{color:'#aeb9cb',usePointStyle:false,boxWidth:9,boxHeight:9,font:{size:11}}},
+       tooltip:{callbacks:{title:i=>i.length?hhmm(i[0].parsed.x):''}}}}};
+  if(chart){chart.data=cfg.data;chart.options=cfg.options;chart.update();} else chart=new Chart(document.getElementById('chart'),cfg);
 }
 
 function renderHistory(){
@@ -308,9 +372,117 @@ function renderBMS(){
 }
 async function load(){
   try{ const r=await fetch(DATA_URL+'?t='+Date.now(),{cache:'no-store'}); DATA=await r.json();
-       renderLive(); renderBMS(); renderProfile(); renderHistory(); }
+       renderLive(); renderBMS(); renderProfile(); renderHistory();
+       if(curTab==='profile') renderProfilePane(); if(curTab==='analysis') renderAnalysis(); }
   catch(e){ document.getElementById('foot').textContent='load error: '+e; }
 }
+
+/* ---- Sri Lanka actual time (Asia/Colombo), ticking every second ---- */
+function tickSL(){
+  const p=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Colombo',
+    year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',
+    hour12:false}).formatToParts(new Date()).map(x=>[x.type,x.value]));
+  const el=document.getElementById('sltime');
+  if(el) el.textContent=`Actual time (SL): ${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}`;
+}
+setInterval(tickSL,1000); tickSL();
+
+/* ---- tabs ---- */
+let curTab='live';
+function switchTab(name){
+  curTab=name;
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+  document.getElementById('tab-live').style.display    = name==='live'?'grid':'none';
+  document.getElementById('tab-profile').style.display = name==='profile'?'block':'none';
+  document.getElementById('tab-analysis').style.display= name==='analysis'?'block':'none';
+  if(name==='profile') renderProfilePane();
+  if(name==='analysis') renderAnalysis();
+}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+
+/* ---- Plant Profile pane ---- */
+const ICON={
+  daily:'<svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 4 5-7 4 5"/><path d="M3 21h18"/></svg>',
+  month:'<svg viewBox="0 0 24 24"><rect x="4" y="9" width="3" height="9"/><rect x="10.5" y="5" width="3" height="13"/><rect x="17" y="12" width="3" height="6"/></svg>',
+  year:'<svg viewBox="0 0 24 24"><path d="M3 18l6-6 4 4 8-9"/><path d="M21 7v5h-5"/></svg>',
+  total:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 12V4M12 12l6 4"/></svg>',
+  gain:'<svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>',
+  co2:'<svg viewBox="0 0 24 24"><path d="M7 18h9a4 4 0 0 0 .5-8 5 5 0 0 0-9.6-1.2A3.6 3.6 0 0 0 7 18z"/></svg>',
+  temp:'<svg viewBox="0 0 24 24"><path d="M12 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/></svg>',
+  sun:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>'};
+function renderProfilePane(){
+  const p=DATA&&DATA.plant;
+  const box=document.getElementById('plantcards');
+  if(!p){ box.innerHTML='<div style="color:var(--muted);padding:24px">No plant data yet — next refresh will populate it.</div>'; document.getElementById('plantinfo').innerHTML=''; return; }
+  const e=p.energy||{};
+  const card=(cls,icon,label,val)=>`<div class="pcard ${cls}"><div class="ph">${icon}<span>${label}</span></div><div class="pv">${val}</div></div>`;
+  box.innerHTML=[
+    card('energy',ICON.daily,'Daily energy',(e.daily??0)+' kWh'),
+    card('energy',ICON.month,'Monthly energy',(e.monthly??0)+' kWh'),
+    card('energy',ICON.year,'Yearly energy',(e.yearly??0)+' kWh'),
+    card('energy',ICON.total,'Total energy (logged)',(e.total??0)+' kWh'),
+    card('benefit',ICON.gain,'Gains',(p.gains_lkr??0).toLocaleString()+' <small style="font-size:14px;opacity:.85">LKR</small>'),
+    card('benefit',ICON.co2,'CO₂ reduced',(p.co2_t??0)+' t'),
+    card('benefit',ICON.temp,'Ambient temperature','— °C'),
+    card('benefit',ICON.sun,'Solar irradiance','— kW/m²'),
+  ].join('');
+  document.getElementById('plantinfo').innerHTML=
+    `<span><b>${p.name||''}</b></span><span>Capacity <b>${p.nominal_power_kw||'—'} kW</b></span>`+
+    `<span>Installer <b>${p.design_company||'—'}</b></span><span>Installed <b>${(p.install||'').slice(0,10)||'—'}</b></span>`+
+    `<span>Location <b>${p.country||'—'}</b></span><span>Tariff <b>Rs ${p.gains_rate||25}/unit</b></span>`+
+    `<span style="opacity:.7">${p.energy_note||''}</span>`;
+}
+
+/* ---- Plant Analysis pane (parameters added per customer via + button) ---- */
+const PARAM_DEFS=[
+  {key:'pinverter_w',     label:'PInverter (W)',      color:'#22c55e',axis:'y'},
+  {key:'load_power_w_est',label:'PLoad (W)',          color:'#3b82f6',axis:'y'},
+  {key:'pv_power_w_est',  label:'PV Power (W)',       color:'#16a34a',axis:'y'},
+  {key:'battery_w',       label:'Charger Power (W)',  color:'#f59e0b',axis:'y'},
+  {key:'battery_v',       label:'Battery Voltage (V)',color:'#22d3ee',axis:'y1'},
+  {key:'battery_a',       label:'Charger Current (A)',color:'#a78bfa',axis:'y1'},
+];
+const AN_KEY='ph1000_an_params_mifanza';
+let anSel=JSON.parse(localStorage.getItem(AN_KEY)||'null')||['load_power_w_est','battery_v'];
+let anDayIdx=null;
+function anDays(){ return Object.keys(groupDays(DATA&&DATA.series7d||[])).sort(); }
+function renderAnParams(){
+  const box=document.getElementById('anparams');
+  const def=k=>PARAM_DEFS.find(p=>p.key===k);
+  let html=anSel.map(k=>{const d=def(k); if(!d)return ''; return `<span class="chip"><i style="background:${d.color}"></i>${d.label}<button data-rm="${k}">×</button></span>`;}).join('');
+  const avail=PARAM_DEFS.filter(p=>!anSel.includes(p.key));
+  html+=`<span class="chip add" id="anadd">+ Add parameter</span>`;
+  html+=`<div class="addmenu" id="anmenu">${avail.map(p=>`<div data-add="${p.key}"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${p.color};margin-right:7px"></span>${p.label}</div>`).join('')||'<div style="color:var(--muted)">all added</div>'}</div>`;
+  box.innerHTML=html;
+  box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{anSel=anSel.filter(x=>x!==b.dataset.rm);saveAn();});
+  const menu=document.getElementById('anmenu'), add=document.getElementById('anadd');
+  add.onclick=e=>{e.stopPropagation();menu.style.display=menu.style.display==='block'?'none':'block';menu.style.left='0';menu.style.top='32px';};
+  menu.querySelectorAll('[data-add]').forEach(d=>d.onclick=()=>{anSel.push(d.dataset.add);saveAn();});
+  document.addEventListener('click',()=>{if(menu)menu.style.display='none';},{once:true});
+}
+function saveAn(){ localStorage.setItem(AN_KEY,JSON.stringify(anSel)); renderAnParams(); renderAnChart(); }
+let anchart=null;
+function renderAnChart(){
+  const g=groupDays(DATA&&DATA.series7d||[]); const ds=anDays();
+  if(!ds.length) return;
+  if(anDayIdx===null||anDayIdx>=ds.length) anDayIdx=ds.length-1;
+  const day=ds[anDayIdx]; document.getElementById('an_date').textContent=day;
+  const pts=(g[day]||[]).slice().sort((a,b)=>a.timestamp<b.timestamp?-1:1);
+  const def=k=>PARAM_DEFS.find(p=>p.key===k);
+  const datasets=anSel.map(k=>{const d=def(k); return d&&{label:d.label,yAxisID:d.axis,borderColor:d.color,backgroundColor:d.color,
+    borderWidth:1.6,pointRadius:0,tension:.25,spanGaps:true,data:pts.map(r=>({x:minOfDay(r.timestamp),y:num(r[k])}))};}).filter(Boolean);
+  const useR=anSel.some(k=>(def(k)||{}).axis==='y1');
+  const cfg={type:'line',data:{datasets},options:{responsive:true,interaction:{mode:'index',intersect:false},
+    scales:{x:DAY_X,
+      y:{position:'left',ticks:{color:'#8a94a6'},grid:{color:'#222c3b'}},
+      y1:{position:'right',display:useR,grid:{drawOnChartArea:false},ticks:{color:'#8a94a6'}}},
+    plugins:{legend:{labels:{color:'#aeb9cb',usePointStyle:false,boxWidth:9,boxHeight:9,font:{size:11}}},
+      tooltip:{callbacks:{title:i=>i.length?hhmm(i[0].parsed.x):''}}}}};
+  if(anchart){anchart.data=cfg.data;anchart.options=cfg.options;anchart.update();} else anchart=new Chart(document.getElementById('anchart'),cfg);
+}
+function renderAnalysis(){ renderAnParams(); renderAnChart(); }
+document.getElementById('an_prev').onclick=()=>{ const n=anDays().length; if(anDayIdx>0){anDayIdx--;renderAnChart();} };
+document.getElementById('an_next').onclick=()=>{ const n=anDays().length; if(anDayIdx<n-1){anDayIdx++;renderAnChart();} };
 document.getElementById('pp_prev').onclick=()=>{ if(dayIdx>0){dayIdx--;renderProfile();} };
 document.getElementById('pp_next').onclick=()=>{ if(dayIdx<days.length-1){dayIdx++;renderProfile();} };
 document.getElementById('hm_prev').onclick=()=>{ monthSel=shiftMonth(monthSel,-1); renderHistory(); };
