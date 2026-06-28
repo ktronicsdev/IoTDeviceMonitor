@@ -145,6 +145,9 @@ def main():
     ap = argparse.ArgumentParser(description="PH1000 BMS fetcher (Hystorix/PACEEX)")
     ap.add_argument("--out", help="write the bms JSON block here")
     ap.add_argument("--token", default=os.environ.get("BMS_IOT_TOKEN", ""))
+    ap.add_argument("--rotated-out", dest="rotated_out",
+                    help="if the refreshToken rotated, write {refreshToken,identityId} JSON here "
+                         "(the workflow persists it back into the GitHub secret — cloud self-renewal)")
     args = ap.parse_args()
 
     out = {"ok": False, "packs": [], "generated": formatdate(usegmt=True)}
@@ -156,8 +159,11 @@ def main():
             token, new_rt = refresh_iot_token(REFRESH_TOKEN, IDENTITY_ID, args.token)
             print("[BMS] iotToken refreshed via checkOrRefreshSession")
             if new_rt and new_rt != REFRESH_TOKEN:
-                # refreshToken rotated — surface it so the operator can update the secret.
-                print("[BMS] NOTE: refreshToken rotated -> update BMS_IOT_REFRESH secret to: %s" % new_rt)
+                # refreshToken rotated — persist it so the next stateless run uses the fresh one.
+                print("[BMS] refreshToken ROTATED -> persisting new value to secret")
+                if args.rotated_out:
+                    with open(args.rotated_out, "w", encoding="utf-8") as f:
+                        json.dump({"refreshToken": new_rt, "identityId": IDENTITY_ID}, f)
         except (urllib.error.HTTPError, urllib.error.URLError, KeyError, RuntimeError) as e:
             print("[BMS] refresh failed (%s) -> falling back to static BMS_IOT_TOKEN" % e)
 

@@ -57,7 +57,8 @@ jobs:
             --history-days 7 2>&1
           # BMS (Hystorix) — true SOC/V/cells; fails soft when the token expires
           # (dashboard then hides the battery pane + falls back to voltage SOC).
-          python3 src/main/java/org/ktronics/scripts/check_ph1000_bms.py --out publish/bms.json 2>&1 || true
+          python3 src/main/java/org/ktronics/scripts/check_ph1000_bms.py --out publish/bms.json \
+            --rotated-out "$GITHUB_WORKSPACE/.bms_rotated.json" 2>&1 || true
           python3 - <<'PY' || true
           import json
           try:
@@ -70,6 +71,25 @@ jobs:
           PY
           cp site/ph1000/index.html publish/index.html 2>/dev/null || true
           exit 0
+
+      - name: Persist rotated BMS refreshToken (Part A — cloud self-renewal, needs GH_PAT)
+        # When the refreshToken rotates, write the new value back into the secret so the next
+        # run uses it — no manual re-harvest. Needs a PAT with Secrets:write (GH_PAT); a no-op
+        # without it or when nothing rotated. .bms_rotated.json lives OUTSIDE publish/ so it is
+        # never force-pushed to the public branch.
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          f="$GITHUB_WORKSPACE/.bms_rotated.json"
+          if [ -z "${GH_TOKEN}" ]; then echo "GH_PAT not set — skipping persist."; exit 0; fi
+          if [ ! -f "$f" ]; then echo "No refreshToken rotation this run — nothing to persist."; exit 0; fi
+          rt=$(python3 -c "import json;print(json.load(open('$f'))['refreshToken'])")
+          id=$(python3 -c "import json;print(json.load(open('$f'))['identityId'])")
+          printf '%s' "$rt" | gh secret set BMS_IOT_REFRESH
+          printf '%s' "$id" | gh secret set BMS_IOT_IDENTITY
+          echo "Persisted rotated refreshToken -> BMS_IOT_REFRESH secret."
 
       - name: Publish to ph1000-live branch (rolling, force-push — no history bloat)
         shell: bash
