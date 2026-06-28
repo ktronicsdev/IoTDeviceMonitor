@@ -54,14 +54,14 @@ class TestColumnMapping:
 
 
 class TestEnergyBalanceDerivation:
-    # PV = PInverter; Load = max(0, PInverter + ChargerPower)  (ChargerPower<0 = charging)
+    # PV = PInverter; Load = max(0, PInverter + ChargerPower - 40W self-use)
     @pytest.mark.parametrize("battery_w,pinverter,exp_pv,exp_load", [
-        (-542, 974, 974, 432),       # user's example: 974 + (-542) = 432
-        (-1806, 2534, 2534, 728),    # midday: PV charging hard, modest load
-        (-707, 1008, 1008, 301),     # afternoon
-        (388, 0, 0, 388),            # night: battery discharges -> load = discharge
+        (-542, 974, 974, 392),       # 974 + (-542) - 40 = 392
+        (-1806, 2534, 2534, 688),    # midday: PV charging hard, modest load
+        (-707, 1008, 1008, 261),     # afternoon
+        (388, 0, 0, 348),            # night: battery discharge - self-use
         (-700, 0, 0, 0),             # grid-charging at night, no PV/load
-        (500, 2000, 2000, 2500),     # PV + battery discharge both feed load
+        (500, 2000, 2000, 2460),     # PV + battery discharge both feed load
     ])
     def test_pv_and_load_estimates(self, battery_w, pinverter, exp_pv, exp_load):
         pv, load = m.derive_energy_balance(battery_w, pinverter)
@@ -103,7 +103,7 @@ class TestMeasuredRowAndMerge:
         assert row["source"] == "measured"
         assert row["charge_state"] == "charging"          # ChargerPower -542 -> charging
         assert row["pv_power_w_est"] == 974               # PV = PInverter
-        assert row["load_power_w_est"] == 432             # 974 + (-542)
+        assert row["load_power_w_est"] == 392             # 974 + (-542) - 40 self-use
 
     def test_merge_measured_supersedes_derived(self):
         history = [{"timestamp": "2026-06-27 12:00:00", "source": "derived", "battery_w": 100}]

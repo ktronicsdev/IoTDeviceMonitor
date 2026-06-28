@@ -221,6 +221,9 @@ def charge_state(battery_w):
     return "idle"
 
 
+INVERTER_SELF_USE_W = 40  # inverter self-consumption, subtracted from the load estimate
+
+
 def derive_energy_balance(battery_w, pinverter_w):
     """Estimate PV power and load power from PInverter and Charger Power.
 
@@ -229,15 +232,15 @@ def derive_energy_balance(battery_w, pinverter_w):
       * PInverter > 0: PV charges the battery and feeds the load
             -> Load = PV - charge = PInverter + ChargerPower   (e.g. 974 + (-542) = 432)
       * PInverter == 0 (night): battery discharges to the load -> Load = ChargerPower.
-    Both unify to Load = max(0, PInverter + ChargerPower). ESTIMATES (the cloud's own
-    PV/PLoad columns are broken); flag as such.
+    Minus the inverter's ~40 W self-consumption: Load = max(0, PInverter + ChargerPower - 40).
+    ESTIMATES (the cloud's own PV/PLoad columns are broken); flag as such.
     """
     cp = _to_float(battery_w)
     pinv = _to_float(pinverter_w)
     if cp is None or pinv is None:
         return None, None
     pv = pinv if pinv > 0 else 0.0
-    load = pinv + cp
+    load = pinv + cp - INVERTER_SELF_USE_W
     if load < 0:
         load = 0.0
     return pv, load

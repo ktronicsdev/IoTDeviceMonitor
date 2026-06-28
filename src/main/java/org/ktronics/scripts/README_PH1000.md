@@ -49,9 +49,9 @@ Because the cloud's own PV/PLoad columns are broken, PV and load are estimated f
 reliable power fields (signed Charger/Battery Power: `+` charging, `−` discharging):
 
 ```
-pv_power_w   = PInverter                          # PInverter = PV power (confirmed)
-load_power_w = max(0, PInverter + ChargerPower)   # ChargerPower < 0 = charging
-                                                  # e.g. 974 + (-542) = 432 W
+pv_power_w   = PInverter                               # PInverter = PV power (confirmed)
+load_power_w = max(0, PInverter + ChargerPower - 40)   # ChargerPower<0=charging; 40W self-use
+                                                       # e.g. 974 + (-542) - 40 = 392 W
 ```
 
 Signed ChargerPower: `< 0` = charging (power into the battery), `> 0` = discharging.
