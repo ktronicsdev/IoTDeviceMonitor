@@ -989,10 +989,10 @@
     "message": "Low battery"
   },
   "1187499:D70000210184361276:69e2d6709127112972a38974": {
-    "send_count": 15,
+    "send_count": 16,
     "first_seen": "2026-04-18T05:06:13.662526",
     "ignored": true,
-    "last_sent": "2026-06-28T09:17:24.476531",
+    "last_sent": "2026-06-28T12:12:09.390952",
     "customer": "Gayan-IMH",
     "plant": "imbulgoda  3kw",
     "message": "Low battery"
