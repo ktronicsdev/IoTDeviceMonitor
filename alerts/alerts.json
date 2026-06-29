@@ -1,29 +1,29 @@
 {
-  "generated_at": "2026-06-28T23:48:28.966373Z",
+  "generated_at": "2026-06-29T01:33:30.127488Z",
   "alerts": [
     {
       "severity": "RED",
       "plant_key": "chamila-chamila-119h",
-      "today": "2026-06-28",
+      "today": "2026-06-29",
       "baseline_avg_kwh_per_day": 0.2214,
       "threshold_kwh_per_day": 0.0443,
       "rule": "< 20.0% baseline for 3 consecutive days",
       "window": [
-        "2026-06-26",
         "2026-06-27",
-        "2026-06-28"
+        "2026-06-28",
+        "2026-06-29"
       ],
       "details": [
-        {
-          "date": "2026-06-26",
-          "kwh": 0.0
-        },
         {
           "date": "2026-06-27",
           "kwh": 0.0
         },
         {
           "date": "2026-06-28",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-06-29",
           "kwh": 0.0
         }
       ]
