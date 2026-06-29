@@ -190,6 +190,12 @@
       <div class="ch"><h2>Weather &amp; Solar Harvest</h2><span class="sel" style="color:var(--muted)">live · Open-Meteo</span></div>
       <div id="wxbody"></div>
     </div>
+    <div class="card full">
+      <div class="ch"><h2>Weather vs Solar Harvest</h2>
+        <div class="sel"><span style="color:var(--muted)">Date</span>
+          <select id="wx_date" style="background:#1a2230;border:1px solid var(--line);color:#c2ccdb;border-radius:8px;padding:5px 8px;font-size:13px;cursor:pointer"></select></div></div>
+      <canvas id="wxchart"></canvas>
+    </div>
   </div>
 </div>
 
@@ -271,6 +277,20 @@ const slClock = ms => { const p=Object.fromEntries(new Intl.DateTimeFormat('en-G
 const DAY_X = {type:'linear',min:0,max:1440,offset:false,
   ticks:{color:'#8a94a6',stepSize:120,callback:hhmm,autoSkip:false},grid:{color:'#222c3b'}};
 
+// Linear interpolator over [{x,y}] points (sorted). Used to resample the HOURLY weather series
+// onto the 5-min power timestamps so every dataset shares an x-index — otherwise Chart.js's
+// 'index' tooltip can't line up the sparse irradiance/cloud points with the power lines.
+function mkInterp(points){
+  const p=points.filter(q=>q.y!=null).sort((a,b)=>a.x-b.x);
+  return x=>{
+    if(!p.length) return null;
+    if(x<=p[0].x) return p[0].y;
+    if(x>=p[p.length-1].x) return p[p.length-1].y;
+    for(let i=1;i<p.length;i++) if(x<=p[i].x){const a=p[i-1],b=p[i];return a.y+(b.y-a.y)*(x-a.x)/(b.x-a.x);}
+    return null;
+  };
+}
+
 function renderProfile(){
   if(!DATA) return;
   const g=groupDays(DATA.series7d||[]);
@@ -281,8 +301,11 @@ function renderProfile(){
   const pts=(g[day]||[]).slice().sort((a,b)=>a.timestamp<b.timestamp?-1:1);
   // Weather: solar irradiance (GHI, W/m²) for this day — the "sunlight envelope". Drawn first
   // (faint amber fill) so the green PV line sits on top; the gap below it shows weather losses.
+  // Resampled onto the power timestamps (mkInterp) so it appears in the shared hover tooltip.
   const wgh=(DATA.weather&&DATA.weather.ok&&DATA.weather.hourly_ghi)||[];
-  const ghiPts=wgh.filter(r=>String(r.timestamp).slice(0,10)===day).map(r=>({x:minOfDay(r.timestamp),y:num(r.ghi)}));
+  const ghiDay=wgh.filter(r=>String(r.timestamp).slice(0,10)===day).map(r=>({x:minOfDay(r.timestamp),y:num(r.ghi)}));
+  const ghiI=mkInterp(ghiDay);
+  const ghiPts=pts.length?pts.map(r=>{const x=minOfDay(r.timestamp),y=ghiI(x);return{x,y:y==null?null:Math.round(y)};}):ghiDay;
   const ds=(label,key,color,o={})=>({label,
      data:pts.map(r=>({x:minOfDay(r.timestamp),y:key==='__zero__'?0:num(r[key])})),borderColor:color,
      backgroundColor:color,borderWidth:1.5,pointRadius:0,tension:.25,spanGaps:true,borderDash:o.dash||[],yAxisID:o.axis||'y'});
@@ -450,12 +473,49 @@ function renderWeather(){
   html+=`<div style="font-size:11px;color:var(--muted);margin-top:9px">Harvest impact is estimated: clear-sky ≈ 0.75 × extraterrestrial irradiance; the bar fill is actual ÷ clear-sky GHI, −% is harvest lost to cloud/rain. Irradiance also overlays the Power Profile chart on the Live tab.</div>`;
   document.getElementById('wxbody').innerHTML=html;
 }
+
+// ---- Weather vs Solar Harvest chart (00:00–23:59, date dropdown) ----
+let wxchart=null, wxDay=null;
+function renderWeatherChart(){
+  if(!DATA) return;
+  const g=groupDays(DATA.series7d||[]);
+  const dlist=Object.keys(g).sort();
+  const sel=document.getElementById('wx_date'); if(!sel) return;
+  if(sel.options.length!==dlist.length)
+    sel.innerHTML=dlist.map(d=>`<option value="${d}">${d}</option>`).join('');
+  if(wxDay===null||!dlist.includes(wxDay)) wxDay=dlist[dlist.length-1]||null;
+  if(!wxDay) return;
+  sel.value=wxDay;
+  sel.onchange=()=>{ wxDay=sel.value; renderWeatherChart(); };
+  const pts=(g[wxDay]||[]).slice().sort((a,b)=>a.timestamp<b.timestamp?-1:1);
+  const wh=((DATA.weather&&DATA.weather.ok&&DATA.weather.hourly_ghi)||[]).filter(r=>String(r.timestamp).slice(0,10)===wxDay);
+  const ghiI=mkInterp(wh.map(r=>({x:minOfDay(r.timestamp),y:num(r.ghi)})));
+  const cloudI=mkInterp(wh.map(r=>({x:minOfDay(r.timestamp),y:num(r.cloud)})));
+  // Resample weather onto the power timestamps (fall back to the hourly grid if no power that day).
+  const xs=pts.length?pts.map(r=>minOfDay(r.timestamp)):wh.map(r=>minOfDay(r.timestamp));
+  const at=(f,x)=>{const v=f(x);return v==null?null:Math.round(v);};
+  const cfg={type:'line',data:{datasets:[
+    {label:'Irradiance (W/m²)',data:xs.map(x=>({x,y:at(ghiI,x)})),borderColor:'#f59e0b',
+     backgroundColor:'rgba(245,158,11,.12)',borderWidth:1.4,pointRadius:0,tension:.3,fill:true,spanGaps:true,yAxisID:'y'},
+    {label:'Solar Harvest — PV (W)',data:pts.map(r=>({x:minOfDay(r.timestamp),y:num(r.pinverter_w)})),borderColor:'#22c55e',
+     backgroundColor:'rgba(34,197,94,.14)',borderWidth:1.6,pointRadius:0,tension:.25,fill:true,spanGaps:true,yAxisID:'y'},
+    {label:'Cloud cover (%)',data:xs.map(x=>({x,y:at(cloudI,x)})),borderColor:'#94a3b8',backgroundColor:'#94a3b8',
+     borderWidth:1.2,pointRadius:0,tension:.3,borderDash:[4,4],spanGaps:true,yAxisID:'y1'}]},
+   options:{responsive:true,interaction:{mode:'index',intersect:false},
+     scales:{x:DAY_X,
+       y:{position:'left',title:{display:true,text:'Power (W) · Irradiance (W/m²)',color:'#8a94a6'},ticks:{color:'#8a94a6'},grid:{color:'#222c3b'}},
+       y1:{position:'right',min:0,max:100,grid:{drawOnChartArea:false},title:{display:true,text:'Cloud %',color:'#8a94a6'},ticks:{color:'#8a94a6',callback:v=>v+'%'}}},
+     plugins:{legend:{labels:{color:'#aeb9cb',usePointStyle:false,boxWidth:9,boxHeight:9,font:{size:11}}},
+       tooltip:{callbacks:{title:i=>i.length?hhmm(i[0].parsed.x):''}}}}};
+  if(wxchart){wxchart.data=cfg.data;wxchart.options=cfg.options;wxchart.update();} else wxchart=new Chart(document.getElementById('wxchart'),cfg);
+}
 async function load(){
   try{ const j=await fetchData();
        if(!j||!j.device) throw new Error('no data');
        DATA=j;
        renderLive(); renderBMS(); renderWeather(); renderProfile(); renderHistory();
-       if(curTab==='profile') renderProfilePane(); if(curTab==='analysis') renderAnalysis(); }
+       if(curTab==='profile') renderProfilePane(); if(curTab==='analysis') renderAnalysis();
+       if(curTab==='weather') renderWeatherChart(); }
   catch(e){ if(!DATA){ const f=document.getElementById('foot'); if(f) f.textContent='load error: '+e; } }
 }
 
@@ -478,7 +538,7 @@ function switchTab(name){
   document.getElementById('tab-weather').style.display = name==='weather'?'block':'none';
   document.getElementById('tab-profile').style.display = name==='profile'?'block':'none';
   document.getElementById('tab-analysis').style.display= name==='analysis'?'block':'none';
-  if(name==='weather') renderWeather();
+  if(name==='weather'){ renderWeather(); renderWeatherChart(); }
   if(name==='profile') renderProfilePane();
   if(name==='analysis') renderAnalysis();
 }

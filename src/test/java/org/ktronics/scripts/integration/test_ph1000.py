@@ -281,8 +281,17 @@ class TestWeatherAggregation:
 
     def test_hourly_ghi_series_shape(self):
         s = wx.hourly_ghi_series(self._hourly())
-        assert s[1] == {"timestamp": "2026-06-27 09:00", "ghi": 300}
+        assert s[1]["timestamp"] == "2026-06-27 09:00"
+        assert s[1]["ghi"] == 300
+        assert s[1]["cloud"] == 0          # cloud/rain now included for the weather chart
+        assert s[1]["rain"] == 0.0
         assert len(s) == 8
+
+    def test_hourly_series_carries_cloud_and_rain(self):
+        s = wx.hourly_ghi_series(self._hourly())
+        wet = s[5]                          # 2026-06-28 09:00 -> cloud 95, rain 2
+        assert wet["cloud"] == 95
+        assert wet["rain"] == 2.0
 
     def test_empty_hourly(self):
         assert wx.aggregate_daily({}) == []

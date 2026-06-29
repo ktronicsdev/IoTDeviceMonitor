@@ -161,15 +161,26 @@ def aggregate_daily(hourly):
 
 
 def hourly_ghi_series(hourly):
-    """[{timestamp:'YYYY-MM-DD HH:MM', ghi:W/m^2}] for the dashboard GHI overlay (local time)."""
+    """Per-hour weather series for the dashboard (local time):
+    [{timestamp:'YYYY-MM-DD HH:MM', ghi:W/m^2, cloud:%, rain:mm}]. `ghi` drives the Power-Profile
+    overlay; `cloud`/`rain` feed the Weather-vs-Solar-Harvest chart. Rows without GHI are skipped."""
     times = hourly.get("time", []) or []
     ghi = hourly.get("shortwave_radiation", []) or []
+    cloud = hourly.get("cloud_cover", []) or []
+    rain = hourly.get("precipitation", []) or []
     series = []
     for i, t in enumerate(times):
         g = _f(ghi[i]) if i < len(ghi) else None
         if g is None:
             continue
-        series.append({"timestamp": str(t).replace("T", " ")[:16], "ghi": round(g)})
+        entry = {"timestamp": str(t).replace("T", " ")[:16], "ghi": round(g)}
+        cv = _f(cloud[i]) if i < len(cloud) else None
+        rv = _f(rain[i]) if i < len(rain) else None
+        if cv is not None:
+            entry["cloud"] = round(cv)
+        if rv is not None:
+            entry["rain"] = round(rv, 1)
+        series.append(entry)
     return series
 
 
