@@ -57,5 +57,10 @@ scripts/test/poll_github_actions.py
 # ROI analysis data (UC11 - customer-specific data)
 roi/
 
-# PH1000 reference docs (large binaries, local only) — root folder only, not site/ph1000
-/ph1000/
+# PH1000 reference docs + BMS progress — consolidated under site/ph1000 but kept LOCAL-ONLY.
+# Gitignored so they are NEVER committed/published by GitHub Pages (BMS_PROGRESS.md holds live
+# secrets; the rest are large manufacturer binaries). index.html + README*.md stay tracked.
+site/ph1000/BMS_PROGRESS.md
+site/ph1000/*.docx
+site/ph1000/*.pdf
+site/ph1000/*.xlsx
