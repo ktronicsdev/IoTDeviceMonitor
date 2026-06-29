@@ -98,8 +98,9 @@ jobs:
             fi
 
             echo "::endgroup::"
-            [ "$i" -lt "${ITERATIONS}" ] && sleep "${SLEEP_S}"
+            if [ "$i" -lt "${ITERATIONS}" ]; then sleep "${SLEEP_S}"; fi
           done
+          echo "loop finished ${ITERATIONS} iterations"   # ensure the step exits 0 -> chain runs
 
       - name: Re-launch self (keeps the cloud loop alive — the chain)
         if: success()
