@@ -70,6 +70,7 @@
     display:flex;flex-direction:column;justify-content:space-between}
   .pcard.energy{background:linear-gradient(135deg,#ef6a63,#e2554d)}
   .pcard.benefit{background:linear-gradient(135deg,#3bb5b0,#2aa39d)}
+  .pcard.device{background:linear-gradient(135deg,#6366f1,#4f46e5)}
   .pcard .ph{display:flex;align-items:center;gap:9px;font-size:13px;opacity:.95}
   .pcard .ph svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:1.7;opacity:.95}
   .pcard .pv{font-size:26px;font-weight:800;margin-top:6px}
@@ -580,12 +581,19 @@ function renderProfilePane(){
     card('benefit',ICON.co2,'CO₂ reduced',(p.co2_t??0)+' t'),
     card('benefit',ICON.temp,'Ambient temperature',(wc.temp_c??'—')+' °C'),
     card('benefit',ICON.sun,'Solar irradiance',(wc.ghi_wm2!=null?(wc.ghi_wm2/1000).toFixed(2):'—')+' kW/m²'),
+    // Real device lifetime counters (decoded from the inverter's own registers — not estimates)
+    ...(p.device_totals ? [
+      card('device',ICON.gain,'Battery charged (device)',(p.device_totals.charged_kwh??0)+' kWh'),
+      card('device',ICON.total,'Battery discharged (device)',(p.device_totals.discharged_kwh??0)+' kWh'),
+    ] : []),
   ].join('');
+  const dt=p.device_totals;
   document.getElementById('plantinfo').innerHTML=
     `<span><b>${p.name||''}</b></span><span>Capacity <b>${p.nominal_power_kw||'—'} kW</b></span>`+
     `<span>Installer <b>${p.design_company||'—'}</b></span><span>Installed <b>${(p.install||'').slice(0,10)||'—'}</b></span>`+
     `<span>Location <b>${p.country||'—'}</b></span><span>Tariff <b>Rs ${p.gains_rate||25}/unit</b></span>`+
-    `<span style="opacity:.7">${p.energy_note||''}</span>`;
+    (dt?`<span>Device counters (real) <b>charged ${dt.charged_kwh} · discharged ${dt.discharged_kwh} kWh</b></span>`:'')+
+    `<span style="opacity:.7">${p.energy_note||''} Daily/Monthly/Yearly are computed from PV power; the two indigo cards are the inverter's own lifetime counters.</span>`;
 }
 
 /* ---- Plant Analysis pane (parameters added per customer via + button) ---- */

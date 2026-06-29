@@ -31,6 +31,7 @@ Usage:
 """
 
 import argparse
+import base64
 import csv
 import hashlib
 import json
@@ -324,6 +325,54 @@ def build_plant_block(plant_info, series, tz_offset=0):
         "co2_t": round(total * co2_factor / 1000.0, 2),
         "energy_note": "Daily/period energy integrated from PInverter (PV power); the cloud's "
                        "accumulated counters are frozen so there is no lifetime total.",
+    }
+
+
+def _decode_raw_registers(blob):
+    """Decode the device's raw upload blob (queryDeviceLastRawData) into {register: value}.
+
+    The blob is a sequence of self-describing ``[start_reg][end_reg][value…]`` big-endian
+    blocks (verified against the PH RS485 protocol sheet — battery V @25205, PInverter @25213,
+    charger A/W @15207/15208, accumulated energy @25245+). Returns the register->word map.
+    """
+    w = [(blob[i] << 8) | blob[i + 1] for i in range(0, len(blob) - 1, 2)]
+    def ok(x):
+        return 10000 <= x <= 10300 or 15200 <= x <= 15260 or 20000 <= x <= 20300 or 25200 <= x <= 25280
+    reg, i = {}, 0
+    while i < len(w) - 1:
+        s, e = w[i], w[i + 1]
+        if ok(s) and ok(e) and 0 <= e - s < 90:
+            for k in range(e - s + 1):
+                if i + 2 + k < len(w):
+                    reg[s + k] = w[i + 2 + k]
+            i += 2 + (e - s + 1)
+            continue
+        i += 1
+    return reg
+
+
+def fetch_device_totals(token, secret, device):
+    """Read the device's REAL lifetime energy counters from its raw register dump.
+
+    These are the inverter's own accumulators (kWh) — actual device values, not estimates.
+    Returns {charged_kwh, discharged_kwh, pv_sell_kwh, as_of} or None.
+    """
+    resp = api_call(token, secret, "queryDeviceLastRawData", _device_params(device))
+    if resp.get("err") != 0:
+        return None
+    try:
+        reg = _decode_raw_registers(base64.b64decode(resp["dat"]["dat"]))
+    except (KeyError, ValueError, TypeError):
+        return None
+
+    def acc(hi, lo):                                  # hi*1000 + lo*0.1 -> kWh
+        return round(reg.get(hi, 0) * 1000 + reg.get(lo, 0) * 0.1, 1)
+
+    return {
+        "charged_kwh": acc(25245, 25246),
+        "discharged_kwh": acc(25247, 25248),
+        "pv_sell_kwh": acc(25257, 25258),
+        "as_of": resp.get("dat", {}).get("gts"),
     }
 
 
@@ -633,6 +682,11 @@ def process_account(token, secret, label, args):
     series = merge_series(history_rows, measured_rows)
 
     plant_block = build_plant_block(get_plant_info(token, secret, plant.get("pid")), series, tz_off)
+    totals = fetch_device_totals(token, secret, device)
+    if totals:
+        plant_block["device_totals"] = totals
+        print(f"  Device counters: charged {totals['charged_kwh']} / discharged "
+              f"{totals['discharged_kwh']} kWh (real, as of {totals.get('as_of')})")
     print(f"  Plant: {plant_block['name']} | today {plant_block['energy']['daily']} kWh | "
           f"logged total {plant_block['energy']['total']} kWh | gains Rs {plant_block['gains_lkr']}")
 
