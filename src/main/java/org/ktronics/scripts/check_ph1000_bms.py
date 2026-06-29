@@ -197,7 +197,10 @@ def main():
                          "(the workflow persists it back into the GitHub secret — cloud self-renewal)")
     args = ap.parse_args()
 
-    out = {"ok": False, "packs": [], "generated": formatdate(usegmt=True)}
+    # auth_failed = the cloud SESSION is dead (refreshToken rejected) and needs a one-time app
+    # re-login. Distinct from a pack being merely offline (ok:false but session fine). The
+    # workflow alerts the operator only on auth_failed -- the rare event a human must act on.
+    out = {"ok": False, "packs": [], "generated": formatdate(usegmt=True), "auth_failed": False}
 
     # Preferred: self-renew the iotToken from the long-lived refreshToken (no app needed).
     token = args.token
@@ -211,8 +214,15 @@ def main():
                 if args.rotated_out:
                     with open(args.rotated_out, "w", encoding="utf-8") as f:
                         json.dump({"refreshToken": new_rt, "identityId": IDENTITY_ID}, f)
-        except (urllib.error.HTTPError, urllib.error.URLError, KeyError, RuntimeError) as e:
-            print("[BMS] refresh failed (%s) -> falling back to static BMS_IOT_TOKEN" % e)
+        except RuntimeError as e:
+            # checkOrRefreshSession REJECTED the refreshToken -> the cloud session is dead. No
+            # cloud/script path recovers this; it needs a one-time app re-login. Flag it so the
+            # workflow emails the operator (see the BMS re-login alert in trigger-ph1000.yml).
+            print("[BMS] refreshToken REJECTED (%s) -> session dead, app re-login needed" % e)
+            out["auth_failed"] = True
+        except (urllib.error.HTTPError, urllib.error.URLError, KeyError) as e:
+            # transient network/parse hiccup -> not a session death; fall back, don't alert.
+            print("[BMS] refresh failed transiently (%s) -> falling back to static token" % e)
 
     if not token:
         print("[BMS] no token (set BMS_IOT_REFRESH+BMS_IOT_IDENTITY, or BMS_IOT_TOKEN) "
@@ -238,7 +248,8 @@ def main():
         except (urllib.error.HTTPError, urllib.error.URLError, KeyError, RuntimeError) as e:
             # token expired / auth failed -> ok stays False; dashboard hides the pane.
             print("[BMS] fetch failed (token expired?): %s -> dashboard falls back to voltage SOC" % e)
-            out = {"ok": False, "packs": [], "generated": formatdate(usegmt=True)}
+            out = {"ok": False, "packs": [], "generated": formatdate(usegmt=True),
+                   "auth_failed": out.get("auth_failed", False)}
 
     if args.out:
         with open(args.out, "w", encoding="utf-8") as f:

@@ -54,6 +54,11 @@ jobs:
           BMS_APPSECRET:    ${{ secrets.BMS_APPSECRET }}
           GH_PAT:           ${{ secrets.GH_PAT }}
           GH_TOKEN:         ${{ secrets.GITHUB_TOKEN }}
+          SMTP_HOST:        ${{ secrets.SMTP_HOST }}
+          SMTP_PORT:        ${{ secrets.SMTP_PORT }}
+          SMTP_USER:        ${{ secrets.SMTP_USER }}
+          SMTP_PASS:        ${{ secrets.SMTP_PASS }}
+          ALERT_TO:         pcgayan@gmail.com
           ITERATIONS:       ${{ github.event.inputs.iterations || '26' }}
           SLEEP_S:          ${{ github.event.inputs.sleep_s || '600' }}
           REPO:             ${{ github.repository }}
@@ -73,6 +78,20 @@ jobs:
             python3 src/main/java/org/ktronics/scripts/check_ph1000_bms.py \
               --out publish/bms.json --rotated-out "${ROT}" 2>&1 || true
             python3 -c "import json;d=json.load(open('publish/ph1000_live.json'));d['bms']=json.load(open('publish/bms.json'));json.dump(d,open('publish/ph1000_live.json','w'),indent=2,default=str);print('[merge] bms ok=%s'%d['bms'].get('ok'))" 2>/dev/null || echo "[merge] no bms this iteration"
+
+            # 2a) BMS session-death alert: refreshToken REJECTED -> needs a one-time app re-login
+            #     (can't be automated; PACEEX is FLAG_SECURE). Email the operator once per run;
+            #     the /tmp marker dedups within this job's loop, a new run re-alerts if still dead.
+            if python3 -c "import json,sys;sys.exit(0 if json.load(open('publish/ph1000_live.json')).get('bms',{}).get('auth_failed') else 1)" 2>/dev/null; then
+              if [ ! -f /tmp/bms_alerted ] && [ -n "${SMTP_USER}" ]; then
+                EMAIL_SUBJECT="🔴 PH1000 BMS: app re-login needed" \
+                EMAIL_BODY=$'The PH1000 BMS cloud session (refreshToken) has expired, so live battery data is paused and the dashboard is showing voltage-based SOC.\n\nThis is the rare (~once per few days) re-login that cannot be automated, because the PACEEX app is screenshot-protected (FLAG_SECURE).\n\nTo restore live BMS data:\n  1. Open the PACEEX app on the laptop and log in.\n  2. Run: python src/main/java/org/ktronics/scripts/refresh_bms_creds.py\n     (or just wait for the weekly scheduled task to do it).\n\nInverter data is unaffected.' \
+                python3 src/main/java/org/ktronics/scripts/send_email.py 2>&1 | tail -2
+                touch /tmp/bms_alerted && echo "[alert] BMS re-login email sent to ${ALERT_TO}"
+              fi
+            else
+              rm -f /tmp/bms_alerted   # session healthy -> reset so a future death re-alerts
+            fi
 
             # 2b) weather + solar-harvest impact (Open-Meteo, no API key) — fails soft like the BMS
             python3 src/main/java/org/ktronics/scripts/check_ph1000_weather.py \

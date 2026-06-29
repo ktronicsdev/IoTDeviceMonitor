@@ -201,6 +201,40 @@ class TestBMSDecode:
         assert bms.decode_wifi_band("9A00") is None
 
 
+class TestAuthFailedDetector:
+    """auth_failed must flag ONLY a dead cloud session (re-login needed), not an offline pack."""
+
+    def _run(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(bms, "REFRESH_TOKEN", "rt")
+        monkeypatch.setattr(bms, "IDENTITY_ID", "id")
+        out = tmp_path / "b.json"
+        monkeypatch.setattr(sys, "argv", ["check_ph1000_bms.py", "--out", str(out)])
+        bms.main()
+        return json.load(open(out, encoding="utf-8"))
+
+    def test_refresh_rejected_sets_auth_failed(self, monkeypatch, tmp_path):
+        def boom(*a, **k):
+            raise RuntimeError("checkOrRefreshSession code 2401")
+        monkeypatch.setattr(bms, "refresh_iot_token", boom)
+        d = self._run(monkeypatch, tmp_path)
+        assert d["auth_failed"] is True and d["ok"] is False
+
+    def test_transient_network_error_does_not_alert(self, monkeypatch, tmp_path):
+        import urllib.error
+        def neterr(*a, **k):
+            raise urllib.error.URLError("temporary DNS hiccup")
+        monkeypatch.setattr(bms, "refresh_iot_token", neterr)
+        d = self._run(monkeypatch, tmp_path)
+        assert d["auth_failed"] is False        # transient -> no false re-login alert
+
+    def test_datalogger_offline_is_not_auth_failed(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(bms, "refresh_iot_token", lambda *a, **k: ("tok", "rt"))
+        monkeypatch.setattr(bms, "fetch_pack",
+                            lambda p, t: {"name": p["name"], "offline": True})
+        d = self._run(monkeypatch, tmp_path)
+        assert d["auth_failed"] is False and d["ok"] is False   # session fine -> no alert
+
+
 class TestLiveParsing:
     def test_fetch_live_parses_reliable_fields(self, monkeypatch):
         # Shape of queryDeviceLastData (flat par dict under dat).
