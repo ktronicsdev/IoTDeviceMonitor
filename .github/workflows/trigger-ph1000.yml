@@ -74,6 +74,11 @@ jobs:
               --out publish/bms.json --rotated-out "${ROT}" 2>&1 || true
             python3 -c "import json;d=json.load(open('publish/ph1000_live.json'));d['bms']=json.load(open('publish/bms.json'));json.dump(d,open('publish/ph1000_live.json','w'),indent=2,default=str);print('[merge] bms ok=%s'%d['bms'].get('ok'))" 2>/dev/null || echo "[merge] no bms this iteration"
 
+            # 2b) weather + solar-harvest impact (Open-Meteo, no API key) — fails soft like the BMS
+            python3 src/main/java/org/ktronics/scripts/check_ph1000_weather.py \
+              --live-json publish/ph1000_live.json --out publish/weather.json 2>&1 || true
+            python3 -c "import json;d=json.load(open('publish/ph1000_live.json'));d['weather']=json.load(open('publish/weather.json'));json.dump(d,open('publish/ph1000_live.json','w'),indent=2,default=str);print('[merge] weather ok=%s'%d['weather'].get('ok'))" 2>/dev/null || echo "[merge] no weather this iteration"
+
             cp site/ph1000/index.html publish/index.html 2>/dev/null || true
 
             # 3) Part A — persist a rotated refreshToken back into the secret (needs GH_PAT)
@@ -108,6 +113,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
+          echo "GH_PAT length: ${#GH_TOKEN}"
           if [ -z "${GH_TOKEN}" ]; then
             echo "No GH_PAT — cannot self-chain; the 2h backup cron will restart the loop."
             exit 0
