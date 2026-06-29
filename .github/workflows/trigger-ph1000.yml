@@ -113,7 +113,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
-          echo "GH_PAT length: ${#GH_TOKEN}"
           if [ -z "${GH_TOKEN}" ]; then
             echo "No GH_PAT — cannot self-chain; the 2h backup cron will restart the loop."
             exit 0
