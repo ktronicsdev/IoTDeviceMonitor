@@ -95,7 +95,7 @@ def decode_wifi_band(hexstr):
     u16 = lambda i: (b[i] << 8) | b[i + 1]
     s16 = lambda i: (u16(i) - 65536 if u16(i) >= 32768 else u16(i))
     cur = s16(11) / 100.0
-    return {
+    d = {
         "voltage": round(u16(15) / 100.0, 2),       # V
         "current": round(cur, 2),                    # A (signed: + charge / - discharge)
         "state": "charging" if cur > 0.05 else ("discharging" if cur < -0.05 else "idle"),
@@ -110,6 +110,29 @@ def decode_wifi_band(hexstr):
         "max_temp": round((u16(53) - 2730) / 10.0, 1),  # °C
         "min_temp": round((u16(57) - 2730) / 10.0, 1),
     }
+    # The datalogger pushes several frame TYPES (summary, per-cell, status). The summary
+    # frame decodes here cleanly; an offline/idle logger leaves a *non-summary* frame as the
+    # last value, which at these offsets yields physical nonsense (e.g. 568 V / SOC 201%).
+    # Reject anything implausible so the dashboard cleanly falls back to voltage-SOC and
+    # auto-resumes the moment a real summary frame arrives -- no manual re-harvest needed.
+    if not _frame_is_sane(d):
+        return None
+    return d
+
+
+def _frame_is_sane(d):
+    """True only if a decoded WIFI_Band frame holds physically possible 16S-LFP values."""
+    return (
+        40.0 <= d["voltage"] <= 60.0           # 16 x 2.5-3.75 V
+        and 0 <= d["soc"] <= 100
+        and 0 <= d["soh"] <= 100
+        and 1500 <= d["low_cell_mv"] <= 4000    # mV
+        and 1500 <= d["high_cell_mv"] <= 4000
+        and d["low_cell_mv"] <= d["high_cell_mv"]
+        and -30.0 <= d["min_temp"] <= 85.0
+        and -30.0 <= d["max_temp"] <= 85.0
+        and abs(d["current"]) <= 600
+    )
 
 
 def refresh_iot_token(refresh_token, identity_id, cur_token=""):
@@ -134,6 +157,10 @@ def fetch_pack(pack, iot_token):
         raise RuntimeError("API code %s" % resp.get("code"))
     wb = resp["data"]["WIFI_Band"]
     data = decode_wifi_band(wb["value"])
+    if data is None:
+        # Datalogger offline/idle: last cached frame is non-summary -> can't read this pack.
+        return {"name": pack["name"], "role": pack["role"], "iotId": pack["iotId"],
+                "offline": True, "reported_ms": int(wb.get("time", 0)) or None}
     # `time` = when the pack's datalogger last pushed this frame (epoch ms). Packs report at
     # different rates (B2 lags ~20-30 min), so surface it; the dashboard shows the data's age.
     data["reported_ms"] = int(wb.get("time", 0)) or None
@@ -174,11 +201,18 @@ def main():
         try:
             for p in PACKS:
                 d = fetch_pack(p, token)
+                if d.get("offline"):
+                    # Skip from packs -> dashboard ignores it and uses voltage SOC. Self-heals
+                    # the moment the logger pushes a fresh summary frame again.
+                    out.setdefault("offline_packs", []).append(d["name"])
+                    print("[BMS] %s: datalogger offline (no fresh summary frame) -> skipped"
+                          % d["name"])
+                    continue
                 out["packs"].append(d)
                 print("[BMS] %s: SOC %d%% %.2fV %.2fA %s temp %.1f/%.1f cyc %d"
                       % (d["name"], d["soc"], d["voltage"], d["current"], d["state"],
                          d["max_temp"], d["min_temp"], d["cycles"]))
-            out["ok"] = True
+            out["ok"] = len(out["packs"]) > 0
         except (urllib.error.HTTPError, urllib.error.URLError, KeyError, RuntimeError) as e:
             # token expired / auth failed -> ok stays False; dashboard hides the pane.
             print("[BMS] fetch failed (token expired?): %s -> dashboard falls back to voltage SOC" % e)
