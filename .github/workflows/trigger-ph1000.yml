@@ -1,24 +1,31 @@
 name: PH1000 Live Dashboard
 
+# CLOUD-ONLY refresh — does NOT depend on the laptop. One run loops: fetch -> publish every
+# ~10 min for ~4.6h, then re-launches itself (via GH_PAT) so the chain runs forever on GitHub
+# Actions (free on this public repo). A low-frequency cron restarts the chain if it ever dies.
 on:
-    # GitHub throttles high-frequency crons; a local Task Scheduler job (every 10 min)
-    # is the reliable trigger. This schedule is just a best-effort backup.
   schedule:
-    - cron: "*/10 * * * *"
-  workflow_dispatch: {}
+    - cron: "7 */2 * * *"        # backup: restart the loop chain every 2h (reliable cadence)
+  workflow_dispatch:
+    inputs:
+      iterations:
+        description: "fetch+publish iterations before re-launch"
+        default: "26"
+      sleep_s:
+        description: "seconds between iterations"
+        default: "600"
 
-# Only contents:write — publishes to the dedicated `ph1000-live` branch, NOT main,
-# so it never triggers trigger-shinemonitor.yml / trigger-dessmonitor.yml (which watch main).
 permissions:
   contents: write
 
 concurrency:
   group: ph1000-live
-  cancel-in-progress: true
+  cancel-in-progress: true        # only one loop at a time; a restart replaces the old one
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 330          # under the 6h limit; the loop finishes well inside this
     steps:
       - name: Checkout (main — scripts + dashboard template)
         uses: actions/checkout@v4
@@ -38,75 +45,72 @@ jobs:
           EOF
           chmod 600 src/main/java/org/ktronics/config/credentials.json
 
-      - name: Fetch PH1000 telemetry -> dashboard JSON
+      - name: Fetch + publish loop (every ~10 min — cloud-only, no laptop)
         shell: bash
         env:
-          # Self-renewing BMS auth: refreshToken + identityId mint a fresh iotToken each run
-          # (pure Python via /account/checkOrRefreshSession). BMS_IOT_TOKEN is a static fallback.
-          BMS_IOT_REFRESH: ${{ secrets.BMS_IOT_REFRESH }}
+          BMS_IOT_REFRESH:  ${{ secrets.BMS_IOT_REFRESH }}
           BMS_IOT_IDENTITY: ${{ secrets.BMS_IOT_IDENTITY }}
-          BMS_IOT_TOKEN: ${{ secrets.BMS_IOT_TOKEN }}
-          BMS_APPSECRET: ${{ secrets.BMS_APPSECRET }}
+          BMS_IOT_TOKEN:    ${{ secrets.BMS_IOT_TOKEN }}
+          BMS_APPSECRET:    ${{ secrets.BMS_APPSECRET }}
+          GH_PAT:           ${{ secrets.GH_PAT }}
+          GH_TOKEN:         ${{ secrets.GITHUB_TOKEN }}
+          ITERATIONS:       ${{ github.event.inputs.iterations || '26' }}
+          SLEEP_S:          ${{ github.event.inputs.sleep_s || '600' }}
+          REPO:             ${{ github.repository }}
+          ROT:              ${{ github.workspace }}/.bms_rotated.json
         run: |
-          set +e   # fail-soft: stays a green no-op until Mifanza is in the secret
-          mkdir -p publish/data
-          python3 src/main/java/org/ktronics/scripts/check_ph1000.py \
-            --customer Mifanza \
-            --json-out publish/ph1000_live.json \
-            --data-dir publish/data \
-            --history-days 7 2>&1
-          # BMS (Hystorix) — true SOC/V/cells; fails soft when the token expires
-          # (dashboard then hides the battery pane + falls back to voltage SOC).
-          python3 src/main/java/org/ktronics/scripts/check_ph1000_bms.py --out publish/bms.json \
-            --rotated-out "$GITHUB_WORKSPACE/.bms_rotated.json" 2>&1 || true
-          python3 - <<'PY' || true
-          import json
-          try:
-              d = json.load(open('publish/ph1000_live.json'))
-              d['bms'] = json.load(open('publish/bms.json'))
-              json.dump(d, open('publish/ph1000_live.json', 'w'), indent=2, default=str)
-              print('[merge] bms ok=%s packs=%d' % (d['bms'].get('ok'), len(d['bms'].get('packs', []))))
-          except Exception as e:
-              print('[merge] skipped:', e)
-          PY
-          cp site/ph1000/index.html publish/index.html 2>/dev/null || true
-          exit 0
+          set +e   # never fail the loop on a transient fetch/publish error
+          for i in $(seq 1 "${ITERATIONS}"); do
+            echo "::group::iteration $i / ${ITERATIONS} ($(date -u +%H:%M:%S) UTC)"
+            rm -rf publish; mkdir -p publish/data
 
-      - name: Persist rotated BMS refreshToken (Part A — cloud self-renewal, needs GH_PAT)
-        # When the refreshToken rotates, write the new value back into the secret so the next
-        # run uses it — no manual re-harvest. Needs a PAT with Secrets:write (GH_PAT); a no-op
-        # without it or when nothing rotated. .bms_rotated.json lives OUTSIDE publish/ so it is
-        # never force-pushed to the public branch.
-        if: always()
+            # 1) inverter telemetry (the critical feed — always available)
+            python3 src/main/java/org/ktronics/scripts/check_ph1000.py \
+              --customer Mifanza --json-out publish/ph1000_live.json \
+              --data-dir publish/data --history-days 7 2>&1
+
+            # 2) BMS (optional) — fails soft; dashboard falls back to voltage SOC
+            python3 src/main/java/org/ktronics/scripts/check_ph1000_bms.py \
+              --out publish/bms.json --rotated-out "${ROT}" 2>&1 || true
+            python3 -c "import json;d=json.load(open('publish/ph1000_live.json'));d['bms']=json.load(open('publish/bms.json'));json.dump(d,open('publish/ph1000_live.json','w'),indent=2,default=str);print('[merge] bms ok=%s'%d['bms'].get('ok'))" 2>/dev/null || echo "[merge] no bms this iteration"
+
+            cp site/ph1000/index.html publish/index.html 2>/dev/null || true
+
+            # 3) Part A — persist a rotated refreshToken back into the secret (needs GH_PAT)
+            if [ -n "${GH_PAT}" ] && [ -f "${ROT}" ]; then
+              rt=$(python3 -c "import json;print(json.load(open('${ROT}'))['refreshToken'])")
+              id=$(python3 -c "import json;print(json.load(open('${ROT}'))['identityId'])")
+              GH_TOKEN="${GH_PAT}" bash -c "printf '%s' '$rt' | gh secret set BMS_IOT_REFRESH && printf '%s' '$id' | gh secret set BMS_IOT_IDENTITY" \
+                && echo "[persist] refreshToken rotated -> secret updated"
+              rm -f "${ROT}"
+            fi
+
+            # 4) publish to the ph1000-live branch (rolling force-push)
+            if [ -f publish/ph1000_live.json ]; then
+              ( cd publish
+                git init -q
+                git checkout -q -b ph1000-live
+                git add -A
+                git -c user.email="actions@users.noreply.github.com" -c user.name="ph1000-bot" \
+                    commit -q -m "PH1000 live update"
+                git push -f "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" ph1000-live ) \
+                && echo "[publish] ph1000-live updated"
+            fi
+
+            echo "::endgroup::"
+            [ "$i" -lt "${ITERATIONS}" ] && sleep "${SLEEP_S}"
+          done
+
+      - name: Re-launch self (keeps the cloud loop alive — the chain)
+        if: success()
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
-          f="$GITHUB_WORKSPACE/.bms_rotated.json"
-          if [ -z "${GH_TOKEN}" ]; then echo "GH_PAT not set — skipping persist."; exit 0; fi
-          if [ ! -f "$f" ]; then echo "No refreshToken rotation this run — nothing to persist."; exit 0; fi
-          rt=$(python3 -c "import json;print(json.load(open('$f'))['refreshToken'])")
-          id=$(python3 -c "import json;print(json.load(open('$f'))['identityId'])")
-          printf '%s' "$rt" | gh secret set BMS_IOT_REFRESH
-          printf '%s' "$id" | gh secret set BMS_IOT_IDENTITY
-          echo "Persisted rotated refreshToken -> BMS_IOT_REFRESH secret."
-
-      - name: Publish to ph1000-live branch (rolling, force-push — no history bloat)
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -e
-          if [ ! -f publish/ph1000_live.json ]; then
-            echo "No dashboard JSON produced (Mifanza not configured in SHINEMONITOR_CREDENTIALS_JSON yet?) — skipping publish."
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "No GH_PAT — cannot self-chain; the 2h backup cron will restart the loop."
             exit 0
           fi
-          cd publish
-          git init -q
-          git checkout -q -b ph1000-live
-          git add -A
-          git -c user.email="actions@users.noreply.github.com" \
-              -c user.name="ph1000-bot" \
-              commit -q -m "PH1000 live update"
-          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ph1000-live
-          echo "Published to ph1000-live (Pages serves from this branch root)."
+          gh workflow run trigger-ph1000.yml --ref main \
+            && echo "Re-dispatched the next loop run (cloud chain continues)." \
+            || echo "Re-dispatch failed; the 2h backup cron will restart the loop."
