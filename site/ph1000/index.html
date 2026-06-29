@@ -27,6 +27,9 @@
   .sel button{border:1px solid var(--line);background:#1a2230;border-radius:8px;width:28px;height:26px;cursor:pointer;color:#aeb9cb;font-size:15px;line-height:1}
   .sel button:hover{background:#222c3c}
   .sel .d{min-width:96px;text-align:center;font-weight:600}
+  .sel select.d{background:#1a2230;border:1px solid var(--line);color:#c2ccdb;border-radius:8px;
+    height:26px;padding:2px 6px;cursor:pointer;font-size:13px}
+  .sel select.d:hover{background:#222c3c}
 
   /* flow graph */
   .flow{position:relative;width:100%;max-width:560px;margin:6px auto 0;aspect-ratio:560/360}
@@ -159,14 +162,14 @@
   <!-- Power Profile (per day) -->
   <div class="card full">
     <div class="ch"><h2>Power Profile</h2>
-      <div class="sel"><button id="pp_prev">‹</button><span class="d" id="pp_date">—</span><button id="pp_next">›</button></div></div>
+      <div class="sel"><button id="pp_prev">‹</button><select class="d" id="pp_date"></select><button id="pp_next">›</button></div></div>
     <canvas id="chart"></canvas>
   </div>
 
   <!-- Generation & Usage History -->
   <div class="card full">
     <div class="ch"><h2>Generation &amp; Usage History</h2>
-      <div class="sel"><button id="hm_prev">‹</button><span class="d" id="hm_month">—</span><button id="hm_next">›</button></div></div>
+      <div class="sel"><button id="hm_prev">‹</button><select class="d" id="hm_month"></select><button id="hm_next">›</button></div></div>
     <canvas id="hist"></canvas>
   </div>
 
@@ -192,8 +195,7 @@
     </div>
     <div class="card full">
       <div class="ch"><h2>Weather vs Solar Harvest</h2>
-        <div class="sel"><span style="color:var(--muted)">Date</span>
-          <select id="wx_date" style="background:#1a2230;border:1px solid var(--line);color:#c2ccdb;border-radius:8px;padding:5px 8px;font-size:13px;cursor:pointer"></select></div></div>
+        <div class="sel"><button id="wx_prev">‹</button><select class="d" id="wx_date"></select><button id="wx_next">›</button></div></div>
       <canvas id="wxchart"></canvas>
     </div>
   </div>
@@ -204,7 +206,7 @@
   <div class="wrap" style="margin-bottom:0">
     <div class="card full">
       <div class="ch"><h2>Plant Analysis</h2>
-        <div class="sel"><button id="an_prev">‹</button><span class="d" id="an_date">—</span><button id="an_next">›</button></div></div>
+        <div class="sel"><button id="an_prev">‹</button><select class="d" id="an_date"></select><button id="an_next">›</button></div></div>
       <div class="params" id="anparams" style="margin:4px 0 12px;position:relative"></div>
       <canvas id="anchart"></canvas>
     </div>
@@ -250,6 +252,17 @@ const socFromV = v => {
 };
 const show = (id,on) => { const e=document.getElementById(id); if(e) e.style.display=on?'':'none'; };
 const ts = s => new Date(String(s).replace(' ','T'));
+// Consistent date/month picker: fill a <select> with options (rebuild only when the list
+// changes, so the open dropdown isn't disrupted) and set the current value.
+function fillSel(sel, items, current){
+  if(!sel) return;
+  const sig=items.join('|');
+  if(sel.dataset.sig!==sig){ sel.innerHTML=items.map(v=>`<option value="${v}">${v}</option>`).join(''); sel.dataset.sig=sig; }
+  if(current!=null) sel.value=current;
+}
+// Months present in the 7-day series (for the History picker), newest last.
+const histMonths = () => { const g=groupDays(DATA&&DATA.series7d||[]);
+  return [...new Set(Object.keys(g).map(d=>d.slice(0,7)))].sort(); };
 
 function groupDays(series){
   const m={}; for(const r of series){ const d=String(r.timestamp).slice(0,10); (m[d]=m[d]||[]).push(r); } return m;
@@ -297,7 +310,7 @@ function renderProfile(){
   days=Object.keys(g).sort();
   if(dayIdx===null||dayIdx>=days.length) dayIdx=days.length-1;
   const day=days[dayIdx]||'—';
-  document.getElementById('pp_date').textContent=day;
+  fillSel(document.getElementById('pp_date'),days,day);
   const pts=(g[day]||[]).slice().sort((a,b)=>a.timestamp<b.timestamp?-1:1);
   // Weather: solar irradiance (GHI, W/m²) for this day — the "sunlight envelope". Drawn first
   // (faint amber fill) so the green PV line sits on top; the gap below it shows weather losses.
@@ -331,8 +344,9 @@ function renderHistory(){
   const g=groupDays(DATA.series7d||[]);
   const allDays=Object.keys(g).sort();
   if(!allDays.length) return;
-  if(monthSel===null) monthSel=allDays[allDays.length-1].slice(0,7);
-  document.getElementById('hm_month').textContent=monthSel;
+  const months=histMonths();
+  if(monthSel===null||!months.includes(monthSel)) monthSel=months[months.length-1];
+  fillSel(document.getElementById('hm_month'),months,monthSel);
   const [y,mo]=monthSel.split('-').map(Number);
   const dim=new Date(y,mo,0).getDate();                       // days in selected month
   const labels=[], E=[];
@@ -480,13 +494,9 @@ function renderWeatherChart(){
   if(!DATA) return;
   const g=groupDays(DATA.series7d||[]);
   const dlist=Object.keys(g).sort();
-  const sel=document.getElementById('wx_date'); if(!sel) return;
-  if(sel.options.length!==dlist.length)
-    sel.innerHTML=dlist.map(d=>`<option value="${d}">${d}</option>`).join('');
   if(wxDay===null||!dlist.includes(wxDay)) wxDay=dlist[dlist.length-1]||null;
   if(!wxDay) return;
-  sel.value=wxDay;
-  sel.onchange=()=>{ wxDay=sel.value; renderWeatherChart(); };
+  fillSel(document.getElementById('wx_date'),dlist,wxDay);
   const pts=(g[wxDay]||[]).slice().sort((a,b)=>a.timestamp<b.timestamp?-1:1);
   const wh=((DATA.weather&&DATA.weather.ok&&DATA.weather.hourly_ghi)||[]).filter(r=>String(r.timestamp).slice(0,10)===wxDay);
   const ghiI=mkInterp(wh.map(r=>({x:minOfDay(r.timestamp),y:num(r.ghi)})));
@@ -611,7 +621,7 @@ function renderAnChart(){
   const g=groupDays(DATA&&DATA.series7d||[]); const ds=anDays();
   if(!ds.length) return;
   if(anDayIdx===null||anDayIdx>=ds.length) anDayIdx=ds.length-1;
-  const day=ds[anDayIdx]; document.getElementById('an_date').textContent=day;
+  const day=ds[anDayIdx]; fillSel(document.getElementById('an_date'),ds,day);
   const pts=(g[day]||[]).slice().sort((a,b)=>a.timestamp<b.timestamp?-1:1);
   const def=k=>PARAM_DEFS.find(p=>p.key===k);
   const datasets=anSel.map(k=>{const d=def(k); return d&&{label:d.label,yAxisID:d.axis,borderColor:d.color,backgroundColor:d.color,
@@ -626,12 +636,21 @@ function renderAnChart(){
   if(anchart){anchart.data=cfg.data;anchart.options=cfg.options;anchart.update();} else anchart=new Chart(document.getElementById('anchart'),cfg);
 }
 function renderAnalysis(){ renderAnParams(); renderAnChart(); }
-document.getElementById('an_prev').onclick=()=>{ const n=anDays().length; if(anDayIdx>0){anDayIdx--;renderAnChart();} };
-document.getElementById('an_next').onclick=()=>{ const n=anDays().length; if(anDayIdx<n-1){anDayIdx++;renderAnChart();} };
+// Consistent pickers: each has ‹ prev, a dropdown, › next. Arrows step within the available
+// list; the dropdown jumps directly. All bounded to the data (no empty months/days).
+document.getElementById('an_prev').onclick=()=>{ if(anDayIdx>0){anDayIdx--;renderAnChart();} };
+document.getElementById('an_next').onclick=()=>{ if(anDayIdx<anDays().length-1){anDayIdx++;renderAnChart();} };
+document.getElementById('an_date').onchange=function(){ const i=anDays().indexOf(this.value); if(i>=0){anDayIdx=i;renderAnChart();} };
 document.getElementById('pp_prev').onclick=()=>{ if(dayIdx>0){dayIdx--;renderProfile();} };
 document.getElementById('pp_next').onclick=()=>{ if(dayIdx<days.length-1){dayIdx++;renderProfile();} };
-document.getElementById('hm_prev').onclick=()=>{ monthSel=shiftMonth(monthSel,-1); renderHistory(); };
-document.getElementById('hm_next').onclick=()=>{ monthSel=shiftMonth(monthSel, 1); renderHistory(); };
+document.getElementById('pp_date').onchange=function(){ const i=days.indexOf(this.value); if(i>=0){dayIdx=i;renderProfile();} };
+document.getElementById('hm_prev').onclick=()=>{ const ms=histMonths(),i=ms.indexOf(monthSel); if(i>0){monthSel=ms[i-1];renderHistory();} };
+document.getElementById('hm_next').onclick=()=>{ const ms=histMonths(),i=ms.indexOf(monthSel); if(i<ms.length-1){monthSel=ms[i+1];renderHistory();} };
+document.getElementById('hm_month').onchange=function(){ monthSel=this.value; renderHistory(); };
+const wxDays=()=>Object.keys(groupDays(DATA&&DATA.series7d||[])).sort();
+document.getElementById('wx_prev').onclick=()=>{ const ds=wxDays(),i=ds.indexOf(wxDay); if(i>0){wxDay=ds[i-1];renderWeatherChart();} };
+document.getElementById('wx_next').onclick=()=>{ const ds=wxDays(),i=ds.indexOf(wxDay); if(i<ds.length-1){wxDay=ds[i+1];renderWeatherChart();} };
+document.getElementById('wx_date').onchange=function(){ wxDay=this.value; renderWeatherChart(); };
 // ---- light client-side gate (Mifanza credential; SHA-256, no plaintext in source) ----
 const PW_HASH='7b9ce106de4476760c494c04333d108f7f6fb73c4449ccaf555480a618578497';
 async function sha256(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
