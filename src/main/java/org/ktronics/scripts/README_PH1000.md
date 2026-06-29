@@ -83,6 +83,7 @@ conversion losses.
 | **ShineMonitor cloud** (`queryDeviceLastData`, `queryDeviceDataOneDayPaging`) | the reliable fields above (+ broken ones) | ✅ yes — **this module** |
 | **Inverter RS485 Modbus** (protocol below) | true PV/load/grid/SOC/energies, all registers | ❌ needs on-site ESP/Pi (e.g. [esphome-must-inverter](https://github.com/vladyspavlov/esphome-must-inverter)) |
 | **Hystorix/PACEEX BMS** (PACEEX WiFi cloud) | accurate **SOC, battery V, charge/discharge A, cells, cycles, temps** | ✅ **cracked & live** — [`check_ph1000_bms.py`](check_ph1000_bms.py), see [README_BMS.md](README_BMS.md) |
+| **Open-Meteo** (open weather/solar API) | sky condition, cloud %, rain, ambient temp, **solar irradiance (GHI)** + harvest impact | ✅ **live, no API key** — [`check_ph1000_weather.py`](check_ph1000_weather.py), see "Weather" below |
 
 Endpoints probed (Mifanza): `querySPDeviceLastData` returns almost nothing (PV voltage + work
 state only); `queryDeviceCtrlField` is settings-only; `querySPDeviceParEs` / energy-flow actions
@@ -101,7 +102,10 @@ python check_ph1000.py --customer Mifanza --json-out data/ph1000_live.json --his
 ```
 
 - Account opt-in: only `credentials.json` accounts flagged `"ph1000": true` (or `--customer`).
-- Output JSON: `{ device, latest, series7d, fields_note, last_updated }`.
+- Output JSON: `{ device, latest, series7d, plant, fields_note, last_updated }`; the workflow then
+  merges in a `bms` block ([`check_ph1000_bms.py`](check_ph1000_bms.py)) and a `weather` block
+  ([`check_ph1000_weather.py`](check_ph1000_weather.py)). `plant` includes `lat`/`lon` (from
+  `queryPlantInfo`) so the weather fetcher can locate the site.
 - Output CSV: `data/ph1000-<label>-<device>-<YYYY-MM>.csv` (one row per measured poll, deduped).
 - The live source is `queryDeviceLastData` (the `SP` variant is empty for this device).
 
@@ -165,6 +169,38 @@ The Hystorix/PACEEX BMS cloud API was reverse-engineered (full write-up in
 **Remaining work:** the BMS `iotToken` is currently a session secret. Fully-automated re-login is
 blocked by the **native** pace-power request signature (`libpace.so`) — cracking that (the next
 task) makes the token self-renewing. Until then, refresh with `gh secret set BMS_IOT_TOKEN`.
+
+## Weather & solar-harvest impact (live)
+
+[`check_ph1000_weather.py`](check_ph1000_weather.py) adds a `weather` block so the dashboard can
+show the live sky and — the useful part — quantify how much the weather is *costing* the harvest.
+
+- **Source: [Open-Meteo](https://open-meteo.com/en/docs)** — free, **no API key** (works straight
+  from GitHub Actions), and one call returns both the weather AND the solar irradiance (GHI) that
+  physically drives PV output. Variables used: `temperature_2m`, `cloud_cover`, `precipitation`,
+  `weather_code` (WMO → condition label/category), `shortwave_radiation` (GHI), and
+  `terrestrial_radiation` (the clear-sky reference). Past 7 days + today, in the plant's timezone.
+- **Harvest impact (estimate, flagged as such):** clear-sky surface GHI ≈ `0.75 ×` extraterrestrial
+  radiation (standard clear-sky transmittance). Per day,
+  `harvest_factor = actual_GHI / clear_sky_GHI` (1.0 = clear, lower = cloud/rain) and
+  `loss_pct = 100 × (1 − harvest_factor)` (~harvest lost to weather) — e.g. a thunderstorm day →
+  "harvest ~51% of clear-sky (weather cost ~49%)".
+- **Dashboard:** a dedicated **Weather** tab (current condition + 7-day harvest-impact strip), the
+  **Ambient temperature** / **Solar irradiance** cards on Plant Profile, and an **irradiance
+  overlay** on the Live tab's Power Profile chart (the "sunlight envelope" behind the PV curve, so
+  weather-driven dips are visible directly).
+- **Location:** auto-detected from `plant.lat`/`plant.lon` in `ph1000_live.json`; ShineMonitor does
+  not expose coordinates for this plant, so it falls back to the **Mifanza site**
+  (Plus Code `WVR5+RC9` Colombo → `6.94205, 79.85856`). Override with `--lat`/`--lon` or env
+  `PH1000_LAT`/`PH1000_LON`.
+- **Graceful fallback:** if Open-Meteo is unreachable the fetcher emits `ok:false` → the dashboard
+  shows a placeholder in the Weather tab and the overlay/cards quietly skip. No stale data is shown.
+
+```bash
+# Fetch weather for the auto-detected (or default Mifanza) location
+python check_ph1000_weather.py --live-json data/ph1000_live.json --out weather.json
+python check_ph1000_weather.py --lat 6.94205 --lon 79.85856 --out weather.json   # explicit
+```
 
 ## Future: accurate PV & load
 

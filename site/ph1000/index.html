@@ -108,6 +108,7 @@
 </header>
 <nav class="tabs">
   <button data-tab="live" class="active">Live</button>
+  <button data-tab="weather">Weather</button>
   <button data-tab="profile">Plant Profile</button>
   <button data-tab="analysis">Plant Analysis</button>
 </nav>
@@ -180,6 +181,16 @@
 <div class="tabpane" id="tab-profile" style="display:none">
   <div class="pinfo" id="plantinfo"></div>
   <div class="pgrid" id="plantcards"></div>
+</div>
+
+<!-- ===== Weather tab ===== -->
+<div class="tabpane" id="tab-weather" style="display:none">
+  <div class="wrap" style="margin-bottom:0">
+    <div class="card full">
+      <div class="ch"><h2>Weather &amp; Solar Harvest</h2><span class="sel" style="color:var(--muted)">live · Open-Meteo</span></div>
+      <div id="wxbody"></div>
+    </div>
+  </div>
 </div>
 
 <!-- ===== Plant Analysis tab ===== -->
@@ -268,10 +279,16 @@ function renderProfile(){
   const day=days[dayIdx]||'—';
   document.getElementById('pp_date').textContent=day;
   const pts=(g[day]||[]).slice().sort((a,b)=>a.timestamp<b.timestamp?-1:1);
+  // Weather: solar irradiance (GHI, W/m²) for this day — the "sunlight envelope". Drawn first
+  // (faint amber fill) so the green PV line sits on top; the gap below it shows weather losses.
+  const wgh=(DATA.weather&&DATA.weather.ok&&DATA.weather.hourly_ghi)||[];
+  const ghiPts=wgh.filter(r=>String(r.timestamp).slice(0,10)===day).map(r=>({x:minOfDay(r.timestamp),y:num(r.ghi)}));
   const ds=(label,key,color,o={})=>({label,
      data:pts.map(r=>({x:minOfDay(r.timestamp),y:key==='__zero__'?0:num(r[key])})),borderColor:color,
      backgroundColor:color,borderWidth:1.5,pointRadius:0,tension:.25,spanGaps:true,borderDash:o.dash||[],yAxisID:o.axis||'y'});
   const cfg={type:'line',data:{datasets:[
+     {label:'Irradiance (W/m²)',data:ghiPts,borderColor:'rgba(245,158,11,.5)',backgroundColor:'rgba(245,158,11,.10)',
+      borderWidth:1,pointRadius:0,tension:.3,fill:true,spanGaps:true,yAxisID:'y'},
      ds('PV','pinverter_w','#22c55e'),ds('Battery','battery_w','#3b82f6'),
      ds('Grid','__zero__','#ec4899'),ds('Consumption','load_power_w_est','#eab308'),
      {label:'SOC',data:pts.map(r=>({x:minOfDay(r.timestamp),y:socFromV(num(r.battery_v))})),borderColor:'#1e3a8a',
@@ -395,11 +412,49 @@ function renderBMS(){
       ${age!=null?`<div style="font-size:11px;margin-top:9px;color:${stale?'var(--red)':lag?'var(--amber)':'var(--muted)'}">${note}</div>`:''}
     </div>`;}).join('');
 }
+// ---- Weather & solar-harvest impact (from the `weather` block, Open-Meteo) ----
+const WX_EMOJI={clear:'☀️',partly:'⛅',cloudy:'☁️',fog:'🌫️',drizzle:'🌦️',rain:'🌧️',snow:'❄️',storm:'⛈️',unknown:'🌡️'};
+const lossColor=l=>l==null?'var(--muted)':l<20?'var(--green)':l<50?'var(--amber)':'var(--red)';
+function renderWeather(){
+  const body=document.getElementById('wxbody'); if(!body) return;
+  const w=DATA&&DATA.weather;
+  if(!w||!w.ok||!w.current){   // feed down -> placeholder (the tab still renders)
+    body.innerHTML='<div style="color:var(--muted);padding:24px">No weather data yet — the next refresh will populate it.</div>';
+    return;
+  }
+  const c=w.current, t=w.today||{}, em=k=>WX_EMOJI[k]||WX_EMOJI.unknown;
+  const ghiKw=c.ghi_wm2!=null?(c.ghi_wm2/1000).toFixed(2):'—';
+  const harvest=t.loss_pct!=null?(100-t.loss_pct):null;
+  let html=`<div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+    <div style="font-size:42px;line-height:1">${em(c.category)}</div>
+    <div><div style="font-size:20px;font-weight:700">${c.condition}</div>
+      <div style="color:var(--muted);font-size:12px">${c.temp_c!=null?c.temp_c+' °C · ':''}cloud ${c.cloud_pct!=null?Math.round(c.cloud_pct)+'%':'—'} · rain ${c.rain_mm!=null?c.rain_mm+' mm':'—'} · irradiance ${ghiKw} kW/m²</div></div>`;
+  if(harvest!=null){ const lc=lossColor(t.loss_pct);
+    html+=`<div style="margin-left:auto;text-align:right">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Today vs clear-sky</div>
+      <div style="font-size:24px;font-weight:800;color:${lc}">${harvest}<small style="font-size:13px;color:var(--muted);font-weight:600">% of clear-sky</small></div>
+      <div style="font-size:12px;color:${lc}">weather cost ~${t.loss_pct}% · GHI ${t.ghi_kwh_m2}/${t.clear_kwh_m2} kWh/m²</div></div>`; }
+  html+=`</div>`;
+  const days=(w.daily||[]).slice(-7);
+  if(days.length){
+    html+=`<div style="display:grid;grid-template-columns:repeat(${days.length},1fr);gap:8px;margin-top:14px">`+
+      days.map(d=>{ const lc=lossColor(d.loss_pct);
+        return `<div class="m" style="padding:10px;text-align:center">
+          <div style="font-size:11px;color:var(--muted)">${String(d.date).slice(5)}</div>
+          <div style="font-size:22px;margin:3px 0">${em(d.category)}</div>
+          <div style="font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.condition}</div>
+          <div style="height:5px;background:#222c3b;border-radius:3px;margin:7px 0 5px;overflow:hidden"><div style="height:100%;width:${d.harvest_factor!=null?Math.round(Math.min(1,d.harvest_factor)*100):0}%;background:${lc}"></div></div>
+          <div style="font-size:11px;color:${lc}">${d.loss_pct!=null?'−'+d.loss_pct+'%':'—'}${d.rain_mm>0?' · '+d.rain_mm+'mm':''}</div>
+        </div>`;}).join('')+`</div>`;
+  }
+  html+=`<div style="font-size:11px;color:var(--muted);margin-top:9px">Harvest impact is estimated: clear-sky ≈ 0.75 × extraterrestrial irradiance; the bar fill is actual ÷ clear-sky GHI, −% is harvest lost to cloud/rain. Irradiance also overlays the Power Profile chart on the Live tab.</div>`;
+  document.getElementById('wxbody').innerHTML=html;
+}
 async function load(){
   try{ const j=await fetchData();
        if(!j||!j.device) throw new Error('no data');
        DATA=j;
-       renderLive(); renderBMS(); renderProfile(); renderHistory();
+       renderLive(); renderBMS(); renderWeather(); renderProfile(); renderHistory();
        if(curTab==='profile') renderProfilePane(); if(curTab==='analysis') renderAnalysis(); }
   catch(e){ if(!DATA){ const f=document.getElementById('foot'); if(f) f.textContent='load error: '+e; } }
 }
@@ -420,8 +475,10 @@ function switchTab(name){
   curTab=name;
   document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
   document.getElementById('tab-live').style.display    = name==='live'?'grid':'none';
+  document.getElementById('tab-weather').style.display = name==='weather'?'block':'none';
   document.getElementById('tab-profile').style.display = name==='profile'?'block':'none';
   document.getElementById('tab-analysis').style.display= name==='analysis'?'block':'none';
+  if(name==='weather') renderWeather();
   if(name==='profile') renderProfilePane();
   if(name==='analysis') renderAnalysis();
 }
@@ -442,6 +499,7 @@ function renderProfilePane(){
   const box=document.getElementById('plantcards');
   if(!p){ box.innerHTML='<div style="color:var(--muted);padding:24px">No plant data yet — next refresh will populate it.</div>'; document.getElementById('plantinfo').innerHTML=''; return; }
   const e=p.energy||{};
+  const wc=(DATA.weather&&DATA.weather.ok&&DATA.weather.current)||{};
   const card=(cls,icon,label,val)=>`<div class="pcard ${cls}"><div class="ph">${icon}<span>${label}</span></div><div class="pv">${val}</div></div>`;
   box.innerHTML=[
     card('energy',ICON.daily,'Daily energy',(e.daily??0)+' kWh'),
@@ -450,8 +508,8 @@ function renderProfilePane(){
     card('energy',ICON.total,'Total energy (logged)',(e.total??0)+' kWh'),
     card('benefit',ICON.gain,'Gains',(p.gains_lkr??0).toLocaleString()+' <small style="font-size:14px;opacity:.85">LKR</small>'),
     card('benefit',ICON.co2,'CO₂ reduced',(p.co2_t??0)+' t'),
-    card('benefit',ICON.temp,'Ambient temperature','— °C'),
-    card('benefit',ICON.sun,'Solar irradiance','— kW/m²'),
+    card('benefit',ICON.temp,'Ambient temperature',(wc.temp_c??'—')+' °C'),
+    card('benefit',ICON.sun,'Solar irradiance',(wc.ghi_wm2!=null?(wc.ghi_wm2/1000).toFixed(2):'—')+' kW/m²'),
   ].join('');
   document.getElementById('plantinfo').innerHTML=
     `<span><b>${p.name||''}</b></span><span>Capacity <b>${p.nominal_power_kw||'—'} kW</b></span>`+

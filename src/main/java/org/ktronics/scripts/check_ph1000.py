@@ -304,12 +304,18 @@ def build_plant_block(plant_info, series, tz_offset=0):
     profit = (plant_info or {}).get("profit", {}) or {}
     co2_factor = _to_float(profit.get("co2")) or CO2_KG_PER_KWH
     addr = (plant_info or {}).get("address", {}) or {}
+    # Plant coordinates (key names vary across ShineMonitor plant records) — used by the
+    # weather module to fetch local sky/irradiance. May be absent; weather then falls back.
+    lat = _to_float(_first(addr, "lat", "latitude", "lati"))
+    lon = _to_float(_first(addr, "lng", "lon", "longitude", "long", "longi"))
     return {
         "name": (plant_info or {}).get("name", "Mifanza Solar System"),
         "nominal_power_kw": _to_float((plant_info or {}).get("nominalPower")),
         "design_company": (plant_info or {}).get("designCompany"),
         "install": (plant_info or {}).get("install"),
         "country": addr.get("country"),
+        "lat": lat,
+        "lon": lon,
         "energy": {"daily": daily, "monthly": monthly, "yearly": yearly, "total": total,
                    "logged_from_days": len(pv_kwh)},
         "load_daily": round(load_kwh.get(today, 0.0), 1),

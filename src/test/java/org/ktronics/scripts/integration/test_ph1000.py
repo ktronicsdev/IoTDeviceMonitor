@@ -20,6 +20,7 @@ sys.path.insert(0, str(SCRIPTS))
 
 import check_ph1000 as m  # noqa: E402
 import check_ph1000_bms as bms  # noqa: E402
+import check_ph1000_weather as wx  # noqa: E402
 
 # The real Data Details title order observed for this PH1000 (dat.title).
 PH1000_TITLES = [
@@ -221,3 +222,100 @@ class TestLiveParsing:
         assert "battery_a" in fields and fields["battery_a"]["value"] == "6.4"
         # garbage "Batt Current" must not leak into a reliable field
         assert all(f["value"] != "100" for f in fields.values())
+
+
+class TestWeatherCodes:
+    def test_known_codes(self):
+        assert wx.weather_label(0) == ("Clear", "clear")
+        assert wx.weather_label(3) == ("Overcast", "cloudy")
+        assert wx.weather_label(63)[1] == "rain"
+        assert wx.weather_label(95)[1] == "storm"
+        assert wx.weather_label(2)[1] == "partly"
+
+    def test_unknown_and_bad_input(self):
+        assert wx.weather_label(123)[1] == "unknown"
+        assert wx.weather_label(None) == ("Unknown", "unknown")
+        assert wx.weather_label("x") == ("Unknown", "unknown")
+
+
+class TestWeatherAggregation:
+    def _hourly(self):
+        # 2 days x 4 hours. Day 1 = clear (GHI == clear-sky envelope), Day 2 = heavy cloud
+        # (GHI ~30% of envelope) + rain. terrestrial_radiation is the clear-sky reference;
+        # clear-sky surface = 0.75 x terrestrial, so day-1 GHI is set to exactly 0.75 x tr.
+        return {
+            "time": ["2026-06-27T06:00", "2026-06-27T09:00", "2026-06-27T12:00", "2026-06-27T18:00",
+                     "2026-06-28T06:00", "2026-06-28T09:00", "2026-06-28T12:00", "2026-06-28T18:00"],
+            "terrestrial_radiation": [0, 400, 800, 0,   0, 400, 800, 0],
+            "shortwave_radiation":   [0, 300, 600, 0,   0, 90, 180, 0],   # d1=0.75xtr, d2~0.225xtr
+            "cloud_cover":           [0, 0,   0,   0,   90, 95, 100, 80],
+            "precipitation":         [0, 0,   0,   0,   0,  2,  6,   1],
+            "weather_code":          [0, 1,   0,   0,   3,  63, 65,  3],
+        }
+
+    def test_clear_day_zero_loss(self):
+        daily = wx.aggregate_daily(self._hourly())
+        d1 = daily[0]
+        assert d1["date"] == "2026-06-27"
+        # GHI == 0.75 x terrestrial == clear-sky -> ~0% loss, factor ~1.0
+        assert d1["loss_pct"] == 0
+        assert d1["harvest_factor"] == 1.0
+        assert d1["category"] == "clear"
+        assert d1["rain_mm"] == 0.0
+
+    def test_cloudy_day_high_loss(self):
+        daily = wx.aggregate_daily(self._hourly())
+        d2 = daily[1]
+        assert d2["date"] == "2026-06-28"
+        assert d2["loss_pct"] > 50            # heavy cloud -> big harvest loss
+        assert d2["rain_mm"] == 9.0           # 2 + 6 + 1
+        assert d2["cloud_pct"] >= 90
+        assert d2["category"] == "rain"       # dominant daylight code is rain (63/65)
+
+    def test_ghi_and_clear_kwh_units(self):
+        d1 = wx.aggregate_daily(self._hourly())[0]
+        # clear_kwh = 0.75 * (0+400+800+0) Wh /1000 = 0.9 kWh/m^2
+        assert d1["clear_kwh_m2"] == 0.9
+        # ghi_kwh = (0+300+600+0)/1000 = 0.9
+        assert d1["ghi_kwh_m2"] == 0.9
+
+    def test_hourly_ghi_series_shape(self):
+        s = wx.hourly_ghi_series(self._hourly())
+        assert s[1] == {"timestamp": "2026-06-27 09:00", "ghi": 300}
+        assert len(s) == 8
+
+    def test_empty_hourly(self):
+        assert wx.aggregate_daily({}) == []
+        assert wx.hourly_ghi_series({}) == []
+
+
+class TestWeatherCurrentAndLocation:
+    def test_build_current(self):
+        cur = {"temperature_2m": 29.3, "cloud_cover": 75, "precipitation": 0.4,
+               "weather_code": 3, "shortwave_radiation": 410.0}
+        c = wx.build_current(cur)
+        assert c["temp_c"] == 29.3
+        assert c["cloud_pct"] == 75
+        assert c["ghi_wm2"] == 410
+        assert c["condition"] == "Overcast"
+        assert c["category"] == "cloudy"
+
+    def test_location_from_cli(self):
+        assert wx.resolve_location(None, 6.5, 80.1) == (6.5, 80.1, "cli")
+
+    def test_location_from_plant_json(self, tmp_path):
+        p = tmp_path / "live.json"
+        p.write_text(json.dumps({"plant": {"lat": 7.1, "lon": 80.5}}), encoding="utf-8")
+        assert wx.resolve_location(str(p), None, None) == (7.1, 80.5, "plant")
+
+    def test_location_falls_back_to_default(self, tmp_path):
+        # plant present but no coords -> default
+        p = tmp_path / "live.json"
+        p.write_text(json.dumps({"plant": {"country": "LK"}}), encoding="utf-8")
+        lat, lon, src = wx.resolve_location(str(p), None, None)
+        assert src == "default"
+        assert (lat, lon) == (wx.DEFAULT_LAT, wx.DEFAULT_LON)
+
+    def test_location_missing_file_defaults(self):
+        lat, lon, src = wx.resolve_location("/no/such/file.json", None, None)
+        assert src == "default"
