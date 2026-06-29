@@ -14,6 +14,7 @@ Automated monitoring system for **multi-cloud solar panel installations** with i
 |--------------|-------------------------|------------------|
 | ShineMonitor | `web.shinemonitor.com`  | Production       |
 | DessMonitor  | `web.dessmonitor.com`   | Production (UC10)|
+| SolisCloud   | `soliscloud.com:13333`  | Production (UC13)|
 
 **Features:**
 
@@ -382,6 +383,50 @@ with **true battery SOC** read directly from the cracked **Hystorix/PACEEX BMS**
 
 ---
 
+### UC13: SolisCloud Inverter ON/OFF Watchdog
+
+Watchdog for **SolisCloud** inverters that detects when an inverter has been switched **OFF** and (when the Control API is configured) automatically switches it back **ON**, emailing the admin.
+
+**Implementation Status:** ✅ **IMPLEMENTED** (Session 17) — detection live; auto switch-on activates once the Solis API key is added.
+
+**Motivation:** The **Ktronics Imbulgoda** plant latched **OFF for 4 days** after repeated `Uac-Unstable` (code 1019) grid faults, recovering only when manually powered on in the SolisCloud app. This watchdog catches that within ~2 hours instead of days.
+
+**How it works:**
+
+1. Runs every 2 hours ([trigger-solis-switch.yml](.github/workflows/trigger-solis-switch.yml)).
+2. Reads each inverter's live state via the HMAC-SHA1-signed SolisCloud API.
+3. Decides if it's OFF — two modes:
+   - **Authoritative:** if `onoff_cid` is configured, reads the on/off control register (`/v2/api/atRead`).
+   - **Heuristic (default, no Control permission needed):** during the core daylight window (09:00–15:00 local), fresh telemetry showing `pac == 0` ⇒ not producing. Skips at night / on stale data to avoid false triggers.
+4. If OFF: auto-enable via `/v2/api/control` and email *"auto re-enabled"*; otherwise email *"switch on manually"* (throttled to once / 12 h).
+
+**Platform note:** SolisCloud uses an **API Key ID + Secret** (SolisCloud → Service → API Management), **not** the web login. Remote on/off needs the **Control API** permission (Ktronics AB is the Solis distributor, so it can self-enable this).
+
+**Scripts:**
+
+| Script | Purpose |
+|--------|---------|
+| `solis_common.py` | SolisCloud signed-request client (`SolisClient`) |
+| `check_solis_switch.py` | Detect OFF → enable → email watchdog |
+
+**Config:** `solis` block in `credentials.json` (see [solis/README_SOLIS.md](src/main/java/org/ktronics/scripts/solis/README_SOLIS.md)).
+
+**State File:** `state/solis_switch_state.json`
+
+**CLI:**
+
+```bash
+py check_solis_switch.py            # check + act + email (cron entrypoint)
+py check_solis_switch.py --dry-run  # detect + email, never send control
+py check_solis_switch.py --status   # print live state, no action
+py check_solis_switch.py --list     # list inverters on the account
+py check_solis_switch.py --discover <INVERTER_ID>   # find the on/off cid
+```
+
+**Test Coverage:** 31/31 PASSED (100%) — `test_solis_switch.py`
+
+---
+
 ## Bug Fixes
 
 ### UC9: Hash Timestamp Bug (Session 14)
@@ -571,7 +616,7 @@ The system runs automatically via GitHub Actions:
 
 Configure these in GitHub Settings > Secrets:
 
-- `SHINEMONITOR_CREDENTIALS_JSON`: ShineMonitor account credentials
+- `SHINEMONITOR_CREDENTIALS_JSON`: ShineMonitor account credentials (also holds the `solis` block for UC13)
 - `DESSMONITOR_CREDENTIALS_JSON`: DessMonitor account credentials (UC10)
 - `BMS_IOT_TOKEN`: PH1000 battery BMS session token — Aliyun IoT (UC12; refresh when expired)
 - `BMS_APPSECRET`: PH1000 BMS Aliyun API-Gateway app secret (UC12)
@@ -608,6 +653,7 @@ Default thresholds in `check_anomaly.py`:
 │   ├── trigger-shinemonitor.yml       # ShineMonitor monitoring (6x daily)
 │   ├── trigger-dessmonitor.yml        # DessMonitor monitoring (6x daily) - UC10
 │   ├── trigger-ph1000.yml             # PH1000 live dashboard + BMS (~10 min) - UC12
+│   ├── trigger-solis-switch.yml       # SolisCloud ON/OFF watchdog (2h) - UC13
 │   └── trigger-customer-reports.yml   # Weekly reports (Sunday)
 ├── src/main/java/org/ktronics/
 │   ├── config/
@@ -627,7 +673,10 @@ Default thresholds in `check_anomaly.py`:
 │       ├── generate_weekly_report.py  # Weekly report generation
 │       ├── generate_admin_summary.py  # Admin summary generation
 │       ├── send_customer_emails.py    # Customer email sending
-│       └── send_email.py              # System-wide email notifications
+│       ├── send_email.py              # System-wide email notifications
+│       ├── solis_common.py            # SolisCloud signed-request client (UC13)
+│       ├── check_solis_switch.py      # SolisCloud ON/OFF watchdog (UC13)
+│       └── solis/README_SOLIS.md      # SolisCloud setup + Control API guide (UC13)
 ├── data/                              # CSV time-series data
 │   ├── {plant}-YYYY-MM.csv            # ShineMonitor data files
 │   └── dessmonitor-{plant}-YYYY-MM.csv # DessMonitor data files (UC10)
@@ -642,7 +691,8 @@ Default thresholds in `check_anomaly.py`:
     ├── alerts_state.json              # ShineMonitor alert state
     ├── dessmonitor_alerts_state.json  # DessMonitor alert state (UC10)
     ├── admin_email_state.txt          # UC9 hash state
-    └── device_alarms_state.json       # Device alarm state
+    ├── device_alarms_state.json       # Device alarm state
+    └── solis_switch_state.json        # SolisCloud watchdog state (UC13)
 ```
 
 ## Testing
@@ -651,13 +701,19 @@ Default thresholds in `check_anomaly.py`:
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 252 tests (100% pass rate)
+#### Test Coverage: 283 tests (100% pass rate)
 
 **PH1000 Inverter + BMS (21 tests):**
 
 | Suite | Tests | Status |
 | ----- | ----- | ------ |
 | UC12 (PH1000 + BMS) | 21 | PASSED |
+
+**SolisCloud Watchdog (31 tests):**
+
+| Suite | Tests | Status |
+| ----- | ----- | ------ |
+| UC13 (Solis ON/OFF Watchdog) | 31 | PASSED |
 
 **ShineMonitor (119 tests):**
 
