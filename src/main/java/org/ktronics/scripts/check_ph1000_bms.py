@@ -90,11 +90,13 @@ def decode_wifi_band(hexstr):
     addr 2/4 = max/min temp in 0.1 K, => (raw-2730)/10 C).
     """
     b = bytes.fromhex(hexstr)
-    if len(b) < 60:
+    if len(b) < 35:
         return None
     u16 = lambda i: (b[i] << 8) | b[i + 1]
     s16 = lambda i: (u16(i) - 65536 if u16(i) >= 32768 else u16(i))
     cur = s16(11) / 100.0
+    # The fixed-offset HEADER (bytes 0-34) is the reliable part of the frame: it carries
+    # voltage/current/SOC/SOH/Ah/cycles and decodes identically across frame variants.
     d = {
         "voltage": round(u16(15) / 100.0, 2),       # V
         "current": round(cur, 2),                    # A (signed: + charge / - discharge)
@@ -105,33 +107,51 @@ def decode_wifi_band(hexstr):
         "soc": b[29],                                # %
         "soh": b[30],                                # %
         "cycles": u16(33),                           # @33 (the @31 next to it is reserved/0)
-        "high_cell_mv": u16(45),
-        "low_cell_mv": u16(49),
-        "max_temp": round((u16(53) - 2730) / 10.0, 1),  # °C
-        "min_temp": round((u16(57) - 2730) / 10.0, 1),
+        "high_cell_mv": None,
+        "low_cell_mv": None,
+        "max_temp": None,
+        "min_temp": None,
     }
-    # The datalogger pushes several frame TYPES (summary, per-cell, status). The summary
-    # frame decodes here cleanly; an offline/idle logger leaves a *non-summary* frame as the
-    # last value, which at these offsets yields physical nonsense (e.g. 568 V / SOC 201%).
-    # Reject anything implausible so the dashboard cleanly falls back to voltage-SOC and
-    # auto-resumes the moment a real summary frame arrives -- no manual re-harvest needed.
+    # The datalogger pushes several frame TYPES. An offline/idle logger leaves a *non-summary*
+    # frame cached, which at these header offsets yields physical nonsense (e.g. 568 V /
+    # SOC 201%). Gate on the reliable header so the dashboard cleanly falls back to voltage-SOC
+    # and auto-resumes the moment a real summary frame arrives -- no manual re-harvest needed.
     if not _frame_is_sane(d):
         return None
+    # The tail holds up to four `01 <addr> <u16>` records in a FIXED ORDER: high-cell mV,
+    # low-cell mV, max-temp, min-temp (temps in 0.1 K -> C). Their byte offset shifts per
+    # frame (and zero-padding precedes them), so scan for the real records and read them
+    # positionally rather than from a fixed offset.
+    recs = []
+    i = 34
+    while i + 3 < len(b) - 2:            # stop before the trailing 2-byte CRC + terminator
+        if b[i] == 0x01:
+            v = (b[i + 2] << 8) | b[i + 3]
+            if 2500 <= v <= 3700:        # a real cell-mV / temp(0.1 K) record; skips 0-padding
+                recs.append(v)
+                i += 4
+                continue
+        i += 1
+    if len(recs) >= 2:
+        d["high_cell_mv"], d["low_cell_mv"] = recs[0], recs[1]
+    if len(recs) >= 4:
+        d["max_temp"] = round((recs[2] - 2730) / 10.0, 1)
+        d["min_temp"] = round((recs[3] - 2730) / 10.0, 1)
     return d
 
 
 def _frame_is_sane(d):
-    """True only if a decoded WIFI_Band frame holds physically possible 16S-LFP values."""
+    """True only if the reliable header of a WIFI_Band frame holds physically possible values.
+
+    Validates ONLY fixed-offset header fields (voltage/SOC/SOH/current/Ah) -- the cell-mV and
+    temperature fields sit at variable tail offsets and are parsed/range-guarded separately.
+    """
     return (
         40.0 <= d["voltage"] <= 60.0           # 16 x 2.5-3.75 V
         and 0 <= d["soc"] <= 100
         and 0 <= d["soh"] <= 100
-        and 1500 <= d["low_cell_mv"] <= 4000    # mV
-        and 1500 <= d["high_cell_mv"] <= 4000
-        and d["low_cell_mv"] <= d["high_cell_mv"]
-        and -30.0 <= d["min_temp"] <= 85.0
-        and -30.0 <= d["max_temp"] <= 85.0
         and abs(d["current"]) <= 600
+        and 0 <= d["full_ah"] <= 2000
     )
 
 
@@ -209,9 +229,11 @@ def main():
                           % d["name"])
                     continue
                 out["packs"].append(d)
-                print("[BMS] %s: SOC %d%% %.2fV %.2fA %s temp %.1f/%.1f cyc %d"
+                temp = ("%.1f/%.1f" % (d["max_temp"], d["min_temp"])
+                        if d["max_temp"] is not None else "n/a")
+                print("[BMS] %s: SOC %d%% %.2fV %.2fA %s temp %s cyc %d"
                       % (d["name"], d["soc"], d["voltage"], d["current"], d["state"],
-                         d["max_temp"], d["min_temp"], d["cycles"]))
+                         temp, d["cycles"]))
             out["ok"] = len(out["packs"]) > 0
         except (urllib.error.HTTPError, urllib.error.URLError, KeyError, RuntimeError) as e:
             # token expired / auth failed -> ok stays False; dashboard hides the pane.
