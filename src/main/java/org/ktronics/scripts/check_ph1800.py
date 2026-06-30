@@ -200,7 +200,7 @@ def load_ph1800_accounts(creds_path, customer=None):
                 continue
         elif not acc.get("ph1800"):
             continue
-        caps = {"pv_kw": acc.get("pv_kw"), "rated_kw": acc.get("rated_kw"), "batt_kw": acc.get("batt_kw")}
+        caps = {"pv_kw": acc.get("pv_kw"), "batt_kw": acc.get("batt_kw")}
         out.append((label, acc.get("username"), acc.get("password"), caps))
     return company_key, out
 
@@ -255,6 +255,8 @@ FIELD_MAP = [
     (["pgrid"], "pgrid_w", "W"),
     (["grid voltage"], "grid_v", "V"),
     (["inverter voltage"], "inverter_v", "V"),
+    (["rated power"], "rated_power_w", "W"),       # inverter rating, straight from ShineMonitor
+    (["accumulated pv power"], "acc_pv_kwh", "kWh"),  # lifetime PV generation counter
     (["work state", "working state"], "work_state", ""),
 ]
 
@@ -382,45 +384,59 @@ def energy_by_date_kwh(series):
             {d: v / 1000.0 for d, v in load_wh.items()})
 
 
-def build_plant_block(plant_info, device, series, tz_offset=0, caps=None):
-    """PH1000-style plant block (energy from real PInverter/PLoad; no gains/CO2 — generic).
-
-    Capacities (PV array / inverter rating / battery) come straight from the per-account
-    credentials config (pv_kw / rated_kw / batt_kw) — not hardcoded — so the Flow Graph % and
-    the Plant-Profile spec cards are correct per plant.
+def build_plant_block(plant_info, device, series, tz_offset=0, caps=None,
+                      rated_w_cloud=None, cloud_energy=None, acc_pv_kwh=None):
+    """Plant block. Rated power + daily/monthly/yearly energy come straight from ShineMonitor;
+    total is the inverter's accumulated-PV counter. PV array / battery capacity come from the
+    per-account credentials config (pv_kw / batt_kw) — not hardcoded.
     """
     caps = caps or {}
-    pv_kwh, load_kwh = energy_by_date_kwh(series)
-    today = (datetime.now(timezone.utc) + timedelta(seconds=tz_offset)).strftime("%Y-%m-%d")
-    ym, yr = today[:7], today[:4]
+    e = cloud_energy or {}
     addr = (plant_info or {}).get("address", {}) or {}
 
     def cap_w(key):
         kw = _to_float(caps.get(key))
         return round(kw * 1000) if kw else None
 
+    nom = _to_float((plant_info or {}).get("nominalPower"))
+    rated_w = rated_w_cloud or (round(nom * 1000) if nom else None)
+
     return {
         "type": "PH1800",
         "name": (plant_info or {}).get("name") or device.get("alias") or "Plant",
-        "nominal_power_kw": _to_float(caps.get("rated_kw")) or _to_float((plant_info or {}).get("nominalPower")),
+        "nominal_power_kw": round(rated_w / 1000.0, 2) if rated_w else None,
         "pv_cap_w": cap_w("pv_kw"),
-        "rated_w": cap_w("rated_kw"),
+        "rated_w": rated_w,                          # from ShineMonitor (live "rated power")
         "batt_cap_w": cap_w("batt_kw"),
         "design_company": (plant_info or {}).get("designCompany"),
         "install": (plant_info or {}).get("install"),
         "country": addr.get("country"),
         "lat": _to_float(_first(addr, "lat", "latitude", "lati")),
         "lon": _to_float(_first(addr, "lng", "lon", "longitude", "long", "longi")),
-        "energy": {
-            "daily": round(pv_kwh.get(today, 0.0), 1),
-            "monthly": round(sum(v for d, v in pv_kwh.items() if d.startswith(ym)), 1),
-            "yearly": round(sum(v for d, v in pv_kwh.items() if d.startswith(yr)), 1),
-            "total": round(sum(pv_kwh.values()), 1),
-            "logged_from_days": len(pv_kwh),
+        "energy": {                                 # straight from ShineMonitor's energy endpoints
+            "daily": e.get("daily"),
+            "monthly": e.get("monthly"),
+            "yearly": e.get("yearly"),
+            "total": acc_pv_kwh,                     # the inverter's lifetime accumulated-PV counter
         },
-        "load_daily": round(load_kwh.get(today, 0.0), 1),
-        "energy_note": "Energy integrated from the real PInverter (PV) / PLoad fields ShineMonitor "
-                       "reports for this inverter.",
+        "energy_note": "Energy (daily/monthly/yearly) and rated power come straight from "
+                       "ShineMonitor; total is the inverter's accumulated-PV lifetime counter.",
+    }
+
+
+def plant_energy(token, secret, plant_id, tz_offset=0):
+    """Daily / monthly / yearly generation (kWh) from ShineMonitor's own energy endpoints."""
+    now = datetime.now(timezone.utc) + timedelta(seconds=tz_offset)
+
+    def e(action, date):
+        r = api_call(token, secret, action, f"plantid={plant_id}&date={date}")
+        dat = r.get("dat", {}) if r.get("err") == 0 else {}
+        return _to_float(dat.get("energy")) if isinstance(dat, dict) else None
+
+    return {
+        "daily": e("queryPlantEnergyDay", now.strftime("%Y-%m-%d")),
+        "monthly": e("queryPlantEnergyMonth", now.strftime("%Y-%m")),
+        "yearly": e("queryPlantEnergyYear", now.strftime("%Y")),
     }
 
 
@@ -459,7 +475,11 @@ def process_plant(token, secret, plant, days, caps=None):
     tz_off = int((plant.get("address", {}) or {}).get("timezone", 0) or 0)
     latest, last_update, all_fields = fetch_live(token, secret, device)
     series = fetch_history(token, secret, device, days, tz_off)
-    plant_block = build_plant_block(get_plant_info(token, secret, pid), device, series, tz_off, caps)
+    rated_w_cloud = _to_float((latest.get("rated_power_w") or {}).get("value"))
+    acc_pv_kwh = _to_float((latest.get("acc_pv_kwh") or {}).get("value"))
+    cloud_energy = plant_energy(token, secret, pid, tz_off)
+    plant_block = build_plant_block(get_plant_info(token, secret, pid), device, series, tz_off,
+                                    caps, rated_w_cloud, cloud_energy, acc_pv_kwh)
     return {
         "device": {
             "pn": device["pn"], "sn": device["sn"], "alias": device["alias"],

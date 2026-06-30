@@ -752,7 +752,7 @@ function renderProfilePane(){
     `<span>Installer <b>${p.design_company||'—'}</b></span><span>Installed <b>${(p.install||'').slice(0,10)||'—'}</b></span>`+
     `<span>Location <b>${p.country||'—'}</b></span><span>Tariff <b>Rs ${p.gains_rate||25}/unit</b></span>`+
     (dt?`<span>Device counters (real) <b>charged ${dt.charged_kwh} · discharged ${dt.discharged_kwh} kWh</b></span>`:'')+
-    `<span style="opacity:.7">${p.energy_note||''} Daily/Monthly/Yearly are computed from PV power; the two indigo cards are the inverter's own lifetime counters.</span>`;
+    `<span style="opacity:.7">${p.energy_note||''}</span>`;
 }
 
 /* ---- Plant Analysis pane (parameters added per customer via + button) ---- */
