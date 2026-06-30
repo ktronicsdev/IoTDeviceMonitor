@@ -6,7 +6,7 @@
 ║                                                                              ║
 ║                        Status: 1 CRITICAL, 0 WARNING                         ║
 ║                                                                              ║
-║               Date: 2026-06-29  |  Total Plants Monitored: 24                ║
+║               Date: 2026-06-30  |  Total Plants Monitored: 24                ║
 ║                                                                              ║
 ================================================================================
 
@@ -37,9 +37,9 @@
 │   Baseline (avg/day): 0.2214 kWh
 │   Alert Threshold: < 0.0443 kWh/day
 │   Recent Production:
-│     2026-06-27: 0.0000 kWh (0.0% of baseline)
 │     2026-06-28: 0.0000 kWh (0.0% of baseline)
 │     2026-06-29: 0.0000 kWh (0.0% of baseline)
+│     2026-06-30: 0.0000 kWh (0.0% of baseline)
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
