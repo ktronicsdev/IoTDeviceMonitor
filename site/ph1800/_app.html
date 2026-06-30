@@ -516,7 +516,7 @@ function renderLive(){
   document.getElementById('n_batt').innerHTML=(bv!==null?bv+' V':'—')+' · '+W(bw!==null?Math.abs(bw):null)
     +(bw?' · '+pctOf(Math.abs(bw),BATT_CAP_W):'');
   document.getElementById('n_battlab').textContent='Battery'+(flow&&flow!=='idle'?' · '+flow:'');
-  document.getElementById('n_grid').innerHTML=W(grid!==null?Math.abs(grid):0)+(gimp?' · import':gexp?' · export':'');
+  document.getElementById('n_grid').innerHTML=W(grid!==null?Math.abs(grid):0)+(grid?' · '+pctOf(Math.abs(grid),RATED_W):'');
   show('d_pv',pv>0); show('d_load',load>0); show('d_chg',bw<0); show('d_dis',bw>0);
   show('d_gin',gimp); show('d_gout',gexp);
   document.getElementById('a_batt').setAttribute('points', bw<0?'252,204 244,208 252,212':'244,204 252,208 244,212');
