@@ -427,6 +427,28 @@ def build_plant_block(plant_info, device, series, tz_offset=0, caps=None):
 # --------------------------------------------------------------------------- #
 # main
 # --------------------------------------------------------------------------- #
+def fetch_weather_block(lat, lon):
+    """Weather + solar-harvest block for the plant's location (reuses the shared weather module).
+
+    Fails soft (ok:false) -> the dashboard hides the Weather tab. Falls back to the module's
+    default location when the plant has no coordinates.
+    """
+    try:
+        import check_ph1000_weather as wx
+        la = lat if lat is not None else wx.DEFAULT_LAT
+        lo = lon if lon is not None else wx.DEFAULT_LON
+        raw = wx.fetch_open_meteo(la, lo)
+        hourly = raw.get("hourly", {}) or {}
+        daily = wx.aggregate_daily(hourly)
+        return {"ok": True, "lat": la, "lon": lo, "source": "open-meteo",
+                "current": wx.build_current(raw.get("current", {}) or {}),
+                "today": daily[-1] if daily else None,
+                "daily": daily, "hourly_ghi": wx.hourly_ghi_series(hourly)}
+    except Exception as e:                            # noqa: BLE001 — fail soft like the rest
+        print("  [WEATHER] failed (%s) -> weather pane hidden" % e)
+        return {"ok": False}
+
+
 def process_plant(token, secret, plant, days, caps=None):
     """Return a raw block for one plant, or None if it has no readable device."""
     pid = plant.get("pid")
@@ -448,7 +470,7 @@ def process_plant(token, secret, plant, days, caps=None):
         },
         "plant": plant_block,
         "latest": latest,
-        "fields": all_fields,           # every ShineMonitor reading, as-is, for the All-readings grid
+        "weather": fetch_weather_block(plant_block.get("lat"), plant_block.get("lon")),
         "series7d": series,
     }
 

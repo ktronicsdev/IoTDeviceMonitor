@@ -120,6 +120,7 @@
 </header>
 <nav class="tabs">
   <button data-tab="live" class="active">Live</button>
+  <button data-tab="weather">Weather</button>
   <button data-tab="profile">Plant Profile</button>
   <button data-tab="analysis">Plant Analysis</button>
 </nav>
@@ -168,10 +169,6 @@
 
   <!-- Live -->
   <div class="card"><div class="ch"><h2>Live</h2></div><div class="metrics" id="metrics"></div></div>
-
-  <!-- All readings: every field ShineMonitor reports for this inverter, exactly as-is -->
-  <div class="card"><div class="ch"><h2>All readings</h2><span class="sel" style="color:var(--muted)">every field · as-is from ShineMonitor</span></div>
-    <div class="metrics" id="allfields"></div></div>
 
   <!-- Power Profile (per day) -->
   <div class="card full">
@@ -302,21 +299,23 @@ const histMonths = () => { const g=groupDays(DATA&&DATA.series7d||[]);
 function groupDays(series){
   const m={}; for(const r of series){ const d=String(r.timestamp).slice(0,10); (m[d]=m[d]||[]).push(r); } return m;
 }
+const Z=()=>({prod:0,cons:0,chg:0,dis:0,imp:0,exp:0});   // zero energy bucket
 function dailyEnergy(points){ // integrate W -> kWh
   const p=[...points].sort((a,b)=>a.timestamp<b.timestamp?-1:1);
-  let prod=0,cons=0,chg=0,dis=0;
+  let prod=0,cons=0,chg=0,dis=0,imp=0,exp=0;
   for(let i=1;i<p.length;i++){
     const dt=(ts(p[i].timestamp)-ts(p[i-1].timestamp))/3600000; if(dt<=0||dt>0.5) continue;
     const avg=k=>{const a=num(p[i][k]),b=num(p[i-1][k]); return a==null||b==null?null:(a+b)/2;};
-    const pv=avg('pinverter_w'),ld=avg('load_power_w_est'),bw=avg('battery_w');
+    const pv=avg('pinverter_w'),ld=avg('load_power_w_est'),bw=avg('battery_w'),gw=avg('pgrid_w');
     if(pv>0) prod+=pv*dt; if(ld>0) cons+=ld*dt;
     if(bw<0) chg+=(-bw)*dt; if(bw>0) dis+=bw*dt;   // ChargerPower<0 = charging
+    if(gw<0) imp+=(-gw)*dt; if(gw>0) exp+=gw*dt;   // PGrid<0 = import from grid, >0 = export
   }
-  return {prod:prod/1000,cons:cons/1000,chg:chg/1000,dis:dis/1000};
+  return {prod:prod/1000,cons:cons/1000,chg:chg/1000,dis:dis/1000,imp:imp/1000,exp:exp/1000};
 }
 // Energy rolled up from the intraday series, for the Power-Profile M/Y/T views. Sparse on a
 // new plant (only days that have logged samples populate) and fills in as history accrues.
-const _eAdd=(o,k,e)=>{const t=o[k]=o[k]||{prod:0,cons:0,chg:0,dis:0};for(const x in t)t[x]+=e[x];};
+const _eAdd=(o,k,e)=>{const t=o[k]=o[k]||Z();for(const x in t)t[x]+=(e[x]||0);};
 function energyByDay(){ const g=groupDays(DATA&&DATA.series7d||[]),o={}; for(const d in g)o[d]=dailyEnergy(g[d]); return o; }
 function energyByMonth(){ const e=energyByDay(),o={}; for(const d in e)_eAdd(o,d.slice(0,7),e[d]); return o; }
 function energyByYear(){ const e=energyByMonth(),o={}; for(const m in e)_eAdd(o,m.slice(0,4),e[m]); return o; }
@@ -326,7 +325,7 @@ const dataYears =()=>[...new Set(Object.keys(energyByDay()).map(d=>d.slice(0,4))
 function energyByHour(day){
   const g=groupDays(DATA&&DATA.series7d||[]), pts=g[day]||[], byH={};
   for(const r of pts){ const h=String(r.timestamp).slice(11,13); (byH[h]=byH[h]||[]).push(r); }
-  const o={}; for(let h=0;h<24;h++){ const k=String(h).padStart(2,'0'); o[h]=byH[k]?dailyEnergy(byH[k]):{prod:0,cons:0,chg:0,dis:0}; }
+  const o={}; for(let h=0;h<24;h++){ const k=String(h).padStart(2,'0'); o[h]=byH[k]?dailyEnergy(byH[k]):Z(); }
   return o;
 }
 // M/Y/T aggregation for the intraday LINE charts (Plant Analysis, Weather): bucket the series by
@@ -414,7 +413,7 @@ function renderProfileDay(day){
      {label:'Irradiance (W/m²)',data:ghiPts,borderColor:'rgba(245,158,11,.5)',backgroundColor:'rgba(245,158,11,.10)',
       borderWidth:1,pointRadius:0,tension:.3,fill:true,spanGaps:true,yAxisID:'y'},
      ds('PV','pinverter_w','#22c55e'),ds('Battery','battery_w','#3b82f6'),
-     ds('Grid','__zero__','#ec4899'),ds('Consumption','load_power_w_est','#eab308'),
+     ds('Grid','pgrid_w','#ec4899'),ds('Consumption','load_power_w_est','#eab308'),
      {label:'SOC',data:pts.map(r=>({x:minOfDay(r.timestamp),y:socFromV(num(r.battery_v))})),borderColor:'#1e3a8a',
       backgroundColor:'#1e3a8a',borderWidth:1.5,pointRadius:0,tension:.25,spanGaps:true,
       borderDash:[4,4],yAxisID:'y1'}]},
@@ -432,11 +431,11 @@ function renderProfileEnergy(){
   const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   if(ppPeriod==='M'){
     const m=ppList('M')[ppIx.M], [y,mo]=m.split('-').map(Number), dim=new Date(y,mo,0).getDate(), e=energyByDay();
-    for(let d=1;d<=dim;d++){ const k=m+'-'+String(d).padStart(2,'0'); labels.push(String(d)); rows.push(e[k]||{prod:0,cons:0,chg:0,dis:0}); }
+    for(let d=1;d<=dim;d++){ const k=m+'-'+String(d).padStart(2,'0'); labels.push(String(d)); rows.push(e[k]||Z()); }
     xt='Day · '+m;
   } else if(ppPeriod==='Y'){
     const y=ppList('Y')[ppIx.Y], e=energyByMonth();
-    for(let mo=1;mo<=12;mo++){ const k=y+'-'+String(mo).padStart(2,'0'); labels.push(MN[mo-1]); rows.push(e[k]||{prod:0,cons:0,chg:0,dis:0}); }
+    for(let mo=1;mo<=12;mo++){ const k=y+'-'+String(mo).padStart(2,'0'); labels.push(MN[mo-1]); rows.push(e[k]||Z()); }
     xt='Month · '+y;
   } else {                                   // T — one bar per year of logged data
     const e=energyByYear(); for(const y of Object.keys(e).sort()){ labels.push(y); rows.push(e[y]); }
@@ -446,8 +445,10 @@ function renderProfileEnergy(){
   const cfg={type:'bar',data:{labels,datasets:[
      bar('Production',rows.map(e=>+e.prod.toFixed(2)),'#22c55e'),
      bar('Discharge', rows.map(e=>+e.dis.toFixed(2)),'#7dd3fc'),
+     bar('Grid import',rows.map(e=>+(e.imp||0).toFixed(2)),'#ef4444'),
      bar('Consumption',rows.map(e=>-+e.cons.toFixed(2)),'#eab308'),
-     bar('Charge',    rows.map(e=>-+e.chg.toFixed(2)),'#2563eb')]},
+     bar('Charge',    rows.map(e=>-+e.chg.toFixed(2)),'#2563eb'),
+     bar('Grid export',rows.map(e=>-+(e.exp||0).toFixed(2)),'#10b981')]},
    options:{responsive:true,scales:{
      x:{stacked:true,title:{display:true,text:xt,color:'#8a94a6'},ticks:{color:'#8a94a6'},grid:{display:false}},
      y:{stacked:true,title:{display:true,text:'kWh',color:'#8a94a6'},ticks:{color:'#8a94a6'},grid:{color:'#222c3b'}}},
@@ -460,7 +461,7 @@ function renderHistory(){
   if(!DATA) return;
   if(!Object.keys(groupDays(DATA.series7d||[])).length) return;
   document.getElementById('hm_seg').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.p===hmPeriod));
-  const list=ppList(hmPeriod), z=()=>({prod:0,cons:0,chg:0,dis:0});
+  const list=ppList(hmPeriod), z=()=>(Z());
   const sel=document.getElementById('hm_date').parentElement;
   if(hmPeriod==='T'||!list.length){ sel.style.display='none'; }
   else{ sel.style.display='';
@@ -480,8 +481,10 @@ function renderHistory(){
   const cfg={type:'bar',data:{labels,datasets:[
      bar('Production',E.map(e=>+e.prod.toFixed(2)),'#22c55e'),
      bar('Discharge', E.map(e=>+e.dis.toFixed(2)),'#7dd3fc'),
+     bar('Grid import',E.map(e=>+(e.imp||0).toFixed(2)),'#ef4444'),
      bar('Consumption',E.map(e=>-+e.cons.toFixed(2)),'#eab308'),
-     bar('Charge',    E.map(e=>-+e.chg.toFixed(2)),'#2563eb')]},
+     bar('Charge',    E.map(e=>-+e.chg.toFixed(2)),'#2563eb'),
+     bar('Grid export',E.map(e=>-+(e.exp||0).toFixed(2)),'#10b981')]},
    options:{responsive:true,scales:{
      x:{stacked:true,title:{display:!!xt,text:xt,color:'#8a94a6'},ticks:{color:'#8a94a6'},grid:{display:false}},
      y:{stacked:true,title:{display:true,text:'kWh',color:'#8a94a6'},ticks:{color:'#8a94a6'},grid:{color:'#222c3b'}}},
@@ -523,7 +526,7 @@ function renderLive(){
   document.getElementById('metrics').innerHTML=[
     card('PV Power',W(pv),''),
     card('Load Power',W(load),''),
-    card('Grid Power',W(grid!==null?Math.abs(grid):null),gimp?'▼ import':gexp?'▲ export':'',gimp?'charging':gexp?'discharging':''),
+    card('Grid Power',W(grid!==null?Math.abs(grid):null),gimp?'<span style="color:#ef4444">▼ import</span>':gexp?'<span style="color:#22c55e">▲ export</span>':'',''),
     card('Battery Power',W(bw),flow&&flow!=='idle'?'▲ '+flow:'',flow),
     card('Battery',(bv??'—')+' <small>V</small>',(ba??'—')+' A'),
     card('Grid Voltage',(gv??'—')+' <small>V</small>',''),
@@ -661,15 +664,6 @@ function renderWeatherChart(){
   }
   if(wxchart){ wxchart.data=cfg.data; wxchart.options=cfg.options; wxchart.update(); } else wxchart=new Chart(document.getElementById('wxchart'),cfg);
 }
-// Every ShineMonitor field for the plant, shown as-is (no calculation, no dropping).
-function renderAllFields(){
-  const box=document.getElementById('allfields'); if(!box) return;
-  const fs=(DATA&&DATA.fields)||[];
-  box.innerHTML = fs.length ? fs.map(f=>{
-    const v=(f.value===null||f.value===undefined||f.value==='')?'—':f.value;
-    return `<div class="m"><div class="l">${f.label}</div><div class="v">${v}${f.unit?` <small style="color:var(--muted);font-size:13px">${f.unit}</small>`:''}</div></div>`;
-  }).join('') : '<div style="color:var(--muted)">No fields.</div>';
-}
 async function load(){
   try{ const j=await fetchData();
        if(!j||!j.plants||!j.plants.length) throw new Error('no data');
@@ -682,7 +676,8 @@ async function load(){
        PV_CAP_W=num(DATA.plant&&DATA.plant.pv_cap_w); RATED_W=num(DATA.plant&&DATA.plant.rated_w); BATT_CAP_W=num(DATA.plant&&DATA.plant.batt_cap_w);
        const nm=(DATA.plant&&DATA.plant.name)||j.account||'Solar';
        document.getElementById('plantname').textContent=nm; document.title=nm;
-       renderLive(); renderAllFields(); renderBMS(); renderProfile(); renderHistory();
+       DATA.last_updated=j.last_updated;
+       renderLive(); renderBMS(); renderWeather(); renderProfile(); renderHistory();
        if(curTab==='profile') renderProfilePane(); if(curTab==='analysis') renderAnalysis(); }
   catch(e){ if(!DATA){ const f=document.getElementById('foot'); if(f) f.textContent='load error: '+e; } }
 }
@@ -766,8 +761,10 @@ const PARAM_DEFS=[
   {key:'load_power_w_est',label:'PLoad (W)',          color:'#3b82f6',axis:'y'},
   {key:'pv_power_w_est',  label:'PV Power (W)',       color:'#16a34a',axis:'y'},
   {key:'battery_w',       label:'Charger Power (W)',  color:'#f59e0b',axis:'y'},
+  {key:'pgrid_w',         label:'PGrid (W)',          color:'#ec4899',axis:'y'},
   {key:'battery_v',       label:'Battery Voltage (V)',color:'#22d3ee',axis:'y1'},
   {key:'battery_a',       label:'Charger Current (A)',color:'#a78bfa',axis:'y1'},
+  {key:'grid_v',          label:'Grid Voltage (V)',   color:'#94a3b8',axis:'y1'},
 ];
 const AN_KEY='ph1800_an_params';
 let anSel=JSON.parse(localStorage.getItem(AN_KEY)||'null')||['load_power_w_est','battery_v'];
