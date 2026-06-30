@@ -200,7 +200,8 @@ def load_ph1800_accounts(creds_path, customer=None):
                 continue
         elif not acc.get("ph1800"):
             continue
-        out.append((label, acc.get("username"), acc.get("password")))
+        caps = {"pv_kw": acc.get("pv_kw"), "rated_kw": acc.get("rated_kw"), "batt_kw": acc.get("batt_kw")}
+        out.append((label, acc.get("username"), acc.get("password"), caps))
     return company_key, out
 
 
@@ -381,16 +382,30 @@ def energy_by_date_kwh(series):
             {d: v / 1000.0 for d, v in load_wh.items()})
 
 
-def build_plant_block(plant_info, device, series, tz_offset=0):
-    """PH1000-style plant block (energy from real PInverter/PLoad; no gains/CO2 — generic)."""
+def build_plant_block(plant_info, device, series, tz_offset=0, caps=None):
+    """PH1000-style plant block (energy from real PInverter/PLoad; no gains/CO2 — generic).
+
+    Capacities (PV array / inverter rating / battery) come straight from the per-account
+    credentials config (pv_kw / rated_kw / batt_kw) — not hardcoded — so the Flow Graph % and
+    the Plant-Profile spec cards are correct per plant.
+    """
+    caps = caps or {}
     pv_kwh, load_kwh = energy_by_date_kwh(series)
     today = (datetime.now(timezone.utc) + timedelta(seconds=tz_offset)).strftime("%Y-%m-%d")
     ym, yr = today[:7], today[:4]
     addr = (plant_info or {}).get("address", {}) or {}
+
+    def cap_w(key):
+        kw = _to_float(caps.get(key))
+        return round(kw * 1000) if kw else None
+
     return {
         "type": "PH1800",
         "name": (plant_info or {}).get("name") or device.get("alias") or "Plant",
-        "nominal_power_kw": _to_float((plant_info or {}).get("nominalPower")),
+        "nominal_power_kw": _to_float(caps.get("rated_kw")) or _to_float((plant_info or {}).get("nominalPower")),
+        "pv_cap_w": cap_w("pv_kw"),
+        "rated_w": cap_w("rated_kw"),
+        "batt_cap_w": cap_w("batt_kw"),
         "design_company": (plant_info or {}).get("designCompany"),
         "install": (plant_info or {}).get("install"),
         "country": addr.get("country"),
@@ -412,7 +427,7 @@ def build_plant_block(plant_info, device, series, tz_offset=0):
 # --------------------------------------------------------------------------- #
 # main
 # --------------------------------------------------------------------------- #
-def process_plant(token, secret, plant, days):
+def process_plant(token, secret, plant, days, caps=None):
     """Return a raw block for one plant, or None if it has no readable device."""
     pid = plant.get("pid")
     devices = discover_devices(token, secret, pid)
@@ -422,7 +437,7 @@ def process_plant(token, secret, plant, days):
     tz_off = int((plant.get("address", {}) or {}).get("timezone", 0) or 0)
     latest, last_update, all_fields = fetch_live(token, secret, device)
     series = fetch_history(token, secret, device, days, tz_off)
-    plant_block = build_plant_block(get_plant_info(token, secret, pid), device, series, tz_off)
+    plant_block = build_plant_block(get_plant_info(token, secret, pid), device, series, tz_off, caps)
     return {
         "device": {
             "pn": device["pn"], "sn": device["sn"], "alias": device["alias"],
@@ -438,7 +453,7 @@ def process_plant(token, secret, plant, days):
     }
 
 
-def process_account(token, secret, label, username, password, args):
+def process_account(token, secret, label, username, password, caps, args):
     plants = get_plants(token, secret)
     if not plants:
         print(f"  [WARN] No plants for {label}")
@@ -447,7 +462,7 @@ def process_account(token, secret, label, username, password, args):
     blocks = []
     for plant in plants:
         try:
-            blk = process_plant(token, secret, plant, args.history_days)
+            blk = process_plant(token, secret, plant, args.history_days, caps)
         except Exception as e:                            # one bad plant must not sink the account
             print(f"  [WARN] plant {plant.get('name')} failed: {e}")
             blk = None
@@ -498,20 +513,20 @@ def main():
         sys.exit(1)
 
     if args.pages_dir:
-        created = [label for label, username, _pw in accounts if ensure_page(args.pages_dir, label, username)]
+        created = [label for label, _u, _pw, _c in accounts if ensure_page(args.pages_dir, label)]
         print(f"[pages] created {len(created)} new page(s): {created}" if created else "[pages] all pages exist")
         if not args.out_dir:
             sys.exit(0)
 
     rc = 0
-    for label, username, password in accounts:
+    for label, username, password, caps in accounts:
         print(f"\nAccount: {label}")
         token, secret = authenticate(username, password, company_key)
         if not token:
             print("  [ERROR] Auth failed")
             rc = 1
             continue
-        rc = process_account(token, secret, label, username, password, args) or rc
+        rc = process_account(token, secret, label, username, password, caps, args) or rc
     sys.exit(rc)
 
 

@@ -265,10 +265,8 @@ const shiftMonth=(ym,delta)=>{ let [y,m]=ym.split('-').map(Number); m+=delta;
   while(m<1){m+=12;y--;} while(m>12){m-=12;y++;} return y+'-'+String(m).padStart(2,'0'); };
 const num = v => { const n=parseFloat(v); return isNaN(n)?null:n; };
 const W = v => v===null||v===undefined||v===""?"—":Math.round(v).toLocaleString()+" W";
-// System capacities — drive the Flow-Graph % readouts and the Plant Profile spec cards.
-const PV_CAP_W=8*640;     // 5,120 W PV array (8 × 640 W panels)
-const RATED_W=5000;       // 5 kW inverter rated output
-const BATT_CAP_W=10000;   // 10 kW battery (200 A)
+// System capacities come from the per-plant credentials config (DATA.plant.*); set on load().
+let PV_CAP_W=null, RATED_W=null, BATT_CAP_W=null;
 const pctOf=(v,cap)=> (v==null||!cap)?'':Math.round(Math.max(0,v)/cap*100)+'%';
 // SOC from 16S LFP battery voltage — Deye-style smooth curve, anchored to the operator's
 // reference points (55.x V≈100%, 53.x V≈80%, 50.x V≈20%) and consistent with the live BMS
@@ -510,9 +508,10 @@ function renderLive(){
   // PGrid convention: < 0 = importing FROM grid (load runs off grid), > 0 = exporting TO grid.
   const gimp=grid!==null&&grid<-1, gexp=grid!==null&&grid>1;
   // Flow-graph readouts (power in W).
-  document.getElementById('n_pv').innerHTML=W(pv);
-  document.getElementById('n_load').innerHTML=W(load);
-  document.getElementById('n_batt').innerHTML=(bv!==null?bv+' V':'—')+' · '+W(bw!==null?Math.abs(bw):null);
+  document.getElementById('n_pv').innerHTML=W(pv)+(pv?' · '+pctOf(pv,PV_CAP_W):'');
+  document.getElementById('n_load').innerHTML=W(load)+(load?' · '+pctOf(load,RATED_W):'');
+  document.getElementById('n_batt').innerHTML=(bv!==null?bv+' V':'—')+' · '+W(bw!==null?Math.abs(bw):null)
+    +(bw?' · '+pctOf(Math.abs(bw),BATT_CAP_W):'');
   document.getElementById('n_battlab').textContent='Battery'+(flow&&flow!=='idle'?' · '+flow:'');
   document.getElementById('n_grid').innerHTML=W(grid!==null?Math.abs(grid):0)+(gimp?' · import':gexp?' · export':'');
   show('d_pv',pv>0); show('d_load',load>0); show('d_chg',bw<0); show('d_dis',bw>0);
@@ -680,6 +679,7 @@ async function load(){
          if(psel.dataset.sig!==String(j.plants.length)){ psel.innerHTML=j.plants.map((p,i)=>`<option value="${i}">${(p.plant&&p.plant.name)||('Plant '+(i+1))}</option>`).join(''); psel.dataset.sig=String(j.plants.length); }
          psel.value=plantIdx; }
        DATA=j.plants[plantIdx]||j.plants[0];
+       PV_CAP_W=num(DATA.plant&&DATA.plant.pv_cap_w); RATED_W=num(DATA.plant&&DATA.plant.rated_w); BATT_CAP_W=num(DATA.plant&&DATA.plant.batt_cap_w);
        const nm=(DATA.plant&&DATA.plant.name)||j.account||'Solar';
        document.getElementById('plantname').textContent=nm; document.title=nm;
        renderLive(); renderAllFields(); renderBMS(); renderProfile(); renderHistory();
@@ -742,9 +742,9 @@ function renderProfilePane(){
     card('benefit',ICON.temp,'Ambient temperature',(wc.temp_c??'—')+' °C'),
     card('benefit',ICON.sun,'Solar irradiance',(wc.ghi_wm2!=null?(wc.ghi_wm2/1000).toFixed(2):'—')+' kW/m²'),
     // System capacities (ratings) — also shown as % on the Flow Graph
-    card('spec',ICON.panel,'PV array',(PV_CAP_W/1000).toFixed(2)+' <small style="font-size:13px;opacity:.85">kW · 8×640W</small>'),
-    card('spec',ICON.bolt,'Inverter rated',(RATED_W/1000)+' <small style="font-size:13px;opacity:.85">kW</small>'),
-    card('spec',ICON.batt,'Battery capacity',(BATT_CAP_W/1000)+' <small style="font-size:13px;opacity:.85">kW · 200A</small>'),
+    card('spec',ICON.panel,'PV array',(PV_CAP_W?(PV_CAP_W/1000).toFixed(2):'—')+' <small style="font-size:13px;opacity:.85">kW</small>'),
+    card('spec',ICON.bolt,'Inverter rated',(RATED_W?(RATED_W/1000):'—')+' <small style="font-size:13px;opacity:.85">kW</small>'),
+    card('spec',ICON.batt,'Battery capacity',(BATT_CAP_W?(BATT_CAP_W/1000):'—')+' <small style="font-size:13px;opacity:.85">kW</small>'),
     // Real device lifetime counters (decoded from the inverter's own registers — not estimates)
     ...(p.device_totals ? [
       card('device',ICON.gain,'Battery charged (device)',(p.device_totals.charged_kwh??0)+' kWh'),
