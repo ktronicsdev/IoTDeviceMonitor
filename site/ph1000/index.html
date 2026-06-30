@@ -483,7 +483,7 @@ function renderWeather(){
   html+=`</div>`;
   const days=(w.daily||[]).slice(-7);
   if(days.length){
-    html+=`<div style="display:grid;grid-template-columns:repeat(${days.length},1fr);gap:8px;margin-top:14px">`+
+    html+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:8px;margin-top:14px">`+
       days.map(d=>{ const lc=lossColor(d.loss_pct);
         return `<div class="m" style="padding:10px;text-align:center">
           <div style="font-size:11px;color:var(--muted)">${String(d.date).slice(5)}</div>
