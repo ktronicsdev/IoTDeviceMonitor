@@ -157,41 +157,22 @@ def account_file(username, password):
     return hashlib.sha256(f"{username}:{password}".encode()).hexdigest() + ".json"
 
 
-# Thin per-plant page shell: loads the shared app and supplies the (non-secret) username; the
-# user types the password and the app fetches sha256(username:password).json from ph1800-live.
-PAGE_TEMPLATE = """<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{label} · Solar</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>☀️</text></svg>">
-<link rel="stylesheet" href="../app.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script>window.PH1800 = {{ username: {username}, label: {label_js} }};</script>
-</head>
-<body>
-<div id="root"></div>
-<script src="../app.js"></script>
-</body>
-</html>
-"""
+def ensure_page(pages_dir, label):
+    """Create <pages_dir>/<label>/index.html by copying the canonical dashboard template.
 
-
-def ensure_page(pages_dir, label, username):
-    """Create site/ph1800/<label>/index.html from the template if it doesn't exist yet.
-
-    Returns True if a new page was created. Never overwrites an existing one.
+    The dashboard is plant-agnostic (login + data drive everything), so every plant's page is
+    an identical copy of <pages_dir>/_app.html. Returns True if a new page was created; never
+    overwrites an existing one. Needs _app.html to exist.
     """
     page = Path(pages_dir) / label / "index.html"
     if page.exists():
         return False
+    template = Path(pages_dir) / "_app.html"
+    if not template.exists():
+        print(f"[pages] template {template} missing — cannot create page for {label}")
+        return False
     page.parent.mkdir(parents=True, exist_ok=True)
-    page.write_text(
-        PAGE_TEMPLATE.format(label=label,
-                             username=json.dumps(username),
-                             label_js=json.dumps(label)),
-        encoding="utf-8")
+    page.write_text(template.read_text(encoding="utf-8"), encoding="utf-8")
     return True
 
 
@@ -259,10 +240,33 @@ def _device_params(device):
 
 
 # --------------------------------------------------------------------------- #
-# Raw pass-through: live + history (EVERY field ShineMonitor returns)
+# Field mapping -> PH1000 dashboard schema (so the same layout renders the data).
+# Same MUST PH device family as PH1000, so the cloud column TITLES match. For a working
+# inverter these values are CORRECT, so we use the REAL PLoad / PInverter directly (the
+# PH1000 module only *estimated* them because Mifanza's devcode-697 unit is broken).
 # --------------------------------------------------------------------------- #
+FIELD_MAP = [
+    (["battery voltage"], "battery_v", "V"),
+    (["charger current"], "battery_a", "A"),     # signed: + charge / - discharge
+    (["charger power"], "battery_w", "W"),        # signed battery power
+    (["pinverter", "inverter power"], "pinverter_w", "W"),
+    (["pload"], "load_power_w_est", "W"),         # REAL load (key kept for layout compatibility)
+    (["pgrid"], "pgrid_w", "W"),
+    (["grid voltage"], "grid_v", "V"),
+    (["inverter voltage"], "inverter_v", "V"),
+    (["work state", "working state"], "work_state", ""),
+]
+
+
+def _map_key(title):
+    low = str(title).lower()
+    for cands, key, unit in FIELD_MAP:
+        if any(c in low for c in cands):
+            return key, unit
+    return None, None
+
+
 def _iter_par_entries(obj):
-    """Yield (title, value, unit) from an arbitrary queryDeviceLastData payload."""
     if isinstance(obj, dict):
         name = _first(obj, "par", "name", "title", "id")
         val = obj.get("val") if "val" in obj else obj.get("value")
@@ -275,8 +279,15 @@ def _iter_par_entries(obj):
             yield from _iter_par_entries(v)
 
 
-def fetch_live_raw(token, secret, device):
-    """Return ({slug: {label, value, unit}}, last_update, raw) for EVERY live field as-is."""
+def charge_state(battery_w):
+    w = _to_float(battery_w)
+    if w is None:
+        return "unknown"
+    return "charging" if w < 0 else ("discharging" if w > 0 else "idle")
+
+
+def fetch_live(token, secret, device):
+    """Live snapshot mapped to the PH1000 dashboard keys (+ pv_power_w_est from real PInverter)."""
     resp = api_call(token, secret, LIVE_ACTION, _device_params(device))
     if resp.get("err") != 0:
         return {}, None, resp
@@ -285,19 +296,18 @@ def fetch_live_raw(token, secret, device):
         if str(title).lower() == "timestamp":
             last_update = val
             continue
-        key = safe_slug(title)
+        key, kunit = _map_key(title)
         if key and key not in fields:
-            fields[key] = {"label": str(title), "value": val, "unit": unit or ""}
+            fields[key] = {"value": val, "unit": unit or kunit}
+    # PV power = PInverter (real). load_power_w_est already holds the real PLoad above.
+    if "pinverter_w" in fields:
+        fields["pv_power_w_est"] = {"value": fields["pinverter_w"]["value"], "unit": "W"}
     return fields, last_update, resp
 
 
-def fetch_history_raw(token, secret, device, days, tz_offset=0):
-    """Last `days` days of the full "Data Details" table, as-is. Returns (rows, fields).
-
-    `fields` is the ordered list of {key,label} numeric columns (for the dashboard chart).
-    The device logs in plant-local time, so "today" uses tz_offset (plant address.timezone).
-    """
-    rows, fields = [], []
+def fetch_history(token, secret, device, days, tz_offset=0):
+    """Last `days` days mapped to PH1000 keys (battery_v/a/w, pinverter_w, load_power_w_est, ...)."""
+    rows = []
     today = (datetime.now(timezone.utc) + timedelta(seconds=tz_offset)).date()
     for offset in range(days - 1, -1, -1):
         date_str = (today - timedelta(days=offset)).strftime("%Y-%m-%d")
@@ -314,11 +324,9 @@ def fetch_history_raw(token, secret, device, days, tz_offset=0):
                 colmap = []
                 for t in titles:
                     label = str(_first(t, "title", "name", default=t) if isinstance(t, dict) else t)
-                    colmap.append((safe_slug(label) or label.lower(), label))
-                ts_idx = next((i for i, (k, _l) in enumerate(colmap) if "timestamp" in k), None)
-                if not fields:
-                    fields = [{"key": k, "label": lbl}
-                              for i, (k, lbl) in enumerate(colmap) if i != ts_idx]
+                    key, _u = _map_key(label)
+                    colmap.append(("timestamp" if "timestamp" in label.lower() else key))
+                ts_idx = next((i for i, k in enumerate(colmap) if k == "timestamp"), None)
             if ts_idx is None:
                 break
             page_rows = dat.get("row", []) or []
@@ -326,33 +334,70 @@ def fetch_history_raw(token, secret, device, days, tz_offset=0):
                 f = r.get("field", [])
                 if ts_idx >= len(f):
                     continue
-                row = {"timestamp": f[ts_idx]}
-                for i, (k, _lbl) in enumerate(colmap):
-                    if i == ts_idx or i >= len(f):
+                row = {"timestamp": f[ts_idx], "source": "measured", "work_state": ""}
+                for i, k in enumerate(colmap):
+                    if not k or k == "timestamp" or i >= len(f):
                         continue
-                    fv = _to_float(f[i])
-                    row[k] = fv if fv is not None else f[i]
+                    row[k] = _to_float(f[i])
+                row["charge_state"] = charge_state(row.get("battery_w"))
+                if row.get("pinverter_w") is not None:
+                    row["pv_power_w_est"] = row["pinverter_w"]
                 rows.append(row)
             if len(page_rows) < HISTORY_PAGESIZE:
                 break
             page += 1
             time.sleep(0.1)
         time.sleep(0.1)
-    return rows, fields
+    return rows
 
 
-def build_plant_block(plant_info, device):
-    """Plant profile straight from ShineMonitor (no computed energy/gains)."""
+def energy_by_date_kwh(series):
+    """Integrate PV (PInverter) and load (real PLoad) into kWh per date (trapezoid, 15-min cap)."""
+    from collections import defaultdict
+    pv_wh, load_wh, prev = defaultdict(float), defaultdict(float), None
+    for r in sorted(series, key=lambda x: str(x.get("timestamp", ""))):
+        try:
+            dt = datetime.strptime(str(r.get("timestamp", ""))[:19], "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            continue
+        pv = _to_float(r.get("pinverter_w")) or 0.0
+        load = _to_float(r.get("load_power_w_est")) or 0.0
+        if prev is not None:
+            dh = (dt - prev[0]).total_seconds() / 3600.0
+            if 0 < dh <= 0.25:
+                d = prev[0].strftime("%Y-%m-%d")
+                pv_wh[d] += prev[1] * dh
+                load_wh[d] += prev[2] * dh
+        prev = (dt, pv, load)
+    return ({d: v / 1000.0 for d, v in pv_wh.items()},
+            {d: v / 1000.0 for d, v in load_wh.items()})
+
+
+def build_plant_block(plant_info, device, series, tz_offset=0):
+    """PH1000-style plant block (energy from real PInverter/PLoad; no gains/CO2 — generic)."""
+    pv_kwh, load_kwh = energy_by_date_kwh(series)
+    today = (datetime.now(timezone.utc) + timedelta(seconds=tz_offset)).strftime("%Y-%m-%d")
+    ym, yr = today[:7], today[:4]
     addr = (plant_info or {}).get("address", {}) or {}
     return {
         "type": "PH1800",
-        "display_mode": "raw",
         "name": (plant_info or {}).get("name") or device.get("alias") or "Plant",
         "nominal_power_kw": _to_float((plant_info or {}).get("nominalPower")),
+        "design_company": (plant_info or {}).get("designCompany"),
         "install": (plant_info or {}).get("install"),
         "country": addr.get("country"),
         "lat": _to_float(_first(addr, "lat", "latitude", "lati")),
         "lon": _to_float(_first(addr, "lng", "lon", "longitude", "long", "longi")),
+        "energy": {
+            "daily": round(pv_kwh.get(today, 0.0), 1),
+            "monthly": round(sum(v for d, v in pv_kwh.items() if d.startswith(ym)), 1),
+            "yearly": round(sum(v for d, v in pv_kwh.items() if d.startswith(yr)), 1),
+            "total": round(sum(pv_kwh.values()), 1),
+            "logged_from_days": len(pv_kwh),
+        },
+        "load_daily": round(load_kwh.get(today, 0.0), 1),
+        "energy_note": "Energy integrated from the real PInverter (PV) / PLoad fields ShineMonitor "
+                       "reports for this inverter.",
     }
 
 
@@ -367,9 +412,9 @@ def process_plant(token, secret, plant, days):
         return None
     device = devices[0]                                   # one inverter per plant (typical)
     tz_off = int((plant.get("address", {}) or {}).get("timezone", 0) or 0)
-    latest, last_update, _ = fetch_live_raw(token, secret, device)
-    series, fields = fetch_history_raw(token, secret, device, days, tz_off)
-    plant_block = build_plant_block(get_plant_info(token, secret, pid), device)
+    latest, last_update, _ = fetch_live(token, secret, device)
+    series = fetch_history(token, secret, device, days, tz_off)
+    plant_block = build_plant_block(get_plant_info(token, secret, pid), device, series, tz_off)
     return {
         "device": {
             "pn": device["pn"], "sn": device["sn"], "alias": device["alias"],
@@ -380,8 +425,7 @@ def process_plant(token, secret, plant, days):
         },
         "plant": plant_block,
         "latest": latest,
-        "series_fields": fields,
-        "series": series,
+        "series7d": series,
     }
 
 
@@ -403,7 +447,7 @@ def process_account(token, secret, label, username, password, args):
         blocks.append(blk)
         print(f"  Plant: {blk['plant']['name']} | device {blk['device']['alias']} "
               f"(devcode {blk['device']['devcode']}) | {len(blk['latest'])} live fields, "
-              f"{len(blk['series'])} history points")
+              f"{len(blk['series7d'])} history points")
 
     if not blocks:
         print(f"  [WARN] No readable devices for {label}")

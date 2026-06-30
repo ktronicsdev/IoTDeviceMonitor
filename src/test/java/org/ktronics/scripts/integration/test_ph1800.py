@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-check_ph1800.py — generic ShineMonitor pass-through tests.
+check_ph1800.py — generic ShineMonitor tests (multi-plant, PH1000-schema mapping).
 
-Verifies the multi-tenant "PH1800" path: ph1800-flag account selection, the
-credential-derived data filename, raw live/history pass-through (no computed/estimate
-fields), and per-plant page-shell generation. No network (pure logic on mocked shapes).
-The PH1000 tests are unaffected — this is an additive, separate module.
+Verifies ph1800-flag account selection, the credential-derived data filename, the field
+mapping that lets the PH1000 dashboard layout render real cloud data (PLoad/PInverter used
+DIRECTLY, no estimation), and per-plant page-shell generation. No network. The PH1000 tests
+are unaffected — this is an additive, separate module.
 """
 
 import hashlib
@@ -36,69 +36,69 @@ class TestAccountSelection:
 
     def test_only_ph1800_flagged(self, tmp_path):
         ck, accs = b.load_ph1800_accounts(self._creds(tmp_path))
-        assert ck == "ck"
-        assert [a[0] for a in accs] == ["A"]            # not B (no flag), not C (ph1000)
+        assert ck == "ck" and [a[0] for a in accs] == ["A"]
 
     def test_customer_overrides_flag(self, tmp_path):
         _ck, accs = b.load_ph1800_accounts(self._creds(tmp_path), "B")
-        assert [a[0] for a in accs] == ["B"]            # --customer includes an unflagged account
+        assert [a[0] for a in accs] == ["B"]
 
 
 class TestFilename:
     def test_deterministic_credential_hash(self):
-        assert b.account_file("user", "pass") == \
-            hashlib.sha256(b"user:pass").hexdigest() + ".json"
+        assert b.account_file("user", "pass") == hashlib.sha256(b"user:pass").hexdigest() + ".json"
 
     def test_distinct_per_credentials(self):
         assert b.account_file("u", "p1") != b.account_file("u", "p2")
 
 
-class TestRawPassthrough:
-    def test_live_passes_through_every_field(self, monkeypatch):
+class TestFieldMapping:
+    def test_live_maps_to_dashboard_keys(self, monkeypatch):
         fake = {"err": 0, "dat": {
             "ts": {"par": "Timestamp", "val": "2026-06-30 10:00:00"},
             "bv": {"par": "Battery Voltage", "val": "26.6", "unit": "V"},
+            "cc": {"par": "Charger Current", "val": "0.0", "unit": "A"},
+            "cp": {"par": "Charger Power", "val": "0", "unit": "W"},
+            "pi": {"par": "PInverter", "val": "0", "unit": "W"},
             "pl": {"par": "PLoad", "val": "168", "unit": "W"},
             "ws": {"par": "work state", "val": "Grid-Tie"}}}
         monkeypatch.setattr(b, "api_call", lambda *a, **k: fake)
-        fields, last, _ = b.fetch_live_raw(None, None, DEV)
+        f, last, _ = b.fetch_live(None, None, DEV)
         assert last == "2026-06-30 10:00:00"
-        assert "timestamp" not in fields                # timestamp is lifted out, not a field
-        assert fields["battery-voltage"]["value"] == "26.6"
-        assert fields["pload"]["label"] == "PLoad" and fields["pload"]["unit"] == "W"
-        assert fields["work-state"]["value"] == "Grid-Tie"
+        assert f["battery_v"]["value"] == "26.6"
+        assert f["load_power_w_est"]["value"] == "168"      # REAL PLoad, used directly
+        assert f["pinverter_w"]["value"] == "0"
+        assert f["pv_power_w_est"]["value"] == "0"           # = PInverter
+        assert f["work_state"]["value"] == "Grid-Tie"
 
-    def test_no_estimate_or_computed_keys(self, monkeypatch):
-        fake = {"err": 0, "dat": {"x": {"par": "PInverter", "val": "0", "unit": "W"}}}
-        monkeypatch.setattr(b, "api_call", lambda *a, **k: fake)
-        fields, _l, _r = b.fetch_live_raw(None, None, DEV)
-        assert list(fields) == ["pinverter"]
-        assert all("est" not in k and "soc" not in k for k in fields)  # nothing derived
-
-    def test_history_passes_through_columns(self, monkeypatch):
+    def test_history_maps_and_flags_charge_state(self, monkeypatch):
         page = {"err": 0, "dat": {
-            "title": [{"title": "Timestamp"}, {"title": "Battery Voltage"}, {"title": "PLoad"}],
-            "row": [{"field": ["2026-06-30 10:00:00", "26.6", "168"]}]}}
+            "title": [{"title": "Timestamp"}, {"title": "Battery Voltage"},
+                      {"title": "Charger Power"}, {"title": "PInverter"}, {"title": "PLoad"}],
+            "row": [{"field": ["2026-06-30 10:00:00", "26.6", "-50", "0", "168"]}]}}
         n = {"i": 0}
 
-        def fake(token, secret, action, params=""):
-            if "OneDay" in action:
+        def fake(t, s, a, p=""):
+            if "OneDay" in a:
                 n["i"] += 1
                 return page if n["i"] == 1 else {"err": 0, "dat": {"title": [], "row": []}}
             return {"err": 0, "dat": {}}
         monkeypatch.setattr(b, "api_call", fake)
-        rows, fields = b.fetch_history_raw(None, None, DEV, days=1)
-        assert rows and rows[0]["battery-voltage"] == 26.6 and rows[0]["pload"] == 168.0
-        assert {f["key"] for f in fields} == {"battery-voltage", "pload"}   # timestamp excluded
+        rows = b.fetch_history(None, None, DEV, days=1)
+        r = rows[0]
+        assert r["battery_v"] == 26.6 and r["battery_w"] == -50.0 and r["load_power_w_est"] == 168.0
+        assert r["pv_power_w_est"] == 0.0 and r["charge_state"] == "charging"   # battery_w < 0
 
 
 class TestPageShell:
-    def test_creates_and_embeds_username(self, tmp_path):
-        assert b.ensure_page(str(tmp_path), "Gayan-IMH", "pcgayan.imbulgoda") is True
-        html = (tmp_path / "Gayan-IMH" / "index.html").read_text(encoding="utf-8")
-        assert '"pcgayan.imbulgoda"' in html and '"Gayan-IMH"' in html
-        assert "../app.js" in html and "../app.css" in html
+    def test_copies_template(self, tmp_path):
+        (tmp_path / "_app.html").write_text("<html>DASH</html>", encoding="utf-8")
+        assert b.ensure_page(str(tmp_path), "Gayan-IMH") is True
+        assert (tmp_path / "Gayan-IMH" / "index.html").read_text(encoding="utf-8") == "<html>DASH</html>"
+
+    def test_no_template_no_create(self, tmp_path):
+        assert b.ensure_page(str(tmp_path), "X") is False   # no _app.html -> nothing created
 
     def test_does_not_overwrite(self, tmp_path):
-        b.ensure_page(str(tmp_path), "X", "u")
-        assert b.ensure_page(str(tmp_path), "X", "u") is False
+        (tmp_path / "_app.html").write_text("X", encoding="utf-8")
+        b.ensure_page(str(tmp_path), "Y")
+        assert b.ensure_page(str(tmp_path), "Y") is False
