@@ -52,14 +52,13 @@ class TestFilename:
 
 
 class TestFieldMapping:
-    # On this inverter: Charger Power = PV power; PInverter = battery power; Batt Current = battery A.
+    # On this inverter: Charger Power = PV power; battery power = Battery V x Batt Current.
     def test_live_maps_to_dashboard_keys(self, monkeypatch):
         fake = {"err": 0, "dat": {
             "ts": {"par": "Timestamp", "val": "2026-06-30 10:00:00"},
             "bv": {"par": "Battery Voltage", "val": "26.6", "unit": "V"},
             "bc": {"par": "Batt Current", "val": "-3", "unit": "A"},
             "cp": {"par": "Charger Power", "val": "88", "unit": "W"},
-            "pi": {"par": "PInverter", "val": "-80", "unit": "W"},
             "pl": {"par": "PLoad", "val": "168", "unit": "W"},
             "ws": {"par": "work state", "val": "Grid-Tie"}}}
         monkeypatch.setattr(b, "api_call", lambda *a, **k: fake)
@@ -69,7 +68,7 @@ class TestFieldMapping:
         assert f["battery_a"]["value"] == "-3"               # from Batt Current
         assert f["pinverter_w"]["value"] == "88"             # Charger Power = PV power
         assert f["pv_power_w_est"]["value"] == "88"
-        assert f["battery_w"]["value"] == "-80"              # PInverter = battery power
+        assert f["battery_w"]["value"] == round(26.6 * -3)   # Battery V x Batt Current = -80
         assert f["load_power_w_est"]["value"] == "168"       # REAL PLoad, used directly
         assert f["work_state"]["value"] == "Grid-Tie"
 
@@ -83,8 +82,8 @@ class TestFieldMapping:
     def test_history_maps_and_flags_charge_state(self, monkeypatch):
         page = {"err": 0, "dat": {
             "title": [{"title": "Timestamp"}, {"title": "Battery Voltage"}, {"title": "Batt Current"},
-                      {"title": "Charger Power"}, {"title": "PInverter"}, {"title": "PLoad"}],
-            "row": [{"field": ["2026-06-30 10:00:00", "26.6", "-3", "88", "-80", "168"]}]}}
+                      {"title": "Charger Power"}, {"title": "PLoad"}],
+            "row": [{"field": ["2026-06-30 10:00:00", "26.6", "-3", "88", "168"]}]}}
         n = {"i": 0}
 
         def fake(t, s, a, p=""):
@@ -97,7 +96,7 @@ class TestFieldMapping:
         r = rows[0]
         assert r["battery_v"] == 26.6 and r["battery_a"] == -3.0 and r["load_power_w_est"] == 168.0
         assert r["pinverter_w"] == 88.0 and r["pv_power_w_est"] == 88.0      # Charger Power = PV
-        assert r["battery_w"] == -80.0 and r["charge_state"] == "charging"   # PInverter, <0 = charging
+        assert r["battery_w"] == round(26.6 * -3) and r["charge_state"] == "charging"  # V*I < 0
 
 
 class TestPageShell:
