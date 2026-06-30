@@ -248,9 +248,8 @@ def _device_params(device):
 # --------------------------------------------------------------------------- #
 FIELD_MAP = [
     (["battery voltage"], "battery_v", "V"),
-    (["charger current"], "battery_a", "A"),     # signed: + charge / - discharge
-    (["charger power"], "battery_w", "W"),        # signed battery power
-    (["pinverter", "inverter power"], "pinverter_w", "W"),
+    (["batt current"], "battery_a", "A"),         # the REAL battery current (signed)
+    (["charger power"], "pinverter_w", "W"),      # Charger Power = PV power on this inverter
     (["pload"], "load_power_w_est", "W"),         # REAL load (key kept for layout compatibility)
     (["pgrid"], "pgrid_w", "W"),
     (["grid voltage"], "grid_v", "V"),
@@ -311,7 +310,11 @@ def fetch_live(token, secret, device):
         key, kunit = _map_key(title)
         if key and key not in mapped:
             mapped[key] = {"value": val, "unit": unit or kunit}
-    if "pinverter_w" in mapped:                       # PV power = PInverter (real)
+    bv = _to_float((mapped.get("battery_v") or {}).get("value"))
+    ba = _to_float((mapped.get("battery_a") or {}).get("value"))
+    if bv is not None and ba is not None:             # battery power = V x I (signed by current)
+        mapped["battery_w"] = {"value": round(bv * ba), "unit": "W"}
+    if "pinverter_w" in mapped:                       # PV power = Charger Power on this inverter
         mapped["pv_power_w_est"] = {"value": mapped["pinverter_w"]["value"], "unit": "W"}
     return mapped, last_update, all_fields
 
@@ -350,6 +353,8 @@ def fetch_history(token, secret, device, days, tz_offset=0):
                     if not k or k == "timestamp" or i >= len(f):
                         continue
                     row[k] = _to_float(f[i])
+                if row.get("battery_v") is not None and row.get("battery_a") is not None:
+                    row["battery_w"] = round(row["battery_v"] * row["battery_a"])
                 row["charge_state"] = charge_state(row.get("battery_w"))
                 if row.get("pinverter_w") is not None:
                     row["pv_power_w_est"] = row["pinverter_w"]

@@ -52,29 +52,38 @@ class TestFilename:
 
 
 class TestFieldMapping:
+    # On this inverter: Charger Power = PV power; battery power = Battery V x Batt Current.
     def test_live_maps_to_dashboard_keys(self, monkeypatch):
         fake = {"err": 0, "dat": {
             "ts": {"par": "Timestamp", "val": "2026-06-30 10:00:00"},
             "bv": {"par": "Battery Voltage", "val": "26.6", "unit": "V"},
-            "cc": {"par": "Charger Current", "val": "0.0", "unit": "A"},
-            "cp": {"par": "Charger Power", "val": "0", "unit": "W"},
-            "pi": {"par": "PInverter", "val": "0", "unit": "W"},
+            "bc": {"par": "Batt Current", "val": "-3", "unit": "A"},
+            "cp": {"par": "Charger Power", "val": "88", "unit": "W"},
             "pl": {"par": "PLoad", "val": "168", "unit": "W"},
             "ws": {"par": "work state", "val": "Grid-Tie"}}}
         monkeypatch.setattr(b, "api_call", lambda *a, **k: fake)
         f, last, _ = b.fetch_live(None, None, DEV)
         assert last == "2026-06-30 10:00:00"
         assert f["battery_v"]["value"] == "26.6"
-        assert f["load_power_w_est"]["value"] == "168"      # REAL PLoad, used directly
-        assert f["pinverter_w"]["value"] == "0"
-        assert f["pv_power_w_est"]["value"] == "0"           # = PInverter
+        assert f["battery_a"]["value"] == "-3"               # from Batt Current
+        assert f["pinverter_w"]["value"] == "88"             # Charger Power = PV power
+        assert f["pv_power_w_est"]["value"] == "88"
+        assert f["battery_w"]["value"] == round(26.6 * -3)   # V x I = -80
+        assert f["load_power_w_est"]["value"] == "168"       # REAL PLoad, used directly
         assert f["work_state"]["value"] == "Grid-Tie"
+
+    def test_charger_current_is_not_battery(self, monkeypatch):
+        # Charger Current is the MPPT/PV current, not the battery — must NOT become battery_a.
+        fake = {"err": 0, "dat": {"cc": {"par": "Charger Current", "val": "0.5", "unit": "A"}}}
+        monkeypatch.setattr(b, "api_call", lambda *a, **k: fake)
+        f, _l, _r = b.fetch_live(None, None, DEV)
+        assert "battery_a" not in f
 
     def test_history_maps_and_flags_charge_state(self, monkeypatch):
         page = {"err": 0, "dat": {
             "title": [{"title": "Timestamp"}, {"title": "Battery Voltage"},
-                      {"title": "Charger Power"}, {"title": "PInverter"}, {"title": "PLoad"}],
-            "row": [{"field": ["2026-06-30 10:00:00", "26.6", "-50", "0", "168"]}]}}
+                      {"title": "Batt Current"}, {"title": "Charger Power"}, {"title": "PLoad"}],
+            "row": [{"field": ["2026-06-30 10:00:00", "26.6", "-3", "88", "168"]}]}}
         n = {"i": 0}
 
         def fake(t, s, a, p=""):
@@ -85,8 +94,9 @@ class TestFieldMapping:
         monkeypatch.setattr(b, "api_call", fake)
         rows = b.fetch_history(None, None, DEV, days=1)
         r = rows[0]
-        assert r["battery_v"] == 26.6 and r["battery_w"] == -50.0 and r["load_power_w_est"] == 168.0
-        assert r["pv_power_w_est"] == 0.0 and r["charge_state"] == "charging"   # battery_w < 0
+        assert r["battery_v"] == 26.6 and r["battery_a"] == -3.0 and r["load_power_w_est"] == 168.0
+        assert r["pinverter_w"] == 88.0 and r["pv_power_w_est"] == 88.0      # Charger Power = PV
+        assert r["battery_w"] == round(26.6 * -3) and r["charge_state"] == "charging"  # V*I < 0
 
 
 class TestPageShell:
