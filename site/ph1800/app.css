@@ -1,0 +1,44 @@
+/* Shared styling for the generic PH1800 (all-inverter) dashboard. Dark theme,
+   mirrors the look of the PH1000 dashboard but with no plant-specific chrome. */
+:root{--bg:#0b0f17;--card:#121826;--line:#1f2937;--muted:#8a94a6;--ink:#e6ebf2;--accent:#2563eb}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+a{color:#60a5fa}
+.topbar{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line);background:#0d1220;position:sticky;top:0;z-index:5;flex-wrap:wrap}
+.topbar h1{font-size:16px;margin:0;font-weight:700}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.dot.on{background:#22c55e}.dot.off{background:#ef4444}.dot.st{background:#f59e0b}
+.muted{color:var(--muted);font-size:12px}
+.spacer{margin-left:auto}
+select,button{font:inherit}
+select.d{background:#1a2230;border:1px solid var(--line);color:var(--ink);border-radius:8px;height:28px;padding:2px 8px;cursor:pointer}
+.btn{border:1px solid var(--line);background:#1a2230;color:var(--ink);border-radius:8px;height:28px;min-width:30px;padding:0 10px;cursor:pointer}
+.btn:hover{background:#222c3c}
+.wrap{max-width:1200px;margin:18px auto;padding:0 18px;display:grid;gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px;flex-wrap:wrap}
+.card h2{font-size:14px;margin:0;font-weight:600;color:#c2ccdb}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.m{background:#0e1422;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.m .l{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.m .v{font-size:20px;font-weight:700;margin-top:4px}
+.m .u{color:var(--muted);font-size:13px;font-weight:500;margin-left:3px}
+.tabs{display:flex;gap:8px;margin:0 0 4px}
+.tabs button{border:1px solid var(--line);background:#1a2230;color:#aeb9cb;border-radius:9px;padding:7px 14px;cursor:pointer;font-weight:600}
+.tabs button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:#0e1422;border:1px solid var(--line);border-radius:20px;padding:4px 10px;font-size:12px;cursor:pointer;user-select:none}
+.chip i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.chip.off{opacity:.45}
+.info span{display:inline-block;margin-right:18px;color:var(--muted);font-size:13px}
+.info b{color:var(--ink)}
+/* login gate */
+.gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:50}
+.gatebox{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px 26px;width:340px;text-align:center}
+.gatebox h1{font-size:18px;margin:0 0 4px}
+.gatebox .sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+.gatebox input{width:100%;height:38px;border-radius:9px;border:1px solid var(--line);background:#0e1422;color:var(--ink);padding:0 12px;margin-bottom:12px}
+.gatebox .go{width:100%;height:38px;border-radius:9px;border:0;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
+.gatebox .err{color:#f87171;font-size:12px;min-height:16px;margin-top:8px}
+.foot{color:var(--muted);font-size:12px;text-align:center;margin:18px 0 30px}
+canvas{max-height:420px}

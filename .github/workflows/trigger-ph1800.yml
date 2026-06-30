@@ -1,0 +1,109 @@
+name: PH1800 Live Dashboard (generic, all inverters)
+
+# CLOUD-ONLY refresh (no laptop). One run loops fetch -> publish every ~10 min for ~4.6h, then
+# re-launches itself (GH_PAT) so the chain runs forever; a 2h cron restarts it if it ever dies.
+# Pure pass-through of ShineMonitor for every account flagged "ph1800": true — no BMS, no
+# estimates, no computed fields. One JSON per account, force-pushed to the ph1800-live branch.
+on:
+  schedule:
+    - cron: "23 */2 * * *"        # backup restart, offset from the ph1000 chain
+  workflow_dispatch:
+    inputs:
+      iterations:
+        description: "fetch+publish iterations before re-launch"
+        default: "26"
+      sleep_s:
+        description: "seconds between iterations"
+        default: "600"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ph1800-live
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - name: Checkout (main — script + shared dashboard app)
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Create credentials.json from secret
+        shell: bash
+        run: |
+          set -e
+          mkdir -p src/main/java/org/ktronics/config
+          cat <<'EOF' > src/main/java/org/ktronics/config/credentials.json
+          ${{ secrets.SHINEMONITOR_CREDENTIALS_JSON }}
+          EOF
+          chmod 600 src/main/java/org/ktronics/config/credentials.json
+
+      - name: Ensure a page exists for each flagged plant (commit new ones to main)
+        shell: bash
+        run: |
+          set -e
+          python3 src/main/java/org/ktronics/scripts/check_ph1800.py --pages-dir site/ph1800 2>&1 || true
+          if [ -n "$(git status --porcelain site/ph1800)" ]; then
+            git add site/ph1800
+            git -c user.email="actions@users.noreply.github.com" -c user.name="ph1800-bot" \
+                commit -q -m "PH1800: add page(s) for newly-flagged plant(s)"
+            git push origin HEAD:main && echo "[pages] pushed new plant page(s) to main"
+          else
+            echo "[pages] no new plant pages"
+          fi
+
+      - name: Fetch + publish loop (every ~10 min — cloud-only)
+        shell: bash
+        env:
+          GH_PAT:   ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ITERATIONS: ${{ github.event.inputs.iterations || '26' }}
+          SLEEP_S:    ${{ github.event.inputs.sleep_s || '600' }}
+          REPO:       ${{ github.repository }}
+        run: |
+          set +e
+          for i in $(seq 1 "${ITERATIONS}"); do
+            echo "::group::iteration $i / ${ITERATIONS} ($(date -u +%H:%M:%S) UTC)"
+            rm -rf publish; mkdir -p publish
+
+            # Pure pass-through for every ph1800-flagged account -> one <hash>.json each
+            python3 src/main/java/org/ktronics/scripts/check_ph1800.py \
+              --out-dir publish --history-days 7 2>&1
+
+            if ls publish/*.json >/dev/null 2>&1; then
+              ( cd publish
+                git init -q
+                git checkout -q -b ph1800-live
+                git add -A
+                git -c user.email="actions@users.noreply.github.com" -c user.name="ph1800-bot" \
+                    commit -q -m "PH1800 live update"
+                git push -f "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" ph1800-live ) \
+                && echo "[publish] ph1800-live updated"
+            fi
+
+            echo "::endgroup::"
+            if [ "$i" -lt "${ITERATIONS}" ]; then sleep "${SLEEP_S}"; fi
+          done
+          echo "loop finished ${ITERATIONS} iterations"
+
+      - name: Re-launch self (keeps the cloud loop alive)
+        if: success()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "No GH_PAT — relying on the 2h backup cron."
+            exit 0
+          fi
+          gh workflow run trigger-ph1800.yml --ref main \
+            && echo "Re-dispatched the next loop run." \
+            || echo "Re-dispatch failed; the 2h cron will restart it."
