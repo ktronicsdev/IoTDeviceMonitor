@@ -166,9 +166,23 @@ The Hystorix/PACEEX BMS cloud API was reverse-engineered (full write-up in
   emits `ok:false` → the dashboard hides the Battery Profile pane and reverts the Live SOC to the
   voltage-based estimate (`socFromV`). No stale battery data is ever shown.
 
-**Remaining work:** the BMS `iotToken` is currently a session secret. Fully-automated re-login is
-blocked by the **native** pace-power request signature (`libpace.so`) — cracking that (the next
-task) makes the token self-renewing. Until then, refresh with `gh secret set BMS_IOT_TOKEN`.
+**Token lifecycle & alerts** (full detail in [README_BMS.md](README_BMS.md)):
+
+- **Auto-renewal (cloud):** the short-lived `iotToken` self-renews every run from the long-lived
+  `refreshToken` via `checkOrRefreshSession` — no laptop, no app. Covers the common case.
+- **Session-death alert:** if the `refreshToken` itself is rejected (rare, ~every few days), the
+  fetcher sets `auth_failed:true` and the workflow emails a **"🔴 app re-login needed"** notice.
+- **Stale-data alert:** if a *healthy* session's datalogger goes silent (the physical BMS device
+  loses power/wifi), the fetcher surfaces `data_stale_min` and the workflow emails a
+  **"⚠️ datalogger offline"** heads-up once the newest frame is > `STALE_ALERT_MIN` (default 180).
+- **Re-login (rare, manual):** a full re-login can't be automated — the PACEEX app is `FLAG_SECURE`
+  (screenshot + UI-inspection both blocked) and login is guarded by Alibaba Security Guard. When
+  alerted, log into the app and run [`refresh_bms_creds.py`](refresh_bms_creds.py) (harvests creds
+  via Frida → `gh secret set`). **Keep the app closed between harvests:** the app and cloud share
+  one rotating token, so leaving the app open can invalidate the cloud's session.
+- **Frame robustness:** the decoder validates the fixed header and rejects implausible frames, so an
+  offline/garbage datalogger frame never shows nonsense — packs go STALE/skip and the Live SOC
+  falls back to the voltage estimate, auto-resuming when a real summary frame returns.
 
 ## Weather & solar-harvest impact (live)
 
@@ -201,6 +215,19 @@ show the live sky and — the useful part — quantify how much the weather is *
 python check_ph1000_weather.py --live-json data/ph1000_live.json --out weather.json
 python check_ph1000_weather.py --lat 6.94205 --lon 79.85856 --out weather.json   # explicit
 ```
+
+## Dashboard charts
+
+- **Power Profile** (Live tab) has a **D / M / Y / T** period selector:
+  - **D** — the intraday power curve (PV / Battery / Grid / Consumption + SOC and the irradiance
+    envelope) for one day; the ‹ › arrows / dropdown step through days.
+  - **M** — daily energy (kWh) stacked bars for a month; **Y** — monthly bars for a year;
+    **T** — one bar per logged year.
+  - Energy for M/Y/T is integrated from the intraday series, so those views are **sparse until the
+    plant accumulates history** (a ~1-month-old plant shows one month / one year). They fill in
+    automatically over time.
+- The other pickers (Generation & Usage History, Plant Analysis, Weather) use the same
+  ‹ select › control style for consistency.
 
 ## Future: accurate PV & load
 

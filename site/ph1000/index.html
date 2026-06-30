@@ -30,6 +30,12 @@
   .sel select.d{background:#1a2230;border:1px solid var(--line);color:#c2ccdb;border-radius:8px;
     height:26px;padding:2px 6px;cursor:pointer;font-size:13px}
   .sel select.d:hover{background:#222c3c}
+  .ctl{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{border:0;border-left:1px solid var(--line);background:#1a2230;color:#aeb9cb;height:26px;min-width:30px;cursor:pointer;font-size:12px;font-weight:600;line-height:1}
+  .seg button:first-child{border-left:0}
+  .seg button.on{background:#2563eb;color:#fff}
+  .seg button:hover:not(.on){background:#222c3c}
 
   /* flow graph */
   .flow{position:relative;width:100%;max-width:560px;margin:6px auto 0;aspect-ratio:560/360}
@@ -164,7 +170,10 @@
   <!-- Power Profile (per day) -->
   <div class="card full">
     <div class="ch"><h2>Power Profile</h2>
-      <div class="sel"><button id="pp_prev">‹</button><select class="d" id="pp_date"></select><button id="pp_next">›</button></div></div>
+      <div class="ctl">
+        <div class="seg" id="pp_seg"><button data-p="D" class="on">D</button><button data-p="M">M</button><button data-p="Y">Y</button><button data-p="T">T</button></div>
+        <div class="sel"><button id="pp_prev">‹</button><select class="d" id="pp_date"></select><button id="pp_next">›</button></div>
+      </div></div>
     <canvas id="chart"></canvas>
   </div>
 
@@ -230,7 +239,7 @@ async function fetchData(){
        if(r.ok) return await r.json(); }catch(e){}
   const r2=await fetch(RAW_URL+'?t='+Date.now(),{cache:'no-store'}); return await r2.json();
 }
-let chart, hist, DATA=null, dayIdx=null, days=[], monthSel=null;
+let chart, hist, DATA=null, dayIdx=null, days=[], monthSel=null, ppPeriod='D', ppIx={}, chartKind=null;
 const shiftMonth=(ym,delta)=>{ let [y,m]=ym.split('-').map(Number); m+=delta;
   while(m<1){m+=12;y--;} while(m>12){m-=12;y++;} return y+'-'+String(m).padStart(2,'0'); };
 const num = v => { const n=parseFloat(v); return isNaN(n)?null:n; };
@@ -286,6 +295,29 @@ function dailyEnergy(points){ // integrate W -> kWh
   }
   return {prod:prod/1000,cons:cons/1000,chg:chg/1000,dis:dis/1000};
 }
+// Energy rolled up from the intraday series, for the Power-Profile M/Y/T views. Sparse on a
+// new plant (only days that have logged samples populate) and fills in as history accrues.
+const _eAdd=(o,k,e)=>{const t=o[k]=o[k]||{prod:0,cons:0,chg:0,dis:0};for(const x in t)t[x]+=e[x];};
+function energyByDay(){ const g=groupDays(DATA&&DATA.series7d||[]),o={}; for(const d in g)o[d]=dailyEnergy(g[d]); return o; }
+function energyByMonth(){ const e=energyByDay(),o={}; for(const d in e)_eAdd(o,d.slice(0,7),e[d]); return o; }
+function energyByYear(){ const e=energyByMonth(),o={}; for(const m in e)_eAdd(o,m.slice(0,4),e[m]); return o; }
+const dataMonths=()=>[...new Set(Object.keys(energyByDay()).map(d=>d.slice(0,7)))].sort();
+const dataYears =()=>[...new Set(Object.keys(energyByDay()).map(d=>d.slice(0,4)))].sort();
+// The list the Power-Profile picker steps through for the active period (T = no sub-selection).
+function ppList(p){
+  if(p==='D') return Object.keys(groupDays(DATA&&DATA.series7d||[])).sort();
+  if(p==='M') return dataMonths();
+  if(p==='Y') return dataYears();
+  return [];
+}
+// Draw on the shared Power-Profile canvas, recreating only when the chart TYPE changes
+// (Chart.js can't morph line<->bar via update()).
+function drawChart(cfg,kind){
+  if(chart&&chartKind!==kind){ chart.destroy(); chart=null; }
+  chartKind=kind;
+  if(chart){ chart.data=cfg.data; chart.options=cfg.options; chart.update(); }
+  else chart=new Chart(document.getElementById('chart'),cfg);
+}
 
 const minOfDay = t => { const [h,m]=String(t).slice(11,16).split(':').map(Number); return (h||0)*60+(m||0); };
 const hhmm = v => { v=Math.round(v); return String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart(2,'0'); };
@@ -313,11 +345,20 @@ function mkInterp(points){
 
 function renderProfile(){
   if(!DATA) return;
+  document.getElementById('pp_seg').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.p===ppPeriod));
+  const list=ppList(ppPeriod);
+  const sel=document.getElementById('pp_date').parentElement;    // the ‹ select › group
+  if(ppPeriod==='T'||!list.length){ sel.style.display='none'; }
+  else{
+    sel.style.display='';
+    if(ppIx[ppPeriod]==null||ppIx[ppPeriod]>=list.length) ppIx[ppPeriod]=list.length-1;
+    fillSel(document.getElementById('pp_date'),list,list[ppIx[ppPeriod]]);
+  }
+  if(ppPeriod==='D') renderProfileDay(list[ppIx.D]||'—');
+  else renderProfileEnergy();
+}
+function renderProfileDay(day){
   const g=groupDays(DATA.series7d||[]);
-  days=Object.keys(g).sort();
-  if(dayIdx===null||dayIdx>=days.length) dayIdx=days.length-1;
-  const day=days[dayIdx]||'—';
-  fillSel(document.getElementById('pp_date'),days,day);
   const pts=(g[day]||[]).slice().sort((a,b)=>a.timestamp<b.timestamp?-1:1);
   // Weather: solar irradiance (GHI, W/m²) for this day — the "sunlight envelope". Drawn first
   // (faint amber fill) so the green PV line sits on top; the gap below it shows weather losses.
@@ -343,7 +384,36 @@ function renderProfile(){
        y1:{position:'right',min:0,max:100,grid:{drawOnChartArea:false},title:{display:true,text:'SOC %',color:'#8a94a6'},ticks:{color:'#8a94a6',callback:v=>v+'%'}}},
      plugins:{legend:{labels:{color:'#aeb9cb',usePointStyle:false,boxWidth:9,boxHeight:9,font:{size:11}}},
        tooltip:{callbacks:{title:i=>i.length?hhmm(i[0].parsed.x):''}}}}};
-  if(chart){chart.data=cfg.data;chart.options=cfg.options;chart.update();} else chart=new Chart(document.getElementById('chart'),cfg);
+  drawChart(cfg,'line');
+}
+// M / Y / T views: stacked energy (kWh) bars, same colour language as the History chart.
+function renderProfileEnergy(){
+  let labels=[], rows=[], xt='';
+  const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  if(ppPeriod==='M'){
+    const m=ppList('M')[ppIx.M], [y,mo]=m.split('-').map(Number), dim=new Date(y,mo,0).getDate(), e=energyByDay();
+    for(let d=1;d<=dim;d++){ const k=m+'-'+String(d).padStart(2,'0'); labels.push(String(d)); rows.push(e[k]||{prod:0,cons:0,chg:0,dis:0}); }
+    xt='Day · '+m;
+  } else if(ppPeriod==='Y'){
+    const y=ppList('Y')[ppIx.Y], e=energyByMonth();
+    for(let mo=1;mo<=12;mo++){ const k=y+'-'+String(mo).padStart(2,'0'); labels.push(MN[mo-1]); rows.push(e[k]||{prod:0,cons:0,chg:0,dis:0}); }
+    xt='Month · '+y;
+  } else {                                   // T — one bar per year of logged data
+    const e=energyByYear(); for(const y of Object.keys(e).sort()){ labels.push(y); rows.push(e[y]); }
+    xt='All logged years';
+  }
+  const bar=(label,vals,color)=>({label,data:vals,backgroundColor:color,stack:'s',borderWidth:0,borderRadius:2});
+  const cfg={type:'bar',data:{labels,datasets:[
+     bar('Production',rows.map(e=>+e.prod.toFixed(2)),'#22c55e'),
+     bar('Discharge', rows.map(e=>+e.dis.toFixed(2)),'#7dd3fc'),
+     bar('Consumption',rows.map(e=>-+e.cons.toFixed(2)),'#eab308'),
+     bar('Charge',    rows.map(e=>-+e.chg.toFixed(2)),'#2563eb')]},
+   options:{responsive:true,scales:{
+     x:{stacked:true,title:{display:true,text:xt,color:'#8a94a6'},ticks:{color:'#8a94a6'},grid:{display:false}},
+     y:{stacked:true,title:{display:true,text:'kWh',color:'#8a94a6'},ticks:{color:'#8a94a6'},grid:{color:'#222c3b'}}},
+     plugins:{legend:{labels:{color:'#aeb9cb',usePointStyle:false,boxWidth:9,boxHeight:9,font:{size:11}}},
+       tooltip:{callbacks:{label:c=>c.dataset.label+': '+Math.abs(c.parsed.y)+' kWh'}}}}};
+  drawChart(cfg,'bar');
 }
 
 function renderHistory(){
@@ -664,9 +734,10 @@ function renderAnalysis(){ renderAnParams(); renderAnChart(); }
 document.getElementById('an_prev').onclick=()=>{ if(anDayIdx>0){anDayIdx--;renderAnChart();} };
 document.getElementById('an_next').onclick=()=>{ if(anDayIdx<anDays().length-1){anDayIdx++;renderAnChart();} };
 document.getElementById('an_date').onchange=function(){ const i=anDays().indexOf(this.value); if(i>=0){anDayIdx=i;renderAnChart();} };
-document.getElementById('pp_prev').onclick=()=>{ if(dayIdx>0){dayIdx--;renderProfile();} };
-document.getElementById('pp_next').onclick=()=>{ if(dayIdx<days.length-1){dayIdx++;renderProfile();} };
-document.getElementById('pp_date').onchange=function(){ const i=days.indexOf(this.value); if(i>=0){dayIdx=i;renderProfile();} };
+document.getElementById('pp_seg').querySelectorAll('button').forEach(b=>b.onclick=()=>{ ppPeriod=b.dataset.p; renderProfile(); });
+document.getElementById('pp_prev').onclick=()=>{ if((ppIx[ppPeriod]||0)>0){ppIx[ppPeriod]--;renderProfile();} };
+document.getElementById('pp_next').onclick=()=>{ const l=ppList(ppPeriod); if(ppIx[ppPeriod]<l.length-1){ppIx[ppPeriod]++;renderProfile();} };
+document.getElementById('pp_date').onchange=function(){ const i=ppList(ppPeriod).indexOf(this.value); if(i>=0){ppIx[ppPeriod]=i;renderProfile();} };
 document.getElementById('hm_prev').onclick=()=>{ const ms=histMonths(),i=ms.indexOf(monthSel); if(i>0){monthSel=ms[i-1];renderHistory();} };
 document.getElementById('hm_next').onclick=()=>{ const ms=histMonths(),i=ms.indexOf(monthSel); if(i<ms.length-1){monthSel=ms[i+1];renderHistory();} };
 document.getElementById('hm_month').onchange=function(){ monthSel=this.value; renderHistory(); };
