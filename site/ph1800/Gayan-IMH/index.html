@@ -756,14 +756,14 @@ function renderProfilePane(){
 }
 
 /* ---- Plant Analysis pane (parameters added per customer via + button) ---- */
+// Consistent dashboard names (not the raw ShineMonitor field names).
 const PARAM_DEFS=[
-  {key:'pinverter_w',     label:'PInverter (W)',      color:'#22c55e',axis:'y'},
-  {key:'load_power_w_est',label:'PLoad (W)',          color:'#3b82f6',axis:'y'},
   {key:'pv_power_w_est',  label:'PV Power (W)',       color:'#16a34a',axis:'y'},
-  {key:'battery_w',       label:'Charger Power (W)',  color:'#f59e0b',axis:'y'},
-  {key:'pgrid_w',         label:'PGrid (W)',          color:'#ec4899',axis:'y'},
+  {key:'battery_w',       label:'Battery Power (W)',  color:'#f59e0b',axis:'y'},
+  {key:'load_power_w_est',label:'Load Power (W)',     color:'#3b82f6',axis:'y'},
+  {key:'pgrid_w',         label:'Grid Power (W)',     color:'#ec4899',axis:'y'},
   {key:'battery_v',       label:'Battery Voltage (V)',color:'#22d3ee',axis:'y1'},
-  {key:'battery_a',       label:'Charger Current (A)',color:'#a78bfa',axis:'y1'},
+  {key:'battery_a',       label:'Battery Current (A)',color:'#a78bfa',axis:'y1'},
   {key:'grid_v',          label:'Grid Voltage (V)',   color:'#94a3b8',axis:'y1'},
 ];
 const AN_KEY='ph1800_an_params';
