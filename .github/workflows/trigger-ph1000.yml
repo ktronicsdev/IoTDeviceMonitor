@@ -59,6 +59,7 @@ jobs:
           SMTP_USER:        ${{ secrets.SMTP_USER }}
           SMTP_PASS:        ${{ secrets.SMTP_PASS }}
           ALERT_TO:         pcgayan@gmail.com
+          STALE_ALERT_MIN:  '180'     # email if the datalogger hasn't pushed in > this many min
           ITERATIONS:       ${{ github.event.inputs.iterations || '26' }}
           SLEEP_S:          ${{ github.event.inputs.sleep_s || '600' }}
           REPO:             ${{ github.repository }}
@@ -91,6 +92,21 @@ jobs:
               fi
             else
               rm -f /tmp/bms_alerted   # session healthy -> reset so a future death re-alerts
+            fi
+
+            # 2a-ii) BMS stale-data alert: session is HEALTHY but the physical datalogger at the
+            #        plant stopped pushing for > STALE_ALERT_MIN (lost power / wifi). Re-login does
+            #        NOT fix this; it's a heads-up to check the device. Once per run, separate marker.
+            stale_min=$(python3 -c "import json;b=json.load(open('publish/ph1000_live.json')).get('bms',{});print(b.get('data_stale_min') if (not b.get('auth_failed') and b.get('data_stale_min') is not None) else -1)" 2>/dev/null || echo -1)
+            if [ "${stale_min:--1}" -gt "${STALE_ALERT_MIN:-180}" ]; then
+              if [ ! -f /tmp/bms_stale_alerted ] && [ -n "${SMTP_USER}" ]; then
+                EMAIL_SUBJECT="⚠️ PH1000 BMS: data stale — datalogger offline" \
+                EMAIL_BODY="The PH1000 BMS cloud session is HEALTHY, but the physical BMS datalogger at the plant has not pushed fresh data in ${stale_min} minutes (~$((stale_min/60)) h). The dashboard shows the last reading flagged STALE and is using voltage-based SOC. This usually means the BMS wifi dongle / pack at the site lost power or connectivity. No re-login needed — it resumes automatically when the device reconnects. Inverter data is unaffected." \
+                python3 src/main/java/org/ktronics/scripts/send_email.py 2>&1 | tail -2
+                touch /tmp/bms_stale_alerted && echo "[alert] BMS stale-data email sent (${stale_min} min)"
+              fi
+            else
+              rm -f /tmp/bms_stale_alerted   # data fresh again -> reset so a future outage re-alerts
             fi
 
             # 2b) weather + solar-harvest impact (Open-Meteo, no API key) — fails soft like the BMS

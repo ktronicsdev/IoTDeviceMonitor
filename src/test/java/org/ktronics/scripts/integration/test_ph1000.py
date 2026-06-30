@@ -234,6 +234,18 @@ class TestAuthFailedDetector:
         d = self._run(monkeypatch, tmp_path)
         assert d["auth_failed"] is False and d["ok"] is False   # session fine -> no alert
 
+    def test_stale_frame_sets_data_stale_min(self, monkeypatch, tmp_path):
+        import time
+        old_ms = int((time.time() - 1000 * 60) * 1000)         # newest frame ~1000 min old
+        monkeypatch.setattr(bms, "refresh_iot_token", lambda *a, **k: ("tok", "rt"))
+        monkeypatch.setattr(bms, "fetch_pack", lambda p, t: {
+            "name": p["name"], "soc": 50, "voltage": 53.0, "current": 0.0, "state": "idle",
+            "max_temp": 30.0, "min_temp": 30.0, "cycles": 1, "reported_ms": old_ms})
+        d = self._run(monkeypatch, tmp_path)
+        # healthy session, but the workflow should alert on a long-silent datalogger
+        assert d["ok"] is True and d["auth_failed"] is False
+        assert 995 <= d["data_stale_min"] <= 1006
+
 
 class TestLiveParsing:
     def test_fetch_live_parses_reliable_fields(self, monkeypatch):

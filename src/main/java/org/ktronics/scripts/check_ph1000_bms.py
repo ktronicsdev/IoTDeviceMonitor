@@ -229,8 +229,11 @@ def main():
               "-> dashboard falls back to voltage SOC")
     else:
         try:
+            reported = []
             for p in PACKS:
                 d = fetch_pack(p, token)
+                if d.get("reported_ms"):
+                    reported.append(d["reported_ms"])
                 if d.get("offline"):
                     # Skip from packs -> dashboard ignores it and uses voltage SOC. Self-heals
                     # the moment the logger pushes a fresh summary frame again.
@@ -245,6 +248,14 @@ def main():
                       % (d["name"], d["soc"], d["voltage"], d["current"], d["state"],
                          temp, d["cycles"]))
             out["ok"] = len(out["packs"]) > 0
+            # Freshness: even with a HEALTHY session, the physical datalogger at the plant can
+            # stop pushing (lost power / wifi). Surface the age of the newest frame so the
+            # workflow can alert on a stale device -- a different problem from a dead session.
+            if reported:
+                freshest = max(reported)
+                out["freshest_ms"] = freshest
+                out["data_stale_min"] = max(0, int((time.time() * 1000 - freshest) / 60000))
+                print("[BMS] newest frame is %d min old" % out["data_stale_min"])
         except (urllib.error.HTTPError, urllib.error.URLError, KeyError, RuntimeError) as e:
             # token expired / auth failed -> ok stays False; dashboard hides the pane.
             print("[BMS] fetch failed (token expired?): %s -> dashboard falls back to voltage SOC" % e)
