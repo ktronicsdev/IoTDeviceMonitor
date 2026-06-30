@@ -167,6 +167,10 @@
   <!-- Live -->
   <div class="card"><div class="ch"><h2>Live</h2></div><div class="metrics" id="metrics"></div></div>
 
+  <!-- All readings: every field ShineMonitor reports for this inverter, exactly as-is -->
+  <div class="card"><div class="ch"><h2>All readings</h2><span class="sel" style="color:var(--muted)">every field · as-is from ShineMonitor</span></div>
+    <div class="metrics" id="allfields"></div></div>
+
   <!-- Power Profile (per day) -->
   <div class="card full">
     <div class="ch"><h2>Power Profile</h2>
@@ -652,6 +656,15 @@ function renderWeatherChart(){
   }
   if(wxchart){ wxchart.data=cfg.data; wxchart.options=cfg.options; wxchart.update(); } else wxchart=new Chart(document.getElementById('wxchart'),cfg);
 }
+// Every ShineMonitor field for the plant, shown as-is (no calculation, no dropping).
+function renderAllFields(){
+  const box=document.getElementById('allfields'); if(!box) return;
+  const fs=(DATA&&DATA.fields)||[];
+  box.innerHTML = fs.length ? fs.map(f=>{
+    const v=(f.value===null||f.value===undefined||f.value==='')?'—':f.value;
+    return `<div class="m"><div class="l">${f.label}</div><div class="v">${v}${f.unit?` <small style="color:var(--muted);font-size:13px">${f.unit}</small>`:''}</div></div>`;
+  }).join('') : '<div style="color:var(--muted)">No fields.</div>';
+}
 async function load(){
   try{ const j=await fetchData();
        if(!j||!j.plants||!j.plants.length) throw new Error('no data');
@@ -663,7 +676,7 @@ async function load(){
        DATA=j.plants[plantIdx]||j.plants[0];
        const nm=(DATA.plant&&DATA.plant.name)||j.account||'Solar';
        document.getElementById('plantname').textContent=nm; document.title=nm;
-       renderLive(); renderBMS(); renderProfile(); renderHistory();
+       renderLive(); renderAllFields(); renderBMS(); renderProfile(); renderHistory();
        if(curTab==='profile') renderProfilePane(); if(curTab==='analysis') renderAnalysis(); }
   catch(e){ if(!DATA){ const f=document.getElementById('foot'); if(f) f.textContent='load error: '+e; } }
 }

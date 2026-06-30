@@ -287,22 +287,30 @@ def charge_state(battery_w):
 
 
 def fetch_live(token, secret, device):
-    """Live snapshot mapped to the PH1000 dashboard keys (+ pv_power_w_est from real PInverter)."""
+    """Return (mapped, last_update, all_fields).
+
+    `mapped` holds the PH1000 dashboard keys (battery_v/.../pv_power_w_est) used by the Flow
+    Graph and charts. `all_fields` is EVERY field ShineMonitor returns, in order, exactly as-is
+    [{label, value, unit}] — for the dashboard's "All readings" grid (every data point shown).
+    """
     resp = api_call(token, secret, LIVE_ACTION, _device_params(device))
     if resp.get("err") != 0:
-        return {}, None, resp
-    fields, last_update = {}, None
+        return {}, None, []
+    mapped, all_fields, last_update = {}, [], None
     for title, val, unit in _iter_par_entries(resp.get("dat", {})):
-        if str(title).lower() == "timestamp":
+        low = str(title).lower()
+        if low == "timestamp":
             last_update = val
             continue
+        if low == "id":                              # internal row id, not a reading
+            continue
+        all_fields.append({"label": str(title), "value": val, "unit": unit or ""})
         key, kunit = _map_key(title)
-        if key and key not in fields:
-            fields[key] = {"value": val, "unit": unit or kunit}
-    # PV power = PInverter (real). load_power_w_est already holds the real PLoad above.
-    if "pinverter_w" in fields:
-        fields["pv_power_w_est"] = {"value": fields["pinverter_w"]["value"], "unit": "W"}
-    return fields, last_update, resp
+        if key and key not in mapped:
+            mapped[key] = {"value": val, "unit": unit or kunit}
+    if "pinverter_w" in mapped:                       # PV power = PInverter (real)
+        mapped["pv_power_w_est"] = {"value": mapped["pinverter_w"]["value"], "unit": "W"}
+    return mapped, last_update, all_fields
 
 
 def fetch_history(token, secret, device, days, tz_offset=0):
@@ -412,7 +420,7 @@ def process_plant(token, secret, plant, days):
         return None
     device = devices[0]                                   # one inverter per plant (typical)
     tz_off = int((plant.get("address", {}) or {}).get("timezone", 0) or 0)
-    latest, last_update, _ = fetch_live(token, secret, device)
+    latest, last_update, all_fields = fetch_live(token, secret, device)
     series = fetch_history(token, secret, device, days, tz_off)
     plant_block = build_plant_block(get_plant_info(token, secret, pid), device, series, tz_off)
     return {
@@ -425,6 +433,7 @@ def process_plant(token, secret, plant, days):
         },
         "plant": plant_block,
         "latest": latest,
+        "fields": all_fields,           # every ShineMonitor reading, as-is, for the All-readings grid
         "series7d": series,
     }
 
