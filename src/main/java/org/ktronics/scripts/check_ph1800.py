@@ -445,6 +445,36 @@ def plant_energy(token, secret, plant_id, tz_offset=0):
     }
 
 
+def plant_energy_series(token, secret, plant_id, tz_offset=0):
+    """Full generation history (kWh) from ShineMonitor for the M/Y/T charts:
+    per-day for every month of the current year (back to Jan 1), per-month for the current year,
+    and per-year for all logged years. Generation only — the cloud doesn't break down usage/grid
+    per day. Light: ~(months + 2) calls.
+    """
+    now = datetime.now(timezone.utc) + timedelta(seconds=tz_offset)
+
+    def arr(action, date, key, klen):
+        p = f"plantid={plant_id}&date={date}" if date else f"plantid={plant_id}"
+        r = api_call(token, secret, action, p)
+        dat = r.get("dat", {}) if r.get("err") == 0 else {}
+        out = []
+        for x in (dat.get(key) or []) if isinstance(dat, dict) else []:
+            kwh = _to_float(x.get("val"))
+            if kwh is not None:
+                out.append({"t": str(x.get("ts", ""))[:klen], "kwh": round(kwh, 2)})
+        return out
+
+    peryear = arr("queryPlantEnergyTotalPerYear", "", "peryear", 4)         # YYYY
+    years = [y["t"] for y in peryear] or [str(now.year)]
+    permonth = []                                                            # YYYY-MM, all years
+    for yr in years:
+        permonth += arr("queryPlantEnergyYearPerMonth", yr, "permonth", 7)
+    perday = []                                                              # YYYY-MM-DD, this year
+    for m in range(1, now.month + 1):
+        perday += arr("queryPlantEnergyMonthPerDay", "%d-%02d" % (now.year, m), "perday", 10)
+    return {"perday": perday, "permonth": permonth, "peryear": peryear}
+
+
 # --------------------------------------------------------------------------- #
 # main
 # --------------------------------------------------------------------------- #
@@ -485,6 +515,7 @@ def process_plant(token, secret, plant, days, caps=None):
     cloud_energy = plant_energy(token, secret, pid, tz_off)
     plant_block = build_plant_block(get_plant_info(token, secret, pid), device, series, tz_off,
                                     caps, rated_w_cloud, cloud_energy, acc_pv_kwh)
+    plant_block["energy_series"] = plant_energy_series(token, secret, pid, tz_off)
     return {
         "device": {
             "pn": device["pn"], "sn": device["sn"], "alias": device["alias"],

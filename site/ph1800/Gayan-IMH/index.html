@@ -342,11 +342,35 @@ function bucketMean(series, buckets, key){
   return buckets.map(b=>{ const vs=(series||[]).filter(b.f).map(r=>num(r[key])).filter(v=>v!=null&&!isNaN(v));
     return vs.length?+(vs.reduce((a,c)=>a+c,0)/vs.length).toFixed(2):null; });
 }
-// The list the period pickers (Power Profile + History) step through (T = no sub-selection).
+// Generation history straight from ShineMonitor (kWh): perday (this year), permonth + peryear
+// (all logged years). Drives the M/Y/T energy bars back to Jan 1 — see check_ph1800.plant_energy_series.
+const genSeries=()=>(DATA&&DATA.plant&&DATA.plant.energy_series)||{perday:[],permonth:[],peryear:[]};
+// One green "Generation (kWh)" bar series for the active period.
+function genBars(period, sel){
+  const es=genSeries(), MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let labels=[], vals=[], xt='';
+  if(period==='M'){ const [y,mo]=sel.split('-').map(Number), dim=new Date(y,mo,0).getDate(), byd={};
+    es.perday.forEach(x=>{ if(x.t.slice(0,7)===sel) byd[x.t.slice(8,10)]=x.kwh; });
+    for(let d=1;d<=dim;d++){ labels.push(String(d)); vals.push(byd[String(d).padStart(2,'0')]||0); } xt='Day · '+sel;
+  } else if(period==='Y'){ const bym={};
+    es.permonth.forEach(x=>{ if(x.t.slice(0,4)===sel) bym[x.t.slice(5,7)]=x.kwh; });
+    for(let mo=1;mo<=12;mo++){ labels.push(MN[mo-1]); vals.push(bym[String(mo).padStart(2,'0')]||0); } xt='Month · '+sel;
+  } else { es.peryear.forEach(x=>{ labels.push(x.t); vals.push(x.kwh); }); xt='Year'; }
+  return {labels,vals,xt};
+}
+function genBarCfg(labels,vals,xt){
+  return {type:'bar',data:{labels,datasets:[{label:'Generation (kWh)',data:vals,backgroundColor:'#22c55e',borderWidth:0,borderRadius:2}]},
+    options:{responsive:true,scales:{
+      x:{title:{display:!!xt,text:xt,color:'#8a94a6'},ticks:{color:'#8a94a6'},grid:{display:false}},
+      y:{title:{display:true,text:'kWh',color:'#8a94a6'},ticks:{color:'#8a94a6'},grid:{color:'#222c3b'},beginAtZero:true}},
+      plugins:{legend:{labels:{color:'#aeb9cb',usePointStyle:false,boxWidth:9,boxHeight:9,font:{size:11}}},
+        tooltip:{callbacks:{label:c=>'Generation: '+c.parsed.y+' kWh'}}}}};
+}
+// The list the period pickers step through (D=intraday days; M/Y from the generation history).
 function ppList(p){
   if(p==='D') return Object.keys(groupDays(DATA&&DATA.series7d||[])).sort();
-  if(p==='M') return dataMonths();
-  if(p==='Y') return dataYears();
+  if(p==='M') return [...new Set(genSeries().perday.map(x=>x.t.slice(0,7)))].sort();
+  if(p==='Y') return [...new Set(genSeries().permonth.map(x=>x.t.slice(0,4)))].sort();
   return [];
 }
 // Draw on the shared Power-Profile canvas, recreating only when the chart TYPE changes
@@ -425,71 +449,28 @@ function renderProfileDay(day){
        tooltip:{callbacks:{title:i=>i.length?hhmm(i[0].parsed.x):''}}}}};
   drawChart(cfg,'line');
 }
-// M / Y / T views: stacked energy (kWh) bars, same colour language as the History chart.
+// M / Y / T views: daily/monthly/yearly GENERATION (kWh) straight from ShineMonitor (back to Jan 1).
 function renderProfileEnergy(){
-  let labels=[], rows=[], xt='';
-  const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  if(ppPeriod==='M'){
-    const m=ppList('M')[ppIx.M], [y,mo]=m.split('-').map(Number), dim=new Date(y,mo,0).getDate(), e=energyByDay();
-    for(let d=1;d<=dim;d++){ const k=m+'-'+String(d).padStart(2,'0'); labels.push(String(d)); rows.push(e[k]||Z()); }
-    xt='Day · '+m;
-  } else if(ppPeriod==='Y'){
-    const y=ppList('Y')[ppIx.Y], e=energyByMonth();
-    for(let mo=1;mo<=12;mo++){ const k=y+'-'+String(mo).padStart(2,'0'); labels.push(MN[mo-1]); rows.push(e[k]||Z()); }
-    xt='Month · '+y;
-  } else {                                   // T — one bar per year of logged data
-    const e=energyByYear(); for(const y of Object.keys(e).sort()){ labels.push(y); rows.push(e[y]); }
-    xt='All logged years';
-  }
-  const bar=(label,vals,color)=>({label,data:vals,backgroundColor:color,stack:'s',borderWidth:0,borderRadius:2});
-  const cfg={type:'bar',data:{labels,datasets:[
-     bar('Production',rows.map(e=>+e.prod.toFixed(2)),'#22c55e'),
-     bar('Discharge', rows.map(e=>+e.dis.toFixed(2)),'#7dd3fc'),
-     bar('Grid import',rows.map(e=>+(e.imp||0).toFixed(2)),'#ef4444'),
-     bar('Consumption',rows.map(e=>-+e.cons.toFixed(2)),'#eab308'),
-     bar('Charge',    rows.map(e=>-+e.chg.toFixed(2)),'#2563eb'),
-     bar('Grid export',rows.map(e=>-+(e.exp||0).toFixed(2)),'#10b981')]},
-   options:{responsive:true,scales:{
-     x:{stacked:true,title:{display:true,text:xt,color:'#8a94a6'},ticks:{color:'#8a94a6'},grid:{display:false}},
-     y:{stacked:true,title:{display:true,text:'kWh',color:'#8a94a6'},ticks:{color:'#8a94a6'},grid:{color:'#222c3b'}}},
-     plugins:{legend:{labels:{color:'#aeb9cb',usePointStyle:false,boxWidth:9,boxHeight:9,font:{size:11}}},
-       tooltip:{callbacks:{label:c=>c.dataset.label+': '+Math.abs(c.parsed.y)+' kWh'}}}}};
-  drawChart(cfg,'bar');
+  const {labels,vals,xt}=genBars(ppPeriod, ppList(ppPeriod)[ppIx[ppPeriod]]);
+  drawChart(genBarCfg(labels,vals,xt),'bar');
 }
 
 function renderHistory(){
   if(!DATA) return;
-  if(!Object.keys(groupDays(DATA.series7d||[])).length) return;
   document.getElementById('hm_seg').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.p===hmPeriod));
-  const list=ppList(hmPeriod), z=()=>(Z());
+  const list=ppList(hmPeriod);
   const sel=document.getElementById('hm_date').parentElement;
   if(hmPeriod==='T'||!list.length){ sel.style.display='none'; }
   else{ sel.style.display='';
     if(hmIx[hmPeriod]==null||hmIx[hmPeriod]>=list.length) hmIx[hmPeriod]=list.length-1;
     fillSel(document.getElementById('hm_date'),list,list[hmIx[hmPeriod]]);
   }
-  let labels=[], E=[], xt='';
-  const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  if(hmPeriod==='D'){ const day=list[hmIx.D], e=energyByHour(day);
-    for(let h=0;h<24;h++){ labels.push(String(h).padStart(2,'0')); E.push(e[h]); } xt='Hour · '+day;
-  } else if(hmPeriod==='M'){ const m=list[hmIx.M], [y,mo]=m.split('-').map(Number), dim=new Date(y,mo,0).getDate(), eb=energyByDay();
-    for(let d=1;d<=dim;d++){ const k=m+'-'+String(d).padStart(2,'0'); labels.push(String(d)); E.push(eb[k]||z()); } xt='Day · '+m;
-  } else if(hmPeriod==='Y'){ const yy=list[hmIx.Y], eb=energyByMonth();
-    for(let mo=1;mo<=12;mo++){ const k=yy+'-'+String(mo).padStart(2,'0'); labels.push(MN[mo-1]); E.push(eb[k]||z()); } xt='Month · '+yy;
-  } else { const eb=energyByYear(); for(const y of Object.keys(eb).sort()){ labels.push(y); E.push(eb[y]); } xt='Year'; }
-  const bar=(label,vals,color)=>({label,data:vals,backgroundColor:color,stack:'s',borderWidth:0,borderRadius:2});
-  const cfg={type:'bar',data:{labels,datasets:[
-     bar('Production',E.map(e=>+e.prod.toFixed(2)),'#22c55e'),
-     bar('Discharge', E.map(e=>+e.dis.toFixed(2)),'#7dd3fc'),
-     bar('Grid import',E.map(e=>+(e.imp||0).toFixed(2)),'#ef4444'),
-     bar('Consumption',E.map(e=>-+e.cons.toFixed(2)),'#eab308'),
-     bar('Charge',    E.map(e=>-+e.chg.toFixed(2)),'#2563eb'),
-     bar('Grid export',E.map(e=>-+(e.exp||0).toFixed(2)),'#10b981')]},
-   options:{responsive:true,scales:{
-     x:{stacked:true,title:{display:!!xt,text:xt,color:'#8a94a6'},ticks:{color:'#8a94a6'},grid:{display:false}},
-     y:{stacked:true,title:{display:true,text:'kWh',color:'#8a94a6'},ticks:{color:'#8a94a6'},grid:{color:'#222c3b'}}},
-     plugins:{legend:{labels:{color:'#aeb9cb',usePointStyle:false,boxWidth:9,boxHeight:9,font:{size:11}}},
-       tooltip:{callbacks:{label:c=>c.dataset.label+': '+Math.abs(c.parsed.y)+' kWh'}}}}};
+  let labels, vals, xt;
+  if(hmPeriod==='D'){ const day=list[hmIx.D], e=day?energyByHour(day):{}; labels=[]; vals=[];
+    for(let h=0;h<24;h++){ labels.push(String(h).padStart(2,'0')); vals.push(+(((e[h]||Z()).prod)||0).toFixed(2)); }
+    xt='Hour · '+(day||'—');
+  } else { ({labels,vals,xt}=genBars(hmPeriod, list[hmIx[hmPeriod]])); }
+  const cfg=genBarCfg(labels,vals,xt);
   if(hist){hist.data=cfg.data;hist.options=cfg.options;hist.update();} else hist=new Chart(document.getElementById('hist'),cfg);
 }
 
