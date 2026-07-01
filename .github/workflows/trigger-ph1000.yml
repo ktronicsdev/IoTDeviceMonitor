@@ -20,13 +20,25 @@ permissions:
 
 concurrency:
   group: ph1000-live
-  cancel-in-progress: true        # only one loop at a time; a restart replaces the old one
+  cancel-in-progress: false       # never kill a healthy loop; the next run waits as a hot standby
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     timeout-minutes: 330          # under the 6h limit; the loop finishes well inside this
     steps:
+      - name: Pre-queue the standby (hot backup — survives a crash of this run)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}   # PAT needed: GITHUB_TOKEN-dispatched runs don't chain
+        run: |
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "No GH_PAT — relying on the backup cron for continuity."; exit 0
+          fi
+          gh workflow run trigger-ph1000.yml --ref main \
+            && echo "Standby queued — it starts the moment this loop ends/dies/is cancelled." \
+            || echo "Could not queue standby; the backup cron will cover."
+
       - name: Checkout (main — scripts + dashboard template)
         uses: actions/checkout@v4
 
@@ -140,18 +152,4 @@ jobs:
             echo "::endgroup::"
             if [ "$i" -lt "${ITERATIONS}" ]; then sleep "${SLEEP_S}"; fi
           done
-          echo "loop finished ${ITERATIONS} iterations"   # ensure the step exits 0 -> chain runs
-
-      - name: Re-launch self (keeps the cloud loop alive — the chain)
-        if: success()
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
-        run: |
-          if [ -z "${GH_TOKEN}" ]; then
-            echo "No GH_PAT — cannot self-chain; the 2h backup cron will restart the loop."
-            exit 0
-          fi
-          gh workflow run trigger-ph1000.yml --ref main \
-            && echo "Re-dispatched the next loop run (cloud chain continues)." \
-            || echo "Re-dispatch failed; the 2h backup cron will restart the loop."
+          echo "loop finished ${ITERATIONS} iterations"   # exits 0; the pre-queued standby now starts
