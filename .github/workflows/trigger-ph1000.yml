@@ -92,34 +92,9 @@ jobs:
               --out publish/bms.json --rotated-out "${ROT}" 2>&1 || true
             python3 -c "import json;d=json.load(open('publish/ph1000_live.json'));d['bms']=json.load(open('publish/bms.json'));json.dump(d,open('publish/ph1000_live.json','w'),indent=2,default=str);print('[merge] bms ok=%s'%d['bms'].get('ok'))" 2>/dev/null || echo "[merge] no bms this iteration"
 
-            # 2a) BMS session-death alert: refreshToken REJECTED -> needs a one-time app re-login
-            #     (can't be automated; PACEEX is FLAG_SECURE). Email the operator once per run;
-            #     the /tmp marker dedups within this job's loop, a new run re-alerts if still dead.
-            if python3 -c "import json,sys;sys.exit(0 if json.load(open('publish/ph1000_live.json')).get('bms',{}).get('auth_failed') else 1)" 2>/dev/null; then
-              if [ ! -f /tmp/bms_alerted ] && [ -n "${SMTP_USER}" ]; then
-                EMAIL_SUBJECT="🔴 PH1000 BMS: app re-login needed" \
-                EMAIL_BODY=$'The PH1000 BMS cloud session (refreshToken) has expired, so live battery data is paused and the dashboard is showing voltage-based SOC.\n\nThis is the rare (~once per few days) re-login that cannot be automated, because the PACEEX app is screenshot-protected (FLAG_SECURE).\n\nTo restore live BMS data:\n  1. Open the PACEEX app on the laptop and log in.\n  2. Run: python src/main/java/org/ktronics/scripts/refresh_bms_creds.py\n     (or just wait for the weekly scheduled task to do it).\n\nInverter data is unaffected.' \
-                python3 src/main/java/org/ktronics/scripts/send_email.py 2>&1 | tail -2
-                touch /tmp/bms_alerted && echo "[alert] BMS re-login email sent to ${ALERT_TO}"
-              fi
-            else
-              rm -f /tmp/bms_alerted   # session healthy -> reset so a future death re-alerts
-            fi
-
-            # 2a-ii) BMS stale-data alert: session is HEALTHY but the physical datalogger at the
-            #        plant stopped pushing for > STALE_ALERT_MIN (lost power / wifi). Re-login does
-            #        NOT fix this; it's a heads-up to check the device. Once per run, separate marker.
-            stale_min=$(python3 -c "import json;b=json.load(open('publish/ph1000_live.json')).get('bms',{});print(b.get('data_stale_min') if (not b.get('auth_failed') and b.get('data_stale_min') is not None) else -1)" 2>/dev/null || echo -1)
-            if [ "${stale_min:--1}" -gt "${STALE_ALERT_MIN:-180}" ]; then
-              if [ ! -f /tmp/bms_stale_alerted ] && [ -n "${SMTP_USER}" ]; then
-                EMAIL_SUBJECT="⚠️ PH1000 BMS: data stale — datalogger offline" \
-                EMAIL_BODY="The PH1000 BMS cloud session is HEALTHY, but the physical BMS datalogger at the plant has not pushed fresh data in ${stale_min} minutes (~$((stale_min/60)) h). The dashboard shows the last reading flagged STALE and is using voltage-based SOC. This usually means the BMS wifi dongle / pack at the site lost power or connectivity. No re-login needed — it resumes automatically when the device reconnects. Inverter data is unaffected." \
-                python3 src/main/java/org/ktronics/scripts/send_email.py 2>&1 | tail -2
-                touch /tmp/bms_stale_alerted && echo "[alert] BMS stale-data email sent (${stale_min} min)"
-              fi
-            else
-              rm -f /tmp/bms_stale_alerted   # data fresh again -> reset so a future outage re-alerts
-            fi
+            # BMS email alerts removed per request. BMS still auto-refreshes its token, and
+            # the dashboard falls back to voltage SOC / flags STALE when the session or the
+            # datalogger is down. Re-login manually with refresh_bms_creds.py when needed.
 
             # 2b) weather + solar-harvest impact (Open-Meteo, no API key) — fails soft like the BMS
             python3 src/main/java/org/ktronics/scripts/check_ph1000_weather.py \
