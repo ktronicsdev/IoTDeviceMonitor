@@ -208,7 +208,10 @@ class TestAuthFailedDetector:
         monkeypatch.setattr(bms, "REFRESH_TOKEN", "rt")
         monkeypatch.setattr(bms, "IDENTITY_ID", "id")
         out = tmp_path / "b.json"
-        monkeypatch.setattr(sys, "argv", ["check_ph1000_bms.py", "--out", str(out)])
+        # --prev-url "" disables the live carry-forward fetch: these tests exercise the raw
+        # fetch/staleness/auth logic in isolation (carry-forward has its own tests).
+        monkeypatch.setattr(sys, "argv",
+                            ["check_ph1000_bms.py", "--out", str(out), "--prev-url", ""])
         bms.main()
         return json.load(open(out, encoding="utf-8"))
 

@@ -122,6 +122,8 @@
   <button data-tab="weather">Weather</button>
   <button data-tab="profile">Plant Profile</button>
   <button data-tab="analysis">Plant Analysis</button>
+  <button data-tab="b1">Battery B1</button>
+  <button data-tab="b2">Battery B2</button>
 </nav>
 
 <div class="wrap tabpane show" id="tab-live">
@@ -231,6 +233,14 @@
       <canvas id="anchart"></canvas>
     </div>
   </div>
+</div>
+
+<!-- ===== Battery B1 / B2 tabs (per-cell BMS detail; additive) ===== -->
+<div class="tabpane" id="tab-b1" style="display:none">
+  <div class="wrap" id="b1wrap" style="margin-bottom:0;grid-template-columns:1fr"></div>
+</div>
+<div class="tabpane" id="tab-b2" style="display:none">
+  <div class="wrap" id="b2wrap" style="margin-bottom:0;grid-template-columns:1fr"></div>
 </div>
 
 <div class="foot" style="display:flex;justify-content:space-between;align-items:center;gap:14px">
@@ -525,15 +535,18 @@ function renderLive(){
 }
 
 function bmsAvgSoc(){
-  const b=DATA&&DATA.bms; if(!b||!b.ok||!(b.packs||[]).length) return null;
-  return Math.round(b.packs.reduce((a,p)=>a+(p.soc||0),0)/b.packs.length);
+  const b=DATA&&DATA.bms; const sp=b&&b.ok?(b.packs||[]).filter(p=>p.soc!=null):[];
+  if(!sp.length) return null;
+  return Math.round(sp.reduce((a,p)=>a+(p.soc||0),0)/sp.length);
 }
 function renderBMS(){
   const card=document.getElementById('bmscard'); const b=DATA&&DATA.bms;
-  if(!b||!b.ok||!(b.packs||[]).length){ card.style.display='none'; return; }   // token expired -> hide
+  // summary packs only — a cells-only pack (Battery tab) has no SOC and isn't shown here.
+  const sp=(b&&b.ok?(b.packs||[]):[]).filter(p=>p.soc!=null);
+  if(!sp.length){ card.style.display='none'; return; }   // token expired / no summary -> hide
   card.style.display='';
   const sc=s=>s==='charging'?'charging':s==='discharging'?'discharging':'';
-  document.getElementById('bmsbody').innerHTML=b.packs.map(p=>{
+  document.getElementById('bmsbody').innerHTML=sp.map(p=>{
     const age=ageMin(p.reported_ms);            // minutes old, or null
     const stale = age!=null && age>120;          // >2 h => datalogger effectively offline
     const lag   = age!=null && age>20;
@@ -561,6 +574,51 @@ function renderBMS(){
       </div>
       ${age!=null?`<div style="font-size:11px;margin-top:9px;color:${stale?'var(--red)':lag?'var(--amber)':'var(--muted)'}">${note}</div>`:''}
     </div>`;}).join('');
+}
+// ---- Battery B1/B2 per-cell tabs (additive; fed by the pack `cells` block from the 79B cell
+//      frame). Cell data only flows while a pack is in the sticky "PACK cell" mode, so the cards
+//      are shown ONLY when fresh; otherwise a hint to arm it in the app. ----
+const CELL_STALE_MIN=120;  // cells older than this => datalogger offline; show the hint instead
+const CELL_LAG_MIN=20;     // older than this (but < stale) => show a "lagging" note
+function renderBattery(n){                       // n = 1 (B1) or 2 (B2)
+  const wrap=document.getElementById('b'+n+'wrap'); if(!wrap) return;
+  const b=DATA&&DATA.bms;
+  const pk=b&&b.packs&&b.packs.find(p=>String(p.name||'').replace(/\s+/g,'').toUpperCase().endsWith('B'+n));
+  const name=(pk&&pk.name)||('Battery B'+n);
+  const c=pk&&pk.cells, age=c&&c.ts?ageMin(c.ts):null, fresh=c&&c.mv&&age!=null&&age<=CELL_STALE_MIN;
+  if(!fresh){
+    const why = !c||!c.mv ? 'No per-cell data yet.'
+              : ('Cell data is '+Math.round(age)+' min old — datalogger offline.');
+    wrap.innerHTML=`<div class="card"><div class="ch"><h2>${name} · Cells</h2><span class="sel" style="color:var(--muted)">per-cell · live BMS</span></div>
+      <div style="color:var(--muted);padding:22px 6px;line-height:1.7">${why}<br>Open <b>${name}</b>'s <b>Voltage&nbsp;temperature / PACK&nbsp;cell</b> screen in the PACEEX app once to load live cell voltages here — it stays live afterwards.</div></div>`;
+    return;
+  }
+  const lag = age>CELL_LAG_MIN;
+  const mv=c.mv, avg=Math.round(mv.reduce((a,x)=>a+x,0)/mv.length);
+  const m=(l,v,s)=>`<div class="m"><div class="l">${l}</div><div class="v">${v}</div>${s?`<div class="s" style="color:var(--muted)">${s}</div>`:''}</div>`;
+  const overall=`<div class="card"><div class="ch"><h2>${name} · Cells Overall</h2>
+      <span class="sel" style="color:${lag?'var(--amber)':'var(--muted)'}">as of ${slClock(c.ts)} SL · ${Math.round(age)} min ago${lag?' · lagging':''}</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px">
+      ${m('Pack voltage',(c.pack_v??'—')+' <small>V</small>',mv.length+' cells')}
+      ${m('Highest cell',c.high.mv+' <small>mV</small>','cell '+c.high.n)}
+      ${m('Lowest cell',c.low.mv+' <small>mV</small>','cell '+c.low.n)}
+      ${m('Spread',(c.spread??'—')+' <small>mV</small>','avg '+avg+' mV')}
+      ${c.tmax?m('Max temp',c.tmax.c+' <small>°C</small>','sensor '+c.tmax.n):''}
+      ${c.tmin?m('Min temp',c.tmin.c+' <small>°C</small>','sensor '+c.tmin.n):''}
+    </div></div>`;
+  const lo=c.low.mv, hi=c.high.mv, span=Math.max(1,hi-lo);
+  const tile=(i,v)=>{ const col = v===hi?'var(--green)':v===lo?'var(--amber)':'var(--blue)';
+    return `<div style="background:#1a2230;border:1px solid var(--line);border-radius:9px;padding:9px 10px">
+      <div style="font-size:11px;color:var(--muted)">Cell ${i}</div>
+      <div style="font-size:16px;font-weight:700;margin:2px 0">${v}<small style="font-size:11px;color:var(--muted);font-weight:500"> mV</small></div>
+      <div style="height:5px;background:#222c3b;border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.round(20+(v-lo)/span*80)}%;background:${col}"></div></div>
+    </div>`;};
+  const grid=`<div class="card"><div class="ch"><h2>${name} · Cell voltage</h2>
+      <span class="sel" style="color:var(--muted)">${mv.length} cells · Δ ${c.spread} mV</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:9px">
+      ${mv.map((v,i)=>tile(i+1,v)).join('')}
+    </div></div>`;
+  wrap.innerHTML=overall+grid;
 }
 // ---- Weather & solar-harvest impact (from the `weather` block, Open-Meteo) ----
 const WX_EMOJI={clear:'☀️',partly:'⛅',cloudy:'☁️',fog:'🌫️',drizzle:'🌦️',rain:'🌧️',snow:'❄️',storm:'⛈️',unknown:'🌡️'};
@@ -652,7 +710,8 @@ async function load(){
        DATA=j;
        renderLive(); renderBMS(); renderWeather(); renderProfile(); renderHistory();
        if(curTab==='profile') renderProfilePane(); if(curTab==='analysis') renderAnalysis();
-       if(curTab==='weather') renderWeatherChart(); }
+       if(curTab==='weather') renderWeatherChart();
+       if(curTab==='b1') renderBattery(1); if(curTab==='b2') renderBattery(2); }
   catch(e){ if(!DATA){ const f=document.getElementById('foot'); if(f) f.textContent='load error: '+e; } }
 }
 
@@ -675,9 +734,13 @@ function switchTab(name){
   document.getElementById('tab-weather').style.display = name==='weather'?'block':'none';
   document.getElementById('tab-profile').style.display = name==='profile'?'block':'none';
   document.getElementById('tab-analysis').style.display= name==='analysis'?'block':'none';
+  document.getElementById('tab-b1').style.display      = name==='b1'?'block':'none';
+  document.getElementById('tab-b2').style.display      = name==='b2'?'block':'none';
   if(name==='weather'){ renderWeather(); renderWeatherChart(); }
   if(name==='profile') renderProfilePane();
   if(name==='analysis') renderAnalysis();
+  if(name==='b1') renderBattery(1);
+  if(name==='b2') renderBattery(2);
 }
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 

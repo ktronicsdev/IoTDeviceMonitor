@@ -155,6 +155,53 @@ def _frame_is_sane(d):
     )
 
 
+def decode_cell_frame(hexstr):
+    """Decode the 79-byte PACK-cell `WIFI_Band` frame: all 16 cell mV + 4 temps + pack V.
+
+    A DIFFERENT frame type from the summary frame (decode_wifi_band). The datalogger emits it
+    while the PACEEX app is on a pack's "Voltage temperature / PACK cell" screen — a *sticky*
+    per-device mode that persists after the app leaves, so our HTTP poll keeps reading it.
+
+    Layout validated byte-for-byte against the app: byte[3]==0x0A marks the cell frame,
+    byte[11] = cell count (16). Then `n` four-byte records at off=12+4*i: mv=u16(off); the
+    FIRST 4 records carry a temperature at u16(off+2) as 0.1 K -> (raw/10 - 273) C (records
+    5..16 hold 0000 there). Returns None if it is not a cell frame.
+    """
+    b = bytes.fromhex(hexstr)
+    if len(b) < 12 or b[3] != 0x0A:
+        return None
+    n = b[11]
+    if not (8 <= n <= 24) or len(b) < 12 + 4 * n:
+        return None
+    u16 = lambda i: (b[i] << 8) | b[i + 1]
+    mv, temps = [], []
+    for i in range(n):
+        off = 12 + 4 * i
+        v = u16(off)
+        if not (2000 <= v <= 4000):        # plausible LFP cell mV; else this isn't a cell frame
+            return None
+        mv.append(v)
+        aux = u16(off + 2)                 # first 4 records: temp in 0.1 K; rest: 0
+        if 2700 <= aux <= 3300:            # ~ -3..57 C -> a real temp sensor
+            temps.append(round(aux / 10.0 - 273.0, 1))
+    hi_i = max(range(n), key=lambda i: mv[i])
+    lo_i = min(range(n), key=lambda i: mv[i])
+    out = {
+        "mv": mv,
+        "temps": temps,
+        "pack_v": round(sum(mv) / 1000.0, 2),
+        "high": {"n": hi_i + 1, "mv": mv[hi_i]},
+        "low": {"n": lo_i + 1, "mv": mv[lo_i]},
+        "spread": mv[hi_i] - mv[lo_i],
+    }
+    if temps:
+        tmax_i = max(range(len(temps)), key=lambda i: temps[i])
+        tmin_i = min(range(len(temps)), key=lambda i: temps[i])
+        out["tmax"] = {"n": tmax_i + 1, "c": temps[tmax_i]}
+        out["tmin"] = {"n": tmin_i + 1, "c": temps[tmin_i]}
+    return out
+
+
 def refresh_iot_token(refresh_token, identity_id, cur_token=""):
     """Mint a fresh iotToken from the (long-lived) refreshToken + identityId.
 
@@ -176,16 +223,114 @@ def fetch_pack(pack, iot_token):
     if resp.get("code") != 200:
         raise RuntimeError("API code %s" % resp.get("code"))
     wb = resp["data"]["WIFI_Band"]
-    data = decode_wifi_band(wb["value"])
-    if data is None:
-        # Datalogger offline/idle: last cached frame is non-summary -> can't read this pack.
-        return {"name": pack["name"], "role": pack["role"], "iotId": pack["iotId"],
-                "offline": True, "reported_ms": int(wb.get("time", 0)) or None}
-    # `time` = when the pack's datalogger last pushed this frame (epoch ms). Packs report at
-    # different rates (B2 lags ~20-30 min), so surface it; the dashboard shows the data's age.
-    data["reported_ms"] = int(wb.get("time", 0)) or None
-    data.update({"name": pack["name"], "role": pack["role"], "iotId": pack["iotId"]})
-    return data
+    hexval = wb.get("value", "")
+    reported = int(wb.get("time", 0)) or None
+    meta = {"name": pack["name"], "role": pack["role"], "iotId": pack["iotId"]}
+    data = decode_wifi_band(hexval)
+    if data is not None:
+        # `time` = when the pack's datalogger last pushed this frame (epoch ms). Packs report at
+        # different rates (B2 lags ~20-30 min), so surface it; the dashboard shows the data's age.
+        data["reported_ms"] = reported
+        data.update(meta)
+        return data
+    # Not a summary frame -> no fresh SOC/V this run. It may instead be the sticky CELL frame
+    # (app's PACK-cell screen): capture the per-cell block so the Battery tab can show it. The
+    # pack is still "offline" for the main SOC pane (which carries its last summary forward).
+    marker = {**meta, "offline": True, "reported_ms": reported}
+    cells = decode_cell_frame(hexval)
+    if cells is not None:
+        marker["cell_frame"] = cells
+    return marker
+
+
+# Where to read the previously published data from, for per-pack carry-forward (below).
+PREV_URL_DEFAULT = ("https://raw.githubusercontent.com/ktronicsdev/IoTDeviceMonitor/"
+                    "ph1000-live/ph1000_live.json")
+
+
+def _load_prev_bms(url):
+    """Fetch the previously published `bms` block (the last-good reading per pack)."""
+    if not url:
+        return {}
+    try:
+        with urllib.request.urlopen(url + ("?t=%d" % int(time.time() * 1000)), timeout=15) as r:
+            return json.loads(r.read().decode()).get("bms") or {}
+    except (urllib.error.HTTPError, urllib.error.URLError, ValueError) as e:
+        print("[BMS] prev-bms fetch failed (%s) -> no carry-forward" % e)
+        return {}
+
+
+def carry_forward_packs(out, prev_bms):
+    """Keep both packs on the dashboard across heartbeat-only cycles.
+
+    The datalogger pushes the full SUMMARY frame (SOC/voltage/temps) only intermittently;
+    between summaries it sends short heartbeat frames that carry no telemetry, so a pack's
+    cached property is often a heartbeat at fetch time. Without this, that pack vanishes from
+    the dashboard until the next summary happens to be cached. Instead, for any pack with no
+    fresh summary THIS run, reuse its last-good summary from the previously published data —
+    tagged `carried`, keeping its original `reported_ms` so the dashboard shows the true age
+    and flags it STALE. Skipped when the cloud session is dead (auth_failed) so a genuine
+    re-login need still surfaces. Mutates and returns `out`.
+    """
+    if out.get("auth_failed"):
+        return out
+    have = {p.get("iotId") for p in out["packs"]}
+    for pack in PACKS:
+        if pack["iotId"] in have:
+            continue
+        old = next((q for q in (prev_bms.get("packs") or [])
+                    if q.get("iotId") == pack["iotId"] and q.get("soc") is not None), None)
+        if not old:
+            continue
+        old = dict(old)
+        old["carried"] = True
+        out["packs"].append(old)
+        if old.get("name") in out.get("offline_packs", []):
+            out["offline_packs"].remove(old["name"])   # shown from cache, not "offline"
+        print("[BMS] %s: no fresh summary -> carried forward last-good (SOC %s%%)"
+              % (old.get("name"), old.get("soc")))
+    out["ok"] = len(out["packs"]) > 0
+    rep = [q["reported_ms"] for q in out["packs"] if q.get("reported_ms")]
+    if rep:
+        out["freshest_ms"] = max(rep)
+        out["data_stale_min"] = max(0, int((time.time() * 1000 - max(rep)) / 60000))
+    return out
+
+
+def attach_cells(out, cell_updates, prev_bms):
+    """Attach a per-pack `cells` block (16 mV + temps + pack V) for the Battery B1/B2 tabs.
+
+    Independent of the summary/SOC layer: `cells` and the summary fields come from DIFFERENT
+    (mutually-exclusive) frame types, so each is carried forward on its own timeline. For every
+    pack now in `out["packs"]`, attach this run's fresh cells if we caught a cell frame, else the
+    last-good cells from the previously published data (kept with their own `ts` so the frontend
+    can STALE-gate them). A pack emitting cell frames is in cell mode, not offline -> drop it from
+    `offline_packs`. Mutates `out`.
+    """
+    prev = {q.get("iotId"): q for q in (prev_bms.get("packs") or [])}
+    have = {p.get("iotId") for p in out["packs"]}
+    for pk in out["packs"]:
+        iid = pk.get("iotId")
+        cells = cell_updates.get(iid)
+        if cells is None:
+            cells = (prev.get(iid) or {}).get("cells")
+        if cells is not None:
+            pk["cells"] = cells
+            if pk.get("name") in out.get("offline_packs", []):
+                out["offline_packs"].remove(pk["name"])   # cell mode, not offline
+    # Cells-only fallback: a pack in cell mode with no summary anywhere (fresh or prev) isn't in
+    # out["packs"] yet -> add a minimal pack so the Battery tab can still show its cells. It has no
+    # SOC, so the main BMS pane skips it (renderBMS filters on soc).
+    for pack in PACKS:
+        iid = pack["iotId"]
+        if iid in have or iid not in cell_updates:
+            continue
+        out["packs"].append({"name": pack["name"], "role": pack["role"], "iotId": iid,
+                             "cells_only": True, "cells": cell_updates[iid]})
+        if pack["name"] in out.get("offline_packs", []):
+            out["offline_packs"].remove(pack["name"])
+    out["ok"] = len(out["packs"]) > 0
+    return out
 
 
 def main():
@@ -195,12 +340,17 @@ def main():
     ap.add_argument("--rotated-out", dest="rotated_out",
                     help="if the refreshToken rotated, write {refreshToken,identityId} JSON here "
                          "(the workflow persists it back into the GitHub secret — cloud self-renewal)")
+    ap.add_argument("--prev-url", dest="prev_url",
+                    default=os.environ.get("BMS_PREV_URL", PREV_URL_DEFAULT),
+                    help="URL of the previously published ph1000_live.json; any pack that only "
+                         "heartbeats this run is carried forward from it. Empty string disables.")
     args = ap.parse_args()
 
     # auth_failed = the cloud SESSION is dead (refreshToken rejected) and needs a one-time app
     # re-login. Distinct from a pack being merely offline (ok:false but session fine). The
     # workflow alerts the operator only on auth_failed -- the rare event a human must act on.
     out = {"ok": False, "packs": [], "generated": formatdate(usegmt=True), "auth_failed": False}
+    cell_updates = {}   # iotId -> fresh per-cell block (populated if a pack is in cell mode)
 
     # Preferred: self-renew the iotToken from the long-lived refreshToken (no app needed).
     token = args.token
@@ -235,11 +385,18 @@ def main():
                 if d.get("reported_ms"):
                     reported.append(d["reported_ms"])
                 if d.get("offline"):
-                    # Skip from packs -> dashboard ignores it and uses voltage SOC. Self-heals
-                    # the moment the logger pushes a fresh summary frame again.
+                    if d.get("cell_frame"):
+                        # Pack is in cell mode: no fresh SOC, but we captured the 16-cell block.
+                        cf = dict(d["cell_frame"]); cf["ts"] = d.get("reported_ms")
+                        cell_updates[d["iotId"]] = cf
+                        print("[BMS] %s: cell frame -> %d cells, pack %.2fV (Battery tab)"
+                              % (d["name"], len(cf["mv"]), cf["pack_v"]))
+                    else:
+                        print("[BMS] %s: datalogger offline (no fresh summary frame) -> skipped"
+                              % d["name"])
+                    # Either way, no summary this run -> carried forward below. Self-heals when a
+                    # summary frame is next cached.
                     out.setdefault("offline_packs", []).append(d["name"])
-                    print("[BMS] %s: datalogger offline (no fresh summary frame) -> skipped"
-                          % d["name"])
                     continue
                 out["packs"].append(d)
                 temp = ("%.1f/%.1f" % (d["max_temp"], d["min_temp"])
@@ -261,6 +418,14 @@ def main():
             print("[BMS] fetch failed (token expired?): %s -> dashboard falls back to voltage SOC" % e)
             out = {"ok": False, "packs": [], "generated": formatdate(usegmt=True),
                    "auth_failed": out.get("auth_failed", False)}
+
+    # Carry forward from the previously published data (loaded once). Two independent layers:
+    #  1) summary/SOC for packs with no fresh summary this run (heartbeat or cell mode);
+    #  2) the per-cell block for the Battery tabs (fresh this run, else last-good).
+    if args.prev_url:
+        prev_bms = _load_prev_bms(args.prev_url)
+        carry_forward_packs(out, prev_bms)
+        attach_cells(out, cell_updates, prev_bms)
 
     if args.out:
         with open(args.out, "w", encoding="utf-8") as f:
