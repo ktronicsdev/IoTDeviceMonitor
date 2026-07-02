@@ -1,69 +1,55 @@
 {
-  "generated_at": "2026-06-30T23:53:52.556695Z",
-  "alerts": [
-    {
-      "severity": "RED",
-      "plant_key": "chamila-chamila-119h",
-      "today": "2026-06-30",
-      "baseline_avg_kwh_per_day": 0.2214,
-      "threshold_kwh_per_day": 0.0443,
-      "rule": "< 20.0% baseline for 3 consecutive days",
-      "window": [
-        "2026-06-28",
-        "2026-06-29",
-        "2026-06-30"
-      ],
-      "details": [
-        {
-          "date": "2026-06-28",
-          "kwh": 0.0
-        },
-        {
-          "date": "2026-06-29",
-          "kwh": 0.0
-        },
-        {
-          "date": "2026-06-30",
-          "kwh": 0.0
-        }
-      ]
-    }
-  ],
+  "generated_at": "2026-07-02T04:19:56.555812Z",
+  "alerts": [],
   "suppressed": [],
   "ignored": [
     {
       "plant_key": "abeetha-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-06"
+        "2026-07"
+      ]
+    },
+    {
+      "plant_key": "anuradha-gajanayaka-plant",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-07"
+      ]
+    },
+    {
+      "plant_key": "chamila-chamila-119h",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-07"
       ]
     },
     {
       "plant_key": "ganishka-ganishka-home-3kw",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-06"
+        "2026-07"
       ]
     },
     {
       "plant_key": "mifanza-mifanza-solar-system",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-06"
+        "2026-07"
       ]
     },
     {
       "plant_key": "samurdi-kohuwala",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-06"
+        "2026-07"
       ]
     },
     {
       "plant_key": "upulatheja-3kw-pro-kadawath",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-06"
+        "2026-07"
       ]
     }
   ]
