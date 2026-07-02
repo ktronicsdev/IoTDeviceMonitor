@@ -1,0 +1,148 @@
+# =============================================================================
+# KT BMS Monitor  -  DIY "Avrio Link" style JK-BMS -> Cloud bridge
+# =============================================================================
+# ESP32 reads a JK-compatible BMS over BLE and:
+#   1. Shows live data (every 10s) on a built-in LAN web dashboard  -> http://<device-ip>
+#   2. Pushes a periodic reading to GitHub (repository_dispatch)     -> CSV history + email alerts
+#
+# Flash with:  esphome run firmware/jk-bms-monitor.yaml
+# First flash must be over USB; afterwards OTA works over WiFi.
+#
+# Requires firmware/secrets.yaml (copy from secrets.example.yaml and fill in).
+# JK-BMS BLE support comes from the community component below.
+# =============================================================================
+
+substitutions:
+  device_name: "kt-bms-imbulgoda"          # <-- unique per install (also used as CSV key)
+  bms_mac: "C8:47:8C:00:00:00"             # <-- your JK-BMS BLE MAC (see README to find it)
+  push_interval: "15min"                    # how often to send a reading to the cloud
+
+esphome:
+  name: ${device_name}
+  friendly_name: "KT BMS Monitor"
+
+esp32:
+  board: esp32dev                           # ESP32-WROOM-32 dev board
+  framework:
+    type: arduino
+
+# ---- Community JK-BMS BLE component -----------------------------------------
+external_components:
+  - source: github://syssi/esphome-jk-bms@main
+    refresh: 1d
+
+logger:
+
+# Local API + OTA so you can re-flash over WiFi after the first USB flash
+api:
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  # If WiFi fails, expose a "KT-BMS Setup" hotspot so anyone can enter WiFi
+  # from their phone (this is the self-install "WiFi Setup Portal").
+  ap:
+    ssid: "KT-BMS Setup"
+    password: !secret ap_password
+
+captive_portal:
+
+# Live LAN dashboard (the "web dashboard" - shows 10s data, no cloud needed)
+web_server:
+  port: 80
+  version: 3
+
+# ---- BLE link to the BMS ----------------------------------------------------
+esp32_ble_tracker:
+  scan_parameters:
+    active: true
+
+ble_client:
+  - mac_address: ${bms_mac}
+    id: jk_bms_client
+
+jk_bms_ble:
+  - ble_client_id: jk_bms_client
+    id: bms0
+    update_interval: 10s
+
+# ---- Sensors (subset most useful for monitoring + alerts) -------------------
+sensor:
+  - platform: jk_bms_ble
+    jk_bms_ble_id: bms0
+    total_voltage:
+      name: "Total Voltage"
+      id: total_voltage
+    current:
+      name: "Current"
+      id: current
+    power:
+      name: "Power"
+      id: power
+    state_of_charge:
+      name: "State of Charge"
+      id: soc
+    temperature_sensor_1:
+      name: "Temperature 1"
+      id: temp1
+    min_cell_voltage:
+      name: "Min Cell Voltage"
+      id: min_cell_v
+    max_cell_voltage:
+      name: "Max Cell Voltage"
+      id: max_cell_v
+    delta_cell_voltage:
+      name: "Delta Cell Voltage"
+      id: delta_cell_v
+
+binary_sensor:
+  - platform: jk_bms_ble
+    jk_bms_ble_id: bms0
+    charging:
+      name: "Charging"
+    discharging:
+      name: "Discharging"
+    balancing:
+      name: "Balancing"
+
+# ---- Cloud push: GitHub repository_dispatch ---------------------------------
+# Sends the latest reading to GitHub, which triggers the ingest workflow that
+# appends to a CSV and emails alerts. No always-on server needed.
+http_request:
+  useragent: "esphome/kt-bms-monitor"       # GitHub rejects requests without a UA
+  timeout: 10s
+  verify_ssl: false                          # arduino fw: skip cert bundle (WiFiClientSecure)
+
+interval:
+  - interval: ${push_interval}
+    then:
+      - if:
+          # only push once we actually have a voltage reading from the BMS
+          condition:
+            lambda: 'return !isnan(id(total_voltage).state);'
+          then:
+            - http_request.post:
+                url: "https://api.github.com/repos/ktronicsdev/IOT/dispatches"
+                headers:
+                  Authorization: !secret gh_dispatch_auth   # "Bearer github_pat_..."
+                  Accept: "application/vnd.github+json"
+                  Content-Type: "application/json"
+                body: !lambda |-
+                  char buf[512];
+                  snprintf(buf, sizeof(buf),
+                    "{\"event_type\":\"bms_reading\",\"client_payload\":"
+                    "{\"device\":\"%s\",\"voltage\":%.2f,\"current\":%.2f,"
+                    "\"soc\":%.0f,\"power\":%.0f,\"temp\":%.1f,"
+                    "\"min_cell\":%.3f,\"max_cell\":%.3f,\"delta_cell\":%.3f}}",
+                    "${device_name}",
+                    id(total_voltage).state,
+                    id(current).state,
+                    id(soc).state,
+                    id(power).state,
+                    id(temp1).state,
+                    id(min_cell_v).state,
+                    id(max_cell_v).state,
+                    id(delta_cell_v).state);
+                  return std::string(buf);

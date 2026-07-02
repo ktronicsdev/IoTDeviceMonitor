@@ -1,0 +1,62 @@
+name: BMS Reading Ingest
+
+# Fired by an ESP32 BMS monitor via the GitHub API (repository_dispatch).
+# The device POSTs its latest reading; this workflow appends it to a CSV,
+# checks battery thresholds, and emails the admin on new alerts.
+#
+# Manual runs (workflow_dispatch) let you test with a fake reading.
+on:
+  repository_dispatch:
+    types: [bms_reading]
+  workflow_dispatch:
+    inputs:
+      payload:
+        description: "Test reading JSON (device, voltage, current, soc, temp, ...)"
+        type: string
+        default: '{"device":"kt-bms-test","voltage":52.4,"current":-12.6,"power":-660,"soc":78,"temp":28.5,"min_cell":3.29,"max_cell":3.31,"delta_cell":0.02}'
+
+permissions:
+  contents: write            # commit CSV history + alert state
+
+concurrency:
+  group: bms-ingest          # serialize so concurrent pushes don't clash on commit
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Ingest reading + evaluate alerts
+        shell: bash
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          BMS_PAYLOAD: ${{ github.event_name == 'repository_dispatch' && toJSON(github.event.client_payload) || github.event.inputs.payload }}
+        run: |
+          python3 bms-module/scripts/ingest_bms_reading.py
+
+      - name: Commit reading + state
+        shell: bash
+        run: |
+          if [ -n "$(git status --porcelain bms-module/data bms-module/state)" ]; then
+            git config user.name  "bms-ingest-bot"
+            git config user.email "actions@users.noreply.github.com"
+            git add bms-module/data bms-module/state
+            git commit -m "BMS reading ingest"
+            # retry-safe push: rebase on top of any concurrent commit
+            git pull --rebase --autostash origin ${GITHUB_REF_NAME} || true
+            git push
+          else
+            echo "No new data to commit."
+          fi
