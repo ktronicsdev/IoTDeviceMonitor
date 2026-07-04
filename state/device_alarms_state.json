@@ -1158,5 +1158,14 @@
     "customer": "Mifanza",
     "plant": "Mifanza Solar System",
     "message": "Solar charger battery voltage class error"
+  },
+  "1183035:D70000210186994987:6a48c289c60c522dedc5f2e2": {
+    "send_count": 1,
+    "first_seen": "2026-07-04T09:16:27.338759",
+    "ignored": false,
+    "last_sent": "2026-07-04T09:16:27.338759",
+    "customer": "CRDesilva",
+    "plant": "Home",
+    "message": "Solar charger stops due to low battery"
   }
 }
