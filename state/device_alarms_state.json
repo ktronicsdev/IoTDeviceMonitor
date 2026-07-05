@@ -1169,10 +1169,10 @@
     "message": "Solar charger stops due to low battery"
   },
   "1592739:D70000210150180785:6a491c04c60c522ded67ccaa": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-07-04T15:53:31.344542",
-    "ignored": false,
-    "last_sent": "2026-07-04T19:55:59.353792",
+    "ignored": true,
+    "last_sent": "2026-07-05T06:37:10.437803",
     "customer": "Mifanza",
     "plant": "Mifanza Solar System",
     "message": "Solar charger stops due to over load"
