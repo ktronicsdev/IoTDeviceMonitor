@@ -1178,10 +1178,10 @@
     "message": "Solar charger stops due to over load"
   },
   "1592739:D70000210150180785:6a4a192ec60c522ded657be6": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-07-05T09:41:25.312335",
-    "ignored": false,
-    "last_sent": "2026-07-05T15:54:56.717607",
+    "ignored": true,
+    "last_sent": "2026-07-05T20:02:16.346238",
     "customer": "Mifanza",
     "plant": "Mifanza Solar System",
     "message": "Solar charger stops due to over load"
