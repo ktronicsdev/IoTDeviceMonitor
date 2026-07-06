@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-05T23:42:16.065433Z",
+  "generated_at": "2026-07-06T07:05:59.808506Z",
   "alerts": [],
   "suppressed": [],
   "ignored": [
@@ -12,13 +12,6 @@
     },
     {
       "plant_key": "anuradha-gajanayaka-plant",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-07"
-      ]
-    },
-    {
-      "plant_key": "chamila-chamila-119h",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
         "2026-07"

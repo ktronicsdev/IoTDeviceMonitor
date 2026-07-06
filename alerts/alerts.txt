@@ -6,7 +6,7 @@
 ║                                                                              ║
 ║                          Status: NO ALERTS DETECTED                          ║
 ║                                                                              ║
-║               Date: 2026-07-05  |  Total Plants Monitored: 24                ║
+║               Date: 2026-07-06  |  Total Plants Monitored: 24                ║
 ║                                                                              ║
 ================================================================================
 
@@ -16,8 +16,6 @@
 │   • abeetha-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • anuradha-gajanayaka-plant
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│   • chamila-chamila-119h
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • ganishka-ganishka-home-3kw
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
