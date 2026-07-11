@@ -1,29 +1,56 @@
 {
-  "generated_at": "2026-07-10T23:38:54.222464Z",
+  "generated_at": "2026-07-11T05:37:49.634112Z",
   "alerts": [
     {
       "severity": "RED",
       "plant_key": "chamila-chamila-119h",
-      "today": "2026-07-10",
+      "today": "2026-07-11",
       "baseline_avg_kwh_per_day": 0.35,
       "threshold_kwh_per_day": 0.07,
       "rule": "< 20.0% baseline for 3 consecutive days",
       "window": [
-        "2026-07-08",
         "2026-07-09",
-        "2026-07-10"
+        "2026-07-10",
+        "2026-07-11"
       ],
       "details": [
-        {
-          "date": "2026-07-08",
-          "kwh": 0.0
-        },
         {
           "date": "2026-07-09",
           "kwh": 0.0
         },
         {
           "date": "2026-07-10",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-07-11",
+          "kwh": 0.0
+        }
+      ]
+    },
+    {
+      "severity": "RED",
+      "plant_key": "jeremy-jeremy-plant",
+      "today": "2026-07-11",
+      "baseline_avg_kwh_per_day": 7.5786,
+      "threshold_kwh_per_day": 1.5157,
+      "rule": "< 20.0% baseline for 3 consecutive days",
+      "window": [
+        "2026-07-09",
+        "2026-07-10",
+        "2026-07-11"
+      ],
+      "details": [
+        {
+          "date": "2026-07-09",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-07-10",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-07-11",
           "kwh": 0.0
         }
       ]
