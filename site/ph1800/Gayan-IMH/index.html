@@ -264,6 +264,12 @@ const num = v => { const n=parseFloat(v); return isNaN(n)?null:n; };
 const W = v => v===null||v===undefined||v===""?"—":Math.round(v).toLocaleString()+" W";
 // System capacities come from the per-plant credentials config (DATA.plant.*); set on load().
 let PV_CAP_W=null, RATED_W=null, BATT_CAP_W=null;
+// Model variant (set per-plant in load()): grid-power sign differs by inverter family.
+//   "pro" grid-tie MUST : PGrid < 0 = import, > 0 = export
+//   "vhm" off-grid PV-1800: PGrid > 0 = import, never exports
+// gridImp() canonicalises to import-positive (>0 import, <0 export) so downstream code is uniform.
+let VARIANT='pro';
+const gridImp = gw => gw==null?null:(VARIANT==='vhm'? gw : -gw);
 const pctOf=(v,cap)=> (v==null||!cap)?'':Math.round(Math.max(0,v)/cap*100)+'%';
 // SOC from 16S LFP battery voltage — Deye-style smooth curve, anchored to the operator's
 // reference points (55.x V≈100%, 53.x V≈80%, 50.x V≈20%) and consistent with the live BMS
@@ -309,7 +315,7 @@ function dailyEnergy(points){ // integrate W -> kWh
     const pv=avg('pinverter_w'),ld=avg('load_power_w_est'),bw=avg('battery_w'),gw=avg('pgrid_w');
     if(pv>0) prod+=pv*dt; if(ld>0) cons+=ld*dt;
     if(bw<0) chg+=(-bw)*dt; if(bw>0) dis+=bw*dt;   // ChargerPower<0 = charging
-    if(gw<0) imp+=(-gw)*dt; if(gw>0) exp+=gw*dt;   // PGrid<0 = import from grid, >0 = export
+    const gs=gridImp(gw); if(gs>0) imp+=gs*dt; else if(gs<0) exp+=(-gs)*dt;  // sign per variant
   }
   return {prod:prod/1000,cons:cons/1000,chg:chg/1000,dis:dis/1000,imp:imp/1000,exp:exp/1000};
 }
@@ -522,8 +528,8 @@ function renderLive(){
         ba=num(L.battery_a&&L.battery_a.value),pinv=num(L.pinverter_w&&L.pinverter_w.value),
         grid=num(L.pgrid_w&&L.pgrid_w.value),gv=num(L.grid_v&&L.grid_v.value);
   const flow=bw===null?'':bw<0?'charging':bw>0?'discharging':'idle';
-  // PGrid convention: < 0 = importing FROM grid (load runs off grid), > 0 = exporting TO grid.
-  const gimp=grid!==null&&grid<-1, gexp=grid!==null&&grid>1;
+  // Grid import/export via the variant-aware sign (gs>0 = importing FROM grid, <0 = exporting).
+  const gs=gridImp(grid), gimp=gs!==null&&gs>1, gexp=gs!==null&&gs<-1;
   // Flow-graph readouts (power in W).
   document.getElementById('n_pv').innerHTML=W(pv)+(pv?' · '+pctOf(pv,PV_CAP_W):'');
   document.getElementById('n_load').innerHTML=W(load)+(load?' · '+pctOf(load,RATED_W):'');
@@ -688,6 +694,7 @@ async function load(){
          psel.value=plantIdx; }
        DATA=j.plants[plantIdx]||j.plants[0];
        PV_CAP_W=num(DATA.plant&&DATA.plant.pv_cap_w); RATED_W=num(DATA.plant&&DATA.plant.rated_w); BATT_CAP_W=num(DATA.plant&&DATA.plant.batt_cap_w);
+       VARIANT=((DATA.plant&&DATA.plant.variant)||'pro').toLowerCase();
        const nm=(DATA.plant&&DATA.plant.name)||j.account||'Solar';
        document.getElementById('plantname').textContent=nm; document.title=nm;
        DATA.last_updated=j.last_updated;

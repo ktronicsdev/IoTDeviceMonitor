@@ -158,21 +158,23 @@ def account_file(username, password):
 
 
 def ensure_page(pages_dir, label):
-    """Create <pages_dir>/<label>/index.html by copying the canonical dashboard template.
+    """Create/refresh <pages_dir>/<label>/index.html from the canonical dashboard template.
 
     The dashboard is plant-agnostic (login + data drive everything), so every plant's page is
-    an identical copy of <pages_dir>/_app.html. Returns True if a new page was created; never
-    overwrites an existing one. Needs _app.html to exist.
+    an identical copy of <pages_dir>/_app.html. Re-stamps the page whenever it differs from the
+    template so template changes (e.g. a new model variant) propagate to every existing plant.
+    Returns True if the page was created or updated. Needs _app.html to exist.
     """
-    page = Path(pages_dir) / label / "index.html"
-    if page.exists():
-        return False
     template = Path(pages_dir) / "_app.html"
     if not template.exists():
         print(f"[pages] template {template} missing — cannot create page for {label}")
         return False
+    tpl = template.read_text(encoding="utf-8")
+    page = Path(pages_dir) / label / "index.html"
+    if page.exists() and page.read_text(encoding="utf-8") == tpl:
+        return False                                   # up to date
     page.parent.mkdir(parents=True, exist_ok=True)
-    page.write_text(template.read_text(encoding="utf-8"), encoding="utf-8")
+    page.write_text(tpl, encoding="utf-8", newline="")  # preserve LF (no Windows CRLF translation)
     return True
 
 
@@ -200,7 +202,11 @@ def load_ph1800_accounts(creds_path, customer=None):
                 continue
         elif not acc.get("ph1800"):
             continue
-        caps = {"pv_kw": acc.get("pv_kw"), "batt_kw": acc.get("batt_kw")}
+        # variant selects model-specific conventions on the dashboard (grid-power sign):
+        #   "pro" (default) = grid-tie MUST: PGrid<0 import, >0 export
+        #   "vhm"           = off-grid PV-1800: PGrid>0 import, never exports
+        caps = {"pv_kw": acc.get("pv_kw"), "batt_kw": acc.get("batt_kw"),
+                "variant": (acc.get("variant") or "pro").lower()}
         out.append((label, acc.get("username"), acc.get("password"), caps))
     return company_key, out
 
@@ -408,6 +414,7 @@ def build_plant_block(plant_info, device, series, tz_offset=0, caps=None,
 
     return {
         "type": "PH1800",
+        "variant": (caps.get("variant") or "pro"),   # dashboard grid-sign convention (pro/vhm)
         "name": (plant_info or {}).get("name") or device.get("alias") or "Plant",
         "nominal_power_kw": round(rated_w / 1000.0, 2) if rated_w else None,
         "pv_cap_w": cap_w("pv_kw"),

@@ -108,7 +108,38 @@ class TestPageShell:
     def test_no_template_no_create(self, tmp_path):
         assert b.ensure_page(str(tmp_path), "X") is False   # no _app.html -> nothing created
 
-    def test_does_not_overwrite(self, tmp_path):
+    def test_no_change_when_up_to_date(self, tmp_path):
         (tmp_path / "_app.html").write_text("X", encoding="utf-8")
         b.ensure_page(str(tmp_path), "Y")
-        assert b.ensure_page(str(tmp_path), "Y") is False
+        assert b.ensure_page(str(tmp_path), "Y") is False       # identical -> no re-stamp
+
+    def test_restamps_when_template_changes(self, tmp_path):
+        (tmp_path / "_app.html").write_text("v1", encoding="utf-8")
+        b.ensure_page(str(tmp_path), "Y")
+        (tmp_path / "_app.html").write_text("v2 with variant", encoding="utf-8")
+        assert b.ensure_page(str(tmp_path), "Y") is True        # differs -> re-stamped
+        assert (tmp_path / "Y" / "index.html").read_text(encoding="utf-8") == "v2 with variant"
+
+
+class TestVariant:
+    def test_default_variant_is_pro(self, tmp_path):
+        creds = {"company_key": "ck", "accounts": [
+            {"label": "A", "username": "ua", "password": "pa", "ph1800": True}]}
+        f = tmp_path / "c.json"; f.write_text(json.dumps(creds), encoding="utf-8")
+        _ck, accs = b.load_ph1800_accounts(str(f))
+        assert accs[0][3]["variant"] == "pro"                   # caps dict
+
+    def test_vhm_variant_read_and_lowercased(self, tmp_path):
+        creds = {"company_key": "ck", "accounts": [
+            {"label": "A", "username": "ua", "password": "pa", "ph1800": True, "variant": "VHM"}]}
+        f = tmp_path / "c.json"; f.write_text(json.dumps(creds), encoding="utf-8")
+        _ck, accs = b.load_ph1800_accounts(str(f))
+        assert accs[0][3]["variant"] == "vhm"
+
+    def test_plant_block_carries_variant(self):
+        blk = b.build_plant_block({}, {"alias": "x"}, [], caps={"variant": "vhm", "pv_kw": 0.5})
+        assert blk["variant"] == "vhm"
+
+    def test_plant_block_defaults_variant_pro(self):
+        blk = b.build_plant_block({}, {"alias": "x"}, [], caps={})
+        assert blk["variant"] == "pro"
