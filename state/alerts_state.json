@@ -1,15 +1,15 @@
 {
   "chamila-chamila-119h:RED": {
     "first_seen": "2026-07-09",
-    "ignored_date": null,
+    "ignored_date": "2026-07-12",
     "last_sent": "2026-07-11",
     "send_count": 17
   },
   "jeremy-jeremy-plant:RED": {
     "first_seen": "2026-07-11",
     "ignored_date": null,
-    "last_sent": "2026-07-11",
-    "send_count": 6
+    "last_sent": "2026-07-12",
+    "send_count": 7
   },
   "red_sent": {
     "ganishka-ganishka-home-3kw": {
