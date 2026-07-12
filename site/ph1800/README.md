@@ -11,21 +11,23 @@ Tests: [`test_ph1800.py`](../../src/test/java/org/ktronics/scripts/integration/t
 
 ## 🔗 Per-plant URLs
 Each plant is served at its own path:
-- **https://ktronicsdev.github.io/IoTDeviceMonitor/site/ph1800/Gayan-IMH/**
+- **https://ktronicsdev.github.io/IoTDeviceMonitor/site/ph1800/Gayan-IMH/** — `pro` (grid-tie MUST)
+- **https://ktronicsdev.github.io/IoTDeviceMonitor/site/ph1800/CRDesilva/** — `vhm` (off-grid PV-1800)
 
-`site/ph1800/app.css` is shared; every `site/ph1800/<label>/index.html` is an identical copy of the
-canonical dashboard `site/ph1800/_app.html` (the app is plant-agnostic — login + data drive it).
+Every `site/ph1800/<label>/index.html` is an identical copy of the canonical dashboard
+`site/ph1800/_app.html` (CSS + JS are inline; the app is plant-agnostic — login + data drive it).
 
 ## Add a plant = a flag
 1. In `credentials.json`, flag the account and (optionally) its physical specs the cloud doesn't
    expose:
    ```json
    {
-     "label": "Gayan-IMH",
+     "label": "CRDesilva",
      "username": "…", "password": "…",
      "ph1800": true,
-     "pv_kw": 2.2,        // PV array size  (optional)
-     "batt_kw": 5         // battery size   (optional)
+     "variant": "vhm",   // inverter family — "pro" (default) or "vhm"; see Model variants below
+     "pv_kw": 0.5,        // PV array size  (optional)
+     "batt_kw": 1.8       // battery size   (optional)
    }
    ```
 2. Push that same content into the cloud secret so the workflow sees it:
@@ -33,6 +35,19 @@ canonical dashboard `site/ph1800/_app.html` (the app is plant-agnostic — login
 
 That's it. The workflow auto-creates `site/ph1800/<label>/` (copied from `_app.html`) and publishes
 the plant's data. No code changes.
+
+## Model variants
+Different MUST inverter families report **grid power (`PGrid`) with opposite signs**, so each plant
+declares a `variant` (default `"pro"`); the dashboard's `gridImp()` canonicalises the sign so
+import/export are labelled correctly everywhere (Live Grid card, flow arrow, and the History bars).
+
+| `variant` | Inverter | Grid import | Grid export |
+|---|---|---|---|
+| `pro` (default) | grid-tie MUST (e.g. Gayan-IMH) | `PGrid < 0` | `PGrid > 0` |
+| `vhm` | off-grid PV-1800 (e.g. CRDesilva) | `PGrid > 0` | never exports |
+
+Everything else (PV / battery / load mapping) is identical across variants — only the grid sign
+differs. Add a new family by extending the `variant` switch in `gridImp()` (`_app.html`).
 
 ## Login & data files (soft privacy)
 - The login takes a **username + password**; the data file is
@@ -51,7 +66,7 @@ Read as-is from ShineMonitor; no calculation except battery power = V × I:
 | **Battery Power** | Battery Voltage × Batt Current |
 | **Battery Current** | Batt Current |
 | **Load Power** | PLoad |
-| **Grid Power** | PGrid (`<0` import = red, `>0` export = green; % of rated) |
+| **Grid Power** | PGrid — import = red, export = green (sign per **variant**, see above); % of rated |
 | **Battery V / Grid V / Inverter V** | as-is |
 | **Rated power** | ShineMonitor "rated power" |
 | **Daily / Monthly / Yearly energy** | `queryPlantEnergyDay/Month/Year` |
@@ -79,8 +94,9 @@ unused by the UI, kept for a future generation-history view.
 ## Workflow
 [`trigger-ph1800.yml`](../../.github/workflows/trigger-ph1800.yml) runs a cloud-only self-loop
 (fetch → publish every ~10 min, re-launching itself; a 2 h cron restarts the chain). It writes each
-account's `<hash>.json` to the `ph1800-live` branch and auto-creates any missing plant page on
-`main`. No BMS; weather is per-plant. Nothing depends on a laptop.
+account's `<hash>.json` to the `ph1800-live` branch and creates any missing plant page on `main` —
+`ensure_page()` also **re-stamps** existing pages when `_app.html` changes, so a dashboard edit
+propagates to every plant. No BMS; weather is per-plant. Nothing depends on a laptop.
 
 ## Usage
 ```bash
