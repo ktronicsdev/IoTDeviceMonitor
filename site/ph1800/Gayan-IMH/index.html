@@ -866,17 +866,29 @@ document.getElementById('wx_date').onchange=function(){ const i=ppList(wxPeriod)
 // ---- per-plant gate: username + password -> data file sha256(username:password).json ----
 async function sha256(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
   return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+// This plant's label from the URL (…/ph1800/<label>/). sessionStorage is per-ORIGIN, so the
+// saved file MUST be namespaced by label — otherwise logging into one plant auto-shows on every
+// other plant's URL. We also verify the logged-in account matches this URL's plant.
+const _seg=location.pathname.split('/').filter(Boolean), _pi=_seg.indexOf('ph1800');
+const PLANT_LABEL=(_pi>=0 && _seg[_pi+1] && _seg[_pi+1]!=='index.html') ? decodeURIComponent(_seg[_pi+1]) : '';
+const FILE_KEY='ph1800_file'+(PLANT_LABEL?('_'+PLANT_LABEL):'');
+const _norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
 let _poll=null;
 function _begin(){ document.getElementById('gate').style.display='none'; load(); if(!_poll) _poll=setInterval(load, 300000); }
 async function gateLogin(){
   const u=document.getElementById('gu').value.trim(), pw=document.getElementById('gp').value;
-  if(!u||!pw){ document.getElementById('gerr').style.display='block'; return; }
+  const err=document.getElementById('gerr');
+  if(!u||!pw){ err.textContent='Enter username and password'; err.style.display='block'; return; }
   DATA_FILE=(await sha256(u+':'+pw))+'.json';
   const j=await fetchData();
-  if(j&&j.plants&&j.plants.length){ sessionStorage.setItem('ph1800_file',DATA_FILE); _begin(); }
-  else { DATA_FILE=null; document.getElementById('gerr').style.display='block'; }
+  const found=j&&j.plants&&j.plants.length;
+  if(found && PLANT_LABEL && _norm(j.account)!==_norm(PLANT_LABEL)){
+    DATA_FILE=null; err.textContent='These credentials are for '+(j.account||'another plant')+', not '+PLANT_LABEL+'.'; err.style.display='block'; return;
+  }
+  if(found){ sessionStorage.setItem(FILE_KEY,DATA_FILE); _begin(); }
+  else { DATA_FILE=null; err.textContent='Wrong username or password'; err.style.display='block'; }
 }
-const _savedFile=sessionStorage.getItem('ph1800_file');
+const _savedFile=sessionStorage.getItem(FILE_KEY);
 if(_savedFile){ DATA_FILE=_savedFile; _begin(); }
 document.getElementById('gb').onclick=gateLogin;
 document.getElementById('gp').addEventListener('keydown',e=>{if(e.key==='Enter')gateLogin();});
