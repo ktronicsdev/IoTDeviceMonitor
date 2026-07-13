@@ -1185,5 +1185,14 @@
     "customer": "Mifanza",
     "plant": "Mifanza Solar System",
     "message": "Solar charger stops due to over load"
+  },
+  "1101493:D70000210186250779:6a54d46ac60c522ded87418a": {
+    "send_count": 1,
+    "first_seen": "2026-07-13T12:57:40.778805",
+    "ignored": false,
+    "last_sent": "2026-07-13T12:57:40.778805",
+    "customer": "Abeetha",
+    "plant": "PLANT",
+    "message": "battery voltage is too high"
   }
 }
