@@ -7,9 +7,9 @@
           "plant": "jeremy-jeremy-plant",
           "level": "RED",
           "issue": "< 20.0% baseline for 3 consecutive days",
-          "normal": 6.9929,
+          "normal": 6.3929,
           "current": {
-            "date": "2026-07-12",
+            "date": "2026-07-13",
             "kwh": 0.0
           }
         }
