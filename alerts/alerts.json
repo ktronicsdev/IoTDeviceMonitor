@@ -1,29 +1,29 @@
 {
-  "generated_at": "2026-07-13T23:33:08.557168Z",
+  "generated_at": "2026-07-14T05:27:39.138489Z",
   "alerts": [
     {
       "severity": "RED",
       "plant_key": "chamila-chamila-119h",
-      "today": "2026-07-13",
+      "today": "2026-07-14",
       "baseline_avg_kwh_per_day": 0.1286,
       "threshold_kwh_per_day": 0.0257,
       "rule": "< 20.0% baseline for 3 consecutive days",
       "window": [
-        "2026-07-11",
         "2026-07-12",
-        "2026-07-13"
+        "2026-07-13",
+        "2026-07-14"
       ],
       "details": [
-        {
-          "date": "2026-07-11",
-          "kwh": 0.0
-        },
         {
           "date": "2026-07-12",
           "kwh": 0.0
         },
         {
           "date": "2026-07-13",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-07-14",
           "kwh": 0.0
         }
       ]
@@ -31,26 +31,26 @@
     {
       "severity": "RED",
       "plant_key": "jeremy-jeremy-plant",
-      "today": "2026-07-13",
-      "baseline_avg_kwh_per_day": 6.3929,
-      "threshold_kwh_per_day": 1.2786,
+      "today": "2026-07-14",
+      "baseline_avg_kwh_per_day": 5.8643,
+      "threshold_kwh_per_day": 1.1729,
       "rule": "< 20.0% baseline for 3 consecutive days",
       "window": [
-        "2026-07-11",
         "2026-07-12",
-        "2026-07-13"
+        "2026-07-13",
+        "2026-07-14"
       ],
       "details": [
-        {
-          "date": "2026-07-11",
-          "kwh": 0.0
-        },
         {
           "date": "2026-07-12",
           "kwh": 0.0
         },
         {
           "date": "2026-07-13",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-07-14",
           "kwh": 0.0
         }
       ]
