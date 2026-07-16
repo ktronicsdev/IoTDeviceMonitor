@@ -82,10 +82,11 @@ jobs:
             echo "::group::iteration $i / ${ITERATIONS} ($(date -u +%H:%M:%S) UTC)"
             rm -rf publish; mkdir -p publish/data
 
-            # 1) inverter telemetry (the critical feed — always available)
+            # 1) inverter telemetry (the critical feed — always available). Main JSON keeps 7d
+            #    (small, polled); ph1000_hist.json gets 30d, background-loaded by the dashboard.
             python3 src/main/java/org/ktronics/scripts/check_ph1000.py \
               --customer Mifanza --json-out publish/ph1000_live.json \
-              --data-dir publish/data --history-days 7 2>&1
+              --data-dir publish/data --history-days 30 --live-days 7 2>&1
 
             # 2) BMS (optional) — fails soft; dashboard falls back to voltage SOC
             python3 src/main/java/org/ktronics/scripts/check_ph1000_bms.py \

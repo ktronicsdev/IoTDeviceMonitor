@@ -538,6 +538,15 @@ def process_plant(token, secret, plant, days, caps=None):
     }
 
 
+def _recent_days(series, days):
+    """Keep only rows from the most recent `days` calendar dates (by the row timestamp's date)."""
+    if not series or days <= 0:
+        return series
+    dates = sorted({str(r.get("timestamp"))[:10] for r in series})
+    keep = set(dates[-days:])
+    return [r for r in series if str(r.get("timestamp"))[:10] in keep]
+
+
 def process_account(token, secret, label, username, password, caps, args):
     plants = get_plants(token, secret)
     if not plants:
@@ -566,18 +575,30 @@ def process_account(token, secret, label, username, password, caps, args):
         print(json.dumps(blocks[0]["latest"], indent=2, default=str)[:4000])
         return 0
 
-    payload = {
-        "account": label,
-        "plants": blocks,
-        "display_mode": "raw",
-        "last_updated": datetime.now(timezone.utc).isoformat(),
-    }
+    now_iso = datetime.now(timezone.utc).isoformat()
+    live_days = getattr(args, "live_days", 7) or 7
+    # Split the fetched window: the main file keeps only the recent `live_days` (small, polled
+    # every 5 min by the dashboard); the full series goes to a companion .hist.json the dashboard
+    # background-loads once after page render to extend History back to --history-days.
+    full_series = [b["series7d"] for b in blocks]
+    for b in blocks:
+        b["series7d"] = _recent_days(b["series7d"], live_days)
+
+    payload = {"account": label, "plants": blocks, "display_mode": "raw", "last_updated": now_iso}
     if args.out_dir:
+        Path(args.out_dir).mkdir(parents=True, exist_ok=True)
         out = Path(args.out_dir) / account_file(username, password)
-        out.parent.mkdir(parents=True, exist_ok=True)
         with open(out, "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=2, default=str)
-        print(f"  Wrote {out.name} ({len(blocks)} plant(s))")
+        print(f"  Wrote {out.name} ({len(blocks)} plant(s), {live_days}d live)")
+        if args.history_days > live_days:                 # publish the extended-history file
+            hist = {"account": label, "last_updated": now_iso,
+                    "plants": [{"series": fs} for fs in full_series]}
+            hist_out = Path(args.out_dir) / (account_file(username, password)[:-5] + ".hist.json")
+            with open(hist_out, "w", encoding="utf-8") as f:
+                json.dump(hist, f, indent=2, default=str)
+            print(f"  Wrote {hist_out.name} ({sum(len(fs) for fs in full_series)} pts, "
+                  f"{args.history_days}d history)")
     return 0
 
 
@@ -587,7 +608,11 @@ def main():
     p.add_argument("--customer", help="Single account label (else all ph1800-flagged accounts)")
     p.add_argument("--out-dir", help="Write per-account <hash>.json files here")
     p.add_argument("--pages-dir", help="Ensure a <pages-dir>/<label>/index.html shell exists per account")
-    p.add_argument("--history-days", type=int, default=7)
+    p.add_argument("--history-days", type=int, default=7,
+                   help="Full intraday window to fetch (goes to the <hash>.hist.json history file)")
+    p.add_argument("--live-days", type=int, default=7,
+                   help="Recent window kept in the main <hash>.json (small, polled). The dashboard "
+                        "background-loads .hist.json to extend History to --history-days.")
     p.add_argument("--discover", action="store_true", help="Dump the first plant's live fields and exit")
     args = p.parse_args()
 

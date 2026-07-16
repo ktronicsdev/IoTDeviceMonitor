@@ -259,6 +259,22 @@ async function fetchData(){
   const r2=await fetch(RAW_URL+'?t='+Date.now(),{cache:'no-store'}); return await r2.json();
 }
 let chart, hist, DATA=null, dayIdx=null, days=[], monthSel=null, ppPeriod='D', ppIx={}, chartKind=null, hmPeriod='M', hmIx={};
+// 30-day History is background-loaded from ph1000_hist.json so the polled main file stays small.
+// HIST_SERIES (full series) is fetched once; each render merges it with the fresh recent series.
+const HIST_URL = "https://raw.githubusercontent.com/ktronicsdev/IoTDeviceMonitor/ph1000-live/ph1000_hist.json";
+let HIST_SERIES=null, _histTried=false;
+function mergeSeries(base, recent){
+  if(!base||!base.length) return recent||[];
+  if(!recent||!recent.length) return base;
+  const rd=new Set(recent.map(r=>String(r.timestamp).slice(0,10)));
+  return base.filter(r=>!rd.has(String(r.timestamp).slice(0,10))).concat(recent)
+             .sort((a,b)=>String(a.timestamp)<String(b.timestamp)?-1:1);
+}
+async function loadHist(){
+  try{ const r=await fetch(HIST_URL+'?t='+Date.now(),{cache:'no-store'});
+       if(r.ok){ const j=await r.json(); HIST_SERIES=j.series||[];
+         if(DATA){ DATA.series7d=mergeSeries(HIST_SERIES, DATA.series7d); renderProfile(); renderHistory(); if(curTab==='analysis') renderAnalysis(); } } }catch(e){}
+}
 const shiftMonth=(ym,delta)=>{ let [y,m]=ym.split('-').map(Number); m+=delta;
   while(m<1){m+=12;y--;} while(m>12){m-=12;y++;} return y+'-'+String(m).padStart(2,'0'); };
 const num = v => { const n=parseFloat(v); return isNaN(n)?null:n; };
@@ -708,6 +724,8 @@ async function load(){
   try{ const j=await fetchData();
        if(!j||!j.device) throw new Error('no data');
        DATA=j;
+       DATA.series7d=mergeSeries(HIST_SERIES, DATA.series7d);         // extend if hist loaded
+       if(!_histTried){ _histTried=true; loadHist(); }                // fetch 30d history once
        renderLive(); renderBMS(); renderWeather(); renderProfile(); renderHistory();
        if(curTab==='profile') renderProfilePane(); if(curTab==='analysis') renderAnalysis();
        if(curTab==='weather') renderWeatherChart();

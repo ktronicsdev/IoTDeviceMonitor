@@ -143,3 +143,20 @@ class TestVariant:
     def test_plant_block_defaults_variant_pro(self):
         blk = b.build_plant_block({}, {"alias": "x"}, [], caps={})
         assert blk["variant"] == "pro"
+
+
+class TestHistorySplit:
+    # The main file keeps only recent days (small, polled); the full window goes to .hist.json,
+    # which the dashboard background-loads to extend History.
+    S = [{"timestamp": f"2026-07-{d:02d} 10:00:00", "pgrid_w": d} for d in range(1, 31)]
+
+    def test_recent_days_trims_to_last_n_dates(self):
+        r = b._recent_days(self.S, 7)
+        assert len({x["timestamp"][:10] for x in r}) == 7
+        assert r[-1]["timestamp"].startswith("2026-07-30")   # newest kept
+        assert all(x["timestamp"] >= "2026-07-24" for x in r)
+
+    def test_recent_days_full_window_unchanged(self):
+        assert len(b._recent_days(self.S, 30)) == 30
+        assert b._recent_days(self.S, 0) == self.S            # 0 -> no trim
+        assert b._recent_days([], 7) == []

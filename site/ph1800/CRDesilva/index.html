@@ -258,6 +258,30 @@ async function fetchData(){
   return null;
 }
 let chart, hist, DATA=null, dayIdx=null, days=[], monthSel=null, ppPeriod='D', ppIx={}, chartKind=null, hmPeriod='M', hmIx={};
+// 30-day History is background-loaded from the companion .hist.json so the polled main file stays
+// small. HIST_RAW (all plants' full series) is fetched once per account; each render merges it with
+// the fresh recent series (recent days override the overlapping older days).
+let HIST_RAW=null, _histKey=null;
+const _histSeries=()=>((HIST_RAW&&HIST_RAW.plants&&HIST_RAW.plants[plantIdx]&&HIST_RAW.plants[plantIdx].series)||[]);
+function mergeSeries(base, recent){
+  if(!base||!base.length) return recent||[];
+  if(!recent||!recent.length) return base;
+  const rd=new Set(recent.map(r=>String(r.timestamp).slice(0,10)));
+  return base.filter(r=>!rd.has(String(r.timestamp).slice(0,10))).concat(recent)
+             .sort((a,b)=>String(a.timestamp)<String(b.timestamp)?-1:1);
+}
+async function loadHist(){
+  if(!DATA_FILE) return;
+  const hf=DATA_FILE.slice(0,-5)+'.hist.json';
+  try{ const r=await fetch(`https://raw.githubusercontent.com/${PH1800_REPO}/${PH1800_BRANCH}/${hf}?t=`+Date.now(),{cache:'no-store'});
+       if(r.ok){ HIST_RAW=await r.json(); applyHist(); } }catch(e){}
+}
+function applyHist(){
+  if(!HIST_RAW||!DATA) return;
+  const hs=_histSeries(); if(!hs.length) return;
+  DATA.series7d=mergeSeries(hs, DATA.series7d);
+  renderProfile(); renderHistory(); if(curTab==='analysis') renderAnalysis();
+}
 const shiftMonth=(ym,delta)=>{ let [y,m]=ym.split('-').map(Number); m+=delta;
   while(m<1){m+=12;y--;} while(m>12){m-=12;y++;} return y+'-'+String(m).padStart(2,'0'); };
 const num = v => { const n=parseFloat(v); return isNaN(n)?null:n; };
@@ -698,6 +722,8 @@ async function load(){
        const nm=(DATA.plant&&DATA.plant.name)||j.account||'Solar';
        document.getElementById('plantname').textContent=nm; document.title=nm;
        DATA.last_updated=j.last_updated;
+       DATA.series7d=mergeSeries(_histSeries(), DATA.series7d);          // extend if hist loaded
+       if(_histKey!==DATA_FILE){ _histKey=DATA_FILE; HIST_RAW=null; loadHist(); }  // fetch 30d once
        renderLive(); renderBMS(); renderWeather(); renderProfile(); renderHistory();
        if(curTab==='profile') renderProfilePane(); if(curTab==='analysis') renderAnalysis(); }
   catch(e){ if(!DATA){ const f=document.getElementById('foot'); if(f) f.textContent='load error: '+e; } }

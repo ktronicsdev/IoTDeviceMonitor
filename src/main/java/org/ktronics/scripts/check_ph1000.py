@@ -606,7 +606,16 @@ def load_measured_history(data_dir, label, device):
     return rows
 
 
-def write_json(json_out, device, last_update, latest_fields, series, plant_block=None):
+def _recent_days(series, days):
+    """Keep only rows from the most recent `days` calendar dates (by row timestamp date)."""
+    if not series or days <= 0:
+        return series
+    dates = sorted({str(r.get("timestamp"))[:10] for r in series})
+    keep = set(dates[-days:])
+    return [r for r in series if str(r.get("timestamp"))[:10] in keep]
+
+
+def write_json(json_out, device, last_update, latest_fields, series, plant_block=None, live_days=7):
     # Add energy-balance estimates to the live snapshot (clearly flagged estimated).
     latest_fields = dict(latest_fields)
     pv, load = derive_energy_balance(
@@ -618,6 +627,10 @@ def write_json(json_out, device, last_update, latest_fields, series, plant_block
     if load is not None:
         latest_fields["load_power_w_est"] = {"value": round(load), "unit": "W", "estimated": True}
 
+    now_iso = datetime.now(timezone.utc).isoformat()
+    # The main file keeps only the recent `live_days` (small, polled every 5 min). The full series
+    # goes to a companion *_hist.json the dashboard background-loads once to extend History.
+    live_series = _recent_days(series, live_days)
     payload = {
         "device": {
             "pn": device["pn"], "sn": device["sn"], "alias": device["alias"],
@@ -627,16 +640,23 @@ def write_json(json_out, device, last_update, latest_fields, series, plant_block
             "last_update": last_update,
         },
         "latest": latest_fields,
-        "series7d": series,
+        "series7d": live_series,
         "fields_note": "Only Battery V/A/W and PInverter are reliable from ShineMonitor "
                        "for this PH1000; PV power, load power and SOC are not exposed.",
-        "last_updated": datetime.now(timezone.utc).isoformat(),
+        "last_updated": now_iso,
     }
     if plant_block:
         payload["plant"] = plant_block
     Path(json_out).parent.mkdir(parents=True, exist_ok=True)
     with open(json_out, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, default=str)
+    if len(series) > len(live_series):                     # extended history available -> hist file
+        hist_out = json_out.replace("_live.json", "_hist.json")
+        if hist_out == json_out:
+            hist_out = json_out[:-5] + "_hist.json"
+        with open(hist_out, "w", encoding="utf-8") as f:
+            json.dump({"series": series, "last_updated": now_iso}, f, indent=2, default=str)
+        print(f"  Wrote history file -> {hist_out} ({len(series)} points)")
     return payload
 
 
@@ -691,7 +711,8 @@ def process_account(token, secret, label, args):
           f"logged total {plant_block['energy']['total']} kWh | gains Rs {plant_block['gains_lkr']}")
 
     if args.json_out:
-        write_json(args.json_out, device, last_update, latest, series, plant_block)
+        write_json(args.json_out, device, last_update, latest, series, plant_block,
+                   live_days=getattr(args, "live_days", 7))
         print(f"  Wrote dashboard JSON -> {args.json_out} "
               f"(latest={len(latest)} fields, series={len(series)} points)")
     return 0
@@ -704,7 +725,11 @@ def main():
     p.add_argument("--devcode", help=f"Override device code (default {DEFAULT_DEVCODE})")
     p.add_argument("--data-dir", default="data")
     p.add_argument("--json-out", help="Write dashboard JSON to this path")
-    p.add_argument("--history-days", type=int, default=7)
+    p.add_argument("--history-days", type=int, default=7,
+                   help="Full intraday window to fetch (goes to the ph1000_hist.json history file)")
+    p.add_argument("--live-days", type=int, default=7,
+                   help="Recent window kept in the main JSON (small, polled); dashboard "
+                        "background-loads ph1000_hist.json to extend History to --history-days.")
     p.add_argument("--discover", action="store_true", help="Dump raw endpoints + titles and exit")
     args = p.parse_args()
 
