@@ -1,29 +1,29 @@
 {
-  "generated_at": "2026-07-16T23:26:01.156271Z",
+  "generated_at": "2026-07-17T05:37:22.802192Z",
   "alerts": [
     {
       "severity": "RED",
       "plant_key": "chamila-chamila-119h",
-      "today": "2026-07-16",
+      "today": "2026-07-17",
       "baseline_avg_kwh_per_day": 0.1286,
       "threshold_kwh_per_day": 0.0257,
       "rule": "< 20.0% baseline for 3 consecutive days",
       "window": [
-        "2026-07-14",
         "2026-07-15",
-        "2026-07-16"
+        "2026-07-16",
+        "2026-07-17"
       ],
       "details": [
-        {
-          "date": "2026-07-14",
-          "kwh": 0.0
-        },
         {
           "date": "2026-07-15",
           "kwh": 0.0
         },
         {
           "date": "2026-07-16",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-07-17",
           "kwh": 0.0
         }
       ]
@@ -31,26 +31,26 @@
     {
       "severity": "RED",
       "plant_key": "jeremy-jeremy-plant",
-      "today": "2026-07-16",
-      "baseline_avg_kwh_per_day": 5.1286,
-      "threshold_kwh_per_day": 1.0257,
+      "today": "2026-07-17",
+      "baseline_avg_kwh_per_day": 4.5571,
+      "threshold_kwh_per_day": 0.9114,
       "rule": "< 20.0% baseline for 3 consecutive days",
       "window": [
-        "2026-07-14",
         "2026-07-15",
-        "2026-07-16"
+        "2026-07-16",
+        "2026-07-17"
       ],
       "details": [
-        {
-          "date": "2026-07-14",
-          "kwh": 0.0
-        },
         {
           "date": "2026-07-15",
           "kwh": 0.0
         },
         {
           "date": "2026-07-16",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-07-17",
           "kwh": 0.0
         }
       ]
@@ -58,26 +58,26 @@
     {
       "severity": "RED",
       "plant_key": "lahiru-ryan-lahiru-plant",
-      "today": "2026-07-16",
-      "baseline_avg_kwh_per_day": 7.8357,
-      "threshold_kwh_per_day": 1.5671,
+      "today": "2026-07-17",
+      "baseline_avg_kwh_per_day": 7.4571,
+      "threshold_kwh_per_day": 1.4914,
       "rule": "< 20.0% baseline for 3 consecutive days",
       "window": [
-        "2026-07-14",
         "2026-07-15",
-        "2026-07-16"
+        "2026-07-16",
+        "2026-07-17"
       ],
       "details": [
-        {
-          "date": "2026-07-14",
-          "kwh": 0.1
-        },
         {
           "date": "2026-07-15",
           "kwh": 0.0
         },
         {
           "date": "2026-07-16",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-07-17",
           "kwh": 0.0
         }
       ]
