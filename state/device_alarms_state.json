@@ -1194,5 +1194,14 @@
     "customer": "Abeetha",
     "plant": "PLANT",
     "message": "battery voltage is too high"
+  },
+  "1271572:D70000210231584935:695bc2ff4b22431edda135ba": {
+    "send_count": 1,
+    "first_seen": "2026-07-17T08:49:54.968887",
+    "ignored": false,
+    "last_sent": "2026-07-17T08:49:54.968887",
+    "customer": "Thusharasameera",
+    "plant": "Mendis house",
+    "message": "Solar charger stops due to low battery"
   }
 }
