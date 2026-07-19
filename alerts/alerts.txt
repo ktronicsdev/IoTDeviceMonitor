@@ -6,7 +6,7 @@
 ║                                                                              ║
 ║                        Status: 3 CRITICAL, 0 WARNING                         ║
 ║                                                                              ║
-║               Date: 2026-07-18  |  Total Plants Monitored: 25                ║
+║               Date: 2026-07-19  |  Total Plants Monitored: 25                ║
 ║                                                                              ║
 ================================================================================
 
@@ -20,14 +20,14 @@
 │
 │ 🔴 [RED] jeremy-jeremy-plant
 │
-│   Issue: Production dropped 100.0% below normal
-│   Normal: 3.94 kWh/day  →  Current: 0.00 kWh/day
+│   Issue: Production dropped 97.0% below normal
+│   Normal: 3.33 kWh/day  →  Current: 0.10 kWh/day
 │   Rule: < 20.0% baseline for 3 consecutive days
 │
 │ 🔴 [RED] lahiru-ryan-lahiru-plant
 │
 │   Issue: Production dropped 100.0% below normal
-│   Normal: 6.91 kWh/day  →  Current: 0.00 kWh/day
+│   Normal: 6.33 kWh/day  →  Current: 0.00 kWh/day
 │   Rule: < 20.0% baseline for 3 consecutive days
 │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -59,27 +59,27 @@
 │   Baseline (avg/day): 0.1286 kWh
 │   Alert Threshold: < 0.0257 kWh/day
 │   Recent Production:
-│     2026-07-16: 0.0000 kWh (0.0% of baseline)
 │     2026-07-17: 0.0000 kWh (0.0% of baseline)
 │     2026-07-18: 0.0000 kWh (0.0% of baseline)
+│     2026-07-19: 0.0000 kWh (0.0% of baseline)
 │
 │ [RED] jeremy-jeremy-plant
 │
-│   Baseline (avg/day): 3.9357 kWh
-│   Alert Threshold: < 0.7871 kWh/day
+│   Baseline (avg/day): 3.3286 kWh
+│   Alert Threshold: < 0.6657 kWh/day
 │   Recent Production:
-│     2026-07-16: 0.0000 kWh (0.0% of baseline)
 │     2026-07-17: 0.0000 kWh (0.0% of baseline)
 │     2026-07-18: 0.0000 kWh (0.0% of baseline)
+│     2026-07-19: 0.1000 kWh (3.0% of baseline)
 │
 │ [RED] lahiru-ryan-lahiru-plant
 │
-│   Baseline (avg/day): 6.9071 kWh
-│   Alert Threshold: < 1.3814 kWh/day
+│   Baseline (avg/day): 6.3286 kWh
+│   Alert Threshold: < 1.2657 kWh/day
 │   Recent Production:
-│     2026-07-16: 0.0000 kWh (0.0% of baseline)
 │     2026-07-17: 0.0000 kWh (0.0% of baseline)
 │     2026-07-18: 0.0000 kWh (0.0% of baseline)
+│     2026-07-19: 0.0000 kWh (0.0% of baseline)
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
