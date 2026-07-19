@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-19T05:50:41.864839Z",
+  "generated_at": "2026-07-19T09:06:23.299951Z",
   "alerts": [
     {
       "severity": "RED",
@@ -25,33 +25,6 @@
         {
           "date": "2026-07-19",
           "kwh": 0.0
-        }
-      ]
-    },
-    {
-      "severity": "RED",
-      "plant_key": "jeremy-jeremy-plant",
-      "today": "2026-07-19",
-      "baseline_avg_kwh_per_day": 3.3286,
-      "threshold_kwh_per_day": 0.6657,
-      "rule": "< 20.0% baseline for 3 consecutive days",
-      "window": [
-        "2026-07-17",
-        "2026-07-18",
-        "2026-07-19"
-      ],
-      "details": [
-        {
-          "date": "2026-07-17",
-          "kwh": 0.0
-        },
-        {
-          "date": "2026-07-18",
-          "kwh": 0.0
-        },
-        {
-          "date": "2026-07-19",
-          "kwh": 0.1
         }
       ]
     },
