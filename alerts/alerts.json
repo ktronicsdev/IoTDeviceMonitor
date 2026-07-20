@@ -1,29 +1,29 @@
 {
-  "generated_at": "2026-07-19T23:33:57.087796Z",
+  "generated_at": "2026-07-20T06:07:58.796244Z",
   "alerts": [
     {
       "severity": "RED",
       "plant_key": "chamila-chamila-119h",
-      "today": "2026-07-19",
+      "today": "2026-07-20",
       "baseline_avg_kwh_per_day": 0.1286,
       "threshold_kwh_per_day": 0.0257,
       "rule": "< 20.0% baseline for 3 consecutive days",
       "window": [
-        "2026-07-17",
         "2026-07-18",
-        "2026-07-19"
+        "2026-07-19",
+        "2026-07-20"
       ],
       "details": [
-        {
-          "date": "2026-07-17",
-          "kwh": 0.0
-        },
         {
           "date": "2026-07-18",
           "kwh": 0.0
         },
         {
           "date": "2026-07-19",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-07-20",
           "kwh": 0.0
         }
       ]
@@ -31,26 +31,53 @@
     {
       "severity": "RED",
       "plant_key": "lahiru-ryan-lahiru-plant",
-      "today": "2026-07-19",
-      "baseline_avg_kwh_per_day": 6.3286,
-      "threshold_kwh_per_day": 1.2657,
+      "today": "2026-07-20",
+      "baseline_avg_kwh_per_day": 5.7357,
+      "threshold_kwh_per_day": 1.1471,
       "rule": "< 20.0% baseline for 3 consecutive days",
       "window": [
-        "2026-07-17",
         "2026-07-18",
-        "2026-07-19"
+        "2026-07-19",
+        "2026-07-20"
       ],
       "details": [
-        {
-          "date": "2026-07-17",
-          "kwh": 0.0
-        },
         {
           "date": "2026-07-18",
           "kwh": 0.0
         },
         {
           "date": "2026-07-19",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-07-20",
+          "kwh": 0.0
+        }
+      ]
+    },
+    {
+      "severity": "RED",
+      "plant_key": "thusharasameera-mendis-house",
+      "today": "2026-07-20",
+      "baseline_avg_kwh_per_day": 0.65,
+      "threshold_kwh_per_day": 0.13,
+      "rule": "< 20.0% baseline for 3 consecutive days",
+      "window": [
+        "2026-07-18",
+        "2026-07-19",
+        "2026-07-20"
+      ],
+      "details": [
+        {
+          "date": "2026-07-18",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-07-19",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-07-20",
           "kwh": 0.0
         }
       ]
