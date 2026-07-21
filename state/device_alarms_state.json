@@ -1203,5 +1203,14 @@
     "customer": "Thusharasameera",
     "plant": "Mendis house",
     "message": "Solar charger stops due to low battery"
+  },
+  "1187499:D70000210184361276:6a5f219bc60c522dedf006da": {
+    "send_count": 1,
+    "first_seen": "2026-07-21T09:25:37.395841",
+    "ignored": false,
+    "last_sent": "2026-07-21T09:25:37.395841",
+    "customer": "Gayan-IMH",
+    "plant": "imbulgoda  3kw",
+    "message": "Battery connection is open"
   }
 }
