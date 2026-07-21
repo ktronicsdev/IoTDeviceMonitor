@@ -1205,10 +1205,10 @@
     "message": "Solar charger stops due to low battery"
   },
   "1187499:D70000210184361276:6a5f219bc60c522dedf006da": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-07-21T09:25:37.395841",
-    "ignored": false,
-    "last_sent": "2026-07-21T16:13:51.442993",
+    "ignored": true,
+    "last_sent": "2026-07-21T18:05:13.784470",
     "customer": "Gayan-IMH",
     "plant": "imbulgoda  3kw",
     "message": "Battery connection is open"
