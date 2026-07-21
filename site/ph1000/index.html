@@ -273,7 +273,14 @@ function mergeSeries(base, recent){
 async function loadHist(){
   try{ const r=await fetch(HIST_URL+'?t='+Date.now(),{cache:'no-store'});
        if(r.ok){ const j=await r.json(); HIST_SERIES=j.series||[];
-         if(DATA){ DATA.series7d=mergeSeries(HIST_SERIES, DATA.series7d); renderProfile(); renderHistory(); if(curTab==='analysis') renderAnalysis(); } } }catch(e){}
+         if(DATA){
+           // preserve selected day/month by value across the 7d->30d growth (keeps Power Profile
+           // on today, History on this month) — else the stored index points at an old entry.
+           const ppSel=ppList(ppPeriod)[ppIx[ppPeriod]], hmSel=ppList(hmPeriod)[hmIx[hmPeriod]];
+           DATA.series7d=mergeSeries(HIST_SERIES, DATA.series7d);
+           let i=ppList(ppPeriod).indexOf(ppSel); if(i>=0) ppIx[ppPeriod]=i;
+           i=ppList(hmPeriod).indexOf(hmSel); if(i>=0) hmIx[hmPeriod]=i;
+           renderProfile(); renderHistory(); if(curTab==='analysis') renderAnalysis(); } } }catch(e){}
 }
 const shiftMonth=(ym,delta)=>{ let [y,m]=ym.split('-').map(Number); m+=delta;
   while(m<1){m+=12;y--;} while(m>12){m-=12;y++;} return y+'-'+String(m).padStart(2,'0'); };

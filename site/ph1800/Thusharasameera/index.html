@@ -279,7 +279,16 @@ async function loadHist(){
 function applyHist(){
   if(!HIST_RAW||!DATA) return;
   const hs=_histSeries(); if(!hs.length) return;
+<<<<<<< HEAD
   DATA.series7d=mergeSeries(hs, DATA.series7d);
+=======
+  // Preserve the selected day/month by VALUE across the list growing 7d->30d, else the stored
+  // index would point at an old entry -> keeps Power Profile on today, History on this month.
+  const ppSel=ppList(ppPeriod)[ppIx[ppPeriod]], hmSel=ppList(hmPeriod)[hmIx[hmPeriod]];
+  DATA.series7d=mergeSeries(hs, DATA.series7d);
+  let i=ppList(ppPeriod).indexOf(ppSel); if(i>=0) ppIx[ppPeriod]=i;
+  i=ppList(hmPeriod).indexOf(hmSel); if(i>=0) hmIx[hmPeriod]=i;
+>>>>>>> 429f43cf (PH1000+PH1800: keep Power Profile on today + History on current month after 30d hist load)
   renderProfile(); renderHistory(); if(curTab==='analysis') renderAnalysis();
 }
 const shiftMonth=(ym,delta)=>{ let [y,m]=ym.split('-').map(Number); m+=delta;
