@@ -4,9 +4,9 @@
 ║                                                                              ║
 ║                            ⚠ ATTENTION REQUIRED ⚠                            ║
 ║                                                                              ║
-║                        Status: 3 CRITICAL, 0 WARNING                         ║
+║                        Status: 2 CRITICAL, 0 WARNING                         ║
 ║                                                                              ║
-║               Date: 2026-07-20  |  Total Plants Monitored: 25                ║
+║               Date: 2026-07-21  |  Total Plants Monitored: 25                ║
 ║                                                                              ║
 ================================================================================
 
@@ -21,13 +21,7 @@
 │ 🔴 [RED] lahiru-ryan-lahiru-plant
 │
 │   Issue: Production dropped 100.0% below normal
-│   Normal: 5.74 kWh/day  →  Current: 0.00 kWh/day
-│   Rule: < 20.0% baseline for 3 consecutive days
-│
-│ 🔴 [RED] thusharasameera-mendis-house
-│
-│   Issue: Production dropped 100.0% below normal
-│   Normal: 0.65 kWh/day  →  Current: 0.00 kWh/day
+│   Normal: 5.19 kWh/day  →  Current: 0.00 kWh/day
 │   Rule: < 20.0% baseline for 3 consecutive days
 │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -44,11 +38,6 @@
 │   2. Verify grid connection and breaker status
 │   3. Inspect panels for shading or physical damage
 │   4. Contact maintenance team if issue persists
-│ thusharasameera-mendis-house:
-│   1. Check inverter status and error codes
-│   2. Verify grid connection and breaker status
-│   3. Inspect panels for shading or physical damage
-│   4. Contact maintenance team if issue persists
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
@@ -59,27 +48,18 @@
 │   Baseline (avg/day): 0.1286 kWh
 │   Alert Threshold: < 0.0257 kWh/day
 │   Recent Production:
-│     2026-07-18: 0.0000 kWh (0.0% of baseline)
 │     2026-07-19: 0.0000 kWh (0.0% of baseline)
 │     2026-07-20: 0.0000 kWh (0.0% of baseline)
+│     2026-07-21: 0.0000 kWh (0.0% of baseline)
 │
 │ [RED] lahiru-ryan-lahiru-plant
 │
-│   Baseline (avg/day): 5.7357 kWh
-│   Alert Threshold: < 1.1471 kWh/day
+│   Baseline (avg/day): 5.1857 kWh
+│   Alert Threshold: < 1.0371 kWh/day
 │   Recent Production:
-│     2026-07-18: 0.0000 kWh (0.0% of baseline)
 │     2026-07-19: 0.0000 kWh (0.0% of baseline)
 │     2026-07-20: 0.0000 kWh (0.0% of baseline)
-│
-│ [RED] thusharasameera-mendis-house
-│
-│   Baseline (avg/day): 0.6500 kWh
-│   Alert Threshold: < 0.1300 kWh/day
-│   Recent Production:
-│     2026-07-18: 0.0000 kWh (0.0% of baseline)
-│     2026-07-19: 0.0000 kWh (0.0% of baseline)
-│     2026-07-20: 0.0000 kWh (0.0% of baseline)
+│     2026-07-21: 0.0000 kWh (0.0% of baseline)
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
