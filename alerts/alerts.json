@@ -1,29 +1,29 @@
 {
-  "generated_at": "2026-07-28T23:37:18.302987Z",
+  "generated_at": "2026-07-29T05:49:00.752188Z",
   "alerts": [
     {
       "severity": "RED",
       "plant_key": "lahiru-ryan-lahiru-plant",
-      "today": "2026-07-28",
-      "baseline_avg_kwh_per_day": 1.0286,
-      "threshold_kwh_per_day": 0.2057,
+      "today": "2026-07-29",
+      "baseline_avg_kwh_per_day": 0.55,
+      "threshold_kwh_per_day": 0.11,
       "rule": "< 20.0% baseline for 3 consecutive days",
       "window": [
-        "2026-07-26",
         "2026-07-27",
-        "2026-07-28"
+        "2026-07-28",
+        "2026-07-29"
       ],
       "details": [
-        {
-          "date": "2026-07-26",
-          "kwh": 0.0
-        },
         {
           "date": "2026-07-27",
           "kwh": 0.0
         },
         {
           "date": "2026-07-28",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-07-29",
           "kwh": 0.0
         }
       ]
