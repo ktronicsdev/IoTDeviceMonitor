@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Solar Dashboard</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%230b0f17'/><rect x='16' y='14' width='8' height='36' fill='%231C9AD6'/><polygon points='27,31 37,31 51,15 41,15' fill='%23F7941D'/><polygon points='27,33 37,33 51,49 41,49' fill='%231C9AD6'/></svg>">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{--bg:#0b0f17;--card:#151c28;--ink:#e6ebf2;--muted:#8a94a6;--line:#26303f;
+    --blue:#3b82f6;--green:#22c55e;--amber:#f59e0b;--red:#ef4444;--flow:#3b82f6;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px}
+  header{display:flex;align-items:center;gap:12px;padding:13px 22px;background:var(--card);border-bottom:1px solid var(--line)}
+  header h1{font-size:17px;margin:0;font-weight:700}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px}
+  .on{background:var(--green)} .off{background:var(--red)} .st{background:var(--amber)}
+  .pill{font-size:12px;color:#9fb3d1;background:#1e2737;border-radius:6px;padding:3px 8px}
+  .upd{margin-left:auto;color:var(--muted);font-size:12px}
+  .wrap{max-width:1280px;margin:18px auto;padding:0 18px;display:grid;gap:16px;grid-template-columns:1.45fr 1fr}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 1px 3px rgba(16,24,40,.04)}
+  .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .card h2{font-size:14px;margin:0;font-weight:600;color:#c2ccdb}
+  .full{grid-column:1 / -1}
+  .sel{display:flex;align-items:center;gap:8px;font-size:13px;color:#4b5563}
+  .sel button{border:1px solid var(--line);background:#1a2230;border-radius:8px;width:28px;height:26px;cursor:pointer;color:#aeb9cb;font-size:15px;line-height:1}
+  .sel button:hover{background:#222c3c}
+  .sel .d{min-width:96px;text-align:center;font-weight:600}
+  .sel select.d{background:#1a2230;border:1px solid var(--line);color:#c2ccdb;border-radius:8px;
+    height:26px;padding:2px 6px;cursor:pointer;font-size:13px}
+  .sel select.d:hover{background:#222c3c}
+  .ctl{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{border:0;border-left:1px solid var(--line);background:#1a2230;color:#aeb9cb;height:26px;min-width:30px;cursor:pointer;font-size:12px;font-weight:600;line-height:1}
+  .seg button:first-child{border-left:0}
+  .seg button.on{background:#2563eb;color:#fff}
+  .seg button:hover:not(.on){background:#222c3c}
+
+  /* flow graph */
+  .flow{position:relative;width:100%;max-width:560px;margin:6px auto 0;aspect-ratio:560/360}
+  .flow svg.bg{position:absolute;inset:0;width:100%;height:100%}
+  .ln{stroke:#3a4659;stroke-width:1.6;stroke-dasharray:5 5;fill:none;stroke-linecap:round}
+  .arrow{fill:#9aa6b6} .fdot{fill:var(--flow)}
+  .node{position:absolute;width:120px;transform:translate(-50%,-50%);text-align:center}
+  .ic{width:52px;height:52px;border-radius:13px;margin:0 auto 5px;display:flex;align-items:center;justify-content:center;
+      background:#1b2330;border:1px solid #2a3445;color:#aeb9cb;box-shadow:none}
+  .ic.inv{background:#162440;border-color:#284167;color:#5b9bff}
+  .ic svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  .nlab{font-size:11px;color:var(--muted)} .nval{font-size:14px;font-weight:700;margin-top:1px}
+  .nval.na{color:var(--muted);font-weight:600} .ongrid{font-size:11px;color:var(--green)}
+
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+  .m{background:#1a2230;border:1px solid var(--line);border-radius:10px;padding:12px}
+  .m .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+  .m .v{font-size:22px;font-weight:700;margin-top:4px}
+  .m .v small{font-size:13px;color:var(--muted);font-weight:500}
+  .m .s{font-size:11px;margin-top:2px}
+  .est{font-size:9px;color:#b8860b;border:1px solid var(--amber);border-radius:8px;padding:0 5px;margin-left:5px;vertical-align:middle}
+  .na2{color:var(--muted)} .charging{color:var(--green)} .discharging{color:var(--amber)}
+  canvas{max-height:330px}
+  .foot{max-width:1280px;margin:0 auto 26px;padding:0 18px;color:var(--muted);font-size:11px}
+  @media(max-width:880px){.wrap{grid-template-columns:1fr}}
+
+  /* tabs */
+  .tabs{max-width:1280px;margin:14px auto 0;padding:0 18px;display:flex;gap:6px;flex-wrap:wrap}
+  .tabs button{background:#141c28;border:1px solid var(--line);color:#9fb3d1;border-radius:9px;
+    padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer}
+  .tabs button.active{background:#2563eb;border-color:#2563eb;color:#fff}
+  .tabpane{display:none} .tabpane.show{display:grid}
+  /* plant profile metric cards */
+  .pgrid{max-width:1280px;margin:16px auto;padding:0 18px;display:grid;
+    grid-template-columns:repeat(4,1fr);gap:16px}
+  @media(max-width:880px){.pgrid{grid-template-columns:repeat(2,1fr)}}
+  .pcard{border-radius:14px;padding:18px 18px 20px;color:#fff;min-height:118px;
+    display:flex;flex-direction:column;justify-content:space-between}
+  .pcard.energy{background:linear-gradient(135deg,#ef6a63,#e2554d)}
+  .pcard.benefit{background:linear-gradient(135deg,#3bb5b0,#2aa39d)}
+  .pcard.device{background:linear-gradient(135deg,#6366f1,#4f46e5)}
+  .pcard.spec{background:linear-gradient(135deg,#64748b,#475569)}
+  .pcard .ph{display:flex;align-items:center;gap:9px;font-size:13px;opacity:.95}
+  .pcard .ph svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:1.7;opacity:.95}
+  .pcard .pv{font-size:26px;font-weight:800;margin-top:6px}
+  .pinfo{max-width:1280px;margin:0 auto 8px;padding:0 18px;color:var(--muted);font-size:12.5px;
+    display:flex;gap:18px;flex-wrap:wrap}
+  .pinfo b{color:#c2ccdb}
+  /* plant analysis param chips */
+  .params{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:#1a2230;border:1px solid var(--line);
+    border-radius:16px;padding:4px 6px 4px 11px;font-size:12px;color:#c2ccdb}
+  .chip i{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .chip button{background:none;border:0;color:#8a94a6;cursor:pointer;font-size:14px;line-height:1;padding:0 2px}
+  .chip.add{cursor:pointer;color:#7dd3fc;border-style:dashed} .chip.add:hover{background:#1e2737}
+  .addmenu{background:#141c28;border:1px solid var(--line);border-radius:10px;padding:6px;
+    display:none;position:absolute;z-index:20;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+  .addmenu div{padding:7px 10px;border-radius:7px;cursor:pointer;font-size:13px;color:#c2ccdb}
+  .addmenu div:hover{background:#1e2737}
+</style>
+</head>
+<body>
+<div id="gate" style="position:fixed;inset:0;z-index:1000;background:#0b0f17;display:flex;align-items:center;justify-content:center">
+  <div style="background:#151c28;border:1px solid #26303f;border-radius:14px;padding:26px 24px;width:300px;box-shadow:0 6px 24px rgba(0,0,0,.4)">
+    <div style="font-size:18px;font-weight:700;color:#e6ebf2">Solar Dashboard</div>
+    <div style="color:#8a94a6;font-size:13px;margin:2px 0 16px">Sign in to your plant</div>
+    <input id="gu" placeholder="Username" autocomplete="username"
+       style="width:100%;padding:9px 11px;border:1px solid #2a3445;background:#0f1521;color:#e6ebf2;border-radius:8px;margin-bottom:10px;font-size:14px">
+    <input id="gp" type="password" placeholder="Password" autocomplete="current-password"
+       style="width:100%;padding:9px 11px;border:1px solid #2a3445;background:#0f1521;color:#e6ebf2;border-radius:8px;font-size:14px">
+    <button id="gb" style="width:100%;margin-top:14px;padding:9px;border:0;border-radius:8px;background:#2563eb;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Sign in</button>
+    <div id="gerr" style="color:#ef4444;font-size:12px;margin-top:8px;display:none">Incorrect credentials</div>
+  </div>
+</div>
+<header>
+  <h1><span id="plantname">Solar</span> <span id="alias" style="color:var(--muted);font-weight:500"></span></h1>
+  <span id="status"><span class="dot off"></span>—</span>
+  <span class="pill" id="pn"></span>
+  <select id="plantsel" class="d" style="display:none;margin-left:10px" onchange="plantIdx=+this.value;load();"></select>
+  <span class="upd" id="sltime" style="margin-left:auto">Actual time (SL): —</span>
+  <span class="upd" id="upd" style="margin-left:14px">—</span>
+</header>
+<nav class="tabs">
+  <button data-tab="live" class="active">Live</button>
+  <button data-tab="weather">Weather</button>
+  <button data-tab="profile">Plant Profile</button>
+  <button data-tab="analysis">Plant Analysis</button>
+</nav>
+
+<div class="wrap tabpane show" id="tab-live">
+  <!-- Flow Graph -->
+  <div class="card">
+    <div class="ch"><h2>Flow Graph</h2></div>
+    <div class="flow">
+      <svg class="bg" viewBox="0 0 560 360" preserveAspectRatio="xMidYMid meet">
+        <!-- wiring: inputs -> upper inverter corners, outputs -> lower corners + bottom (no overlap) -->
+        <path class="ln" d="M90,108 V152 H252"/>   <!-- PV  -> inverter LEFT-UPPER -->
+        <path class="ln" d="M470,108 V152 H308"/>  <!-- Grid-> inverter RIGHT-UPPER -->
+        <path class="ln" d="M90,272 V208 H252"/>   <!-- Battery <-> inverter LEFT-LOWER -->
+        <path class="ln" d="M470,272 V208 H308"/>  <!-- Load <- inverter RIGHT-LOWER -->
+        <!-- direction arrows -->
+        <polygon class="arrow" points="244,148 252,152 244,156"/>   <!-- PV  ► in -->
+        <polygon id="a_grid" class="arrow" points="316,148 308,152 316,156"/>   <!-- Grid (dir set by JS) -->
+        <polygon class="arrow" points="308,204 316,208 308,212"/>   <!-- Load ► out -->
+        <polygon id="a_batt" class="arrow" points="252,204 244,208 252,212"/> <!-- battery (dir set by JS) -->
+        <!-- animated flow dots -->
+        <circle r="4.5" class="fdot" id="d_pv"   style="display:none"><animateMotion dur="2.2s" repeatCount="indefinite" path="M90,108 V152 H252"/></circle>
+        <circle r="4.5" class="fdot" id="d_load" style="display:none"><animateMotion dur="2.4s" repeatCount="indefinite" path="M308,208 H470 V272"/></circle>
+        <circle r="4.5" class="fdot" id="d_chg"  style="display:none"><animateMotion dur="2.2s" repeatCount="indefinite" path="M252,208 H90 V272"/></circle>
+        <circle r="4.5" class="fdot" id="d_dis"  style="display:none"><animateMotion dur="2.2s" repeatCount="indefinite" path="M90,272 V208 H252"/></circle>
+        <circle r="4.5" class="fdot" id="d_gin"  style="display:none"><animateMotion dur="2.3s" repeatCount="indefinite" path="M470,108 V152 H308"/></circle>
+        <circle r="4.5" class="fdot" id="d_gout" style="display:none"><animateMotion dur="2.3s" repeatCount="indefinite" path="M308,152 H470 V108"/></circle>
+      </svg>
+      <div class="node" style="left:16.1%;top:22.2%">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M5 13h14l-1.6-7H6.6L5 13z"/><path d="M3.5 16.5h17"/><path d="M12 6v7M8.4 6l-.8 7M15.6 6l.8 7M5.8 9.5h12.4"/></svg></div>
+        <div class="nlab">PV</div><div class="nval" id="n_pv">—</div></div>
+      <div class="node" style="left:83.9%;top:22.2%">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M8 21l4-17 4 17M6 21h12M9.3 8h5.4M8.2 13h7.6"/></svg></div>
+        <div class="nlab">Grid</div><div class="nval" id="n_grid">0 W</div></div>
+      <div class="node" style="left:50%;top:50%">
+        <div class="ic inv"><svg viewBox="0 0 24 24"><rect x="6" y="3.5" width="12" height="17" rx="1.5"/><rect x="9" y="8" width="6" height="6" rx="1"/><path d="M9 17.5h6"/></svg></div>
+        <div class="nlab">Inverter</div></div>
+      <div class="node" style="left:16.1%;top:83.3%">
+        <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="8" width="16" height="9" rx="1.5"/><path d="M21 11v3"/><path d="M6.5 11v3M9.5 11v3M12.5 11v3"/></svg></div>
+        <div class="nlab" id="n_battlab">Battery</div><div class="nval" id="n_batt">—</div></div>
+      <div class="node" style="left:83.9%;top:83.3%">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 11l8-6 8 6M6 9.5V19h12V9.5M10 19v-5h4v5"/></svg></div>
+        <div class="nlab">Load</div><div class="nval" id="n_load">—</div></div>
+    </div>
+  </div>
+
+  <!-- Live -->
+  <div class="card"><div class="ch"><h2>Live</h2></div><div class="metrics" id="metrics"></div></div>
+
+  <!-- Power Profile (per day) -->
+  <div class="card full">
+    <div class="ch"><h2>Power Profile</h2>
+      <div class="ctl">
+        <div class="seg" id="pp_seg"><button data-p="D" class="on">D</button><button data-p="M">M</button><button data-p="Y">Y</button><button data-p="T">T</button></div>
+        <div class="sel"><button id="pp_prev">‹</button><select class="d" id="pp_date"></select><button id="pp_next">›</button></div>
+      </div></div>
+    <canvas id="chart"></canvas>
+  </div>
+
+  <!-- Generation & Usage History -->
+  <div class="card full">
+    <div class="ch"><h2>Generation &amp; Usage History</h2>
+      <div class="ctl">
+        <div class="seg" id="hm_seg"><button data-p="D">D</button><button data-p="M" class="on">M</button><button data-p="Y">Y</button><button data-p="T">T</button></div>
+        <div class="sel"><button id="hm_prev">‹</button><select class="d" id="hm_date"></select><button id="hm_next">›</button></div>
+      </div></div>
+    <canvas id="hist"></canvas>
+  </div>
+
+  <!-- Battery Profile (BMS) — shown only when the BMS token is valid -->
+  <div class="card full" id="bmscard" style="display:none">
+    <div class="ch"><h2>Battery Profile</h2><span class="sel" style="color:var(--muted)">live BMS · Hystorix</span></div>
+    <div id="bmsbody" style="display:grid;grid-template-columns:1fr 1fr;gap:14px"></div>
+  </div>
+</div>
+
+<!-- ===== Plant Profile tab ===== -->
+<div class="tabpane" id="tab-profile" style="display:none">
+  <div class="pinfo" id="plantinfo"></div>
+  <div class="pgrid" id="plantcards"></div>
+</div>
+
+<!-- ===== Weather tab ===== -->
+<div class="tabpane" id="tab-weather" style="display:none">
+  <div class="wrap" style="margin-bottom:0">
+    <div class="card full">
+      <div class="ch"><h2>Weather &amp; Solar Harvest</h2><span class="sel" style="color:var(--muted)">live · Open-Meteo</span></div>
+      <div id="wxbody"></div>
+    </div>
+    <div class="card full">
+      <div class="ch"><h2>Weather vs Solar Harvest</h2>
+        <div class="ctl">
+          <div class="seg" id="wx_seg"><button data-p="D" class="on">D</button><button data-p="M">M</button><button data-p="Y">Y</button><button data-p="T">T</button></div>
+          <div class="sel"><button id="wx_prev">‹</button><select class="d" id="wx_date"></select><button id="wx_next">›</button></div>
+        </div></div>
+      <canvas id="wxchart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Plant Analysis tab ===== -->
+<div class="tabpane" id="tab-analysis" style="display:none">
+  <div class="wrap" style="margin-bottom:0">
+    <div class="card full">
+      <div class="ch"><h2>Plant Analysis</h2>
+        <div class="ctl">
+          <div class="seg" id="an_seg"><button data-p="D" class="on">D</button><button data-p="M">M</button><button data-p="Y">Y</button><button data-p="T">T</button></div>
+          <div class="sel"><button id="an_prev">‹</button><select class="d" id="an_date"></select><button id="an_next">›</button></div>
+        </div></div>
+      <div class="params" id="anparams" style="margin:4px 0 12px;position:relative"></div>
+      <canvas id="anchart"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="foot" style="display:flex;justify-content:space-between;align-items:center;gap:14px">
+  <span id="foot"></span><span style="white-space:nowrap">© Ktronics (Pvt) Ltd</span></div>
+
+<script>
+// Data source. The raw.githubusercontent CDN caches 5 min AND ignores ?t= cache-busting, so it
+// can serve ~5-15 min stale data. The GitHub API contents endpoint returns the latest commit
+// immediately (60s cache only) — use it first for freshness, fall back to raw on any error
+// (e.g. the 60/hr API rate limit), so the page never breaks.
+// Generic PH1800 data source: the per-account file is sha256(username:password).json on the
+// ph1800-live branch — set by the login, so a plant's data isn't reachable without its creds.
+let DATA_FILE = null, plantIdx = 0;
+const PH1800_REPO = "ktronicsdev/IoTDeviceMonitor", PH1800_BRANCH = "ph1800-live";
+async function fetchData(){
+  if(!DATA_FILE) return null;
+  try{ const r=await fetch(`https://api.github.com/repos/${PH1800_REPO}/contents/${DATA_FILE}?ref=${PH1800_BRANCH}`,
+        {cache:'no-store',headers:{Accept:'application/vnd.github.raw'}});
+       if(r.ok) return await r.json(); }catch(e){}
+  try{ const r2=await fetch(`https://raw.githubusercontent.com/${PH1800_REPO}/${PH1800_BRANCH}/${DATA_FILE}?t=`+Date.now(),{cache:'no-store'});
+       if(r2.ok) return await r2.json(); }catch(e){}
+  return null;
+}
+let chart, hist, DATA=null, dayIdx=null, days=[], monthSel=null, ppPeriod='D', ppIx={}, chartKind=null, hmPeriod='M', hmIx={};
+// 30-day History is background-loaded from the companion .hist.json so the polled main file stays
+// small. HIST_RAW (all plants' full series) is fetched once per account; each render merges it with
+// the fresh recent series (recent days override the overlapping older days).
+let HIST_RAW=null, _histKey=null;
+const _histSeries=()=>((HIST_RAW&&HIST_RAW.plants&&HIST_RAW.plants[plantIdx]&&HIST_RAW.plants[plantIdx].series)||[]);
+function mergeSeries(base, recent){
+  if(!base||!base.length) return recent||[];
+  if(!recent||!recent.length) return base;
+  const rd=new Set(recent.map(r=>String(r.timestamp).slice(0,10)));
+  return base.filter(r=>!rd.has(String(r.timestamp).slice(0,10))).concat(recent)
+             .sort((a,b)=>String(a.timestamp)<String(b.timestamp)?-1:1);
+}
+async function loadHist(){
+  if(!DATA_FILE) return;
+  const hf=DATA_FILE.slice(0,-5)+'.hist.json';
+  try{ const r=await fetch(`https://raw.githubusercontent.com/${PH1800_REPO}/${PH1800_BRANCH}/${hf}?t=`+Date.now(),{cache:'no-store'});
+       if(r.ok){ HIST_RAW=await r.json(); applyHist(); } }catch(e){}
+}
+function applyHist(){
+  if(!HIST_RAW||!DATA) return;
+  const hs=_histSeries(); if(!hs.length) return;
+  // Preserve the selected day/month by VALUE across the list growing 7d->30d, else the stored
+  // index would point at an old entry -> keeps Power Profile on today, History on this month.
+  const ppSel=ppList(ppPeriod)[ppIx[ppPeriod]], hmSel=ppList(hmPeriod)[hmIx[hmPeriod]];
+  DATA.series7d=mergeSeries(hs, DATA.series7d);
+  let i=ppList(ppPeriod).indexOf(ppSel); if(i>=0) ppIx[ppPeriod]=i;
+  i=ppList(hmPeriod).indexOf(hmSel); if(i>=0) hmIx[hmPeriod]=i;
+  renderProfile(); renderHistory(); if(curTab==='analysis') renderAnalysis();
+}
+const shiftMonth=(ym,delta)=>{ let [y,m]=ym.split('-').map(Number); m+=delta;
+  while(m<1){m+=12;y--;} while(m>12){m-=12;y++;} return y+'-'+String(m).padStart(2,'0'); };
+const num = v => { const n=parseFloat(v); return isNaN(n)?null:n; };
+const W = v => v===null||v===undefined||v===""?"—":Math.round(v).toLocaleString()+" W";
+// System capacities come from the per-plant credentials config (DATA.plant.*); set on load().
+let PV_CAP_W=null, RATED_W=null, BATT_CAP_W=null;
+// Model variant (set per-plant in load()): grid-power sign differs by inverter family.
+//   "pro" grid-tie MUST : PGrid < 0 = import, > 0 = export
+//   "vhm" off-grid PV-1800: PGrid > 0 = import, never exports
+// gridImp() canonicalises to import-positive (>0 import, <0 export) so downstream code is uniform.
+let VARIANT='pro';
+const gridImp = gw => gw==null?null:(VARIANT==='vhm'? gw : -gw);
+const pctOf=(v,cap)=> (v==null||!cap)?'':Math.round(Math.max(0,v)/cap*100)+'%';
+// SOC from 16S LFP battery voltage — Deye-style smooth curve, anchored to the operator's
+// reference points (55.x V≈100%, 53.x V≈80%, 50.x V≈20%) and consistent with the live BMS
+// (~80% at 53.1-53.2 V). Deliberately gentle near the top (no cliff) so an evening voltage
+// sag no longer makes the estimate plunge. Voltage-only is approximate (rises under charge,
+// sags under load); the BMS pane is the source of truth when it can be read.
+const SOC_TABLE=[[48.0,0],[50.4,20],[51.5,40],[52.5,60],[53.2,78],[53.7,85],
+                 [54.2,93],[54.7,97],[55.2,100]];
+const socFromV = v => {
+  if(v==null) return null;
+  const t=SOC_TABLE;
+  if(v<=t[0][0]) return 0;
+  if(v>=t[t.length-1][0]) return 100;
+  for(let i=1;i<t.length;i++) if(v<=t[i][0]){
+    const a=t[i-1],b=t[i]; return Math.round(a[1]+(b[1]-a[1])*(v-a[0])/(b[0]-a[0]));
+  }
+  return 100;
+};
+const show = (id,on) => { const e=document.getElementById(id); if(e) e.style.display=on?'':'none'; };
+const ts = s => new Date(String(s).replace(' ','T'));
+// Consistent date/month picker: fill a <select> with options (rebuild only when the list
+// changes, so the open dropdown isn't disrupted) and set the current value.
+function fillSel(sel, items, current){
+  if(!sel) return;
+  const sig=items.join('|');
+  if(sel.dataset.sig!==sig){ sel.innerHTML=items.map(v=>`<option value="${v}">${v}</option>`).join(''); sel.dataset.sig=sig; }
+  if(current!=null) sel.value=current;
+}
+// Months present in the 7-day series (for the History picker), newest last.
+const histMonths = () => { const g=groupDays(DATA&&DATA.series7d||[]);
+  return [...new Set(Object.keys(g).map(d=>d.slice(0,7)))].sort(); };
+
+function groupDays(series){
+  const m={}; for(const r of series){ const d=String(r.timestamp).slice(0,10); (m[d]=m[d]||[]).push(r); } return m;
+}
+const Z=()=>({prod:0,cons:0,chg:0,dis:0,imp:0,exp:0});   // zero energy bucket
+function dailyEnergy(points){ // integrate W -> kWh
+  const p=[...points].sort((a,b)=>a.timestamp<b.timestamp?-1:1);
+  let prod=0,cons=0,chg=0,dis=0,imp=0,exp=0;
+  for(let i=1;i<p.length;i++){
+    const dt=(ts(p[i].timestamp)-ts(p[i-1].timestamp))/3600000; if(dt<=0||dt>0.5) continue;
+    const avg=k=>{const a=num(p[i][k]),b=num(p[i-1][k]); return a==null||b==null?null:(a+b)/2;};
+    const pv=avg('pinverter_w'),ld=avg('load_power_w_est'),bw=avg('battery_w'),gw=avg('pgrid_w');
+    if(pv>0) prod+=pv*dt; if(ld>0) cons+=ld*dt;
+    if(bw<0) chg+=(-bw)*dt; if(bw>0) dis+=bw*dt;   // ChargerPower<0 = charging
+    const gs=gridImp(gw); if(gs>0) imp+=gs*dt; else if(gs<0) exp+=(-gs)*dt;  // sign per variant
+  }
+  return {prod:prod/1000,cons:cons/1000,chg:chg/1000,dis:dis/1000,imp:imp/1000,exp:exp/1000};
+}
+// Energy rolled up from the intraday series, for the Power-Profile M/Y/T views. Sparse on a
+// new plant (only days that have logged samples populate) and fills in as history accrues.
+const _eAdd=(o,k,e)=>{const t=o[k]=o[k]||Z();for(const x in t)t[x]+=(e[x]||0);};
+function energyByDay(){ const g=groupDays(DATA&&DATA.series7d||[]),o={}; for(const d in g)o[d]=dailyEnergy(g[d]); return o; }
+function energyByMonth(){ const e=energyByDay(),o={}; for(const d in e)_eAdd(o,d.slice(0,7),e[d]); return o; }
+function energyByYear(){ const e=energyByMonth(),o={}; for(const m in e)_eAdd(o,m.slice(0,4),e[m]); return o; }
+const dataMonths=()=>[...new Set(Object.keys(energyByDay()).map(d=>d.slice(0,7)))].sort();
+const dataYears =()=>[...new Set(Object.keys(energyByDay()).map(d=>d.slice(0,4)))].sort();
+// Energy per hour of one day — the History chart's D view (intraday energy bars).
+function energyByHour(day){
+  const g=groupDays(DATA&&DATA.series7d||[]), pts=g[day]||[], byH={};
+  for(const r of pts){ const h=String(r.timestamp).slice(11,13); (byH[h]=byH[h]||[]).push(r); }
+  const o={}; for(let h=0;h<24;h++){ const k=String(h).padStart(2,'0'); o[h]=byH[k]?dailyEnergy(byH[k]):Z(); }
+  return o;
+}
+// M/Y/T aggregation for the intraday LINE charts (Plant Analysis, Weather): bucket the series by
+// day-of-month / month / year and take the MEAN of a field (sane for instantaneous values vs sum).
+function periodBuckets(period, sel){
+  const day=r=>String(r.timestamp).slice(0,10);
+  const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  if(period==='M'){ const [y,mo]=sel.split('-').map(Number),dim=new Date(y,mo,0).getDate(),out=[];
+    for(let d=1;d<=dim;d++){ const dd=sel+'-'+String(d).padStart(2,'0'); out.push({label:String(d),f:r=>day(r)===dd}); } return out; }
+  if(period==='Y'){ const out=[]; for(let mo=1;mo<=12;mo++){ const mm=sel+'-'+String(mo).padStart(2,'0'); out.push({label:MN[mo-1],f:r=>day(r).slice(0,7)===mm}); } return out; }
+  return dataYears().map(y=>({label:y,f:r=>day(r).slice(0,4)===y}));    // T
+}
+function bucketMean(series, buckets, key){
+  return buckets.map(b=>{ const vs=(series||[]).filter(b.f).map(r=>num(r[key])).filter(v=>v!=null&&!isNaN(v));
+    return vs.length?+(vs.reduce((a,c)=>a+c,0)/vs.length).toFixed(2):null; });
+}
+// Generation history straight from ShineMonitor (kWh): perday (this year), permonth + peryear
+// (all logged years). Drives the M/Y/T energy bars back to Jan 1 — see check_ph1800.plant_energy_series.
+const genSeries=()=>(DATA&&DATA.plant&&DATA.plant.energy_series)||{perday:[],permonth:[],peryear:[]};
+// One green "Generation (kWh)" bar series for the active period.
+function genBars(period, sel){
+  const es=genSeries(), MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let labels=[], vals=[], xt='';
+  if(period==='M'){ const [y,mo]=sel.split('-').map(Number), dim=new Date(y,mo,0).getDate(), byd={};
+    es.perday.forEach(x=>{ if(x.t.slice(0,7)===sel) byd[x.t.slice(8,10)]=x.kwh; });
+    for(let d=1;d<=dim;d++){ labels.push(String(d)); vals.push(byd[String(d).padStart(2,'0')]||0); } xt='Day · '+sel;
+  } else if(period==='Y'){ const bym={};
+    es.permonth.forEach(x=>{ if(x.t.slice(0,4)===sel) bym[x.t.slice(5,7)]=x.kwh; });
+    for(let mo=1;mo<=12;mo++){ labels.push(MN[mo-1]); vals.push(bym[String(mo).padStart(2,'0')]||0); } xt='Month · '+sel;
+  } else { es.peryear.forEach(x=>{ labels.push(x.t); vals.push(x.kwh); }); xt='Year'; }
+  return {labels,vals,xt};
+}
+function genBarCfg(labels,vals,xt){
+  return {type:'bar',data:{labels,datasets:[{label:'Generation (kWh)',data:vals,backgroundColor:'#22c55e',borderWidth:0,borderRadius:2}]},
+    options:{responsive:true,scales:{
+      x:{title:{display:!!xt,text:xt,color:'#8a94a6'},ticks:{color:'#8a94a6'},grid:{display:false}},
+      y:{title:{display:true,text:'kWh',color:'#8a94a6'},ticks:{color:'#8a94a6'},grid:{color:'#222c3b'},beginAtZero:true}},
+      plugins:{legend:{labels:{color:'#aeb9cb',usePointStyle:false,boxWidth:9,boxHeight:9,font:{size:11}}},
+        tooltip:{callbacks:{label:c=>'Generation: '+c.parsed.y+' kWh'}}}}};
+}
+// The list the period pickers (Power Profile + History) step through (T = no sub-selection).
+function ppList(p){
+  if(p==='D') return Object.keys(groupDays(DATA&&DATA.series7d||[])).sort();
+  if(p==='M') return dataMonths();
+  if(p==='Y') return dataYears();
+  return [];
+}
+// Draw on the shared Power-Profile canvas, recreating only when the chart TYPE changes
+// (Chart.js can't morph line<->bar via update()).
+function drawChart(cfg,kind){
+  if(chart&&chartKind!==kind){ chart.destroy(); chart=null; }
+  chartKind=kind;
+  if(chart){ chart.data=cfg.data; chart.options=cfg.options; chart.update(); }
+  else chart=new Chart(document.getElementById('chart'),cfg);
+}
+
+const minOfDay = t => { const [h,m]=String(t).slice(11,16).split(':').map(Number); return (h||0)*60+(m||0); };
+const hhmm = v => { v=Math.round(v); return String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart(2,'0'); };
+const ageMin = ms => ms? (Date.now()-ms)/60000 : null;
+const slClock = ms => { const p=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Colombo',
+  hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).formatToParts(new Date(ms)).map(x=>[x.type,x.value]));
+  return `${p.hour}:${p.minute}:${p.second}`; };
+// Fixed full-day X axis (00:00-23:59) so the chart always shows the whole day.
+const DAY_X = {type:'linear',min:0,max:1440,offset:false,
+  ticks:{color:'#8a94a6',stepSize:120,callback:hhmm,autoSkip:false},grid:{color:'#222c3b'}};
+
+// Linear interpolator over [{x,y}] points (sorted). Used to resample the HOURLY weather series
+// onto the 5-min power timestamps so every dataset shares an x-index — otherwise Chart.js's
+// 'index' tooltip can't line up the sparse irradiance/cloud points with the power lines.
+function mkInterp(points){
+  const p=points.filter(q=>q.y!=null).sort((a,b)=>a.x-b.x);
+  return x=>{
+    if(!p.length) return null;
+    if(x<=p[0].x) return p[0].y;
+    if(x>=p[p.length-1].x) return p[p.length-1].y;
+    for(let i=1;i<p.length;i++) if(x<=p[i].x){const a=p[i-1],b=p[i];return a.y+(b.y-a.y)*(x-a.x)/(b.x-a.x);}
+    return null;
+  };
+}
+
+function renderProfile(){
+  if(!DATA) return;
+  document.getElementById('pp_seg').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.p===ppPeriod));
+  const list=ppList(ppPeriod);
+  const sel=document.getElementById('pp_date').parentElement;    // the ‹ select › group
+  if(ppPeriod==='T'||!list.length){ sel.style.display='none'; }
+  else{
+    sel.style.display='';
+    if(ppIx[ppPeriod]==null||ppIx[ppPeriod]>=list.length) ppIx[ppPeriod]=list.length-1;
+    fillSel(document.getElementById('pp_date'),list,list[ppIx[ppPeriod]]);
+  }
+  if(ppPeriod==='D') renderProfileDay(list[ppIx.D]||'—');
+  else renderProfileEnergy();
+}
+function renderProfileDay(day){
+  const g=groupDays(DATA.series7d||[]);
+  const pts=(g[day]||[]).slice().sort((a,b)=>a.timestamp<b.timestamp?-1:1);
+  // Weather: solar irradiance (GHI, W/m²) for this day — the "sunlight envelope". Drawn first
+  // (faint amber fill) so the green PV line sits on top; the gap below it shows weather losses.
+  // Resampled onto the power timestamps (mkInterp) so it appears in the shared hover tooltip.
+  const wgh=(DATA.weather&&DATA.weather.ok&&DATA.weather.hourly_ghi)||[];
+  const ghiDay=wgh.filter(r=>String(r.timestamp).slice(0,10)===day).map(r=>({x:minOfDay(r.timestamp),y:num(r.ghi)}));
+  const ghiI=mkInterp(ghiDay);
+  const ghiPts=pts.length?pts.map(r=>{const x=minOfDay(r.timestamp),y=ghiI(x);return{x,y:y==null?null:Math.round(y)};}):ghiDay;
+  const ds=(label,key,color,o={})=>({label,
+     data:pts.map(r=>({x:minOfDay(r.timestamp),y:key==='__zero__'?0:num(r[key])})),borderColor:color,
+     backgroundColor:color,borderWidth:1.5,pointRadius:0,tension:.25,spanGaps:true,borderDash:o.dash||[],yAxisID:o.axis||'y'});
+  const cfg={type:'line',data:{datasets:[
+     {label:'Irradiance (W/m²)',data:ghiPts,borderColor:'rgba(245,158,11,.5)',backgroundColor:'rgba(245,158,11,.10)',
+      borderWidth:1,pointRadius:0,tension:.3,fill:true,spanGaps:true,yAxisID:'y'},
+     ds('PV','pinverter_w','#22c55e'),ds('Battery','battery_w','#3b82f6'),
+     ds('Grid','pgrid_w','#ec4899'),ds('Consumption','load_power_w_est','#eab308'),
+     {label:'SOC',data:pts.map(r=>({x:minOfDay(r.timestamp),y:socFromV(num(r.battery_v))})),borderColor:'#1e3a8a',
+      backgroundColor:'#1e3a8a',borderWidth:1.5,pointRadius:0,tension:.25,spanGaps:true,
+      borderDash:[4,4],yAxisID:'y1'}]},
+   options:{responsive:true,interaction:{mode:'index',intersect:false},
+     scales:{x:DAY_X,
+       y:{position:'left',title:{display:true,text:'Power (W)',color:'#8a94a6'},ticks:{color:'#8a94a6'},grid:{color:'#222c3b'}},
+       y1:{position:'right',min:0,max:100,grid:{drawOnChartArea:false},title:{display:true,text:'SOC %',color:'#8a94a6'},ticks:{color:'#8a94a6',callback:v=>v+'%'}}},
+     plugins:{legend:{labels:{color:'#aeb9cb',usePointStyle:false,boxWidth:9,boxHeight:9,font:{size:11}}},
+       tooltip:{callbacks:{title:i=>i.length?hhmm(i[0].parsed.x):''}}}}};
+  drawChart(cfg,'line');
+}
+// M / Y / T views: stacked energy (kWh) bars — Production/Discharge/Consumption/Charge/Grid.
+function renderProfileEnergy(){
+  let labels=[], rows=[], xt='';
+  const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  if(ppPeriod==='M'){
+    const m=ppList('M')[ppIx.M], [y,mo]=m.split('-').map(Number), dim=new Date(y,mo,0).getDate(), e=energyByDay();
+    for(let d=1;d<=dim;d++){ const k=m+'-'+String(d).padStart(2,'0'); labels.push(String(d)); rows.push(e[k]||Z()); }
+    xt='Day · '+m;
+  } else if(ppPeriod==='Y'){
+    const y=ppList('Y')[ppIx.Y], e=energyByMonth();
+    for(let mo=1;mo<=12;mo++){ const k=y+'-'+String(mo).padStart(2,'0'); labels.push(MN[mo-1]); rows.push(e[k]||Z()); }
+    xt='Month · '+y;
+  } else {
+    const e=energyByYear(); for(const y of Object.keys(e).sort()){ labels.push(y); rows.push(e[y]); }
+    xt='All logged years';
+  }
+  drawChart(energyBarCfg(labels,rows,xt),'bar');
+}
+// Stacked energy-bar config shared by the Power Profile M/Y/T and the History chart.
+function energyBarCfg(labels,rows,xt){
+  const bar=(label,vals,color)=>({label,data:vals,backgroundColor:color,stack:'s',borderWidth:0,borderRadius:2});
+  return {type:'bar',data:{labels,datasets:[
+     bar('Production',rows.map(e=>+e.prod.toFixed(2)),'#22c55e'),
+     bar('Discharge', rows.map(e=>+e.dis.toFixed(2)),'#7dd3fc'),
+     bar('Grid import',rows.map(e=>+(e.imp||0).toFixed(2)),'#ef4444'),
+     bar('Consumption',rows.map(e=>-+e.cons.toFixed(2)),'#eab308'),
+     bar('Charge',    rows.map(e=>-+e.chg.toFixed(2)),'#2563eb'),
+     bar('Grid export',rows.map(e=>-+(e.exp||0).toFixed(2)),'#10b981')]},
+   options:{responsive:true,scales:{
+     x:{stacked:true,title:{display:!!xt,text:xt,color:'#8a94a6'},ticks:{color:'#8a94a6'},grid:{display:false}},
+     y:{stacked:true,title:{display:true,text:'kWh',color:'#8a94a6'},ticks:{color:'#8a94a6'},grid:{color:'#222c3b'}}},
+     plugins:{legend:{labels:{color:'#aeb9cb',usePointStyle:false,boxWidth:9,boxHeight:9,font:{size:11}}},
+       tooltip:{callbacks:{label:c=>c.dataset.label+': '+Math.abs(c.parsed.y)+' kWh'}}}}};
+}
+
+function renderHistory(){
+  if(!DATA) return;
+  document.getElementById('hm_seg').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.p===hmPeriod));
+  const list=ppList(hmPeriod);
+  const sel=document.getElementById('hm_date').parentElement;
+  if(hmPeriod==='T'||!list.length){ sel.style.display='none'; }
+  else{ sel.style.display='';
+    if(hmIx[hmPeriod]==null||hmIx[hmPeriod]>=list.length) hmIx[hmPeriod]=list.length-1;
+    fillSel(document.getElementById('hm_date'),list,list[hmIx[hmPeriod]]);
+  }
+  let labels=[], E=[], xt='';
+  const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  if(hmPeriod==='D'){ const day=list[hmIx.D], e=day?energyByHour(day):{};
+    for(let h=0;h<24;h++){ labels.push(String(h).padStart(2,'0')); E.push(e[h]||Z()); } xt='Hour · '+(day||'—');
+  } else if(hmPeriod==='M'){ const m=list[hmIx.M], [y,mo]=m.split('-').map(Number), dim=new Date(y,mo,0).getDate(), eb=energyByDay();
+    for(let d=1;d<=dim;d++){ const k=m+'-'+String(d).padStart(2,'0'); labels.push(String(d)); E.push(eb[k]||Z()); } xt='Day · '+m;
+  } else if(hmPeriod==='Y'){ const yy=list[hmIx.Y], eb=energyByMonth();
+    for(let mo=1;mo<=12;mo++){ const k=yy+'-'+String(mo).padStart(2,'0'); labels.push(MN[mo-1]); E.push(eb[k]||Z()); } xt='Month · '+yy;
+  } else { const eb=energyByYear(); for(const y of Object.keys(eb).sort()){ labels.push(y); E.push(eb[y]); } xt='Year'; }
+  const cfg=energyBarCfg(labels,E,xt);
+  if(hist){hist.data=cfg.data;hist.options=cfg.options;hist.update();} else hist=new Chart(document.getElementById('hist'),cfg);
+}
+
+function renderLive(){
+  const L=DATA.latest, dev=DATA.device;
+  document.getElementById('alias').textContent=dev.alias?('· '+dev.alias):'';
+  document.getElementById('pn').textContent='devcode '+dev.devcode;
+  let stale=false;
+  if(dev.last_update){ const age=(Date.now()-ts(dev.last_update).getTime()-0)/60000; stale=age>15; }
+  const cls=!dev.online?'off':stale?'st':'on';
+  document.getElementById('status').innerHTML=`<span class="dot ${cls}"></span>`+(!dev.online?'Offline':stale?'Stale':'Online');
+  document.getElementById('upd').textContent='Last update '+(dev.last_update||'—');
+
+  const pv=num(L.pv_power_w_est&&L.pv_power_w_est.value),load=num(L.load_power_w_est&&L.load_power_w_est.value),
+        bw=num(L.battery_w&&L.battery_w.value),bv=num(L.battery_v&&L.battery_v.value),
+        ba=num(L.battery_a&&L.battery_a.value),pinv=num(L.pinverter_w&&L.pinverter_w.value),
+        grid=num(L.pgrid_w&&L.pgrid_w.value),gv=num(L.grid_v&&L.grid_v.value);
+  const flow=bw===null?'':bw<0?'charging':bw>0?'discharging':'idle';
+  // Grid import/export via the variant-aware sign (gs>0 = importing FROM grid, <0 = exporting).
+  const gs=gridImp(grid), gimp=gs!==null&&gs>1, gexp=gs!==null&&gs<-1;
+  // Flow-graph readouts (power in W).
+  document.getElementById('n_pv').innerHTML=W(pv)+(pv?' · '+pctOf(pv,PV_CAP_W):'');
+  document.getElementById('n_load').innerHTML=W(load)+(load?' · '+pctOf(load,RATED_W):'');
+  document.getElementById('n_batt').innerHTML=(bv!==null?bv+' V':'—')+' · '+W(bw!==null?Math.abs(bw):null)
+    +(bw?' · '+pctOf(Math.abs(bw),BATT_CAP_W):'');
+  document.getElementById('n_battlab').textContent='Battery'+(flow&&flow!=='idle'?' · '+flow:'');
+  document.getElementById('n_grid').innerHTML=W(grid!==null?Math.abs(grid):0)+(grid?' · '+pctOf(Math.abs(grid),RATED_W):'');
+  show('d_pv',pv>0); show('d_load',load>0); show('d_chg',bw<0); show('d_dis',bw>0);
+  show('d_gin',gimp); show('d_gout',gexp);
+  document.getElementById('a_batt').setAttribute('points', bw<0?'252,204 244,208 252,212':'244,204 252,208 244,212');
+  const ag=document.getElementById('a_grid'); if(ag) ag.setAttribute('points', gexp?'308,148 316,152 308,156':'316,148 308,152 316,156');
+
+  const card=(l,v,s,sc)=>`<div class="m"><div class="l">${l}</div><div class="v">${v}</div>${s?`<div class="s ${sc||''}">${s}</div>`:''}</div>`;
+  document.getElementById('metrics').innerHTML=[
+    card('PV Power',W(pv),''),
+    card('Load Power',W(load),''),
+    card('Grid Power',W(grid!==null?Math.abs(grid):null),gimp?'<span style="color:#ef4444">▼ import</span>':gexp?'<span style="color:#22c55e">▲ export</span>':'',''),
+    card('Battery Power',W(bw),flow&&flow!=='idle'?'▲ '+flow:'',flow),
+    card('Battery',(bv??'—')+' <small>V</small>',(ba??'—')+' A'),
+    card('Grid Voltage',(gv??'—')+' <small>V</small>',''),
+    `<div class="m" style="display:flex;align-items:center;justify-content:center;padding:14px">
+      <svg viewBox="0 0 660 150" style="width:100%;max-height:60px" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ktronics">
+        <rect x="14" y="16" width="35" height="118" fill="#1C9AD6"/>
+        <polygon points="62,72 108,72 168,16 122,16" fill="#F7941D"/>
+        <polygon points="62,78 108,78 168,134 122,134" fill="#1C9AD6"/>
+        <text x="178" y="114" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="98" fill="#1C9AD6" letter-spacing="-5">TRONICS</text>
+      </svg>
+    </div>`,
+  ].join('');
+  document.getElementById('foot').textContent=`${(DATA.series7d||[]).length} points · live data from ShineMonitor (as-is) · generated ${DATA.last_updated}`;
+}
+
+function bmsAvgSoc(){
+  const b=DATA&&DATA.bms; if(!b||!b.ok||!(b.packs||[]).length) return null;
+  return Math.round(b.packs.reduce((a,p)=>a+(p.soc||0),0)/b.packs.length);
+}
+function renderBMS(){
+  const card=document.getElementById('bmscard'); const b=DATA&&DATA.bms;
+  if(!b||!b.ok||!(b.packs||[]).length){ card.style.display='none'; return; }   // token expired -> hide
+  card.style.display='';
+  const sc=s=>s==='charging'?'charging':s==='discharging'?'discharging':'';
+  document.getElementById('bmsbody').innerHTML=b.packs.map(p=>{
+    const age=ageMin(p.reported_ms);            // minutes old, or null
+    const stale = age!=null && age>120;          // >2 h => datalogger effectively offline
+    const lag   = age!=null && age>20;
+    const barBg = stale ? '#3a4150' : 'linear-gradient(90deg,#22c55e,#16a34a)';
+    const note  = age==null ? '' :
+      `data as of ${slClock(p.reported_ms)} SL · ${Math.round(age)} min ago` +
+      (stale ? ' · STALE — datalogger offline' : lag ? ' · datalogger lagging' : '');
+    return `
+    <div class="m" style="padding:16px;${stale?'opacity:.55':''}">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <div style="font-weight:700;font-size:15px">${p.name} <span style="color:var(--muted);font-size:11px;font-weight:500">${p.role||''}</span>${stale?' <span style="color:var(--red);font-size:10px;border:1px solid var(--red);border-radius:6px;padding:0 5px;vertical-align:middle">STALE</span>':''}</div>
+        <div style="font-size:26px;font-weight:800;${stale?'color:var(--muted)':''}">${p.soc}<small style="font-size:13px;color:var(--muted)">%</small></div>
+      </div>
+      <div style="height:6px;background:#222c3b;border-radius:4px;margin:9px 0;overflow:hidden">
+        <div style="height:100%;width:${Math.max(0,Math.min(100,p.soc))}%;background:${barBg}"></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px 16px;font-size:12.5px;margin-top:8px">
+        <div>Voltage <b>${p.voltage} V</b></div>
+        <div>Current <b class="${sc(p.state)}">${p.current} A</b></div>
+        <div>State <b class="${sc(p.state)}">${p.state}</b></div>
+        <div>SOH <b>${p.soh}%</b></div>
+        <div>Capacity <b>${p.remaining_ah} / ${p.full_ah} Ah</b></div>
+        <div>Cycles <b>${p.cycles}</b></div>
+        <div>Temperature <b>${p.min_temp}–${p.max_temp} °C</b></div>
+        <div>Cells <b>${p.low_cell_mv}–${p.high_cell_mv} mV</b></div>
+      </div>
+      ${age!=null?`<div style="font-size:11px;margin-top:9px;color:${stale?'var(--red)':lag?'var(--amber)':'var(--muted)'}">${note}</div>`:''}
+    </div>`;}).join('');
+}
+// ---- Weather & solar-harvest impact (from the `weather` block, Open-Meteo) ----
+const WX_EMOJI={clear:'☀️',partly:'⛅',cloudy:'☁️',fog:'🌫️',drizzle:'🌦️',rain:'🌧️',snow:'❄️',storm:'⛈️',unknown:'🌡️'};
+const lossColor=l=>l==null?'var(--muted)':l<20?'var(--green)':l<50?'var(--amber)':'var(--red)';
+function renderWeather(){
+  const body=document.getElementById('wxbody'); if(!body) return;
+  const w=DATA&&DATA.weather;
+  if(!w||!w.ok||!w.current){   // feed down -> placeholder (the tab still renders)
+    body.innerHTML='<div style="color:var(--muted);padding:24px">No weather data yet — the next refresh will populate it.</div>';
+    return;
+  }
+  const c=w.current, t=w.today||{}, em=k=>WX_EMOJI[k]||WX_EMOJI.unknown;
+  const ghiKw=c.ghi_wm2!=null?(c.ghi_wm2/1000).toFixed(2):'—';
+  const harvest=t.loss_pct!=null?(100-t.loss_pct):null;
+  let html=`<div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+    <div style="font-size:42px;line-height:1">${em(c.category)}</div>
+    <div><div style="font-size:20px;font-weight:700">${c.condition}</div>
+      <div style="color:var(--muted);font-size:12px">${c.temp_c!=null?c.temp_c+' °C · ':''}cloud ${c.cloud_pct!=null?Math.round(c.cloud_pct)+'%':'—'} · rain ${c.rain_mm!=null?c.rain_mm+' mm':'—'} · irradiance ${ghiKw} kW/m²</div></div>`;
+  if(harvest!=null){ const lc=lossColor(t.loss_pct);
+    html+=`<div style="margin-left:auto;text-align:right">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Today vs clear-sky</div>
+      <div style="font-size:24px;font-weight:800;color:${lc}">${harvest}<small style="font-size:13px;color:var(--muted);font-weight:600">% of clear-sky</small></div>
+      <div style="font-size:12px;color:${lc}">weather cost ~${t.loss_pct}% · GHI ${t.ghi_kwh_m2}/${t.clear_kwh_m2} kWh/m²</div></div>`; }
+  html+=`</div>`;
+  const days=(w.daily||[]).slice(-7);
+  if(days.length){
+    html+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:8px;margin-top:14px">`+
+      days.map(d=>{ const lc=lossColor(d.loss_pct);
+        return `<div class="m" style="padding:10px;text-align:center">
+          <div style="font-size:11px;color:var(--muted)">${String(d.date).slice(5)}</div>
+          <div style="font-size:22px;margin:3px 0">${em(d.category)}</div>
+          <div style="font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.condition}</div>
+          <div style="height:5px;background:#222c3b;border-radius:3px;margin:7px 0 5px;overflow:hidden"><div style="height:100%;width:${d.harvest_factor!=null?Math.round(Math.min(1,d.harvest_factor)*100):0}%;background:${lc}"></div></div>
+          <div style="font-size:11px;color:${lc}">${d.loss_pct!=null?'−'+d.loss_pct+'%':'—'}${d.rain_mm>0?' · '+d.rain_mm+'mm':''}</div>
+        </div>`;}).join('')+`</div>`;
+  }
+  html+=`<div style="font-size:11px;color:var(--muted);margin-top:9px">Harvest impact is estimated: clear-sky ≈ 0.75 × extraterrestrial irradiance; the bar fill is actual ÷ clear-sky GHI, −% is harvest lost to cloud/rain. Irradiance also overlays the Power Profile chart on the Live tab.</div>`;
+  document.getElementById('wxbody').innerHTML=html;
+}
+
+// ---- Weather vs Solar Harvest chart (00:00–23:59, date dropdown) ----
+let wxchart=null, wxDay=null, wxPeriod='D', wxIx={}, wxKind=null;
+const WX_YAXES={
+  y:{position:'left',title:{display:true,text:'Power (W) · Irradiance (W/m²)',color:'#8a94a6'},ticks:{color:'#8a94a6'},grid:{color:'#222c3b'}},
+  y1:{position:'right',min:0,max:100,grid:{drawOnChartArea:false},title:{display:true,text:'Cloud %',color:'#8a94a6'},ticks:{color:'#8a94a6',callback:v=>v+'%'}}};
+const WX_LEG={legend:{labels:{color:'#aeb9cb',usePointStyle:false,boxWidth:9,boxHeight:9,font:{size:11}}}};
+function renderWeatherChart(){
+  if(!DATA) return;
+  const segEl=document.getElementById('wx_seg');
+  if(segEl) segEl.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.p===wxPeriod));
+  const list=ppList(wxPeriod), sel=document.getElementById('wx_date').parentElement;
+  if(wxPeriod==='T'||!list.length){ sel.style.display='none'; }
+  else{ sel.style.display='';
+    if(wxIx[wxPeriod]==null||wxIx[wxPeriod]>=list.length) wxIx[wxPeriod]=list.length-1;
+    fillSel(document.getElementById('wx_date'),list,list[wxIx[wxPeriod]]);
+  }
+  const wha=(DATA.weather&&DATA.weather.ok&&DATA.weather.hourly_ghi)||[];
+  const kind=wxPeriod==='D'?'day':'agg';
+  if(wxchart&&wxKind!==kind){ wxchart.destroy(); wxchart=null; } wxKind=kind;
+  let cfg;
+  if(wxPeriod==='D'){
+    const g=groupDays(DATA.series7d||[]), day=list[wxIx.D];
+    if(!day){ if(wxchart){wxchart.destroy();wxchart=null;} return; }
+    const pts=(g[day]||[]).slice().sort((a,b)=>a.timestamp<b.timestamp?-1:1);
+    const wh=wha.filter(r=>String(r.timestamp).slice(0,10)===day);
+    const ghiI=mkInterp(wh.map(r=>({x:minOfDay(r.timestamp),y:num(r.ghi)})));
+    const cloudI=mkInterp(wh.map(r=>({x:minOfDay(r.timestamp),y:num(r.cloud)})));
+    const xs=pts.length?pts.map(r=>minOfDay(r.timestamp)):wh.map(r=>minOfDay(r.timestamp));
+    const at=(f,x)=>{const v=f(x);return v==null?null:Math.round(v);};
+    cfg={type:'line',data:{datasets:[
+      {label:'Irradiance (W/m²)',data:xs.map(x=>({x,y:at(ghiI,x)})),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.12)',borderWidth:1.4,pointRadius:0,tension:.3,fill:true,spanGaps:true,yAxisID:'y'},
+      {label:'Solar Harvest — PV (W)',data:pts.map(r=>({x:minOfDay(r.timestamp),y:num(r.pinverter_w)})),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.14)',borderWidth:1.6,pointRadius:0,tension:.25,fill:true,spanGaps:true,yAxisID:'y'},
+      {label:'Cloud cover (%)',data:xs.map(x=>({x,y:at(cloudI,x)})),borderColor:'#94a3b8',backgroundColor:'#94a3b8',borderWidth:1.2,pointRadius:0,tension:.3,borderDash:[4,4],spanGaps:true,yAxisID:'y1'}]},
+     options:{responsive:true,interaction:{mode:'index',intersect:false},scales:{x:DAY_X,...WX_YAXES},
+       plugins:{...WX_LEG,tooltip:{callbacks:{title:i=>i.length?hhmm(i[0].parsed.x):''}}}}};
+  } else {
+    const buckets=periodBuckets(wxPeriod,list[wxIx[wxPeriod]]), labels=buckets.map(b=>b.label);
+    cfg={type:'line',data:{labels,datasets:[
+      {label:'Irradiance (W/m²) · avg',data:bucketMean(wha,buckets,'ghi'),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.12)',borderWidth:1.4,pointRadius:2,tension:.3,fill:true,spanGaps:true,yAxisID:'y'},
+      {label:'PV (W) · avg',data:bucketMean(DATA.series7d,buckets,'pinverter_w'),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.14)',borderWidth:1.6,pointRadius:2,tension:.25,fill:true,spanGaps:true,yAxisID:'y'},
+      {label:'Cloud cover (%) · avg',data:bucketMean(wha,buckets,'cloud'),borderColor:'#94a3b8',backgroundColor:'#94a3b8',borderWidth:1.2,pointRadius:2,tension:.3,borderDash:[4,4],spanGaps:true,yAxisID:'y1'}]},
+     options:{responsive:true,interaction:{mode:'index',intersect:false},scales:{x:{ticks:{color:'#8a94a6'},grid:{color:'#222c3b'}},...WX_YAXES},plugins:{...WX_LEG}}};
+  }
+  if(wxchart){ wxchart.data=cfg.data; wxchart.options=cfg.options; wxchart.update(); } else wxchart=new Chart(document.getElementById('wxchart'),cfg);
+}
+async function load(){
+  try{ const j=await fetchData();
+       if(!j||!j.plants||!j.plants.length) throw new Error('no data');
+       // unwrap the chosen plant block (account file = {account, plants:[{device,latest,series7d,plant}]})
+       const psel=document.getElementById('plantsel');
+       if(j.plants.length>1 && psel){ psel.style.display='';
+         if(psel.dataset.sig!==String(j.plants.length)){ psel.innerHTML=j.plants.map((p,i)=>`<option value="${i}">${(p.plant&&p.plant.name)||('Plant '+(i+1))}</option>`).join(''); psel.dataset.sig=String(j.plants.length); }
+         psel.value=plantIdx; }
+       DATA=j.plants[plantIdx]||j.plants[0];
+       PV_CAP_W=num(DATA.plant&&DATA.plant.pv_cap_w); RATED_W=num(DATA.plant&&DATA.plant.rated_w); BATT_CAP_W=num(DATA.plant&&DATA.plant.batt_cap_w);
+       VARIANT=((DATA.plant&&DATA.plant.variant)||'pro').toLowerCase();
+       const nm=(DATA.plant&&DATA.plant.name)||j.account||'Solar';
+       document.getElementById('plantname').textContent=nm; document.title=nm;
+       DATA.last_updated=j.last_updated;
+       DATA.series7d=mergeSeries(_histSeries(), DATA.series7d);          // extend if hist loaded
+       if(_histKey!==DATA_FILE){ _histKey=DATA_FILE; HIST_RAW=null; loadHist(); }  // fetch 30d once
+       renderLive(); renderBMS(); renderWeather(); renderProfile(); renderHistory();
+       if(curTab==='profile') renderProfilePane(); if(curTab==='analysis') renderAnalysis(); }
+  catch(e){ if(!DATA){ const f=document.getElementById('foot'); if(f) f.textContent='load error: '+e; } }
+}
+
+/* ---- Sri Lanka actual time (Asia/Colombo), ticking every second ---- */
+function tickSL(){
+  const p=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Colombo',
+    year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',
+    hour12:false}).formatToParts(new Date()).map(x=>[x.type,x.value]));
+  const el=document.getElementById('sltime');
+  if(el) el.textContent=`Actual time (SL): ${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}`;
+}
+setInterval(tickSL,1000); tickSL();
+
+/* ---- tabs ---- */
+let curTab='live';
+function switchTab(name){
+  curTab=name;
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+  document.getElementById('tab-live').style.display    = name==='live'?'grid':'none';
+  document.getElementById('tab-weather').style.display = name==='weather'?'block':'none';
+  document.getElementById('tab-profile').style.display = name==='profile'?'block':'none';
+  document.getElementById('tab-analysis').style.display= name==='analysis'?'block':'none';
+  if(name==='weather'){ renderWeather(); renderWeatherChart(); }
+  if(name==='profile') renderProfilePane();
+  if(name==='analysis') renderAnalysis();
+}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+
+/* ---- Plant Profile pane ---- */
+const ICON={
+  daily:'<svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 4 5-7 4 5"/><path d="M3 21h18"/></svg>',
+  month:'<svg viewBox="0 0 24 24"><rect x="4" y="9" width="3" height="9"/><rect x="10.5" y="5" width="3" height="13"/><rect x="17" y="12" width="3" height="6"/></svg>',
+  year:'<svg viewBox="0 0 24 24"><path d="M3 18l6-6 4 4 8-9"/><path d="M21 7v5h-5"/></svg>',
+  total:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 12V4M12 12l6 4"/></svg>',
+  gain:'<svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>',
+  co2:'<svg viewBox="0 0 24 24"><path d="M7 18h9a4 4 0 0 0 .5-8 5 5 0 0 0-9.6-1.2A3.6 3.6 0 0 0 7 18z"/></svg>',
+  temp:'<svg viewBox="0 0 24 24"><path d="M12 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/></svg>',
+  sun:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>',
+  panel:'<svg viewBox="0 0 24 24"><path d="M4 5h16l1.6 11H2.4L4 5z"/><path d="M2 16h20M12 5v11M5.5 9h13M4.8 12.5h14.4"/></svg>',
+  bolt:'<svg viewBox="0 0 24 24"><path d="M13 2.5L5 13.5h6l-1 8 9-12h-6l0-7z"/></svg>',
+  batt:'<svg viewBox="0 0 24 24"><rect x="3" y="8" width="16" height="9" rx="1.5"/><path d="M21 11v3"/><path d="M6.5 11v3M9.5 11v3M12.5 11v3"/></svg>'};
+function renderProfilePane(){
+  const p=DATA&&DATA.plant;
+  const box=document.getElementById('plantcards');
+  if(!p){ box.innerHTML='<div style="color:var(--muted);padding:24px">No plant data yet — next refresh will populate it.</div>'; document.getElementById('plantinfo').innerHTML=''; return; }
+  const e=p.energy||{};
+  const wc=(DATA.weather&&DATA.weather.ok&&DATA.weather.current)||{};
+  const card=(cls,icon,label,val)=>`<div class="pcard ${cls}"><div class="ph">${icon}<span>${label}</span></div><div class="pv">${val}</div></div>`;
+  box.innerHTML=[
+    card('energy',ICON.daily,'Daily energy',(e.daily??0)+' kWh'),
+    card('energy',ICON.month,'Monthly energy',(e.monthly??0)+' kWh'),
+    card('energy',ICON.year,'Yearly energy',(e.yearly??0)+' kWh'),
+    card('energy',ICON.total,'Total energy (logged)',(e.total??0)+' kWh'),
+    card('benefit',ICON.gain,'Gains',(p.gains_lkr??0).toLocaleString()+' <small style="font-size:14px;opacity:.85">LKR</small>'),
+    card('benefit',ICON.co2,'CO₂ reduced',(p.co2_t??0)+' t'),
+    card('benefit',ICON.temp,'Ambient temperature',(wc.temp_c??'—')+' °C'),
+    card('benefit',ICON.sun,'Solar irradiance',(wc.ghi_wm2!=null?(wc.ghi_wm2/1000).toFixed(2):'—')+' kW/m²'),
+    // System capacities (ratings) — also shown as % on the Flow Graph
+    card('spec',ICON.panel,'PV array',(PV_CAP_W?(PV_CAP_W/1000).toFixed(2):'—')+' <small style="font-size:13px;opacity:.85">kW</small>'),
+    card('spec',ICON.bolt,'Inverter rated',(RATED_W?(RATED_W/1000):'—')+' <small style="font-size:13px;opacity:.85">kW</small>'),
+    card('spec',ICON.batt,'Battery capacity',(BATT_CAP_W?(BATT_CAP_W/1000):'—')+' <small style="font-size:13px;opacity:.85">kW</small>'),
+    // Real device lifetime counters (decoded from the inverter's own registers — not estimates)
+    ...(p.device_totals ? [
+      card('device',ICON.gain,'Battery charged (device)',(p.device_totals.charged_kwh??0)+' kWh'),
+      card('device',ICON.total,'Battery discharged (device)',(p.device_totals.discharged_kwh??0)+' kWh'),
+    ] : []),
+  ].join('');
+  const dt=p.device_totals;
+  document.getElementById('plantinfo').innerHTML=
+    `<span><b>${p.name||''}</b></span><span>Capacity <b>${p.nominal_power_kw||'—'} kW</b></span>`+
+    `<span>Installer <b>${p.design_company||'—'}</b></span><span>Installed <b>${(p.install||'').slice(0,10)||'—'}</b></span>`+
+    `<span>Location <b>${p.country||'—'}</b></span><span>Tariff <b>Rs ${p.gains_rate||25}/unit</b></span>`+
+    (dt?`<span>Device counters (real) <b>charged ${dt.charged_kwh} · discharged ${dt.discharged_kwh} kWh</b></span>`:'')+
+    `<span style="opacity:.7">${p.energy_note||''}</span>`;
+}
+
+/* ---- Plant Analysis pane (parameters added per customer via + button) ---- */
+// Consistent dashboard names (not the raw ShineMonitor field names).
+const PARAM_DEFS=[
+  {key:'pv_power_w_est',  label:'PV Power (W)',       color:'#16a34a',axis:'y'},
+  {key:'battery_w',       label:'Battery Power (W)',  color:'#f59e0b',axis:'y'},
+  {key:'load_power_w_est',label:'Load Power (W)',     color:'#3b82f6',axis:'y'},
+  {key:'pgrid_w',         label:'Grid Power (W)',     color:'#ec4899',axis:'y'},
+  {key:'battery_v',       label:'Battery Voltage (V)',color:'#22d3ee',axis:'y1'},
+  {key:'battery_a',       label:'Battery Current (A)',color:'#a78bfa',axis:'y1'},
+  {key:'grid_v',          label:'Grid Voltage (V)',   color:'#94a3b8',axis:'y1'},
+];
+const AN_KEY='ph1800_an_params';
+let anSel=JSON.parse(localStorage.getItem(AN_KEY)||'null')||['load_power_w_est','battery_v'];
+let anPeriod='D', anIx={}, anKind=null;
+function anDays(){ return Object.keys(groupDays(DATA&&DATA.series7d||[])).sort(); }
+function renderAnParams(){
+  const box=document.getElementById('anparams');
+  const def=k=>PARAM_DEFS.find(p=>p.key===k);
+  let html=anSel.map(k=>{const d=def(k); if(!d)return ''; return `<span class="chip"><i style="background:${d.color}"></i>${d.label}<button data-rm="${k}">×</button></span>`;}).join('');
+  const avail=PARAM_DEFS.filter(p=>!anSel.includes(p.key));
+  html+=`<span class="chip add" id="anadd">+ Add parameter</span>`;
+  html+=`<div class="addmenu" id="anmenu">${avail.map(p=>`<div data-add="${p.key}"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${p.color};margin-right:7px"></span>${p.label}</div>`).join('')||'<div style="color:var(--muted)">all added</div>'}</div>`;
+  box.innerHTML=html;
+  box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{anSel=anSel.filter(x=>x!==b.dataset.rm);saveAn();});
+  const menu=document.getElementById('anmenu'), add=document.getElementById('anadd');
+  add.onclick=e=>{e.stopPropagation();menu.style.display=menu.style.display==='block'?'none':'block';menu.style.left='0';menu.style.top='32px';};
+  menu.querySelectorAll('[data-add]').forEach(d=>d.onclick=()=>{anSel.push(d.dataset.add);saveAn();});
+  document.addEventListener('click',()=>{if(menu)menu.style.display='none';},{once:true});
+}
+function saveAn(){ localStorage.setItem(AN_KEY,JSON.stringify(anSel)); renderAnParams(); renderAnChart(); }
+let anchart=null;
+function renderAnChart(){
+  if(!DATA) return;
+  const segEl=document.getElementById('an_seg');
+  if(segEl) segEl.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.p===anPeriod));
+  const list=ppList(anPeriod), sel=document.getElementById('an_date').parentElement;
+  if(anPeriod==='T'||!list.length){ sel.style.display='none'; }
+  else{ sel.style.display='';
+    if(anIx[anPeriod]==null||anIx[anPeriod]>=list.length) anIx[anPeriod]=list.length-1;
+    fillSel(document.getElementById('an_date'),list,list[anIx[anPeriod]]);
+  }
+  const def=k=>PARAM_DEFS.find(p=>p.key===k);
+  const useR=anSel.some(k=>(def(k)||{}).axis==='y1');
+  const kind=anPeriod==='D'?'day':'agg';
+  if(anchart&&anKind!==kind){ anchart.destroy(); anchart=null; } anKind=kind;
+  let cfg;
+  if(anPeriod==='D'){
+    const g=groupDays(DATA.series7d||[]), day=list[anIx.D];
+    const pts=(g[day]||[]).slice().sort((a,b)=>a.timestamp<b.timestamp?-1:1);
+    const datasets=anSel.map(k=>{const d=def(k); return d&&{label:d.label,yAxisID:d.axis,borderColor:d.color,backgroundColor:d.color,
+      borderWidth:1.6,pointRadius:0,tension:.25,spanGaps:true,data:pts.map(r=>({x:minOfDay(r.timestamp),y:num(r[k])}))};}).filter(Boolean);
+    cfg={type:'line',data:{datasets},options:{responsive:true,interaction:{mode:'index',intersect:false},
+      scales:{x:DAY_X,y:{position:'left',ticks:{color:'#8a94a6'},grid:{color:'#222c3b'}},
+        y1:{position:'right',display:useR,grid:{drawOnChartArea:false},ticks:{color:'#8a94a6'}}},
+      plugins:{legend:{labels:{color:'#aeb9cb',usePointStyle:false,boxWidth:9,boxHeight:9,font:{size:11}}},
+        tooltip:{callbacks:{title:i=>i.length?hhmm(i[0].parsed.x):''}}}}};
+  } else {
+    const buckets=periodBuckets(anPeriod,list[anIx[anPeriod]]), labels=buckets.map(b=>b.label);
+    const datasets=anSel.map(k=>{const d=def(k); return d&&{label:d.label+' · avg',yAxisID:d.axis,borderColor:d.color,backgroundColor:d.color,
+      borderWidth:1.6,pointRadius:2,tension:.25,spanGaps:true,data:bucketMean(DATA.series7d,buckets,k)};}).filter(Boolean);
+    cfg={type:'line',data:{labels,datasets},options:{responsive:true,interaction:{mode:'index',intersect:false},
+      scales:{x:{ticks:{color:'#8a94a6'},grid:{color:'#222c3b'}},y:{position:'left',ticks:{color:'#8a94a6'},grid:{color:'#222c3b'}},
+        y1:{position:'right',display:useR,grid:{drawOnChartArea:false},ticks:{color:'#8a94a6'}}},
+      plugins:{legend:{labels:{color:'#aeb9cb',usePointStyle:false,boxWidth:9,boxHeight:9,font:{size:11}}}}}};
+  }
+  if(anchart){ anchart.data=cfg.data; anchart.options=cfg.options; anchart.update(); } else anchart=new Chart(document.getElementById('anchart'),cfg);
+}
+function renderAnalysis(){ renderAnParams(); renderAnChart(); }
+// Consistent pickers: each has ‹ prev, a dropdown, › next. Arrows step within the available
+// list; the dropdown jumps directly. All bounded to the data (no empty months/days).
+document.getElementById('an_seg').querySelectorAll('button').forEach(b=>b.onclick=()=>{ anPeriod=b.dataset.p; renderAnChart(); });
+document.getElementById('an_prev').onclick=()=>{ if((anIx[anPeriod]||0)>0){anIx[anPeriod]--;renderAnChart();} };
+document.getElementById('an_next').onclick=()=>{ const l=ppList(anPeriod); if(anIx[anPeriod]<l.length-1){anIx[anPeriod]++;renderAnChart();} };
+document.getElementById('an_date').onchange=function(){ const i=ppList(anPeriod).indexOf(this.value); if(i>=0){anIx[anPeriod]=i;renderAnChart();} };
+document.getElementById('pp_seg').querySelectorAll('button').forEach(b=>b.onclick=()=>{ ppPeriod=b.dataset.p; renderProfile(); });
+document.getElementById('pp_prev').onclick=()=>{ if((ppIx[ppPeriod]||0)>0){ppIx[ppPeriod]--;renderProfile();} };
+document.getElementById('pp_next').onclick=()=>{ const l=ppList(ppPeriod); if(ppIx[ppPeriod]<l.length-1){ppIx[ppPeriod]++;renderProfile();} };
+document.getElementById('pp_date').onchange=function(){ const i=ppList(ppPeriod).indexOf(this.value); if(i>=0){ppIx[ppPeriod]=i;renderProfile();} };
+document.getElementById('hm_seg').querySelectorAll('button').forEach(b=>b.onclick=()=>{ hmPeriod=b.dataset.p; renderHistory(); });
+document.getElementById('hm_prev').onclick=()=>{ if((hmIx[hmPeriod]||0)>0){hmIx[hmPeriod]--;renderHistory();} };
+document.getElementById('hm_next').onclick=()=>{ const l=ppList(hmPeriod); if(hmIx[hmPeriod]<l.length-1){hmIx[hmPeriod]++;renderHistory();} };
+document.getElementById('hm_date').onchange=function(){ const i=ppList(hmPeriod).indexOf(this.value); if(i>=0){hmIx[hmPeriod]=i;renderHistory();} };
+const wxDays=()=>Object.keys(groupDays(DATA&&DATA.series7d||[])).sort();
+document.getElementById('wx_seg').querySelectorAll('button').forEach(b=>b.onclick=()=>{ wxPeriod=b.dataset.p; renderWeatherChart(); });
+document.getElementById('wx_prev').onclick=()=>{ if((wxIx[wxPeriod]||0)>0){wxIx[wxPeriod]--;renderWeatherChart();} };
+document.getElementById('wx_next').onclick=()=>{ const l=ppList(wxPeriod); if(wxIx[wxPeriod]<l.length-1){wxIx[wxPeriod]++;renderWeatherChart();} };
+document.getElementById('wx_date').onchange=function(){ const i=ppList(wxPeriod).indexOf(this.value); if(i>=0){wxIx[wxPeriod]=i;renderWeatherChart();} };
+// ---- per-plant gate: username + password -> data file sha256(username:password).json ----
+async function sha256(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+// This plant's label from the URL (…/ph1800/<label>/). sessionStorage is per-ORIGIN, so the
+// saved file MUST be namespaced by label — otherwise logging into one plant auto-shows on every
+// other plant's URL. We also verify the logged-in account matches this URL's plant.
+const _seg=location.pathname.split('/').filter(Boolean), _pi=_seg.indexOf('ph1800');
+const PLANT_LABEL=(_pi>=0 && _seg[_pi+1] && _seg[_pi+1]!=='index.html') ? decodeURIComponent(_seg[_pi+1]) : '';
+const FILE_KEY='ph1800_file'+(PLANT_LABEL?('_'+PLANT_LABEL):'');
+const _norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+let _poll=null;
+function _begin(){ document.getElementById('gate').style.display='none'; load(); if(!_poll) _poll=setInterval(load, 300000); }
+async function gateLogin(){
+  const u=document.getElementById('gu').value.trim(), pw=document.getElementById('gp').value;
+  const err=document.getElementById('gerr');
+  if(!u||!pw){ err.textContent='Enter username and password'; err.style.display='block'; return; }
+  DATA_FILE=(await sha256(u+':'+pw))+'.json';
+  const j=await fetchData();
+  const found=j&&j.plants&&j.plants.length;
+  if(found && PLANT_LABEL && _norm(j.account)!==_norm(PLANT_LABEL)){
+    DATA_FILE=null; err.textContent='These credentials are for '+(j.account||'another plant')+', not '+PLANT_LABEL+'.'; err.style.display='block'; return;
+  }
+  if(found){ sessionStorage.setItem(FILE_KEY,DATA_FILE); _begin(); }
+  else { DATA_FILE=null; err.textContent='Wrong username or password'; err.style.display='block'; }
+}
+const _savedFile=sessionStorage.getItem(FILE_KEY);
+if(_savedFile){ DATA_FILE=_savedFile; _begin(); }
+document.getElementById('gb').onclick=gateLogin;
+document.getElementById('gp').addEventListener('keydown',e=>{if(e.key==='Enter')gateLogin();});
+document.getElementById('gu').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('gp').focus();});
+document.getElementById('gerr').textContent='Wrong username or password';
+</script>
+</body>
+</html>
