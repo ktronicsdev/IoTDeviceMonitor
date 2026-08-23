@@ -86,10 +86,11 @@ jobs:
             echo "::group::iteration $i / ${ITERATIONS} ($(date -u +%H:%M:%S) UTC)"
             rm -rf publish; mkdir -p publish
 
-            # Pure pass-through for every ph1800-flagged account -> a small <hash>.json (7d,
-            # polled) + a <hash>.hist.json (30d, background-loaded by the dashboard).
+            # Pure pass-through for every ph1800-flagged account -> one <hash>.json each.
+            # NOTE: reverted from 30d — the 30-day fetch made iterations too slow and runs kept
+            # cancelling before publishing, starving sites of fresh data. 7d keeps runs fast.
             python3 src/main/java/org/ktronics/scripts/check_ph1800.py \
-              --out-dir publish --history-days 30 --live-days 7 2>&1
+              --out-dir publish --history-days 7 2>&1
 
             if ls publish/*.json >/dev/null 2>&1; then
               ( cd publish
