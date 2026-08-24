@@ -1,0 +1,66 @@
+name: PH1000 Monthly History (30-day, hourly, decoupled)
+
+# Runs HOURLY, independent of the fast 7-day live feed (trigger-ph1000.yml). Does the slow 30-day
+# fetch and publishes ONLY ph1000_hist.json to the separate ph1000-hist branch, which the dashboard
+# background-loads to extend History to ~30 days. Its own concurrency lane means it can be slow
+# without ever starving the live workflow.
+on:
+  schedule:
+    - cron: "47 * * * *"          # hourly, offset from the ph1800 history job
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ph1000-hist
+  cancel-in-progress: true
+
+jobs:
+  hist:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout (main — script)
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Create credentials.json from secret
+        shell: bash
+        run: |
+          set -e
+          mkdir -p src/main/java/org/ktronics/config
+          cat <<'EOF' > src/main/java/org/ktronics/config/credentials.json
+          ${{ secrets.SHINEMONITOR_CREDENTIALS_JSON }}
+          EOF
+          chmod 600 src/main/java/org/ktronics/config/credentials.json
+
+      - name: Fetch 30-day history + publish ph1000_hist.json to ph1000-hist
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO:     ${{ github.repository }}
+        run: |
+          set -e
+          rm -rf work histpub; mkdir -p work/data histpub
+          # Full 30-day fetch (writes ph1000_live.json + ph1000_hist.json into work/); publish hist only.
+          python3 src/main/java/org/ktronics/scripts/check_ph1000.py \
+            --customer Mifanza --json-out work/ph1000_live.json \
+            --data-dir work/data --history-days 30 --live-days 7 2>&1
+          cp work/ph1000_hist.json histpub/ 2>/dev/null || true
+          if [ -f histpub/ph1000_hist.json ]; then
+            ( cd histpub
+              git init -q
+              git checkout -q -b ph1000-hist
+              git add -A
+              git -c user.email="actions@users.noreply.github.com" -c user.name="ph1000-hist-bot" \
+                  commit -q -m "PH1000 30-day history update"
+              git push -f "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" ph1000-hist ) \
+              && echo "[hist] ph1000-hist updated"
+          else
+            echo "[hist] no history file produced"; exit 1
+          fi

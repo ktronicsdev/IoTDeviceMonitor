@@ -1,0 +1,65 @@
+name: PH1800 Monthly History (30-day, hourly, decoupled)
+
+# Runs HOURLY, independent of the fast 7-day live feed (trigger-ph1800.yml). Does the slow 30-day
+# fetch and publishes ONLY the <hash>.hist.json files to the separate ph1800-hist branch, which the
+# dashboard background-loads to extend History to ~30 days. Its own concurrency lane means it can
+# be slow without ever starving the live workflow.
+on:
+  schedule:
+    - cron: "17 * * * *"          # top-of-hour-ish, offset from the live chains
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ph1800-hist
+  cancel-in-progress: true         # history isn't time-critical; a fresh run supersedes a slow one
+
+jobs:
+  hist:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50             # 30-day fetch for all flagged plants (~4-5 min each)
+    steps:
+      - name: Checkout (main — script)
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Create credentials.json from secret
+        shell: bash
+        run: |
+          set -e
+          mkdir -p src/main/java/org/ktronics/config
+          cat <<'EOF' > src/main/java/org/ktronics/config/credentials.json
+          ${{ secrets.SHINEMONITOR_CREDENTIALS_JSON }}
+          EOF
+          chmod 600 src/main/java/org/ktronics/config/credentials.json
+
+      - name: Fetch 30-day history + publish *.hist.json to ph1800-hist
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO:     ${{ github.repository }}
+        run: |
+          set -e
+          rm -rf work histpub; mkdir -p work histpub
+          # Full 30-day fetch (writes <hash>.json + <hash>.hist.json into work/); we publish only hist.
+          python3 src/main/java/org/ktronics/scripts/check_ph1800.py \
+            --out-dir work --history-days 30 --live-days 7 2>&1
+          cp work/*.hist.json histpub/ 2>/dev/null || true
+          if ls histpub/*.hist.json >/dev/null 2>&1; then
+            ( cd histpub
+              git init -q
+              git checkout -q -b ph1800-hist
+              git add -A
+              git -c user.email="actions@users.noreply.github.com" -c user.name="ph1800-hist-bot" \
+                  commit -q -m "PH1800 30-day history update"
+              git push -f "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" ph1800-hist ) \
+              && echo "[hist] ph1800-hist updated ($(ls histpub/*.hist.json | wc -l) plant file(s))"
+          else
+            echo "[hist] no history files produced"; exit 1
+          fi

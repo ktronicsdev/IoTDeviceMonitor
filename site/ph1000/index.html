@@ -261,7 +261,7 @@ async function fetchData(){
 let chart, hist, DATA=null, dayIdx=null, days=[], monthSel=null, ppPeriod='D', ppIx={}, chartKind=null, hmPeriod='M', hmIx={};
 // 30-day History is background-loaded from ph1000_hist.json so the polled main file stays small.
 // HIST_SERIES (full series) is fetched once; each render merges it with the fresh recent series.
-const HIST_URL = "https://raw.githubusercontent.com/ktronicsdev/IoTDeviceMonitor/ph1000-live/ph1000_hist.json";
+const HIST_URL = "https://raw.githubusercontent.com/ktronicsdev/IoTDeviceMonitor/ph1000-hist/ph1000_hist.json";
 let HIST_SERIES=null, _histTried=false;
 function mergeSeries(base, recent){
   if(!base||!base.length) return recent||[];

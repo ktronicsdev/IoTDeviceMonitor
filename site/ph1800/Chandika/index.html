@@ -248,6 +248,7 @@
 // ph1800-live branch — set by the login, so a plant's data isn't reachable without its creds.
 let DATA_FILE = null, plantIdx = 0;
 const PH1800_REPO = "ktronicsdev/IoTDeviceMonitor", PH1800_BRANCH = "ph1800-live";
+const PH1800_HIST_BRANCH = "ph1800-hist";   // 30-day history, published hourly by a separate job
 async function fetchData(){
   if(!DATA_FILE) return null;
   try{ const r=await fetch(`https://api.github.com/repos/${PH1800_REPO}/contents/${DATA_FILE}?ref=${PH1800_BRANCH}`,
@@ -273,7 +274,7 @@ function mergeSeries(base, recent){
 async function loadHist(){
   if(!DATA_FILE) return;
   const hf=DATA_FILE.slice(0,-5)+'.hist.json';
-  try{ const r=await fetch(`https://raw.githubusercontent.com/${PH1800_REPO}/${PH1800_BRANCH}/${hf}?t=`+Date.now(),{cache:'no-store'});
+  try{ const r=await fetch(`https://raw.githubusercontent.com/${PH1800_REPO}/${PH1800_HIST_BRANCH}/${hf}?t=`+Date.now(),{cache:'no-store'});
        if(r.ok){ HIST_RAW=await r.json(); applyHist(); } }catch(e){}
 }
 function applyHist(){
