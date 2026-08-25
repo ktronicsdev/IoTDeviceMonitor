@@ -82,28 +82,53 @@ Charge / Grid import / Grid export), **Plant Profile**, **Plant Analysis** (add-
 and **Weather** (per-plant Open-Meteo, reusing [`check_ph1000_weather.py`](../../src/main/java/org/ktronics/scripts/check_ph1000_weather.py)).
 BMS is not shown (these inverters report no per-pack BMS).
 
-### History depth — a real limitation
+### History depth
 The multi-component breakdown (production/battery/consumption/grid) is **integrated from the
-intraday series**, so it only covers the **published intraday days** (`--history-days`, default 7).
-ShineMonitor's *historical* data (back to Jan) is **generation only** — no per-day usage/battery/
-grid split. So you can have the full breakdown over a **short window** OR generation-only **back to
-January**, not the full breakdown for the whole year. The backend also publishes
-`plant.energy_series` (per-day/month/year generation from ShineMonitor, from Jan 1) — currently
-unused by the UI, kept for a future generation-history view.
+intraday series**. The dashboard shows a rolling **~30 days**: the last 7 come from the live feed
+and days 8–30 from the hourly history job (below). ShineMonitor's data older than that is
+**generation only** (no per-day usage/battery/grid split), so the full breakdown is a ~30-day
+window, not the whole year.
 
-## Workflow
-[`trigger-ph1800.yml`](../../.github/workflows/trigger-ph1800.yml) runs a cloud-only self-loop
-(fetch → publish every ~10 min, re-launching itself; a 2 h cron restarts the chain). It writes each
-account's `<hash>.json` to the `ph1800-live` branch and creates any missing plant page on `main` —
-`ensure_page()` also **re-stamps** existing pages when `_app.html` changes, so a dashboard edit
-propagates to every plant. No BMS; weather is per-plant. Nothing depends on a laptop.
+## Workflows — TWO CIs, on purpose (read the incident below before changing this)
+Two independent cloud workflows, so the heavy history fetch can never stall the live feed:
+
+| Workflow | Cadence | Fetches | Publishes to | Concurrency |
+|---|---|---|---|---|
+| **`trigger-ph1800.yml`** (live) | every ~10 min (self-loop + 2 h cron) | **7 days** (fast) | `ph1800-live` | `ph1800-live`, `cancel-in-progress:false` |
+| **`trigger-ph1800-hist.yml`** (history) | **hourly** (cron only) | **30 days** (slow) | `ph1800-hist` (only `*.hist.json`) | `ph1800-hist`, `cancel-in-progress:true` |
+
+- The **live** job also creates any missing plant page on `main`; `ensure_page()` **re-stamps**
+  existing pages when `_app.html` changes so a dashboard edit propagates to every plant.
+- The **dashboard** loads live from `ph1800-live`, background-loads history from `ph1800-hist`, and
+  merges them (recent days from the live feed override the same days in history).
+- PH1000 mirrors this exactly: `trigger-ph1000.yml` (live) + `trigger-ph1000-hist.yml`
+  (`ph1000-hist` branch).
+
+## ⚠️ Incident & the two-CI rule (2026-08) — don't repeat this
+**What happened:** history was originally fetched **on every live cycle** (`--history-days 30` in
+`trigger-ph1800.yml`). It worked at 1–2 plants. As plants grew to ~5, each 30-day fetch (~3–5 min
+*per plant*) made a single live iteration take ~20–25 min. Combined with the self-loop + 2 h cron +
+manual dispatches all contending for the **one** `ph1800-live` concurrency slot, runs kept getting
+**cancelled before the publish step** → every site drifted to **stale/partial data** (Mifanza went
+"Offline", plants stuck days behind). No code was broken — it simply **stopped scaling**.
+
+**The rule:** anything **slow or that scales with plant count** must NOT run on the fast live cycle.
+Put it in a **separate, low-frequency workflow with its own concurrency group** (like the history
+job). Adding a plant then only lengthens an **hourly** job, never the every-10-min live feed.
+
+**Do NOT** re-add `--history-days 30` to `trigger-ph1800.yml`/`trigger-ph1000.yml` — that reverts
+the trap. History belongs in the `*-hist` workflows.
 
 ## Usage
 ```bash
 # One plant (bypasses the flag) — dump its live fields:
 python check_ph1800.py --customer Gayan-IMH --discover
-# All ph1800-flagged accounts -> per-account JSON:
+# LIVE feed: recent window only (what trigger-ph1800.yml runs — keep it small/fast):
 python check_ph1800.py --out-dir publish --history-days 7
+# HISTORY: 30-day fetch (trigger-ph1800-hist.yml runs this HOURLY; publishes only *.hist.json):
+python check_ph1800.py --out-dir publish --history-days 30 --live-days 7
 # Ensure page shells exist for all flagged plants:
 python check_ph1800.py --pages-dir site/ph1800
 ```
+`--history-days` = full window fetched (goes to `<hash>.hist.json`); `--live-days` = the small recent
+window kept in the polled `<hash>.json`. Run the 30-day fetch only in the hourly history job.

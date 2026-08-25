@@ -13,6 +13,17 @@ Live + 7-day telemetry for the **MUST PH1000** (PV18/PH18-family) hybrid inverte
   fetches `ph1000_live.json` from that branch via `raw.githubusercontent.com`
   (so the main Pages site is untouched and no 5-min commits hit `main`).
 - Freshness ≈ 5 min (workflow cadence) + GitHub raw CDN cache.
+- **Two CIs by design (see the incident note below):** the live workflow above fetches only
+  **7 days** (fast). The **30-day history** is fetched **hourly** by a *separate* job
+  [`trigger-ph1000-hist.yml`](../../../../../../.github/workflows/trigger-ph1000-hist.yml) →
+  `ph1000_hist.json` on the **`ph1000-hist`** branch, which the dashboard background-loads and
+  merges. **Never** put `--history-days 30` back on `trigger-ph1000.yml` — that's the trap.
+
+> **⚠️ Incident (2026-08):** history used to be fetched on every ~5-min live cycle. At scale
+> (many plants / the shared PH1800 fleet) the 30-day fetch made runs too slow and they got
+> **cancelled before publishing**, starving every site of fresh data (Mifanza showed "Offline").
+> Fix = decouple slow/scaling work into a separate hourly job on its own concurrency lane. Full
+> write-up in [`site/ph1800/README.md`](../ph1800/README.md#️-incident--the-two-ci-rule-2026-08--dont-repeat-this).
 
 - Device: `pn=D70000210150180785`, `devcode=697`, `devaddr=4`, `sn=08B40001`, serial `060030222800001`
 - Inverter family: **PH1000 / PH3000 / PH1800** (Modbus reg `20001`); MPPT charger: **PC1600**
