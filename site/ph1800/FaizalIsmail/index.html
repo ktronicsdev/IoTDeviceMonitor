@@ -340,7 +340,11 @@ function dailyEnergy(points){ // integrate W -> kWh
   const p=[...points].sort((a,b)=>a.timestamp<b.timestamp?-1:1);
   let prod=0,cons=0,chg=0,dis=0,imp=0,exp=0;
   for(let i=1;i<p.length;i++){
-    const dt=(ts(p[i].timestamp)-ts(p[i-1].timestamp))/3600000; if(dt<=0||dt>0.5) continue;
+    // Count normal sparse intervals (sparse plants log every ~20-40 min, mostly at night when the
+    // battery discharges). Skip only genuine multi-hour datalogger outages (>3h); cap a counted
+    // step at 1h so a real ~2h gap can't fabricate much. (Old rule dropped every >30min interval,
+    // silently deleting night discharge/charge on sparsely-sampled plants.)
+    let dt=(ts(p[i].timestamp)-ts(p[i-1].timestamp))/3600000; if(dt<=0||dt>3) continue; dt=Math.min(dt,1);
     const avg=k=>{const a=num(p[i][k]),b=num(p[i-1][k]); return a==null||b==null?null:(a+b)/2;};
     const pv=avg('pinverter_w'),ld=avg('load_power_w_est'),bw=avg('battery_w'),gw=avg('pgrid_w');
     if(pv>0) prod+=pv*dt; if(ld>0) cons+=ld*dt;
