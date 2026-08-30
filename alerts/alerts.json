@@ -1,48 +1,117 @@
 {
-  "generated_at": "2026-07-31T23:41:22.424684Z",
-  "alerts": [],
+  "generated_at": "2026-08-30T23:54:05.390561Z",
+  "alerts": [
+    {
+      "severity": "RED",
+      "plant_key": "namila-waragoda-namila-plant",
+      "today": "2026-08-30",
+      "baseline_avg_kwh_per_day": 7.9857,
+      "threshold_kwh_per_day": 1.5971,
+      "rule": "< 20.0% baseline for 3 consecutive days",
+      "window": [
+        "2026-08-28",
+        "2026-08-29",
+        "2026-08-30"
+      ],
+      "details": [
+        {
+          "date": "2026-08-28",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-08-29",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-08-30",
+          "kwh": 0.0
+        }
+      ]
+    },
+    {
+      "severity": "RED",
+      "plant_key": "thusharasameera-mendis-house",
+      "today": "2026-08-30",
+      "baseline_avg_kwh_per_day": 1.2143,
+      "threshold_kwh_per_day": 0.2429,
+      "rule": "< 20.0% baseline for 3 consecutive days",
+      "window": [
+        "2026-08-28",
+        "2026-08-29",
+        "2026-08-30"
+      ],
+      "details": [
+        {
+          "date": "2026-08-28",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-08-29",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-08-30",
+          "kwh": 0.0
+        }
+      ]
+    }
+  ],
   "suppressed": [],
   "ignored": [
     {
       "plant_key": "abeetha-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-07"
+        "2026-08"
       ]
     },
     {
       "plant_key": "anuradha-gajanayaka-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-07"
+        "2026-08"
+      ]
+    },
+    {
+      "plant_key": "chamila-chamila-119h",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-08"
       ]
     },
     {
       "plant_key": "ganishka-ganishka-home-3kw",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-07"
+        "2026-08"
+      ]
+    },
+    {
+      "plant_key": "lahiru-ryan-lahiru-plant",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-08"
       ]
     },
     {
       "plant_key": "mifanza-mifanza-solar-system",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-07"
+        "2026-08"
       ]
     },
     {
       "plant_key": "samurdi-kohuwala",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-07"
+        "2026-08"
       ]
     },
     {
       "plant_key": "upulatheja-3kw-pro-kadawath",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-07"
+        "2026-08"
       ]
     }
   ]

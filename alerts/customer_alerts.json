@@ -1,3 +1,19 @@
 {
-  "customer_alerts": {}
+  "customer_alerts": {
+    "Namila-Waragoda": {
+      "email": "dilan.namila@gmail.com",
+      "alerts": [
+        {
+          "plant": "namila-waragoda-namila-plant",
+          "level": "RED",
+          "issue": "< 20.0% baseline for 3 consecutive days",
+          "normal": 7.9857,
+          "current": {
+            "date": "2026-08-30",
+            "kwh": 0.0
+          }
+        }
+      ]
+    }
+  }
 }
