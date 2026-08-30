@@ -21,7 +21,12 @@ permissions:
   contents: write
 
 jobs:
-  run:
+  # Tests run as their OWN job, deliberately NOT linked to `run` by `needs:`.
+  # A regression is still loud (failed job + the email below) but can never stop data
+  # collection. These used to be a step inside `run`: when a stale-dated PH1000 test
+  # started failing on 2026-08-01 it skipped every following step, so the ShineMonitor
+  # fetch silently wrote nothing for a month while the workflow "just failed".
+  tests:
     runs-on: ubuntu-latest
 
     env:
@@ -54,14 +59,14 @@ jobs:
         shell: bash
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🧪 RUNNING INTEGRATION TESTS (ALL 93 TESTS)"
+          echo "🧪 RUNNING INTEGRATION TESTS (FULL SUITE)"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           set -e
 
           # Install pytest
           pip install pytest
 
-          # Run ALL integration tests (no filters - 93/93 tests)
+          # Run ALL integration tests (no filters)
           pytest src/test/java/org/ktronics/scripts/integration/ \
             -v \
             --tb=short \
@@ -69,6 +74,55 @@ jobs:
 
           echo "✅ All tests passed"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: Email test regression to admin
+        if: failure()
+        shell: bash
+        run: |
+          set -e
+          subject="🧪 TESTS FAILED - ${{ github.repository }} @ ${{ github.sha }}"
+          body="Workflow: ${{ github.workflow }} (tests job)
+          Status: TESTS FAILING
+          Trigger: ${{ github.event_name }}
+          Repo: ${{ github.repository }}
+          Branch: ${{ github.ref_name }}
+          Commit: ${{ github.sha }}
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          Data collection is UNAFFECTED and still running - this is a code-quality
+          signal only. Fix the test, but no production data is being lost.
+          "
+          EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 src/main/java/org/ktronics/scripts/send_email.py
+
+  # Data collection. No `needs: tests` on purpose - see the comment on `tests` above.
+  run:
+    runs-on: ubuntu-latest
+
+    env:
+      ALERT_TO: ktronicssolar@gmail.com
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASS: ${{ secrets.SMTP_PASS }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Create credentials.json from GitHub Secrets
+        shell: bash
+        run: |
+          set -e
+          mkdir -p src/main/java/org/ktronics/config
+          cat <<'EOF' > src/main/java/org/ktronics/config/credentials.json
+          ${{ secrets.SHINEMONITOR_CREDENTIALS_JSON }}
+          EOF
+          chmod 600 src/main/java/org/ktronics/config/credentials.json
 
       - name: Run monthly fetch (last month + current month)
         shell: bash
@@ -408,18 +462,24 @@ jobs:
           "
           EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 src/main/java/org/ktronics/scripts/send_email.py
 
-      # ✅ Build verification email on every push (failure)
-      - name: Send build verification email (push + failure)
-        if: github.event_name == 'push' && failure()
+      # ❌ Failure email on EVERY trigger, not just push. Scheduled runs are the ones that
+      # actually keep the data fresh, so a silent scheduled failure means the fetch stops
+      # and nobody hears about it — that hid a month-long outage starting 2026-08-01.
+      - name: Send build verification email (failure)
+        if: failure()
         shell: bash
         run: |
           set -e
           subject="❌ Build FAILED - ${{ github.repository }} @ ${{ github.sha }}"
           body="Workflow: ${{ github.workflow }}
           Status: FAILURE
+          Trigger: ${{ github.event_name }}
           Repo: ${{ github.repository }}
           Branch: ${{ github.ref_name }}
           Commit: ${{ github.sha }}
           Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          NOTE: data fetch + commit steps are skipped when an earlier step fails,
+          so production CSVs are NOT being updated until this is resolved.
           "
           EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 src/main/java/org/ktronics/scripts/send_email.py

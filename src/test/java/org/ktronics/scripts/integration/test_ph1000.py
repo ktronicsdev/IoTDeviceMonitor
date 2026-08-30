@@ -9,6 +9,7 @@ No network: pure logic against captured ShineMonitor shapes.
 
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -119,12 +120,17 @@ class TestMeasuredRowAndMerge:
 class TestCsvRoundTrip:
     def test_append_and_reload(self, tmp_path):
         device = {"alias": "08B40001", "sn": "08B40001"}
+        # append_measured_csv files rows by their own timestamp, but load_measured_history
+        # only reads the current + previous month, so the rows must be anchored to today.
+        # A fixed date silently ages out of that window: this test carried 2026-06-28 and
+        # started failing on 2026-08-01, which blocked the whole ShineMonitor fetch.
+        day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         row1 = m.measured_row_from_live(
             {"battery_w": {"value": "100"}, "pinverter_w": {"value": "0"}},
-            "2026-06-28 00:00:00")
+            f"{day} 00:00:00")
         row2 = m.measured_row_from_live(
             {"battery_w": {"value": "-200"}, "pinverter_w": {"value": "300"}},
-            "2026-06-28 00:05:00")
+            f"{day} 00:05:00")
         m.append_measured_csv(tmp_path, "Mifanza", device, row1)
         m.append_measured_csv(tmp_path, "Mifanza", device, row2)
         # Re-appending the same timestamp must dedupe, not duplicate.
@@ -132,7 +138,7 @@ class TestCsvRoundTrip:
 
         loaded = m.load_measured_history(tmp_path, "Mifanza", device)
         # filter to our two timestamps (load reads whole month files)
-        ours = [r for r in loaded if r["timestamp"].startswith("2026-06-28 00:0")]
+        ours = [r for r in loaded if r["timestamp"].startswith(f"{day} 00:0")]
         assert len(ours) == 2
         assert all(r["source"] == "measured" for r in ours)
 
