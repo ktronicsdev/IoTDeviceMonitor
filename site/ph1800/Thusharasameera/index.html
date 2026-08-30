@@ -123,6 +123,7 @@
   <button data-tab="weather">Weather</button>
   <button data-tab="profile">Plant Profile</button>
   <button data-tab="analysis">Plant Analysis</button>
+  <button data-tab="battery" id="tabbtn-battery" style="display:none">Battery</button>
 </nav>
 
 <div class="wrap tabpane show" id="tab-live">
@@ -236,6 +237,12 @@
   </div>
 </div>
 
+<!-- ===== Battery tab (pack detail; the button stays hidden on plants that report
+     no battery, so a PV-only site never shows an empty pane) ===== -->
+<div class="tabpane" id="tab-battery" style="display:none">
+  <div class="wrap" id="battwrap" style="margin-bottom:0;grid-template-columns:1fr"></div>
+</div>
+
 <div class="foot" style="display:flex;justify-content:space-between;align-items:center;gap:14px">
   <span id="foot"></span><span style="white-space:nowrap">© Ktronics (Pvt) Ltd</span></div>
 
@@ -308,18 +315,49 @@ const pctOf=(v,cap)=> (v==null||!cap)?'':Math.round(Math.max(0,v)/cap*100)+'%';
 // sags under load); the BMS pane is the source of truth when it can be read.
 const SOC_TABLE=[[48.0,0],[50.4,20],[51.5,40],[52.5,60],[53.2,78],[53.7,85],
                  [54.2,93],[54.7,97],[55.2,100]];
+// SOC_TABLE above is calibrated for a 16S pack, but the fleet is mixed (Gayan-IMH is 8S/24V,
+// Chandika and FaizalIsmail are 16S/48V), and on an 8S pack the 16S table clamps every reading
+// to 0%. So infer the series count per plant and scale the curve per-cell. Top-of-charge is the
+// discriminator: mid-range voltages are ambiguous between 15S and 16S, but a full pack lands
+// near 3.45 V/cell whatever the count. PACK_S=16 reproduces the original numbers exactly.
+const LFP_SERIES=[4,8,15,16], FULL_V_PER_CELL=3.45;
+let PACK_S=16;
+function inferPackS(){
+  const vs=((DATA&&DATA.series7d)||[]).map(r=>num(r.battery_v)).filter(v=>v>0);
+  const lv=num(DATA&&DATA.latest&&DATA.latest.battery_v&&DATA.latest.battery_v.value);
+  if(lv>0) vs.push(lv);
+  if(!vs.length) return 16;
+  const vmax=Math.max(...vs);
+  return LFP_SERIES.reduce((a,b)=>
+    Math.abs(vmax/b-FULL_V_PER_CELL)<Math.abs(vmax/a-FULL_V_PER_CELL)?b:a);
+}
 const socFromV = v => {
   if(v==null) return null;
-  const t=SOC_TABLE;
-  if(v<=t[0][0]) return 0;
-  if(v>=t[t.length-1][0]) return 100;
-  for(let i=1;i<t.length;i++) if(v<=t[i][0]){
-    const a=t[i-1],b=t[i]; return Math.round(a[1]+(b[1]-a[1])*(v-a[0])/(b[0]-a[0]));
+  const t=SOC_TABLE, k=PACK_S/16;              // k=1 => identical to the original 16S curve
+  if(v<=t[0][0]*k) return 0;
+  if(v>=t[t.length-1][0]*k) return 100;
+  for(let i=1;i<t.length;i++) if(v<=t[i][0]*k){
+    const a=t[i-1],b=t[i]; return Math.round(a[1]+(b[1]-a[1])*(v-a[0]*k)/((b[0]-a[0])*k));
   }
   return 100;
 };
 const show = (id,on) => { const e=document.getElementById(id); if(e) e.style.display=on?'':'none'; };
-const ts = s => new Date(String(s).replace(' ','T'));
+// Plant-local timezone. The publisher stamps timestamps in PLANT-LOCAL time with NO zone
+// suffix, so `new Date(s)` would parse them in the VIEWER's zone. That silently broke the
+// staleness check abroad: at UTC+2 a 13:32 Colombo stamp reads as 11:32 UTC, i.e. the
+// future, so `age` went negative and hours-old data kept a green "Online" dot.
+const PLANT_TZ='Asia/Colombo';
+const zoneParts=(d,tz)=>Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:tz,
+  year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',
+  second:'2-digit',hour12:false}).formatToParts(d).map(x=>[x.type,x.value]));
+// Offset (ms) of `tz` at instant `d`: read d's wall clock in tz, re-read that as if it were
+// UTC, and diff. Drop d's sub-second part first - formatToParts truncates to whole seconds.
+const tzOffsetMs=(d,tz)=>{ const p=zoneParts(d,tz);
+  return Date.UTC(+p.year,+p.month-1,+p.day,+p.hour%24,+p.minute,+p.second)
+         - Math.floor(d.getTime()/1000)*1000; };
+// Parse "YYYY-MM-DD HH:MM:SS" (plant-local) into a true instant, viewer's zone irrelevant.
+const ts = s => { const u=Date.parse(String(s).replace(' ','T')+'Z');
+  return isNaN(u)?new Date(NaN):new Date(u-tzOffsetMs(new Date(u),PLANT_TZ)); };
 // Consistent date/month picker: fill a <select> with options (rebuild only when the list
 // changes, so the open dropdown isn't disrupted) and set the current value.
 function fillSel(sel, items, current){
@@ -425,8 +463,7 @@ function drawChart(cfg,kind){
 const minOfDay = t => { const [h,m]=String(t).slice(11,16).split(':').map(Number); return (h||0)*60+(m||0); };
 const hhmm = v => { v=Math.round(v); return String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart(2,'0'); };
 const ageMin = ms => ms? (Date.now()-ms)/60000 : null;
-const slClock = ms => { const p=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Colombo',
-  hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).formatToParts(new Date(ms)).map(x=>[x.type,x.value]));
+const slClock = ms => { const p=zoneParts(new Date(ms),PLANT_TZ);
   return `${p.hour}:${p.minute}:${p.second}`; };
 // Fixed full-day X axis (00:00-23:59) so the chart always shows the whole day.
 const DAY_X = {type:'linear',min:0,max:1440,offset:false,
@@ -634,6 +671,108 @@ function renderBMS(){
       ${age!=null?`<div style="font-size:11px;margin-top:9px;color:${stale?'var(--red)':lag?'var(--amber)':'var(--muted)'}">${note}</div>`:''}
     </div>`;}).join('');
 }
+// ---- Battery tab -----------------------------------------------------------
+// Pack detail for a hybrid plant. Everything here comes from the inverter's own battery
+// readings (battery_v/battery_a/battery_w), which is all ShineMonitor exposes; SOC is
+// therefore ESTIMATED from voltage via SOC_TABLE and is labelled as such. Per-cell
+// voltages need a real BMS link - the `cells` block below is filled by the KT BMS Monitor
+// (ESP32 -> JK-BMS over BLE) once one is installed, and shows a hint until then.
+const BATT_CELL_STALE_MIN=120;   // cells older than this => the BMS link is down
+function renderBattery(){
+  const wrap=document.getElementById('battwrap'), btn=document.getElementById('tabbtn-battery');
+  if(!wrap||!btn) return;
+  const L=(DATA&&DATA.latest)||{};
+  const bv=num(L.battery_v&&L.battery_v.value), ba=num(L.battery_a&&L.battery_a.value),
+        bw=num(L.battery_w&&L.battery_w.value);
+  if(bv===null&&bw===null){                       // PV-only plant -> no Battery tab at all
+    btn.style.display='none';
+    if(curTab==='battery') switchTab('live');
+    return;
+  }
+  btn.style.display='';
+  const soc=socFromV(bv), flow=bw===null?'idle':bw<0?'charging':bw>0?'discharging':'idle';
+  const fc=flow==='charging'?'var(--green)':flow==='discharging'?'var(--amber)':'var(--muted)';
+  const m=(l,v,s,c)=>`<div class="m"><div class="l">${l}</div><div class="v"${c?` style="color:${c}"`:''}>${v}</div>${s?`<div class="s" style="color:var(--muted)">${s}</div>`:''}</div>`;
+
+  // --- now ------------------------------------------------------------------
+  const now=`<div class="card"><div class="ch"><h2>Battery · Now</h2>
+      <span class="sel" style="color:var(--muted)">live · inverter reading</span></div>
+    <div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-bottom:14px">
+      <div style="min-width:190px;flex:1">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <div style="color:var(--muted);font-size:12px">State of charge <span title="Derived from pack voltage, not read from a BMS">(estimated)</span></div>
+          <div style="font-size:30px;font-weight:800">${soc==null?'—':soc}<small style="font-size:14px;color:var(--muted)">%</small></div>
+        </div>
+        <div style="height:8px;background:#222c3b;border-radius:5px;margin-top:8px;overflow:hidden">
+          <div style="height:100%;width:${Math.max(0,Math.min(100,soc||0))}%;background:linear-gradient(90deg,#22c55e,#16a34a)"></div></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:7px">Estimated from pack voltage (${PACK_S}S LFP curve) — rises under charge and sags under load. A BMS reading is the source of truth.</div>
+      </div>
+      <div style="font-size:15px;font-weight:700;color:${fc};text-transform:capitalize;min-width:120px">${flow}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px">
+      ${m('Voltage',(bv??'—')+' <small>V</small>')}
+      ${m('Current',(ba??'—')+' <small>A</small>','',fc)}
+      ${m('Power',W(bw===null?null:Math.abs(bw)),flow==='idle'?'':flow,fc)}
+      ${m('Bank capacity',(BATT_CAP_W?(BATT_CAP_W/1000):'—')+' <small>kW</small>')}
+    </div></div>`;
+
+  // --- today ----------------------------------------------------------------
+  const days=groupDays((DATA&&DATA.series7d)||[]), dk=Object.keys(days).sort().pop();
+  let today='';
+  if(dk){
+    const pts=days[dk], e=dailyEnergy(pts);
+    const vs=pts.map(r=>num(r.battery_v)).filter(v=>v!=null);
+    const ws=pts.map(r=>num(r.battery_w)).filter(v=>v!=null);
+    const peakChg=ws.length?Math.min(...ws):null, peakDis=ws.length?Math.max(...ws):null;
+    today=`<div class="card"><div class="ch"><h2>Battery · ${dk}</h2>
+        <span class="sel" style="color:var(--muted)">${pts.length} samples · integrated from logged power</span></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px">
+        ${m('Charged',e.chg.toFixed(2)+' <small>kWh</small>','into the pack')}
+        ${m('Discharged',e.dis.toFixed(2)+' <small>kWh</small>','out of the pack')}
+        ${m('Voltage range',vs.length?(Math.min(...vs)+'–'+Math.max(...vs)+' <small>V</small>'):'—')}
+        ${m('Peak charge',W(peakChg!=null&&peakChg<0?-peakChg:null))}
+        ${m('Peak discharge',W(peakDis!=null&&peakDis>0?peakDis:null))}
+      </div></div>`;
+  }
+
+  // --- cells (needs a real BMS link) ----------------------------------------
+  const pk=(DATA&&DATA.bms&&DATA.bms.packs||[])[0];
+  const c=pk&&pk.cells, age=c&&c.ts?ageMin(c.ts):null;
+  let cells;
+  if(!c||!c.mv||age==null||age>BATT_CELL_STALE_MIN){
+    const why = !c||!c.mv ? 'No per-cell data yet.'
+              : ('Cell data is '+Math.round(age)+' min old — the BMS link is down.');
+    cells=`<div class="card"><div class="ch"><h2>Battery · Cells</h2>
+        <span class="sel" style="color:var(--muted)">per-cell · needs BMS link</span></div>
+      <div style="color:var(--muted);padding:22px 6px;line-height:1.7">${why}<br>
+        Individual cell voltages, cell balance and pack temperatures come from the
+        <b>KT BMS Monitor</b> (ESP32 reading the JK-BMS over Bluetooth) once one is fitted at
+        this site. The inverter alone only reports pack voltage and current, shown above.</div></div>`;
+  }else{
+    const mv=c.mv, avg=Math.round(mv.reduce((a,x)=>a+x,0)/mv.length), lag=age>20;
+    const lo=c.low.mv, hi=c.high.mv, span=Math.max(1,hi-lo);
+    const tile=(i,v)=>{ const col=v===hi?'var(--green)':v===lo?'var(--amber)':'var(--blue)';
+      return `<div style="background:#1a2230;border:1px solid var(--line);border-radius:9px;padding:9px 10px">
+        <div style="font-size:11px;color:var(--muted)">Cell ${i}</div>
+        <div style="font-size:16px;font-weight:700;margin:2px 0">${v}<small style="font-size:11px;color:var(--muted);font-weight:500"> mV</small></div>
+        <div style="height:5px;background:#222c3b;border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.round(20+(v-lo)/span*80)}%;background:${col}"></div></div>
+      </div>`;};
+    cells=`<div class="card"><div class="ch"><h2>Battery · Cells</h2>
+        <span class="sel" style="color:${lag?'var(--amber)':'var(--muted)'}">as of ${slClock(c.ts)} SL · ${Math.round(age)} min ago${lag?' · lagging':''}</span></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;margin-bottom:12px">
+        ${m('Pack voltage',(c.pack_v??'—')+' <small>V</small>',mv.length+' cells')}
+        ${m('Highest cell',c.high.mv+' <small>mV</small>','cell '+c.high.n)}
+        ${m('Lowest cell',c.low.mv+' <small>mV</small>','cell '+c.low.n)}
+        ${m('Spread',(c.spread??'—')+' <small>mV</small>','avg '+avg+' mV')}
+        ${c.tmax?m('Max temp',c.tmax.c+' <small>°C</small>','sensor '+c.tmax.n):''}
+        ${c.tmin?m('Min temp',c.tmin.c+' <small>°C</small>','sensor '+c.tmin.n):''}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:9px">
+        ${mv.map((v,i)=>tile(i+1,v)).join('')}
+      </div></div>`;
+  }
+  wrap.innerHTML=now+today+cells;
+}
 // ---- Weather & solar-harvest impact (from the `weather` block, Open-Meteo) ----
 const WX_EMOJI={clear:'☀️',partly:'⛅',cloudy:'☁️',fog:'🌫️',drizzle:'🌦️',rain:'🌧️',snow:'❄️',storm:'⛈️',unknown:'🌡️'};
 const lossColor=l=>l==null?'var(--muted)':l<20?'var(--green)':l<50?'var(--amber)':'var(--red)';
@@ -734,16 +873,15 @@ async function load(){
        DATA.last_updated=j.last_updated;
        DATA.series7d=mergeSeries(_histSeries(), DATA.series7d);          // extend if hist loaded
        if(_histKey!==DATA_FILE){ _histKey=DATA_FILE; HIST_RAW=null; loadHist(); }  // fetch 30d once
-       renderLive(); renderBMS(); renderWeather(); renderProfile(); renderHistory();
+       PACK_S=inferPackS();                                              // before anything calls socFromV()
+       renderLive(); renderBMS(); renderBattery(); renderWeather(); renderProfile(); renderHistory();
        if(curTab==='profile') renderProfilePane(); if(curTab==='analysis') renderAnalysis(); }
   catch(e){ if(!DATA){ const f=document.getElementById('foot'); if(f) f.textContent='load error: '+e; } }
 }
 
 /* ---- Sri Lanka actual time (Asia/Colombo), ticking every second ---- */
 function tickSL(){
-  const p=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Colombo',
-    year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',
-    hour12:false}).formatToParts(new Date()).map(x=>[x.type,x.value]));
+  const p=zoneParts(new Date(),PLANT_TZ);
   const el=document.getElementById('sltime');
   if(el) el.textContent=`Actual time (SL): ${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}`;
 }
@@ -758,9 +896,11 @@ function switchTab(name){
   document.getElementById('tab-weather').style.display = name==='weather'?'block':'none';
   document.getElementById('tab-profile').style.display = name==='profile'?'block':'none';
   document.getElementById('tab-analysis').style.display= name==='analysis'?'block':'none';
+  document.getElementById('tab-battery').style.display = name==='battery'?'block':'none';
   if(name==='weather'){ renderWeather(); renderWeatherChart(); }
   if(name==='profile') renderProfilePane();
   if(name==='analysis') renderAnalysis();
+  if(name==='battery') renderBattery();
 }
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 

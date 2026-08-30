@@ -79,8 +79,38 @@ Devcode is **auto-detected** per plant (`webQueryDeviceEs?pn=…`) — no per-de
 Flow Graph (with the real Grid path), Live cards, **Power Profile** (D = intraday power lines;
 M/Y/T = stacked energy bars), **Generation & Usage History** (Production / Discharge / Consumption /
 Charge / Grid import / Grid export), **Plant Profile**, **Plant Analysis** (add-parameter chart),
-and **Weather** (per-plant Open-Meteo, reusing [`check_ph1000_weather.py`](../../src/main/java/org/ktronics/scripts/check_ph1000_weather.py)).
-BMS is not shown (these inverters report no per-pack BMS).
+and **Weather** (per-plant Open-Meteo, reusing [`check_ph1000_weather.py`](../../src/main/java/org/ktronics/scripts/check_ph1000_weather.py)),
+plus **Battery** (below).
+
+### Battery tab
+Pack detail for hybrid plants, built from what the inverter itself reports
+(`battery_v` / `battery_a` / `battery_w`) — three cards:
+
+| Card | Shows |
+|---|---|
+| **Battery · Now** | SOC, pack voltage, current, power, charge/discharge state, bank capacity |
+| **Battery · \<date\>** | kWh charged / discharged (integrated by `dailyEnergy`), voltage range, peak charge & discharge |
+| **Battery · Cells** | Per-cell voltages, spread and pack temperatures |
+
+Two things to keep honest about it:
+
+- **SOC is estimated from pack voltage** via `SOC_TABLE`, not read from a BMS — it rises under
+  charge and sags under load. The pane says so on screen; don't relabel it as a true SOC.
+- **The fleet is mixed 16S/8S**, so the curve is scaled per plant. `SOC_TABLE` is calibrated for
+  16S/48 V; Gayan-IMH is **8S/24 V** (23.8–27.7 V) and on the unscaled curve every reading there
+  clamped to **0 %**. `inferPackS()` picks the series count from **top-of-charge** voltage (a full
+  LFP cell sits near 3.45 V whatever the count — mid-range voltages are ambiguous between 15S and
+  16S), and `socFromV()` scales the thresholds by `PACK_S/16`. `PACK_S = 16` reproduces the
+  original numbers exactly, so 16S plants are unaffected. The assumed pack is printed in the pane.
+- **Per-cell data needs a real BMS link.** These inverters expose no per-pack BMS, so the Cells
+  card shows a hint until a [KT BMS Monitor](../../bms-module/README.md) (ESP32 → JK-BMS over BLE)
+  is fitted at that site. When one is, it fills the same `bms.packs[].cells` block the PH1000
+  dashboard uses, and the card renders identically.
+
+The tab button **stays hidden on plants that report no battery**, so a PV-only site never shows an
+empty pane. Covered by
+[`test_ph1800_battery_tab.py`](../../src/test/java/org/ktronics/scripts/integration/test_ph1800_battery_tab.py),
+which also renders the pane in node against fake plant data.
 
 ### History depth
 The multi-component breakdown (production/battery/consumption/grid) is **integrated from the
