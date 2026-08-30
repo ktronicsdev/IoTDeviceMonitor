@@ -36,9 +36,14 @@ jobs:
           if [ -z "${GH_TOKEN}" ]; then
             echo "No GH_PAT — relying on the backup cron for continuity."; exit 0
           fi
-          gh workflow run trigger-ph1800.yml --ref main \
-            && echo "Standby queued — it starts the moment this loop ends/dies/is cancelled." \
-            || echo "Could not queue standby; the backup cron will cover."
+          # -R is REQUIRED: this step runs BEFORE actions/checkout, so there is no git repo
+          # for gh to infer the target from ("fatal: not a git repository"). Without it the
+          # chain dies silently and only the 2h cron restarts the loop -> dashboard goes stale.
+          if gh workflow run trigger-ph1800.yml --ref main -R "${{ github.repository }}"; then
+            echo "Standby queued - it starts the moment this loop ends/dies/is cancelled."
+          else
+            echo "::warning::Could not queue the standby; only the backup cron will restart this loop."
+          fi
 
       - name: Checkout (main — script + shared dashboard app)
         uses: actions/checkout@v4
