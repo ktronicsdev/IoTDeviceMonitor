@@ -1,33 +1,6 @@
 {
-  "generated_at": "2026-08-31T00:52:54.024061Z",
+  "generated_at": "2026-08-31T08:20:37.422119Z",
   "alerts": [
-    {
-      "severity": "RED",
-      "plant_key": "namila-waragoda-namila-plant",
-      "today": "2026-08-31",
-      "baseline_avg_kwh_per_day": 7.1143,
-      "threshold_kwh_per_day": 1.4229,
-      "rule": "< 20.0% baseline for 3 consecutive days",
-      "window": [
-        "2026-08-29",
-        "2026-08-30",
-        "2026-08-31"
-      ],
-      "details": [
-        {
-          "date": "2026-08-29",
-          "kwh": 0.0
-        },
-        {
-          "date": "2026-08-30",
-          "kwh": 0.0
-        },
-        {
-          "date": "2026-08-31",
-          "kwh": 0.0
-        }
-      ]
-    },
     {
       "severity": "RED",
       "plant_key": "thusharasameera-mendis-house",
