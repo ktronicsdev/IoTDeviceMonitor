@@ -6,7 +6,7 @@
 ║                                                                              ║
 ║                        Status: 2 CRITICAL, 0 WARNING                         ║
 ║                                                                              ║
-║               Date: 2026-08-30  |  Total Plants Monitored: 25                ║
+║               Date: 2026-08-31  |  Total Plants Monitored: 25                ║
 ║                                                                              ║
 ================================================================================
 
@@ -15,13 +15,13 @@
 │ 🔴 [RED] namila-waragoda-namila-plant
 │
 │   Issue: Production dropped 100.0% below normal
-│   Normal: 7.99 kWh/day  →  Current: 0.00 kWh/day
+│   Normal: 7.11 kWh/day  →  Current: 0.00 kWh/day
 │   Rule: < 20.0% baseline for 3 consecutive days
 │
 │ 🔴 [RED] thusharasameera-mendis-house
 │
 │   Issue: Production dropped 100.0% below normal
-│   Normal: 1.21 kWh/day  →  Current: 0.00 kWh/day
+│   Normal: 0.94 kWh/day  →  Current: 0.00 kWh/day
 │   Rule: < 20.0% baseline for 3 consecutive days
 │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -45,21 +45,21 @@
 │
 │ [RED] namila-waragoda-namila-plant
 │
-│   Baseline (avg/day): 7.9857 kWh
-│   Alert Threshold: < 1.5971 kWh/day
+│   Baseline (avg/day): 7.1143 kWh
+│   Alert Threshold: < 1.4229 kWh/day
 │   Recent Production:
-│     2026-08-28: 0.0000 kWh (0.0% of baseline)
 │     2026-08-29: 0.0000 kWh (0.0% of baseline)
 │     2026-08-30: 0.0000 kWh (0.0% of baseline)
+│     2026-08-31: 0.0000 kWh (0.0% of baseline)
 │
 │ [RED] thusharasameera-mendis-house
 │
-│   Baseline (avg/day): 1.2143 kWh
-│   Alert Threshold: < 0.2429 kWh/day
+│   Baseline (avg/day): 0.9357 kWh
+│   Alert Threshold: < 0.1871 kWh/day
 │   Recent Production:
-│     2026-08-28: 0.0000 kWh (0.0% of baseline)
 │     2026-08-29: 0.0000 kWh (0.0% of baseline)
 │     2026-08-30: 0.0000 kWh (0.0% of baseline)
+│     2026-08-31: 0.0000 kWh (0.0% of baseline)
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 

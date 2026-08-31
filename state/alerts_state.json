@@ -2,8 +2,8 @@
   "namila-waragoda-namila-plant:RED": {
     "first_seen": "2026-08-30",
     "ignored_date": null,
-    "last_sent": "2026-08-30",
-    "send_count": 1
+    "last_sent": "2026-08-31",
+    "send_count": 2
   },
   "red_sent": {
     "ganishka-ganishka-home-3kw": {
@@ -14,7 +14,7 @@
   "thusharasameera-mendis-house:RED": {
     "first_seen": "2026-08-30",
     "ignored_date": null,
-    "last_sent": "2026-08-30",
-    "send_count": 1
+    "last_sent": "2026-08-31",
+    "send_count": 2
   }
 }

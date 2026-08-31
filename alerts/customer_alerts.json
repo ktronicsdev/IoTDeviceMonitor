@@ -7,9 +7,9 @@
           "plant": "namila-waragoda-namila-plant",
           "level": "RED",
           "issue": "< 20.0% baseline for 3 consecutive days",
-          "normal": 7.9857,
+          "normal": 7.1143,
           "current": {
-            "date": "2026-08-30",
+            "date": "2026-08-31",
             "kwh": 0.0
           }
         }
