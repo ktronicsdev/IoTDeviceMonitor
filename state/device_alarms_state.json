@@ -1223,46 +1223,46 @@
     "message": "Bus soft start failed"
   },
   "1110855:D70000210188843601:6a8bd8bac60c522ded5b0d51": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-08-30T23:54:36.043218",
-    "ignored": false,
-    "last_sent": "2026-08-31T08:21:20.205184",
+    "ignored": true,
+    "last_sent": "2026-08-31T14:31:53.386220",
     "customer": "Kasun",
     "plant": "Kasun",
     "message": "Overload"
   },
   "1116664:D70000210150900869:6a8654bcc60c522dedc971b8": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-08-30T23:54:36.043218",
-    "ignored": false,
-    "last_sent": "2026-08-31T08:21:20.205184",
+    "ignored": true,
+    "last_sent": "2026-08-31T14:31:53.386220",
     "customer": "Ravindra",
     "plant": "Ravindra 3kw",
     "message": "Low battery"
   },
   "1592739:D70000210150180785:6a6ecf65c60c522dedb4c753": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-08-30T23:54:36.043218",
-    "ignored": false,
-    "last_sent": "2026-08-31T08:21:20.205184",
+    "ignored": true,
+    "last_sent": "2026-08-31T14:31:53.386220",
     "customer": "Mifanza",
     "plant": "Mifanza Solar System",
     "message": "Inverter output voltage sensor error"
   },
   "1053849:D70000210151320902:6a7e7055c60c522ded5b7d90": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-08-30T23:54:36.043218",
-    "ignored": false,
-    "last_sent": "2026-08-31T08:21:20.205184",
+    "ignored": true,
+    "last_sent": "2026-08-31T14:31:53.386220",
     "customer": "Namila-Waragoda",
     "plant": "Namila Plant",
     "message": "Low battery"
   },
   "1076828:D70000210184519452:638c02350f05ae1e3ec51dad": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-08-30T23:54:36.043218",
-    "ignored": false,
-    "last_sent": "2026-08-31T08:21:20.205184",
+    "ignored": true,
+    "last_sent": "2026-08-31T14:31:53.386220",
     "customer": "FaizalIsmail",
     "plant": "Faizal",
     "message": "battery voltage is too low"
