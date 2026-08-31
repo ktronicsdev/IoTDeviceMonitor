@@ -70,3 +70,6 @@ site/ph1000/BMS_PROGRESS.md
 site/ph1000/*.docx
 site/ph1000/*.pdf
 site/ph1000/*.xlsx
+
+# BMS module: built firmware images contain the GitHub token - never commit (public repo)
+bms-module/dist/

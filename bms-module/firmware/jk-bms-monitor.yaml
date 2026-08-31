@@ -5,17 +5,24 @@
 #   1. Shows live data (every 10s) on a built-in LAN web dashboard  -> http://<device-ip>
 #   2. Pushes a periodic reading to GitHub (repository_dispatch)     -> CSV history + email alerts
 #
-# Flash with:  esphome run firmware/jk-bms-monitor.yaml
-# First flash must be over USB; afterwards OTA works over WiFi.
+# FIRST INSTALL IS DONE FROM A BROWSER - no ESPHome on the installer's machine:
+#   1. Build the .bin here (or on any laptop):  scripts/build_firmware.sh
+#   2. Send the .bin privately to the installer (NOT via this public repo - it
+#      contains the GitHub token).
+#   3. Installer opens https://web.esphome.io in Chrome/Edge, plugs the ESP32 in
+#      over USB, picks the .bin, and enters the site WiFi when prompted
+#      (improv_serial, below). See INSTALL.md.
+# Later updates deploy over WiFi (OTA) from a laptop on the same LAN.
 #
 # Requires firmware/secrets.yaml (copy from secrets.example.yaml and fill in).
 # JK-BMS BLE support comes from the community component below.
 # =============================================================================
 
 substitutions:
-  device_name: "kt-bms-imbulgoda"          # <-- unique per install (also used as CSV key)
-  bms_mac: "C8:47:8C:00:00:00"             # <-- your JK-BMS BLE MAC (see README to find it)
+  device_name: "kt-bms-gayan-imh"          # <-- unique per install (also the CSV key)
+  bms_mac: "C8:47:8C:00:00:00"             # <-- the JK-BMS BLE MAC (installer scans it, see INSTALL.md)
   push_interval: "15min"                    # how often to send a reading to the cloud
+  github_repo: "ktronicsdev/IoTDeviceMonitor"   # repo that receives repository_dispatch
 
 esphome:
   name: ${device_name}
@@ -38,15 +45,20 @@ api:
 ota:
   - platform: esphome
 
+# ---- WiFi: provisioned ON SITE, not baked into the firmware ------------------
+# No SSID is compiled in, so the SAME .bin works at every site and no customer
+# WiFi password ever lives in this repo or in a shared build.
+# Two ways the installer gets it online:
+#   a) improv_serial - web.esphome.io asks for the WiFi right after flashing (easiest)
+#   b) captive portal - device raises the "KT-BMS Setup" hotspot; join it from a
+#      phone and enter the WiFi there (works if the USB flow is skipped)
+# Credentials are saved in flash and survive reboots and OTA updates.
 wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
-  # If WiFi fails, expose a "KT-BMS Setup" hotspot so anyone can enter WiFi
-  # from their phone (this is the self-install "WiFi Setup Portal").
   ap:
     ssid: "KT-BMS Setup"
     password: !secret ap_password
 
+improv_serial:
 captive_portal:
 
 # Live LAN dashboard (the "web dashboard" - shows 10s data, no cloud needed)
@@ -124,7 +136,7 @@ interval:
             lambda: 'return !isnan(id(total_voltage).state);'
           then:
             - http_request.post:
-                url: "https://api.github.com/repos/ktronicsdev/IOT/dispatches"
+                url: "https://api.github.com/repos/${github_repo}/dispatches"
                 headers:
                   Authorization: !secret gh_dispatch_auth   # "Bearer github_pat_..."
                   Accept: "application/vnd.github+json"
@@ -146,3 +158,13 @@ interval:
                     id(max_cell_v).state,
                     id(delta_cell_v).state);
                   return std::string(buf);
+                # Shows the result in the device log/dashboard so a remote
+                # diagnosis is possible: 204 = accepted, 401 = bad token,
+                # 404 = wrong repo slug or token lacks access to it.
+                # (Older ESPHome versions use `args: ["status_code"]` here - if
+                # `esphome config` rejects this block, just delete it.)
+                on_response:
+                  then:
+                    - logger.log:
+                        format: "BMS cloud push -> HTTP %d"
+                        args: ["response->status_code"]

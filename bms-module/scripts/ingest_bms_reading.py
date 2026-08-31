@@ -206,6 +206,12 @@ def main():
     ok = send_email_smtp(ADMIN_EMAIL, subject, body)
     print(f"Alert email to {ADMIN_EMAIL}: {'sent' if ok else 'FAILED'}")
 
+    if not ok:
+        # Don't start the cooldown on a send we never made - otherwise an SMTP
+        # hiccup silently swallows the alert for REALERT_COOLDOWN_HOURS.
+        print("Cooldown NOT recorded - alert will be retried on the next reading.")
+        sys.exit(1)
+
     for code, _ in to_send:
         state[f"{device}:{code}"] = {"last_sent": now.isoformat(timespec="seconds")}
     save_json(ALERT_STATE_FILE, state)

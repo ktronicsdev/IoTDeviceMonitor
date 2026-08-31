@@ -47,6 +47,9 @@ jobs:
           python3 bms-module/scripts/ingest_bms_reading.py
 
       - name: Commit reading + state
+        # always(): a failed SMTP send exits non-zero (so the run goes red) but
+        # the reading itself is already appended and must still be committed.
+        if: always()
         shell: bash
         run: |
           if [ -n "$(git status --porcelain bms-module/data bms-module/state)" ]; then
