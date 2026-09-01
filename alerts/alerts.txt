@@ -2,46 +2,13 @@
 ║                                                                              ║
 ║                      [SHINEMONITOR] PRODUCTION MONITOR                       ║
 ║                                                                              ║
-║                            ⚠ ATTENTION REQUIRED ⚠                            ║
+║                          ✓ ALL SYSTEMS OPERATIONAL                           ║
 ║                                                                              ║
-║                        Status: 1 CRITICAL, 0 WARNING                         ║
+║                          Status: NO ALERTS DETECTED                          ║
 ║                                                                              ║
-║               Date: 2026-08-31  |  Total Plants Monitored: 25                ║
+║               Date: 2026-09-01  |  Total Plants Monitored: 25                ║
 ║                                                                              ║
 ================================================================================
-
-┌─ ALERT SUMMARY ──────────────────────────────────────────────────────────────┐
-│
-│ 🔴 [RED] thusharasameera-mendis-house
-│
-│   Issue: Production dropped 100.0% below normal
-│   Normal: 0.94 kWh/day  →  Current: 0.00 kWh/day
-│   Rule: < 20.0% baseline for 3 consecutive days
-│
-└──────────────────────────────────────────────────────────────────────────────┘
-
-┌─ RECOMMENDED ACTIONS ────────────────────────────────────────────────────────┐
-│
-│ thusharasameera-mendis-house:
-│   1. Check inverter status and error codes
-│   2. Verify grid connection and breaker status
-│   3. Inspect panels for shading or physical damage
-│   4. Contact maintenance team if issue persists
-│
-└──────────────────────────────────────────────────────────────────────────────┘
-
-┌─ DETAILED BREAKDOWN ─────────────────────────────────────────────────────────┐
-│
-│ [RED] thusharasameera-mendis-house
-│
-│   Baseline (avg/day): 0.9357 kWh
-│   Alert Threshold: < 0.1871 kWh/day
-│   Recent Production:
-│     2026-08-29: 0.0000 kWh (0.0% of baseline)
-│     2026-08-30: 0.0000 kWh (0.0% of baseline)
-│     2026-08-31: 0.0000 kWh (0.0% of baseline)
-│
-└──────────────────────────────────────────────────────────────────────────────┘
 
 ┌─ ADDITIONAL INFORMATION ────────────────────────────────────────────────────┐
 │
@@ -52,13 +19,37 @@
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • chamila-chamila-119h
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│   • chandika-plant
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│   • crdesilva-home
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│   • faizalismail-faizal
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • ganishka-ganishka-home-3kw
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│   • gayan-imh-imbulgoda-3kw
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│   • kasun-kasun
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│   • kosala-koshala-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • lahiru-ryan-lahiru-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│   • matho-plant
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • mifanza-mifanza-solar-system
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│   • muadh-muadh-solar
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│   • namila-waragoda-namila-plant
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│   • ravi-botheju-plant
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • samurdi-kohuwala
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│   • thusharasameera-mendis-house
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│   • troy-troy-hybrid-3kw
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • upulatheja-3kw-pro-kadawath
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
