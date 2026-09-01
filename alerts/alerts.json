@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-01T01:29:03.820587Z",
+  "generated_at": "2026-09-01T08:09:33.114890Z",
   "alerts": [],
   "suppressed": [],
   "ignored": [
@@ -25,49 +25,7 @@
       ]
     },
     {
-      "plant_key": "chandika-plant",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-09"
-      ]
-    },
-    {
-      "plant_key": "crdesilva-home",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-09"
-      ]
-    },
-    {
-      "plant_key": "faizalismail-faizal",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-09"
-      ]
-    },
-    {
       "plant_key": "ganishka-ganishka-home-3kw",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-09"
-      ]
-    },
-    {
-      "plant_key": "gayan-imh-imbulgoda-3kw",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-09"
-      ]
-    },
-    {
-      "plant_key": "kasun-kasun",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-09"
-      ]
-    },
-    {
-      "plant_key": "kosala-koshala-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
         "2026-09"
@@ -81,35 +39,7 @@
       ]
     },
     {
-      "plant_key": "matho-plant",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-09"
-      ]
-    },
-    {
       "plant_key": "mifanza-mifanza-solar-system",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-09"
-      ]
-    },
-    {
-      "plant_key": "muadh-muadh-solar",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-09"
-      ]
-    },
-    {
-      "plant_key": "namila-waragoda-namila-plant",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-09"
-      ]
-    },
-    {
-      "plant_key": "ravi-botheju-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
         "2026-09"
@@ -124,13 +54,6 @@
     },
     {
       "plant_key": "thusharasameera-mendis-house",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-09"
-      ]
-    },
-    {
-      "plant_key": "troy-troy-hybrid-3kw",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
         "2026-09"

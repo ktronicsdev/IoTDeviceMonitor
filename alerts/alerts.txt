@@ -19,37 +19,15 @@
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • chamila-chamila-119h
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│   • chandika-plant
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│   • crdesilva-home
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│   • faizalismail-faizal
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • ganishka-ganishka-home-3kw
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│   • gayan-imh-imbulgoda-3kw
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│   • kasun-kasun
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│   • kosala-koshala-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • lahiru-ryan-lahiru-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│   • matho-plant
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • mifanza-mifanza-solar-system
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│   • muadh-muadh-solar
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│   • namila-waragoda-namila-plant
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│   • ravi-botheju-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • samurdi-kohuwala
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • thusharasameera-mendis-house
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│   • troy-troy-hybrid-3kw
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • upulatheja-3kw-pro-kadawath
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
