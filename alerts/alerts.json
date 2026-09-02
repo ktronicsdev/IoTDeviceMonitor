@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-02T07:28:44.249890Z",
+  "generated_at": "2026-09-02T11:51:41.504805Z",
   "alerts": [],
   "suppressed": [],
   "ignored": [
@@ -47,13 +47,6 @@
     },
     {
       "plant_key": "samurdi-kohuwala",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-09"
-      ]
-    },
-    {
-      "plant_key": "thusharasameera-mendis-house",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
         "2026-09"

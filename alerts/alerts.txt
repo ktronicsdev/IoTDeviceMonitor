@@ -27,8 +27,6 @@
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • samurdi-kohuwala
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│   • thusharasameera-mendis-house
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • upulatheja-3kw-pro-kadawath
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │
