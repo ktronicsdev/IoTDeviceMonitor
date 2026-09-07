@@ -758,6 +758,51 @@ py -m pytest integration/test_dessmonitor_*.py -v     # All DessMonitor tests (1
 
 See [src/test/java/org/ktronics/scripts/README.md](src/test/java/org/ktronics/scripts/README.md) for detailed test documentation.
 
+## Answering a Production Dispute
+
+When a customer says "my system is underproducing" and you suspect weather, do
+not claim it was cloudy - you cannot prove that, and if you are wrong it costs
+you the argument and your credibility. Use the fleet instead.
+
+`fleet_benchmark.py` treats every plant in `data/` as a weather station. They all
+sit under the same Sri Lankan sky, so their collective daily output is an
+irradiance proxy drawn from real meters - the customer's neighbours' own
+systems, not a forecast.
+
+```bash
+# a plant already tracked in data/
+python src/main/java/org/ktronics/scripts/fleet_benchmark.py     --start 2026-08-15 --end 2026-09-07 --target gayan-imh-imbulgoda-3kw
+
+# a plant on another platform (SolisCloud, etc.) via the portal's CSV export
+python src/main/java/org/ktronics/scripts/fleet_benchmark.py     --target-csv surath.csv --label "Surath 5KV" --html reports/surath.html
+```
+
+### Reading the output
+
+| Signal | Meaning |
+|---|---|
+| **Fleet index** | 100% = the fleet's best day in the window. ~85-90% is a good day island-wide, ~60% a genuinely poor one |
+| **Weather correlation (r)** | The number that settles it. Above ~0.7 the plant tracks the sky, so its variation is weather. Near zero it produces the same output regardless of conditions - that is a clamp, a limit or a fault, and it cannot be weather |
+| **Shortfall** | Expected minus actual, weather-adjusted. Positive means lost production |
+
+A high fleet index next to a large shortfall means the sky was fine and the loss
+belongs to the plant.
+
+### Two things to know before quoting a number
+
+**A plant clamped for the whole window understates its own loss.** The
+expectation is calibrated from the plant's own best days, so if it was throttled
+throughout, it never demonstrated its real ceiling and the shortfall shown is a
+*floor*. The low correlation warning flags this. Pass `--kwp` to benchmark
+against the array's rated capability instead.
+
+**Today is always excluded.** Collection runs mid-day, so the current date is a
+half-filled row that reads as a cloudy day that never happened. Use
+`--include-partial` only if you know the day is complete.
+
+`--html` writes a standalone, offline, theme-aware page suitable for sending to a
+customer.
+
 ## Troubleshooting
 
 ### No Weekly Emails Received
