@@ -294,3 +294,57 @@ class TestHandleInverter:
         state = {"123": {"last_manual_email_at": w.now_utc().isoformat()}}
         res = w.handle_inverter(C(), {}, INV, state, dry_run=False)
         assert "throttled" in res and not sent
+
+
+# --------------------------------------------------------------------------- #
+# Per-MPPT DC parsing (--detail)
+# --------------------------------------------------------------------------- #
+def _string_resp(**fields):
+    return {"success": True, "code": "0", "data": fields}
+
+
+class TestParseStrings:
+    # Captured from Surath 5KV (S6-EH1P5K-L-PLUS) on 2026-09-07 14:55 local:
+    # a healthy 2-MPPT array — near-identical current on both strings.
+    SURATH = {"uPv1": "159.5", "iPv1": "10.1", "pow1": "1611",
+              "uPv2": "160.2", "iPv2": "9.7", "pow2": "1554"}
+
+    def test_parses_both_mppts(self):
+        strings = w.parse_strings(_string_resp(**self.SURATH))
+        assert [s["name"] for s in strings] == ["MPPT1", "MPPT2"]
+        assert strings[0]["u"] == 159.5 and strings[0]["i"] == 10.1
+        assert strings[0]["w"] == 1611 and strings[1]["w"] == 1554
+
+    def test_skips_mppts_the_model_does_not_report(self):
+        # A 2-MPPT inverter must not report phantom MPPT3/MPPT4.
+        assert len(w.parse_strings(_string_resp(**self.SURATH))) == 2
+
+    def test_computes_power_when_not_reported(self):
+        strings = w.parse_strings(_string_resp(uPv1="160", iPv1="10"))
+        assert strings[0]["w"] == pytest.approx(1600)
+
+    def test_handles_non_numeric_fields(self):
+        strings = w.parse_strings(_string_resp(uPv1="n/a", iPv1=None))
+        assert strings[0]["u"] is None and strings[0]["w"] is None
+
+    def test_no_strings_when_absent(self):
+        assert w.parse_strings(_string_resp(pac="3.1")) == []
+
+
+class TestStringImbalance:
+    def test_healthy_array_is_balanced(self):
+        strings = w.parse_strings(_string_resp(**TestParseStrings.SURATH))
+        assert w.string_imbalance_pct(strings) < 15
+
+    def test_dead_string_is_flagged(self):
+        # One string open-circuit (blown fuse / disconnected): full volts, no amps.
+        strings = w.parse_strings(
+            _string_resp(uPv1="159.5", iPv1="10.1", uPv2="160.2", iPv2="0.0"))
+        assert w.string_imbalance_pct(strings) == pytest.approx(100)
+
+    def test_night_is_not_an_imbalance(self):
+        strings = w.parse_strings(_string_resp(uPv1="0", iPv1="0", uPv2="0", iPv2="0"))
+        assert w.string_imbalance_pct(strings) is None
+
+    def test_single_string_has_no_spread(self):
+        assert w.string_imbalance_pct(w.parse_strings(_string_resp(uPv1="160", iPv1="10"))) is None

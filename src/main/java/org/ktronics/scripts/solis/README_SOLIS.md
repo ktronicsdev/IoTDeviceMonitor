@@ -90,10 +90,40 @@ python check_solis_switch.py --dry-run    # detect + email, never send control
 python check_solis_switch.py --status     # print live state, no action
 python check_solis_switch.py --list       # list inverters on the account
 python check_solis_switch.py --discover <INVERTER_ID>   # find the on/off cid
+python check_solis_switch.py --detail     # per-MPPT DC volts/amps/watts
+python check_solis_switch.py --detail --raw   # raw inverterDetail JSON
 ```
 
 ## Tests
 ```bash
 py -m pytest src/test/java/org/ktronics/scripts/integration/test_solis_switch.py -q
-# 31 passed
+# 40 passed
 ```
+
+## Array health (`--detail`)
+
+`--detail` prints live **per-MPPT** DC voltage, current and power, so you can tell
+an array fault from bad weather without reading charts:
+
+```
+=== Surath 5KV ===
+  DC            Volt     Curr     Power
+  MPPT1       159.5V    10.1A     1611W
+  MPPT2       160.2V     9.7A     1554W
+  DC total                        3165W
+  balance  : 4% current spread (balanced)
+```
+
+How to read it:
+
+* **Current tracks irradiance; voltage barely moves.** Low current on *every*
+  string with normal voltage = cloud, not a fault.
+* **Balanced (<15% spread) = array is fine.** A string at zero or half the
+  others is a blown DC fuse, a disconnected string, or shading on one roof face.
+* **Volts far below the inverter's rated MPPT voltage** (330 V on the S6-EH1P5K)
+  means short series strings — it works, but costs a little conversion
+  efficiency and shortens the useful day at both ends.
+
+It only needs the read API, not the Control permission, and works from an
+`sn` alone — an inverter entry with a blank `inverter_id` is still queryable
+with `--detail`, it is just skipped by the watchdog run.

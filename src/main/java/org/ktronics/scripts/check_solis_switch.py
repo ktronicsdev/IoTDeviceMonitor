@@ -29,6 +29,7 @@ Usage:
     python check_solis_switch.py --list          # list inverters on the account
     python check_solis_switch.py --discover ID   # dump readable control cids (find onoff_cid)
     python check_solis_switch.py --status         # print live state, take no action
+    python check_solis_switch.py --detail         # per-MPPT DC volts/amps (array health)
 """
 
 import argparse
@@ -128,6 +129,60 @@ def parse_detail(resp):
     }
 
 
+# SolisCloud reports per-MPPT DC as uPv1/iPv1 .. uPv4/iPv4. Not every model
+# populates all four (an S6-EH1P5K-L-PLUS has 2 MPPTs), so we probe and skip.
+MAX_MPPT = 4
+
+
+def _as_float(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _fmt(value, unit=""):
+    return "--" if value is None else f"{value:g}{unit}"
+
+
+def parse_strings(resp):
+    """Per-MPPT DC voltage/current/power from an inverterDetail response.
+
+    Returns [{'name','u','i','w'}, ...] for every MPPT that reports anything.
+    This is the view that separates a real array fault from bad weather: on a
+    healthy multi-string array every MPPT carries near-identical current, and
+    current (not voltage) is what tracks irradiance. A large current gap between
+    strings means a blown fuse, a disconnected string, or shading on one face.
+    """
+    data = resp.get("data") or {}
+    strings = []
+    for n in range(1, MAX_MPPT + 1):
+        if f"uPv{n}" not in data and f"iPv{n}" not in data:
+            continue  # model has fewer MPPTs than MAX_MPPT
+        # Present-but-unparseable is kept and shown as "--": a string reporting
+        # garbage is itself the anomaly, so it must not silently disappear.
+        u = _as_float(data.get(f"uPv{n}"))
+        i = _as_float(data.get(f"iPv{n}"))
+        w = _as_float(data.get(f"pow{n}"))
+        if w is None and u is not None and i is not None:
+            w = u * i
+        strings.append({"name": f"MPPT{n}", "u": u, "i": i, "w": w})
+    return strings
+
+
+def string_imbalance_pct(strings):
+    """Spread between the highest and lowest string current, as a percentage of
+    the highest. None when there is nothing meaningful to compare (one string,
+    or all of them dark). Under ~15% is normal tolerance/measurement noise."""
+    currents = [s["i"] for s in strings if s["i"] is not None]
+    if len(currents) < 2:
+        return None
+    hi = max(currents)
+    if hi <= 0.5:  # night / no production - a spread here means nothing
+        return None
+    return (hi - min(currents)) / hi * 100.0
+
+
 def data_is_fresh(detail, max_age_min=90):
     """Detail timestamp within max_age_min minutes. Stale data => can't trust
     pac==0 as 'off' (it might just be an old reading), so we treat it as unknown."""
@@ -210,7 +265,7 @@ def handle_inverter(client, cfg, inv, state, dry_run):
     label = inv.get("label", inv.get("inverter_id"))
     print(f"\n=== {label} (id={inv['inverter_id']}) ===")
 
-    detail_resp = client.inverter_detail(inv["inverter_id"], inv.get("sn"))
+    detail_resp = client.inverter_detail(inv.get("inverter_id"), inv.get("sn"))
     if not is_success(detail_resp):
         msg = detail_resp.get("msg") or detail_resp.get("code")
         print(f"  [error] inverterDetail failed: {msg}")
@@ -358,6 +413,60 @@ def mode_status(client, cfg, inverters):
     return 0
 
 
+def mode_detail(client, inverters, raw=False):
+    """Print live per-MPPT DC data for each configured inverter.
+
+    Answers "is this array under-performing, or is it just cloudy?" without
+    reading charts: balanced string currents + low current = weather; a string
+    sitting at zero or half the others = a fault to go and look at."""
+    rc = 0
+    for inv in inverters:
+        label = inv.get("label") or inv.get("inverter_id") or inv.get("sn")
+        resp = client.inverter_detail(inv.get("inverter_id"), inv.get("sn"))
+        if not is_success(resp):
+            print(f"{label}: inverterDetail failed ({resp.get('msg') or resp.get('code')})")
+            rc = 1
+            continue
+        if raw:
+            print(json.dumps(resp, indent=2))
+            continue
+
+        data = resp.get("data") or {}
+        d = parse_detail(resp)
+        strings = parse_strings(resp)
+
+        print(f"\n=== {label} ===")
+        print(f"  time     : {data.get('dataTimestampStr') or d['data_timestamp']}")
+        print(f"  state    : {d['state']}    AC power: {_fmt(d['pac'])} {d.get('pac_unit') or ''}")
+        print(f"  today    : {_fmt(_as_float(data.get('eToday')))} kWh"
+              f"    total: {_fmt(_as_float(data.get('eTotal')))} kWh")
+
+        if not strings:
+            print("  (no uPv/iPv fields in this response - run with --detail --raw)")
+            continue
+
+        print(f"  {'DC':<9}{'Volt':>9}{'Curr':>9}{'Power':>10}")
+        dc_total = 0.0
+        for st in strings:
+            dc_total += st["w"] or 0.0
+            print(f"  {st['name']:<9}{_fmt(st['u'], 'V'):>9}"
+                  f"{_fmt(st['i'], 'A'):>9}{_fmt(st['w'], 'W'):>10}")
+        print(f"  {'DC total':<9}{'':>9}{'':>9}{_fmt(dc_total, 'W'):>10}")
+
+        spread = string_imbalance_pct(strings)
+        if spread is not None:
+            verdict = "balanced" if spread < 15 else "IMBALANCED - check strings/fuses"
+            print(f"  balance  : {spread:.0f}% current spread ({verdict})")
+
+        print(f"  AC       : {_fmt(_as_float(data.get('uAc1')), 'V')} "
+              f"{_fmt(_as_float(data.get('iAc1')), 'A')} "
+              f"{_fmt(_as_float(data.get('fac')), 'Hz')}")
+        temp = _as_float(data.get("inverterTemperature"))
+        if temp is not None:
+            print(f"  inv temp : {temp:g}C")
+    return rc
+
+
 # --------------------------------------------------------------------------- #
 # Main
 # --------------------------------------------------------------------------- #
@@ -371,6 +480,10 @@ def main():
                     help="dump readable control registers for an inverter and exit")
     ap.add_argument("--status", action="store_true",
                     help="print live state for configured inverters and exit")
+    ap.add_argument("--detail", action="store_true",
+                    help="print live per-MPPT DC volts/amps/watts and exit")
+    ap.add_argument("--raw", action="store_true",
+                    help="with --detail, dump the raw inverterDetail JSON instead")
     args = ap.parse_args()
 
     cfg = load_solis_config()
@@ -392,6 +505,9 @@ def main():
     inverters = cfg.get("inverters", [])
     if not inverters:
         raise SystemExit("No inverters configured under solis.inverters in credentials.json")
+
+    if args.detail:
+        return mode_detail(client, inverters, args.raw)
 
     if args.status:
         return mode_status(client, cfg, inverters)
