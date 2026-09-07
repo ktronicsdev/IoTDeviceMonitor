@@ -309,7 +309,19 @@ const socFromV = v => {
   return 100;
 };
 const show = (id,on) => { const e=document.getElementById(id); if(e) e.style.display=on?'':'none'; };
-const ts = s => new Date(String(s).replace(' ','T'));
+// Sri Lanka is a fixed UTC+05:30 with no DST, so convert arithmetically instead of asking
+// the browser for the IANA zone: the publisher stamps plant-LOCAL times with no zone suffix,
+// and a browser that hands back UTC for `timeZone:'Asia/Colombo'` (managed profile, anti-
+// fingerprint extension) put the header clock 5h30m slow. `new Date(stamp)` was worse still -
+// it parsed plant time in the VIEWER's zone, so abroad the age went negative and hours-old
+// data kept a green "Online" dot.
+const SL_MS = 330*60000;
+const p2 = n => String(n).padStart(2,'0');
+const slParts = d => { const t=new Date(d.getTime()+SL_MS); return {
+  year:t.getUTCFullYear(), month:p2(t.getUTCMonth()+1), day:p2(t.getUTCDate()),
+  hour:p2(t.getUTCHours()), minute:p2(t.getUTCMinutes()), second:p2(t.getUTCSeconds()) }; };
+// Parse "YYYY-MM-DD HH:MM:SS" (plant-local) into a true instant, viewer's zone irrelevant.
+const ts = s => new Date(Date.parse(String(s).replace(' ','T')+'Z') - SL_MS);
 // Consistent date/month picker: fill a <select> with options (rebuild only when the list
 // changes, so the open dropdown isn't disrupted) and set the current value.
 function fillSel(sel, items, current){
@@ -387,9 +399,7 @@ function drawChart(cfg,kind){
 const minOfDay = t => { const [h,m]=String(t).slice(11,16).split(':').map(Number); return (h||0)*60+(m||0); };
 const hhmm = v => { v=Math.round(v); return String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart(2,'0'); };
 const ageMin = ms => ms? (Date.now()-ms)/60000 : null;
-const slClock = ms => { const p=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Colombo',
-  hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).formatToParts(new Date(ms)).map(x=>[x.type,x.value]));
-  return `${p.hour}:${p.minute}:${p.second}`; };
+const slClock = ms => { const p=slParts(new Date(ms)); return `${p.hour}:${p.minute}:${p.second}`; };
 // Fixed full-day X axis (00:00-23:59) so the chart always shows the whole day.
 const DAY_X = {type:'linear',min:0,max:1440,offset:false,
   ticks:{color:'#8a94a6',stepSize:120,callback:hhmm,autoSkip:false},grid:{color:'#222c3b'}};
@@ -742,11 +752,9 @@ async function load(){
   catch(e){ if(!DATA){ const f=document.getElementById('foot'); if(f) f.textContent='load error: '+e; } }
 }
 
-/* ---- Sri Lanka actual time (Asia/Colombo), ticking every second ---- */
+/* ---- Sri Lanka actual time (fixed UTC+05:30), ticking every second ---- */
 function tickSL(){
-  const p=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Colombo',
-    year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',
-    hour12:false}).formatToParts(new Date()).map(x=>[x.type,x.value]));
+  const p=slParts(new Date());
   const el=document.getElementById('sltime');
   if(el) el.textContent=`Actual time (SL): ${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}`;
 }

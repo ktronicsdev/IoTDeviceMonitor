@@ -347,9 +347,20 @@ const show = (id,on) => { const e=document.getElementById(id); if(e) e.style.dis
 // staleness check abroad: at UTC+2 a 13:32 Colombo stamp reads as 11:32 UTC, i.e. the
 // future, so `age` went negative and hours-old data kept a green "Online" dot.
 const PLANT_TZ='Asia/Colombo';
-const zoneParts=(d,tz)=>Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:tz,
+const _intlParts=(d,tz)=>Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:tz,
   year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',
   second:'2-digit',hour12:false}).formatToParts(d).map(x=>[x.type,x.value]));
+// Colombo is a fixed +05:30 with no DST. Some browsers ignore the IANA zone and format as
+// UTC anyway (managed profiles, anti-fingerprint extensions), which would put the header
+// clock and every staleness check 5h30m out. Probe it once, then convert arithmetically.
+const SL_MS=330*60000, _p2=n=>String(n).padStart(2,'0');
+const _slParts=d=>{ const t=new Date(d.getTime()+SL_MS); return {year:String(t.getUTCFullYear()),
+  month:_p2(t.getUTCMonth()+1), day:_p2(t.getUTCDate()), hour:_p2(t.getUTCHours()),
+  minute:_p2(t.getUTCMinutes()), second:_p2(t.getUTCSeconds())}; };
+const TZ_OK=(()=>{ try{ const d=new Date(Date.UTC(2026,0,1)), p=_intlParts(d,PLANT_TZ);
+  return Date.UTC(+p.year,+p.month-1,+p.day,+p.hour%24,+p.minute,+p.second)
+         -d.getTime()===SL_MS; }catch(e){ return false; } })();
+const zoneParts=(d,tz)=> (tz===PLANT_TZ && !TZ_OK) ? _slParts(d) : _intlParts(d,tz);
 // Offset (ms) of `tz` at instant `d`: read d's wall clock in tz, re-read that as if it were
 // UTC, and diff. Drop d's sub-second part first - formatToParts truncates to whole seconds.
 const tzOffsetMs=(d,tz)=>{ const p=zoneParts(d,tz);
