@@ -16,7 +16,39 @@ permissions:
   contents: write
 
 jobs:
+  # Feature flags gate the whole job: if neither weekly email is enabled there is
+  # nothing for this workflow to do, so it no-ops instead of burning CI minutes
+  # generating reports nobody will receive.
+  flags:
+    runs-on: ubuntu-latest
+    outputs:
+      customer_reports: ${{ steps.flags.outputs.emails_weekly_customer_reports }}
+      admin_summary: ${{ steps.flags.outputs.emails_weekly_admin_summary }}
+      any_weekly: ${{ steps.any.outputs.any_weekly }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Load feature flags
+        id: flags
+        run: python3 src/main/java/org/ktronics/scripts/features.py --github-output
+      - name: Any weekly email enabled?
+        id: any
+        shell: bash
+        run: |
+          if [ "${{ steps.flags.outputs.emails_weekly_customer_reports }}" = "true" ]           || [ "${{ steps.flags.outputs.emails_weekly_admin_summary }}" = "true" ]; then
+            echo "any_weekly=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "any_weekly=false" >> "$GITHUB_OUTPUT"
+            echo "⏭️  Both weekly email flags are off — skipping report generation entirely."
+            echo "    Re-enable in src/main/java/org/ktronics/config/features.json,"
+            echo "    or for one run: KT_FEATURE_EMAILS_WEEKLY_CUSTOMER_REPORTS=true"
+          fi
+
   generate-and-send-reports:
+    needs: flags
+    if: needs.flags.outputs.any_weekly == 'true'
     runs-on: ubuntu-latest
 
     env:
@@ -101,6 +133,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Send DessMonitor admin summary email
+        if: needs.flags.outputs.admin_summary == 'true'
         shell: bash
         env:
           ALERT_TO: ktronicssolar@gmail.com
@@ -118,7 +151,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Send weekly reports to DessMonitor customers
-        if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule' && needs.flags.outputs.customer_reports == 'true'
         shell: bash
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

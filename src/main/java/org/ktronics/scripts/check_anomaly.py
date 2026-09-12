@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 
 from config import CREDENTIALS_PATH
+from features import is_enabled
 
 
 # Matches: <anything>-YYYY-MM.csv  (your monthly output files)
@@ -178,7 +179,26 @@ def main() -> int:
     ap.add_argument("--credentials", default=None, help="Path to credentials JSON file (default: config.CREDENTIALS_PATH)")
     ap.add_argument("--customer-alerts-file", default=None, help="Output path for customer alerts JSON (default: alerts/customer_alerts.json)")
 
+    # Tri-state: --no-X forces off, --X forces on, neither defers to features.json.
+    ap.add_argument("--no-orange", dest="no_orange", action="store_true", default=None,
+                    help="Disable ORANGE (3-month) alerts. Default: the alerts.production_orange_3month feature flag")
+    ap.add_argument("--orange", dest="no_orange", action="store_false",
+                    help="Force ORANGE alerts on, ignoring the feature flag (used by the UC1 tests)")
+    ap.add_argument("--no-red", dest="no_red", action="store_true", default=None,
+                    help="Disable RED (3-day) alerts. Default: the alerts.production_red_3day feature flag")
+    ap.add_argument("--red", dest="no_red", action="store_false",
+                    help="Force RED alerts on, ignoring the feature flag")
+
     args = ap.parse_args()
+
+    # Feature flags supply the default; an explicit CLI switch always wins.
+    if args.no_orange is None:
+        args.no_orange = not is_enabled("alerts.production_orange_3month")
+    if args.no_red is None:
+        args.no_red = not is_enabled("alerts.production_red_3day")
+
+    print(f"Severities enabled: RED={'off' if args.no_red else 'on'}  "
+          f"ORANGE={'off' if args.no_orange else 'on'}", file=sys.stderr)
 
     data_dir = Path(args.data_dir)
     out_dir = Path(args.out_dir)
@@ -264,7 +284,7 @@ def main() -> int:
             })
             continue
 
-        if red_run >= args.red_days and baseline_avg > 0:
+        if red_run >= args.red_days and baseline_avg > 0 and not args.no_red:
             alerts.append({
                 "severity": "RED",
                 "plant_key": plant_key,
@@ -277,7 +297,7 @@ def main() -> int:
             })
 
         # --- ORANGE alert: < 40% baseline for 3 consecutive months ---
-        if month_totals:
+        if month_totals and not args.no_orange:
             latest_month = max(month_totals.keys())
             orange_months = [add_months(latest_month, -i) for i in reversed(range(args.orange_months))]
             # Baseline months: months immediately before orange window

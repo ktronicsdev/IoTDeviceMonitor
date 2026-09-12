@@ -45,6 +45,10 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Load feature flags
+        id: flags
+        run: python3 src/main/java/org/ktronics/scripts/features.py --github-output
+
       - name: Create credentials.json from GitHub Secrets
         shell: bash
         run: |
@@ -76,7 +80,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Email test regression to admin
-        if: failure()
+        if: failure() && steps.flags.outputs.emails_test_regression != 'false'
         shell: bash
         run: |
           set -e
@@ -113,6 +117,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
+      - name: Load feature flags
+        id: flags
+        run: python3 src/main/java/org/ktronics/scripts/features.py --github-output
 
       - name: Create credentials.json from GitHub Secrets
         shell: bash
@@ -273,7 +281,7 @@ jobs:
           exit 0
 
       - name: Send device alarms email to admin
-        if: steps.device_alarms.outputs.exit_code == '2'
+        if: steps.device_alarms.outputs.exit_code == '2' && steps.flags.outputs.emails_device_alarms_admin == 'true'
         shell: bash
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -287,7 +295,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Send customer-specific device alarm emails
-        if: steps.device_alarms.outputs.exit_code == '2'
+        if: steps.device_alarms.outputs.exit_code == '2' && steps.flags.outputs.emails_device_alarms_customer == 'true'
         shell: bash
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -321,6 +329,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Send system-wide status email to admin
+        if: steps.flags.outputs.emails_production_alerts_admin == 'true'
         shell: bash
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -401,7 +410,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Send customer-specific alert emails
-        if: steps.anomaly.outputs.exit_code == '2'
+        if: steps.anomaly.outputs.exit_code == '2' && steps.flags.outputs.emails_production_alerts_customer == 'true'
         shell: bash
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -448,7 +457,7 @@ jobs:
 
       # ✅ Build verification email on every push (success)
       - name: Send build verification email (push + success)
-        if: github.event_name == 'push' && success()
+        if: github.event_name == 'push' && success() && steps.flags.outputs.emails_build_verification == 'true'
         shell: bash
         run: |
           set -e
@@ -466,7 +475,7 @@ jobs:
       # actually keep the data fresh, so a silent scheduled failure means the fetch stops
       # and nobody hears about it — that hid a month-long outage starting 2026-08-01.
       - name: Send build verification email (failure)
-        if: failure()
+        if: failure() && steps.flags.outputs.emails_build_verification != 'false'
         shell: bash
         run: |
           set -e

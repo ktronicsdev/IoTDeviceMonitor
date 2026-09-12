@@ -1,0 +1,30 @@
+{
+  "_comment": [
+    "Feature flags for every outbound email channel and alert severity.",
+    "Single source of truth: read by features.py (Python), common_config.sh (bash),",
+    "and the 'Load feature flags' step in each workflow.",
+    "",
+    "Override for one run without a commit:  KT_FEATURE_EMAILS_WEEKLY_CUSTOMER_REPORTS=true",
+    "(env var name = KT_FEATURE_ + the dotted path, upper-cased, dots -> underscores)"
+  ],
+  "version": 1,
+
+  "emails": {
+    "weekly_customer_reports": true,
+    "weekly_admin_summary": false,
+
+    "device_alarms_admin": true,
+    "device_alarms_customer": true,
+
+    "production_alerts_admin": true,
+    "production_alerts_customer": true,
+
+    "build_verification": true,
+    "test_regression": true
+  },
+
+  "alerts": {
+    "production_red_3day": true,
+    "production_orange_3month": false
+  }
+}

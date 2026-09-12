@@ -172,7 +172,10 @@ class TestAdminProductionAlerts:
             'check_anomaly.py',
             '--data-dir', str(test_data_dir),
             '--out-dir', str(test_output_dir),
-            '--state-file', str(test_state_file)
+            '--state-file', str(test_state_file),
+            # ORANGE is off in features.json; force it on so this UC1 rule
+            # stays covered while the channel is disabled.
+            '--orange'
         ]
 
         exit_code = check_anomaly_main()
@@ -736,7 +739,10 @@ class TestAdminProductionAlerts:
             'check_anomaly.py',
             '--data-dir', str(test_data_dir),
             '--out-dir', str(test_output_dir),
-            '--state-file', str(test_state_file)
+            '--state-file', str(test_state_file),
+            # ORANGE is off in features.json; force it on so this UC1 rule
+            # stays covered while the channel is disabled.
+            '--orange'
         ]
 
         exit_code = check_anomaly_main()

@@ -46,6 +46,10 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Load feature flags
+        id: flags
+        run: python3 src/main/java/org/ktronics/scripts/features.py --github-output
+
       - name: Create DessMonitor credentials from GitHub Secrets
         shell: bash
         run: |
@@ -180,7 +184,7 @@ jobs:
           fi
 
       - name: Send DessMonitor alert email (admin)
-        if: steps.anomaly.outputs.exit_code == '2'
+        if: steps.anomaly.outputs.exit_code == '2' && steps.flags.outputs.emails_production_alerts_admin == 'true'
         shell: bash
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -196,7 +200,7 @@ jobs:
 
       # UC10 Phase 2: Send customer-specific alerts (reuse existing send_customer_emails.py)
       - name: Send DessMonitor customer alerts
-        if: steps.anomaly.outputs.exit_code == '2'
+        if: steps.anomaly.outputs.exit_code == '2' && steps.flags.outputs.emails_production_alerts_customer == 'true'
         shell: bash
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -304,7 +308,7 @@ jobs:
 
       # UC3: Send DessMonitor device alarms email to admin
       - name: Send DessMonitor device alarms email to admin
-        if: steps.dessmonitor_device_alarms.outputs.exit_code == '2'
+        if: steps.dessmonitor_device_alarms.outputs.exit_code == '2' && steps.flags.outputs.emails_device_alarms_admin == 'true'
         shell: bash
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -321,7 +325,7 @@ jobs:
 
       # UC4: Send DessMonitor customer-specific device alarm emails
       - name: Send DessMonitor customer device alarm emails
-        if: steps.dessmonitor_device_alarms.outputs.exit_code == '2'
+        if: steps.dessmonitor_device_alarms.outputs.exit_code == '2' && steps.flags.outputs.emails_device_alarms_customer == 'true'
         shell: bash
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
