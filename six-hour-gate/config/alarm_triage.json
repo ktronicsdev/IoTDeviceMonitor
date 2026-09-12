@@ -1,0 +1,97 @@
+{
+  "_comment": "Six-Hour Gate — alarm triage policy. Tunable without a code change.",
+  "version": 1,
+
+  "dwell_hours_default": 6,
+  "poll_interval_hours": 1,
+
+  "daylight_window_local": {
+    "start_hour": 9,
+    "end_hour": 15,
+    "_comment": "Same window as check_solis_switch.py core_daylight_start_hour/end_hour. One definition of daylight in the codebase."
+  },
+
+  "timezone": {
+    "plant_tz_offset_minutes_default": 330,
+    "_comment": "Sri Lanka UTC+5:30. Prefer the per-plant value from queryPlants -> address.timezone (seconds); this is the fallback only."
+  },
+
+  "_r4_withdrawn": "R4 removed 13 Sep 2026. Offline is detected by the 3-day production-loss rule (an offline logger writes 0.0000 rows, which trips RED), so the gate needs no offline digest and no offline-plant suppression of its own.",
+  "suppress_all_alarms_from_offline_plant": false,
+
+  "classes": {
+    "COMMS": {
+      "gate": "never",
+      "report": "none",
+      "_comment": "Never mailed — customer's network, not our equipment. Not reported here either: a logger that stays down surfaces as a 3-day production-loss RED alert on the CSV side."
+    },
+    "SOC": {
+      "gate": "daylight",
+      "fallback_dwell_hours": 14,
+      "_comment": "R5 — must survive the daylight window still open. Set gate to 'clock' with dwell_hours 14 to use the cheaper variant."
+    },
+    "HARDWARE": { "gate": "clock", "dwell_hours": 6 },
+    "LOAD":     { "gate": "clock", "dwell_hours": 6 },
+    "THERMAL":  { "gate": "clock", "dwell_hours": 6 },
+    "GRID":     { "gate": "clock", "dwell_hours": 6 },
+    "PV":       { "gate": "clock", "dwell_hours": 6 },
+    "UNKNOWN":  { "gate": "clock", "dwell_hours": 6, "log": true }
+  },
+
+  "escalation_hint": {
+    "GRID": "Grid absent 6h+ — check the AC input breaker before blaming CEB.",
+    "SOC": "Battery did not recharge through the midday window — check strings, charge controller and pack health.",
+    "COMMS": "Datalogger offline — customer-side network. Not mailed from here; a sustained outage surfaces as a 3-day production-loss alert."
+  },
+
+  "match": {
+    "_comment": "Lowercased substring match against the vendor's message. LONGEST PATTERN WINS, so 'overload time out' beats 'overload'. Anything unmatched falls to UNKNOWN and is logged.",
+    "COMMS": [
+      "offline",
+      "device disconnected",
+      "datalogger lost",
+      "no communication",
+      "lost connection"
+    ],
+    "SOC": [
+      "battery voltage is too low",
+      "battery voltage is too high",
+      "solar charger stops due to low battery",
+      "low battery"
+    ],
+    "HARDWARE": [
+      "inverter bus voltage is too low",
+      "battery connection is open",
+      "bus soft start failed",
+      "inverter output voltage sensor error",
+      "solar charger battery voltage class error"
+    ],
+    "LOAD": [
+      "inverter over current protection error",
+      "solar charger stops due to over load",
+      "overload time out",
+      "overload"
+    ],
+    "THERMAL": [
+      "inverter radiator over temperature",
+      "fan is locked"
+    ],
+    "GRID": [
+      "no-grid",
+      "inverter grid under frequency",
+      "utility loss",
+      "grid loss"
+    ],
+    "PV": [
+      "solar charger stops due to high pv voltage"
+    ]
+  },
+
+  "vendor_codes": {
+    "_comment": "Where a portal gives a numeric code, match on it first — it is stabler than the message string. Incomplete; grow it from real UNKNOWN traffic.",
+    "solis": {
+      "1015": "GRID",
+      "2012": "SOC"
+    }
+  }
+}
