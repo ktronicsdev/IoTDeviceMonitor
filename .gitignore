@@ -43,6 +43,13 @@ bin/
 obj/
 src/main/java/org/ktronics/config/credentials.json
 src/main/java/org/ktronics/config/dessmonitor_credentials.json
+# ...and any copy/backup of them. The exact-path rules above did NOT cover
+# credentials.json.bak, which held 23 username/password pairs plus the Solis
+# API secret in the working tree of a PUBLIC repo.
+src/main/java/org/ktronics/config/credentials.json.*
+src/main/java/org/ktronics/config/dessmonitor_credentials.json.*
+*.bak
+*.orig
 src/main/java/org/ktronics/scripts/data
 src/main/java/org/ktronics/scripts/alarms
 
