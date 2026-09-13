@@ -45,7 +45,8 @@ class TestBatteryTabWiring:
         assert "renderLive(); renderBMS(); renderBattery();" in app_html
 
     def test_soc_is_labelled_as_an_estimate(self, app_html):
-        """It is derived from pack voltage via SOC_TABLE, not read from a BMS - saying
+        """It is derived from pack voltage via the pack's own measured curve, not read
+        from a BMS - saying
         otherwise would misrepresent the number to the customer."""
         assert "(estimated)" in app_html
         assert "Estimated from pack voltage" in app_html

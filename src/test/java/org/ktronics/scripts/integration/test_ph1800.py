@@ -227,46 +227,49 @@ class TestBatteryHealth:
     DRAINING = [(5, -5), (5, 40)]           # the mirror image
 
     def test_balanced_pack_is_ok(self):
-        h = b.battery_health(b.battery_balance(_week(self.BALANCED)), "lfp")
+        h = b.battery_health(b.battery_balance(_week(self.BALANCED)))
         assert h["ok"] is True and "balances" in h["reason"]
 
     def test_accumulating_pack_is_flagged(self):
-        h = b.battery_health(b.battery_balance(_week(self.ACCUMULATING)), "lfp")
+        h = b.battery_health(b.battery_balance(_week(self.ACCUMULATING)))
         assert h["ok"] is False
         assert h["mean_net_ah_per_day"] > 0
-        assert "sensor" in h["reason"]          # LFP cannot absorb charge it never returns
+        # states the impossibility without asserting a cause the telemetry can't prove
+        assert "accumulate charge indefinitely" in h["reason"]
+        assert "unreliable" in h["reason"]
 
     def test_too_few_days_is_undecided_not_a_flag(self):
         """A brand-new or mostly-offline plant must not be accused."""
         s = _day("2026-09-01", self.ACCUMULATING) + _day("2026-09-02", self.ACCUMULATING)
-        h = b.battery_health(b.battery_balance(s), "lfp")
+        h = b.battery_health(b.battery_balance(s))
         assert h["ok"] is None and "not enough" in h["reason"]
 
-    def test_lead_acid_gets_a_wider_tolerance_and_its_own_diagnosis(self):
-        """Float/gassing genuinely consumes charge on a lead bank, so the same imbalance
-        that condemns an LFP sensor may just be an ageing battery."""
-        bal = b.battery_balance(_week(self.ACCUMULATING))
-        lfp, lead = b.battery_health(bal, "lfp"), b.battery_health(bal, "lead")
-        assert lead["threshold_pct"] > lfp["threshold_pct"]
-        assert lead["ok"] is False and "sulfated" in lead["reason"]
-        assert "LFP" not in lead["reason"]      # don't blame LFP chemistry on a lead bank
+    def test_verdict_does_not_depend_on_any_chemistry_label(self):
+        """REGRESSION: battery_health used to take a `chem` argument and apply a different
+        tolerance per chemistry. That needed a hand-maintained label, and the chemistry can't
+        be inferred from the data either, so the split was removed. One tolerance, and the
+        reason text must not name a chemistry."""
+        h = b.battery_health(b.battery_balance(_week(self.ACCUMULATING)))
+        assert h["threshold_pct"] == b.BALANCE_TOLERANCE_PCT
+        assert "chem" not in h
+        for word in ("LFP", "lead-acid", "lithium", "sulfated"):
+            assert word not in h["reason"], f"reason should not name a chemistry: {word}"
 
-    def test_a_mild_imbalance_passes_on_lead_but_fails_on_lfp(self):
-        """The tolerance split has to actually change a verdict, or it is decoration."""
-        mild = _week([(5, -22), (5, 18)])       # ~18% imbalance: over 10%, under 25%
-        bal = b.battery_balance(mild)
-        assert b.battery_health(bal, "lfp")["ok"] is False
-        assert b.battery_health(bal, "lead")["ok"] is True
+    def test_reason_states_what_was_measured_not_a_diagnosis(self):
+        """The telemetry can prove the count doesn't close; it cannot prove why. Report the
+        measurement and leave the cause open."""
+        h = b.battery_health(b.battery_balance(_week(self.ACCUMULATING)))
+        assert "Ah/day" in h["reason"] and str(abs(h["mean_net_ah_per_day"])) in h["reason"]
 
     def test_draining_pack_reports_the_opposite_problem(self):
-        h = b.battery_health(b.battery_balance(_week(self.DRAINING)), "lead")
+        h = b.battery_health(b.battery_balance(_week(self.DRAINING)))
         assert h["ok"] is False and h["mean_net_ah_per_day"] < 0
-        assert "losing charge" in h["reason"]
+        assert "losing" in h["reason"] and "charging is actually happening" in h["reason"]
 
     def test_idle_plant_is_not_flagged(self):
         """Negligible-throughput days are ignored, so a plant that simply isn't cycling
         doesn't get reported as broken."""
-        h = b.battery_health(b.battery_balance(_week([(5, -0.2)])), "lfp")
+        h = b.battery_health(b.battery_balance(_week([(5, -0.2)])))
         assert h["ok"] is None
 
 
@@ -295,18 +298,74 @@ class TestAccumulatorMapping:
         assert len(keys) == len(set(keys)), f"duplicate mapping: {keys}"
 
 
-class TestChemistry:
-    def test_plant_block_carries_chem(self):
-        assert b.build_plant_block({}, {"alias": "x"}, [], caps={"chem": "lead"})["chem"] == "lead"
+def _pack(volts_amps, step_min=5, start="2026-09-01 00:00:00"):
+    """[(volts, battery_w)] -> discharge-shaped series rows soc_curve() will accept."""
+    rows = []
+    t = 0
+    for v, bw in volts_amps:
+        rows.append({"timestamp": f"2026-09-01 {t // 60:02d}:{t % 60:02d}:00",
+                     "battery_v": v, "battery_w": bw, "pinverter_w": 0})
+        t += step_min
+    return rows
 
-    def test_plant_block_defaults_chem_to_lfp(self):
-        """Unflagged accounts keep the previous behaviour exactly."""
-        assert b.build_plant_block({}, {"alias": "x"}, [], caps={})["chem"] == "lfp"
 
-    def test_accounts_loader_reads_chem(self, tmp_path):
-        p = tmp_path / "c.json"
-        p.write_text(json.dumps({"company_key": "ck", "accounts": [
-            {"label": "L", "username": "u", "password": "p", "ph1800": True, "chem": "LEAD"}]}),
-            encoding="utf-8")
-        _ck, accts = b.load_ph1800_accounts(p)
-        assert accts[0][3]["chem"] == "lead"       # normalised to lowercase
+class TestSocCurve:
+    """SOC comes from the pack's OWN measured discharge distribution - no chemistry model,
+    no per-account label.
+
+    A single 16S LFP table used to be applied to every plant, reading a lead-acid bank at 13%
+    when it was ~71% charged. Labelling chemistry per account was tried and rejected: it is
+    hand-maintained, and it cannot be inferred from the data either - measured 2026-09, LFP and
+    lead-acid plants overlap on every voltage-shape discriminator, because a pack that barely
+    cycles looks flat whatever it is made of.
+    """
+
+    def _sweep(self, lo, hi, n=400):
+        """A pack sweeping evenly from hi down to lo while discharging."""
+        return _pack([(hi - (hi - lo) * i / (n - 1), 200) for i in range(n)])
+
+    def test_curve_spans_the_observed_discharge_range(self):
+        c = b.soc_curve(self._sweep(48.0, 56.0))
+        assert c and c[0][1] == 0 and c[-1][1] == 100
+        assert 47.9 <= c[0][0] <= 48.6 and 55.4 <= c[-1][0] <= 56.1
+
+    def test_curve_is_strictly_increasing_in_voltage(self):
+        """Interpolation divides by (b[0]-a[0]); a repeated voltage would divide by zero."""
+        c = b.soc_curve(self._sweep(48.0, 56.0))
+        assert all(c[i][0] < c[i + 1][0] for i in range(len(c) - 1))
+        assert all(c[i][1] < c[i + 1][1] for i in range(len(c) - 1))
+
+    def test_works_for_a_24v_pack_and_a_48v_pack_alike(self):
+        """The whole point: no per-cell constants, so pack voltage is irrelevant."""
+        for lo, hi in [(23.5, 27.5), (48.0, 56.0), (11.8, 13.8)]:
+            c = b.soc_curve(self._sweep(lo, hi))
+            assert c, f"no curve for a {hi} V pack"
+            assert c[0][0] < c[-1][0]
+
+    def test_charging_samples_are_excluded(self):
+        """Voltage is inflated while charging, so those samples would skew the top of the
+        curve. Only battery-supplying-load samples with PV idle count."""
+        charging = _pack([(60.0, -500) for _ in range(400)])          # battery_w < 0
+        assert b.soc_curve(charging) is None
+        pv_on = [dict(r, pinverter_w=900) for r in self._sweep(48.0, 56.0)]
+        assert b.soc_curve(pv_on) is None
+
+    def test_too_few_samples_returns_none(self):
+        assert b.soc_curve(self._sweep(48.0, 56.0, n=50)) is None
+
+    def test_a_pack_that_barely_cycles_returns_none(self):
+        """REGRESSION: gating on min-max let Thusharasameera through - it spans 25.8-28.1 V on
+        brief load sag while 80% of samples sit inside 0.3 V, which produced a curve jumping 50
+        SOC points per 0.1 V. Gate on the inner p10-p90 spread instead."""
+        flat = _pack([(26.0 + (0.3 if i % 50 == 0 else 0.0), 200) for i in range(400)])
+        flat += _pack([(28.1, 200), (25.8, 200)])       # brief excursions at the extremes
+        assert b.soc_curve(flat) is None
+
+    def test_published_on_the_plant_block(self):
+        blk = b.build_plant_block({}, {"alias": "x"}, self._sweep(48.0, 56.0), caps={})
+        assert blk["soc_curve"] and blk["soc_curve"][0][1] == 0
+        assert "chem" not in blk                 # the label is gone for good
+
+    def test_plant_block_publishes_none_when_it_cannot_measure(self):
+        blk = b.build_plant_block({}, {"alias": "x"}, [], caps={})
+        assert blk["soc_curve"] is None          # dashboard then shows no figure, not a wrong one

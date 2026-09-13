@@ -206,8 +206,7 @@ def load_ph1800_accounts(creds_path, customer=None):
         #   "pro" (default) = grid-tie MUST: PGrid<0 import, >0 export
         #   "vhm"           = off-grid PV-1800: PGrid>0 import, never exports
         caps = {"pv_kw": acc.get("pv_kw"), "batt_kw": acc.get("batt_kw"),
-                "variant": (acc.get("variant") or "pro").lower(),
-                "chem": (acc.get("chem") or "lfp").lower()}
+                "variant": (acc.get("variant") or "pro").lower()}
         out.append((label, acc.get("username"), acc.get("password"), caps))
     return company_key, out
 
@@ -403,6 +402,57 @@ def energy_by_date_kwh(series):
             {d: v / 1000.0 for d, v in load_wh.items()})
 
 
+def soc_curve(series, points=11, min_samples=200, min_span_pct=2.5):
+    """Voltage->SOC breakpoints derived from THIS pack's own measured behaviour.
+
+    No chemistry model and no per-plant config. A fixed LFP table was previously applied to
+    every plant, which read a lead-acid bank at 13% when it was ~71% charged. Labelling the
+    chemistry per account was tried and rejected: it is hand-maintained, and it cannot be
+    inferred from the data either — measured 2026-09, LFP and lead-acid plants overlap on
+    every voltage-shape discriminator (Thusharasameera, lead, scores inside the LFP band
+    because it barely cycles). So don't classify: measure.
+
+    Method: take resting-ish DISCHARGE samples (battery supplying load, PV idle — voltage is
+    inflated while charging), and read percentiles off that distribution. The time a pack
+    spends near a voltage is inversely proportional to dV/dSOC, so the empirical distribution
+    IS the discharge curve, whatever the chemistry. Returns [[volts, soc_pct], ...] ascending,
+    or None when the pack has not cycled enough to say anything honest.
+
+    NOTE the semantics this gives: 0% means "the lowest this pack is observed to go" and 100%
+    means "the highest", relative to its own operating envelope — not an absolute
+    state-of-charge. For a pack that never deep-discharges that is a narrower scale than a
+    modelled SOC, and a good deal more honest than a number derived from the wrong curve.
+    """
+    vs = []
+    for r in series:
+        v = _to_float(r.get("battery_v"))
+        bw = _to_float(r.get("battery_w"))
+        pv = _to_float(r.get("pinverter_w")) or 0.0
+        if v and v > 0 and bw is not None and bw > 20 and pv < 20:
+            vs.append(v)
+    if len(vs) < min_samples:
+        return None
+    vs.sort()
+    # Gate on the INNER spread (p10-p90), not min-max. A pack that barely cycles still shows a
+    # wide min-max from brief load sag and charge spikes, while 80% of its samples sit inside a
+    # fraction of a volt — Thusharasameera spans 25.8-28.1 V but p10-p90 is only 0.3 V, which
+    # would yield a curve jumping 50 SOC points per 0.1 V. Better to publish nothing.
+    p10, p90 = vs[int(len(vs) * 0.10)], vs[int(len(vs) * 0.90)]
+    if p90 <= p10 or (p90 - p10) / p90 * 100 < min_span_pct:
+        return None                      # too flat to distinguish anything
+    out = []
+    for i in range(points):
+        pct = i / (points - 1)
+        idx = min(len(vs) - 1, int(round(pct * (len(vs) - 1))))
+        out.append([round(vs[idx], 2), round(pct * 100)])
+    # Percentiles can repeat on a flat pack; keep the mapping strictly increasing in voltage.
+    dedup = [out[0]]
+    for v, s in out[1:]:
+        if v > dedup[-1][0]:
+            dedup.append([v, s])
+    return dedup if len(dedup) >= 3 else None
+
+
 def battery_balance(series):
     """Per-day coulomb count from Batt Current: {date: {ah_in, ah_out, net_ah, imbalance_pct}}.
 
@@ -450,27 +500,27 @@ def battery_balance(series):
     return out
 
 
-# Tolerance differs by chemistry, so the same net-Ah reading means different things:
-#   lfp  — ~99% coulombic efficiency, so anything but a few percent is a measurement fault.
-#   lead — float/gassing genuinely consumes charge that never comes back out, so a healthy
-#          bank runs a real positive imbalance. Typical float is ~1-3 mA/Ah (a few Ah/day on
-#          a 100 Ah bank); well beyond that means sulfation, not a sensor.
-BALANCE_TOLERANCE_PCT = {"lfp": 10, "lead": 25}
+# One tolerance for every plant. A chemistry-dependent threshold was tried and dropped: it
+# needs a hand-maintained label, and the chemistry cannot be inferred from the data either
+# (measured 2026-09 — LFP and lead-acid plants overlap on every voltage-shape discriminator).
+# 20% is set above the few-percent round-trip loss of any healthy pack and well above the
+# genuine float draw of a lead bank, so what it catches is measurement drift, not chemistry.
+BALANCE_TOLERANCE_PCT = 20
 
 
-def battery_health(balance, chem="lfp", min_days=3):
+def battery_health(balance, min_days=3, threshold_pct=BALANCE_TOLERANCE_PCT):
     """Flag a plant whose coulomb count refuses to close. Returns a small dict for the payload.
 
-    Ignores days with negligible throughput (offline / no cycling) so an idle plant is not
-    flagged, and requires the imbalance to persist across several days so a single odd day
-    (a datalogger gap, a deep-discharge event) doesn't trip it.
+    Reports what was measured and leaves the cause open — a sustained one-way net Ah is
+    impossible for any battery of any chemistry or size, but whether it is a drifting current
+    sensor, a failing bank, or a charger that never runs is not something the telemetry can
+    settle. Ignores days with negligible throughput (offline / not cycling) so an idle plant is
+    not accused, and requires the imbalance to persist so one odd day doesn't trip it.
     """
-    chem = (chem or "lfp").lower()
-    threshold_pct = BALANCE_TOLERANCE_PCT.get(chem, 10)
     days = [(d, v) for d, v in sorted(balance.items()) if max(v["ah_in"], v["ah_out"]) >= 5]
     recent = days[-7:]
     if len(recent) < min_days:
-        return {"ok": None, "chem": chem, "days": len(recent),
+        return {"ok": None, "days": len(recent),
                 "reason": "not enough cycling days to judge"}
     bad = [v for _d, v in recent if v["imbalance_pct"] > threshold_pct]
     nets = [v["net_ah"] for _d, v in recent]
@@ -481,21 +531,17 @@ def battery_health(balance, chem="lfp", min_days=3):
         reason = "coulomb count balances within tolerance"
     elif mean_net < 0:
         # More out than in, sustained — the bank is being drained faster than it is refilled.
-        reason = (f"battery is losing charge it never regains: {mean_net:+} Ah/day across "
-                  f"{len(recent)} days. Check that charging is actually happening.")
-    elif chem == "lead":
-        reason = (f"charge absorbed far exceeds charge returned: {mean_net:+} Ah/day across "
-                  f"{len(recent)} days. Some positive imbalance is normal float on a lead-acid "
-                  f"bank, but not this much — suspect a sulfated/ageing bank (or the current "
-                  f"sensor). Charge/Discharge figures are unreliable on this plant.")
-    else:
-        reason = (f"battery current does not balance: {mean_net:+} Ah/day net across "
-                  f"{len(recent)} days. LFP is ~99% coulombic-efficient and cannot accumulate "
-                  f"charge indefinitely — suspect current-sensor calibration. "
+        reason = (f"battery reports losing {abs(mean_net)} Ah/day more than it takes in, across "
+                  f"{len(recent)} days. No battery can do that indefinitely — check that "
+                  f"charging is actually happening, and that the current reading is sane. "
                   f"Charge/Discharge figures are unreliable on this plant.")
+    else:
+        reason = (f"battery reports absorbing {mean_net:+} Ah/day more than it gives back, "
+                  f"across {len(recent)} days. No battery can accumulate charge indefinitely, "
+                  f"so either the current reading is drifting or the bank is losing what it "
+                  f"takes in. Charge/Discharge figures are unreliable on this plant.")
     return {
         "ok": not flagged,
-        "chem": chem,
         "mean_net_ah_per_day": mean_net,
         "days_considered": len(recent),
         "days_over_threshold": len(bad),
@@ -525,11 +571,6 @@ def build_plant_block(plant_info, device, series, tz_offset=0, caps=None,
     return {
         "type": "PH1800",
         "variant": (caps.get("variant") or "pro"),   # dashboard grid-sign convention (pro/vhm)
-        # Battery chemistry: selects the dashboard's voltage->SOC curve. The fleet is mixed
-        # (LFP at Gayan-IMH/Chandika, lead-acid at FaizalIsmail/Thusharasameera) and the two
-        # curves are nothing alike, so an LFP curve on a lead bank reads badly wrong.
-        # Defaults to lfp to preserve existing behaviour for any unflagged account.
-        "chem": (caps.get("chem") or "lfp"),
         "name": (plant_info or {}).get("name") or device.get("alias") or "Plant",
         "nominal_power_kw": round(rated_w / 1000.0, 2) if rated_w else None,
         "pv_cap_w": cap_w("pv_kw"),
@@ -551,7 +592,10 @@ def build_plant_block(plant_info, device, series, tz_offset=0, caps=None,
         # Data-quality signal, not a reading: does the battery's coulomb count close?
         # See battery_balance() for why this is published rather than silently corrected.
         "battery_balance": balance,
-        "battery_health": battery_health(balance, caps.get("chem")),
+        "battery_health": battery_health(balance),
+        # Voltage->SOC read off this pack's own discharge distribution — no chemistry model,
+        # no config. None when the pack hasn't cycled enough to say anything honest.
+        "soc_curve": soc_curve(series),
     }
 
 

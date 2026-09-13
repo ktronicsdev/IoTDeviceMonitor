@@ -310,51 +310,28 @@ let PV_CAP_W=null, RATED_W=null, BATT_CAP_W=null;
 let VARIANT='pro';
 const gridImp = gw => gw==null?null:(VARIANT==='vhm'? gw : -gw);
 const pctOf=(v,cap)=> (v==null||!cap)?'':Math.round(Math.max(0,v)/cap*100)+'%';
-// SOC from 16S LFP battery voltage — Deye-style smooth curve, anchored to the operator's
-// reference points (55.x V≈100%, 53.x V≈80%, 50.x V≈20%) and consistent with the live BMS
-// (~80% at 53.1-53.2 V). Deliberately gentle near the top (no cliff) so an evening voltage
-// sag no longer makes the estimate plunge. Voltage-only is approximate (rises under charge,
-// sags under load); the BMS pane is the source of truth when it can be read.
-const SOC_TABLE=[[48.0,0],[50.4,20],[51.5,40],[52.5,60],[53.2,78],[53.7,85],
-                 [54.2,93],[54.7,97],[55.2,100]];
-// SOC_TABLE above is calibrated for a 16S pack, but the fleet is mixed (Gayan-IMH is 8S/24V,
-// Chandika and FaizalIsmail are 16S/48V), and on an 8S pack the 16S table clamps every reading
-// to 0%. So infer the series count per plant and scale the curve per-cell. Top-of-charge is the
-// discriminator: mid-range voltages are ambiguous between 15S and 16S, but a full pack lands
-// near 3.45 V/cell whatever the count. PACK_S=16 reproduces the original numbers exactly.
-// The fleet is MIXED CHEMISTRY and the two discharge curves are nothing alike: LFP sits on a
-// long flat plateau (~3.2 V/cell for most of its range) while lead-acid falls off steadily
-// (2.12 V/cell full -> 1.95 V/cell empty). Applying the LFP table to a lead bank therefore
-// reads badly wrong. `chem` comes from the publisher (credentials, per account).
-// Tables are per-cell x series count; the LFP one below reproduces the original 16S numbers
-// exactly (3.00/3.15/3.22/3.28/3.325/3.356/3.388/3.419/3.45 V/cell).
-const SOC_TABLE_LEAD=[[46.8,0],[48.0,20],[48.7,40],[49.2,60],[49.7,78],[50.0,85],
-                      [50.4,93],[50.7,97],[50.9,100]];   // 24-cell / 48V nominal, rested
-const LFP_SERIES=[4,8,15,16], FULL_V_PER_CELL=3.45;
-const LEAD_SERIES=[6,12,24], LEAD_FULL_V_PER_CELL=2.12;  // 12V / 24V / 48V nominal banks
-let PACK_S=16;
-// DATA is the per-plant block (load() does DATA=j.plants[plantIdx]), so chem sits at
-// DATA.plant.chem — same shape as genSeries()/PV_CAP_W read it.
-const packChem = () => ((DATA&&DATA.plant&&DATA.plant.chem)||'lfp').toLowerCase();
-function inferPackS(){
-  const vs=((DATA&&DATA.series7d)||[]).map(r=>num(r.battery_v)).filter(v=>v>0);
-  const lv=num(DATA&&DATA.latest&&DATA.latest.battery_v&&DATA.latest.battery_v.value);
-  if(lv>0) vs.push(lv);
-  const lead=packChem()==='lead';
-  const series=lead?LEAD_SERIES:LFP_SERIES, full=lead?LEAD_FULL_V_PER_CELL:FULL_V_PER_CELL;
-  if(!vs.length) return lead?24:16;
-  const vmax=Math.max(...vs);
-  return series.reduce((a,b)=>
-    Math.abs(vmax/b-full)<Math.abs(vmax/a-full)?b:a);
-}
+// SOC comes from the pack's OWN measured discharge distribution, published by
+// check_ph1800.soc_curve() as plant.soc_curve = [[volts, soc%], ...]. No chemistry model and
+// no per-plant config.
+//
+// History: a single 16S LFP table was applied to every plant, which read a lead-acid bank at
+// 13% when it was ~71% charged. Labelling the chemistry per account was tried and dropped -
+// it is hand-maintained, and it cannot be inferred from the data either (measured 2026-09:
+// LFP and lead-acid plants overlap on every voltage-shape discriminator, because a pack that
+// barely cycles looks flat whatever it is made of). So don't classify - measure.
+//
+// Semantics: 0% = the lowest this pack is observed to go, 100% = the highest, relative to its
+// own operating envelope. Not an absolute state-of-charge, and honest about it in the caption.
+// A pack without enough cycling to build a curve reports null and the tab says so rather than
+// showing a number derived from the wrong assumptions.
+const socTable = () => (DATA&&DATA.plant&&DATA.plant.soc_curve)||null;
 const socFromV = v => {
-  if(v==null) return null;
-  const lead=packChem()==='lead';
-  const t=lead?SOC_TABLE_LEAD:SOC_TABLE, k=PACK_S/(lead?24:16);   // k=1 => the original curve
-  if(v<=t[0][0]*k) return 0;
-  if(v>=t[t.length-1][0]*k) return 100;
-  for(let i=1;i<t.length;i++) if(v<=t[i][0]*k){
-    const a=t[i-1],b=t[i]; return Math.round(a[1]+(b[1]-a[1])*(v-a[0]*k)/((b[0]-a[0])*k));
+  const t=socTable();
+  if(v==null||!t||t.length<2) return null;
+  if(v<=t[0][0]) return 0;
+  if(v>=t[t.length-1][0]) return 100;
+  for(let i=1;i<t.length;i++) if(v<=t[i][0]){
+    const a=t[i-1],b=t[i]; return Math.round(a[1]+(b[1]-a[1])*(v-a[0])/(b[0]-a[0]));
   }
   return 100;
 };
@@ -718,7 +695,8 @@ function renderBMS(){
 // ---- Battery tab -----------------------------------------------------------
 // Pack detail for a hybrid plant. Everything here comes from the inverter's own battery
 // readings (battery_v/battery_a/battery_w), which is all ShineMonitor exposes; SOC is
-// therefore ESTIMATED from voltage via SOC_TABLE and is labelled as such. Per-cell
+// therefore ESTIMATED from voltage via the pack's own measured curve, and labelled as such.
+// Per-cell
 // voltages need a real BMS link - the `cells` block below is filled by the KT BMS Monitor
 // (ESP32 -> JK-BMS over BLE) once one is installed, and shows a hint until then.
 const BATT_CELL_STALE_MIN=120;   // cells older than this => the BMS link is down
@@ -749,7 +727,9 @@ function renderBattery(){
         </div>
         <div style="height:8px;background:#222c3b;border-radius:5px;margin-top:8px;overflow:hidden">
           <div style="height:100%;width:${Math.max(0,Math.min(100,soc||0))}%;background:linear-gradient(90deg,#22c55e,#16a34a)"></div></div>
-        <div style="font-size:11px;color:var(--muted);margin-top:7px">Estimated from pack voltage (${PACK_S}-cell ${packChem()==='lead'?'lead-acid':'LFP'} curve) — rises under charge and sags under load. A BMS reading is the source of truth.</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:7px">${socTable()
+          ? `Estimated from pack voltage, against this pack's own measured range (${socTable()[0][0]}–${socTable()[socTable().length-1][0]} V over the last 30 days) — 0% is the lowest it is seen to go, not empty. Rises under charge and sags under load. A BMS reading is the source of truth.`
+          : `Estimated from pack voltage — but this pack has not cycled enough to measure its range yet, so no figure is shown. It appears once the battery has charged and discharged over a few days.`}</div>
       </div>
       <div style="font-size:15px;font-weight:700;color:${fc};text-transform:capitalize;min-width:120px">${flow}</div>
     </div>
@@ -917,7 +897,6 @@ async function load(){
        DATA.last_updated=j.last_updated;
        DATA.series7d=mergeSeries(_histSeries(), DATA.series7d);          // extend if hist loaded
        if(_histKey!==DATA_FILE){ _histKey=DATA_FILE; HIST_RAW=null; loadHist(); }  // fetch 30d once
-       PACK_S=inferPackS();                                              // before anything calls socFromV()
        renderLive(); renderBMS(); renderBattery(); renderWeather(); renderProfile(); renderHistory();
        if(curTab==='profile') renderProfilePane(); if(curTab==='analysis') renderAnalysis(); }
   catch(e){ if(!DATA){ const f=document.getElementById('foot'); if(f) f.textContent='load error: '+e; } }

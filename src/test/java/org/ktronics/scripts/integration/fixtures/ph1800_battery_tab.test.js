@@ -52,9 +52,16 @@ const series = [
   { timestamp: at(19, 0), battery_v: 51.9, battery_a: 18,  battery_w: 934,   pinverter_w: 0,    load_power_w_est: 900,  pgrid_w: 0 },
   { timestamp: at(20, 0), battery_v: 51.2, battery_a: 22,  battery_w: 1126,  pinverter_w: 0,    load_power_w_est: 1100, pgrid_w: 0 },
 ];
+// soc_curve is the publisher's measured voltage->SOC table for THIS pack (check_ph1800
+// .soc_curve()). The breakpoints below are the ones the old hardcoded 16S LFP table used, so
+// the SOC assertions further down keep their original expected values (52.4 V -> 58%).
 const withBattery = {
   latest: { battery_v: { value: '52.4' }, battery_a: { value: '-12.6' }, battery_w: { value: '-660' } },
-  series7d: series, plant: { batt_cap_w: 5000 }, device: {},
+  series7d: series,
+  plant: { batt_cap_w: 5000,
+           soc_curve: [[48.0,0],[50.4,20],[51.5,40],[52.5,60],[53.2,78],[53.7,85],
+                       [54.2,93],[54.7,97],[55.2,100]] },
+  device: {},
 };
 
 // DATA/BATT_CAP_W/curTab are top-level `let`s in the dashboard script, so they live in the
@@ -69,7 +76,7 @@ function check(name, cond, extra) {
 
 // 1. plant WITH a battery
 ctx.__fx.withBattery = withBattery;
-run('DATA = __fx.withBattery; BATT_CAP_W = 5000; PACK_S = inferPackS(); renderBattery();');
+run('DATA = __fx.withBattery; BATT_CAP_W = 5000; renderBattery();');
 let out = el('battwrap').innerHTML;
 console.log('\n[plant with battery]');
 check('tab button is shown', el('tabbtn-battery').style.display === '');
@@ -77,7 +84,7 @@ check('renders three cards', (out.match(/class="card"/g) || []).length === 3, `g
 check('shows pack voltage 52.4 V', out.includes('52.4'));
 check('shows current -12.6 A', out.includes('-12.6'));
 check('shows charging state', out.toLowerCase().includes('charging'));
-// SOC_TABLE interpolates 51.5V->40% .. 52.5V->60%, so 52.4 V must read 58%.
+// SOC now comes from plant.soc_curve, measured per pack - see the [measured SOC curve] block.
 check('SOC from 52.4 V interpolates to 58%', />58<small[^>]*>%/.test(out), out.match(/>(\d+)<small[^>]*>%/)?.[0]);
 check('SOC is labelled estimated', out.includes('(estimated)'));
 check('bank capacity 5 kW', out.includes('5 <small>kW</small>'));
@@ -91,7 +98,7 @@ check('no undefined/NaN leaked', !/undefined|NaN/.test(out), out.match(/.{40}(un
 // 2. PV-only plant -> tab hidden
 console.log('\n[PV-only plant]');
 ctx.__fx.pvOnly = { latest: { pv_power_w_est: { value: '2000' } }, series7d: [], plant: {}, device: {} };
-run("DATA = __fx.pvOnly; curTab = 'live'; PACK_S = inferPackS(); renderBattery();");
+run("DATA = __fx.pvOnly; curTab = 'live'; renderBattery();");
 check('tab button hidden when no battery', el('tabbtn-battery').style.display === 'none');
 
 // 3. with live per-cell data (what the ESP32 module will deliver)
@@ -103,7 +110,7 @@ ctx.__fx.withCells = Object.assign({}, withBattery, {
     high: { n: 4, mv: 3550 }, low: { n: 10, mv: 3361 },
     tmax: { n: 1, c: 31.8 }, tmin: { n: 4, c: 31.5 } } }] },
 });
-run('DATA = __fx.withCells; BATT_CAP_W = 5000; PACK_S = inferPackS(); renderBattery();');
+run('DATA = __fx.withCells; BATT_CAP_W = 5000; renderBattery();');
 out = el('battwrap').innerHTML;
 check('renders all 16 cell tiles', (out.match(/>Cell \d+</g) || []).length === 16, `got ${(out.match(/>Cell \d+</g) || []).length}`);
 check('shows pack voltage from cells', out.includes('54.67'));
@@ -115,78 +122,72 @@ check('no undefined/NaN leaked', !/undefined|NaN/.test(out), out.match(/.{40}(un
 // 4. stale cells fall back to the hint
 console.log('\n[stale per-cell data]');
 ctx.__fx.withCells.bms.packs[0].cells.ts = Date.now() - 300 * 60000;
-run('DATA = __fx.withCells; PACK_S = inferPackS(); renderBattery();');
+run('DATA = __fx.withCells; renderBattery();');
 out = el('battwrap').innerHTML;
 check('stale cells show the down-link hint', out.includes('the BMS link is down'));
 check('stale cells do not render tiles', !/>Cell \d+</.test(out));
 
 
-// 5. pack-series inference: the fleet is mixed 16S/8S and the curve is calibrated 16S.
-console.log('\n[pack-series aware SOC]');
-check('16S fixture is detected as 16S', run('DATA = __fx.withBattery; inferPackS();') === 16);
-check('16S SOC curve is unchanged (52.4 V -> 58%)',
-      run('PACK_S = 16; socFromV(52.4);') === 58, 'got ' + run('PACK_S = 16; socFromV(52.4);'));
+// 5 & 6. SOC comes from the pack's OWN measured curve (plant.soc_curve), published by
+// check_ph1800.soc_curve(). No chemistry model, no per-account label, no per-cell constants -
+// so a 24 V pack and a 48 V pack go through the identical code path.
+//
+// History: a fixed 16S LFP table was applied to every plant, which clamped a 24 V pack to 0%
+// and read a lead-acid bank at 13% when it was ~71% charged. Labelling chemistry per account
+// was then tried and dropped: hand-maintained, and unlearnable from the data (measured
+// 2026-09, LFP and lead plants overlap on every voltage-shape discriminator).
+console.log('\n[measured SOC curve]');
 
-// Gayan-IMH: a real 8S/24V pack (live range 23.8-27.7 V). On the 16S curve every
-// reading clamps to 0%, which is what this scaling exists to fix.
-const at8 = (h) => `${day} ${String(h).padStart(2, '0')}:00:00`;
-ctx.__fx.pack8s = {
-  latest: { battery_v: { value: '27.3' }, battery_a: { value: '-51' }, battery_w: { value: '-1392' } },
-  series7d: [
-    { timestamp: at8(6),  battery_v: 23.8, battery_w: 300 },
-    { timestamp: at8(12), battery_v: 27.7, battery_w: -1200 },
-    { timestamp: at8(18), battery_v: 26.1, battery_w: 400 },
-  ],
-  plant: { batt_cap_w: 2400 }, device: {},
+ctx.__fx.curve48 = {
+  latest: { battery_v: { value: '52.5' }, battery_a: { value: '-10' }, battery_w: { value: '-525' } },
+  series7d: [],
+  plant: { batt_cap_w: 4800,
+           soc_curve: [[49.5,0],[50.9,10],[51.6,20],[52.1,30],[52.5,40],[52.6,50],
+                       [52.7,60],[52.8,70],[53.1,80],[53.3,90],[53.7,100]] },
+  device: {},
 };
-check('8S pack is detected as 8S', run('DATA = __fx.pack8s; inferPackS();') === 8,
-      'got ' + run('DATA = __fx.pack8s; inferPackS();'));
-check('16S curve would have reported 0% for it', run('PACK_S = 16; socFromV(27.3);') === 0);
-const soc8 = run('DATA = __fx.pack8s; PACK_S = inferPackS(); socFromV(27.3);');
-check('8S curve reports a plausible high SOC (85-100%)', soc8 >= 85 && soc8 <= 100, 'got ' + soc8);
-run('DATA = __fx.pack8s; BATT_CAP_W = 2400; PACK_S = inferPackS(); renderBattery();');
+check('SOC interpolates off the published curve (52.5 V -> 40%)',
+      run('DATA = __fx.curve48; socFromV(52.5);') === 40,
+      'got ' + run('DATA = __fx.curve48; socFromV(52.5);'));
+check('below the measured range clamps to 0%', run('DATA = __fx.curve48; socFromV(40);') === 0);
+check('above the measured range clamps to 100%', run('DATA = __fx.curve48; socFromV(60);') === 100);
+check('interpolates between breakpoints (52.05 V -> ~28%)',
+      Math.abs(run('DATA = __fx.curve48; socFromV(52.05);') - 28) <= 3,
+      'got ' + run('DATA = __fx.curve48; socFromV(52.05);'));
+
+// A 24 V pack: identical code path, no per-cell scaling, no clamping to 0%.
+ctx.__fx.curve24 = {
+  latest: { battery_v: { value: '25.0' }, battery_a: { value: '8' }, battery_w: { value: '200' } },
+  series7d: [],
+  plant: { batt_cap_w: 2400,
+           soc_curve: [[23.9,0],[24.2,20],[24.7,30],[25.3,40],[25.8,60],[26.1,80],[27.2,100]] },
+  device: {},
+};
+const soc24 = run('DATA = __fx.curve24; socFromV(25.0);');
+check('24 V pack reads a sane mid SOC, not clamped (25.0 V -> 30-45%)',
+      soc24 >= 30 && soc24 <= 45, 'got ' + soc24);
+run('DATA = __fx.curve24; BATT_CAP_W = 2400; renderBattery();');
 out = el('battwrap').innerHTML;
-check('Battery tab renders for the 8S plant', out.includes('27.3'));
-check('tab states which pack curve is assumed', out.includes('8-cell LFP curve'));
+check('Battery tab renders for the 24 V pack', out.includes('25'));
+check('tab still labels SOC as an estimate', out.includes('Estimated from pack voltage'));
+check('tab states the measured range it is relative to', out.includes('23.9'));
 check('no undefined/NaN leaked', !/undefined|NaN/.test(out));
 
-// A plant with no battery series at all (Thusharasameera) must not crash the inference.
-ctx.__fx.noBatt = { latest: {}, series7d: [], plant: {}, device: {} };
-check('empty series falls back to 16S', run('DATA = __fx.noBatt; inferPackS();') === 16);
-
-
-// 6. MIXED CHEMISTRY: the fleet is not all LFP. FaizalIsmail and Thusharasameera run
-// lead-acid banks, whose discharge curve is nothing like LFP's flat plateau. Feeding a
-// lead pack through the LFP table read ~13% when it was actually ~71% charged.
-console.log('\n[chemistry-aware SOC]');
-const atL = (h) => `${day} ${String(h).padStart(2, '0')}:00:00`;
-ctx.__fx.lead48 = {
-  latest: { battery_v: { value: '49.5' }, battery_a: { value: '0' }, battery_w: { value: '0' } },
-  series7d: [
-    { timestamp: atL(6),  battery_v: 48.7, battery_w: 0 },
-    { timestamp: atL(12), battery_v: 57.6, battery_w: -900 },
-    { timestamp: atL(18), battery_v: 49.9, battery_w: 0 },
-  ],
-  plant: { batt_cap_w: 4800, chem: 'lead' }, device: {},
+// A pack that has not cycled enough: the publisher sends soc_curve:null and the tab must say
+// so rather than showing a figure derived from assumptions that were never measured.
+ctx.__fx.noCurve = {
+  latest: { battery_v: { value: '26.0' }, battery_a: { value: '4' }, battery_w: { value: '104' } },
+  series7d: [], plant: { batt_cap_w: 2400, soc_curve: null }, device: {},
 };
-check('lead 48V bank is detected as 24 cells',
-      run('DATA = __fx.lead48; inferPackS();') === 24,
-      'got ' + run('DATA = __fx.lead48; inferPackS();'));
-const socLead = run('DATA = __fx.lead48; PACK_S = inferPackS(); socFromV(49.5);');
-check('lead curve reports a plausible mid-high SOC (55-85%)',
-      socLead >= 55 && socLead <= 85, 'got ' + socLead);
-check('LFP curve would have badly understated it (<25%)',
-      run('DATA = __fx.withBattery; PACK_S = 16; socFromV(49.5);') < 25);
-run('DATA = __fx.lead48; BATT_CAP_W = 4800; PACK_S = inferPackS(); renderBattery();');
+check('no curve -> no SOC figure', run('DATA = __fx.noCurve; socFromV(26.0);') === null);
+run('DATA = __fx.noCurve; BATT_CAP_W = 2400; renderBattery();');
 out = el('battwrap').innerHTML;
-check('tab names the lead-acid curve', out.includes('24-cell lead-acid curve'));
-check('no undefined/NaN leaked (lead)', !/undefined|NaN/.test(out));
+check('tab explains why SOC is absent', out.includes('not cycled enough'));
+check('no undefined/NaN leaked (no curve)', !/undefined|NaN/.test(out));
 
-// REGRESSION: an LFP plant must be completely unaffected by the chemistry split.
-check('LFP plant unchanged by the chemistry split (16S, 52.4 V -> 58%)',
-      run('DATA = __fx.withBattery; PACK_S = 16; socFromV(52.4);') === 58);
-check('LFP plant with no chem flag still infers LFP',
-      run('DATA = __fx.pack8s; inferPackS();') === 8);
+// An older payload published before soc_curve existed must degrade, not crash.
+ctx.__fx.legacy = { latest: {}, series7d: [], plant: { batt_cap_w: 2400 }, device: {} };
+check('missing soc_curve degrades to null', run('DATA = __fx.legacy; socFromV(52.0);') === null);
 
 
 // 7. The Charge/Discharge reliability banner. Charge/Discharge is integrated from the
