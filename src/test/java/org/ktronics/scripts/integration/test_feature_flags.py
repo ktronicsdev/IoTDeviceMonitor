@@ -294,6 +294,67 @@ class TestPythonEmailPathsAreGated:
         assert email_utils.WORKFLOW_GATED == "workflow-gated"
 
 
+class TestSeverityDependentTestsForceTheirFlag:
+    """
+    ORANGE is off in features.json, so any test that drives check_anomaly.py and
+    expects an ORANGE alert must pass --orange, or it asserts against a disabled
+    feature and fails.
+
+    This is a TEXT scan on purpose. The tests it protects shell out to `python3`
+    and are skipped on Windows, so a local run is green while CI is red - which
+    is precisely how the DessMonitor pair was missed and broke the ShineMonitor
+    workflow on 13 Sep 2026. A text scan runs everywhere.
+    """
+
+    INTEGRATION_DIR = Path(__file__).resolve().parent
+
+    def _severity_tests(self, token):
+        """
+        Tests that drive check_anomaly.py and mention the severity token.
+
+        Matched on the BODY, not the name: the two that broke CI were called
+        test_exact_3month_boundary / test_dessmonitor_exact_3month_boundary -
+        no "orange" in either name, but both docstrings say ORANGE.
+        """
+        import re
+        for f in sorted(self.INTEGRATION_DIR.glob("test_*.py")):
+            if f.name == Path(__file__).name:
+                continue                      # don't match this guard's own prose
+            text = f.read_text(encoding="utf-8")
+            parts = re.split(chr(10) + r"    def (test_\w+)", text)
+            # parts = [preamble, name1, body1, name2, body2, ...]
+            for i in range(1, len(parts) - 1, 2):
+                name, body = parts[i], parts[i + 1]
+                if token in body and "check_anomaly" in body:
+                    yield f.name, name, body
+
+    def test_orange_tests_declare_the_switch(self):
+        offenders = [
+            f"{fname}::{tname}"
+            for fname, tname, body in self._severity_tests("ORANGE")
+            if "--orange" not in body and "--no-orange" not in body
+        ]
+        assert not offenders, (
+            "these drive check_anomaly.py and reference ORANGE, which is disabled in "
+            "features.json - each must declare '--orange' (force on) or '--no-orange' "
+            "(assert it stays off), so a flag change can never silently break them: "
+            + ", ".join(offenders)
+        )
+
+    def test_the_scan_actually_finds_the_orange_tests(self):
+        """Guard the guard: if the split stops matching, the check passes vacuously."""
+        found = list(self._severity_tests("ORANGE"))
+        names = sorted(f"{f}::{t}" for f, t, _ in found)
+        assert len(found) >= 4, (
+            f"expected >=4 ORANGE tests driving check_anomaly, found {len(found)}: "
+            f"{names} - has the scan broken?"
+        )
+        files = {f for f, _, _ in found}
+        assert "test_admin_alerts.py" in files and "test_dessmonitor_admin_alerts.py" in files, (
+            f"scan must cover both platforms' admin-alert suites, saw: {sorted(files)}"
+        )
+
+
 class TestAnomalySeverityFlags:
     """check_anomaly.py must honour the severity flags."""
 

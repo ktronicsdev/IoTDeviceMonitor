@@ -248,7 +248,10 @@ class TestDessMonitorUC1AdminAlerts:
             '--data-dir', str(test_dessmonitor_data_dir),
             '--out-dir', str(test_output_dir),
             '--state-file', str(test_state_file),
-            '--platform', 'dessmonitor'
+            '--platform', 'dessmonitor',
+            # ORANGE is off in features.json; force it on so this UC1 rule
+            # stays covered while the channel is disabled.
+            '--orange'
         ], capture_output=True, text=True)
 
         assert result.returncode == 2, "Should detect alerts"
@@ -719,7 +722,10 @@ class TestDessMonitorUC1AdminAlerts:
             '--data-dir', str(test_dessmonitor_data_dir),
             '--out-dir', str(test_output_dir),
             '--state-file', str(test_state_file),
-            '--platform', 'dessmonitor'
+            '--platform', 'dessmonitor',
+            # ORANGE is off in features.json; force it on so this UC1 rule
+            # stays covered while the channel is disabled.
+            '--orange'
         ], capture_output=True, text=True)
 
         assert result.returncode == 2
