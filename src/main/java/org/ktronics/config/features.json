@@ -20,7 +20,10 @@
     "production_alerts_customer": true,
 
     "build_verification": true,
-    "test_regression": true
+    "test_regression": true,
+
+    "solis_switch_admin": true,
+    "bms_alerts_admin": true
   },
 
   "alerts": {

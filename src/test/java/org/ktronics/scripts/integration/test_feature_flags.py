@@ -215,6 +215,85 @@ class TestWorkflowGating:
         assert checked >= 2, "expected at least the two failure-path email steps"
 
 
+class TestPythonEmailPathsAreGated:
+    """
+    The workflow-YAML guard above only sees steps that shell out to
+    send_email.py. It was blind to scripts that mail from inside Python -
+    check_solis_switch.py and bms-module/scripts/ingest_bms_reading.py both did,
+    bypassing the flags entirely. These tests close that hole.
+    """
+
+    @staticmethod
+    def _python_files():
+        for root in (SCRIPTS_DIR, PROJECT_ROOT / "bms-module" / "scripts"):
+            if root.exists():
+                for f in root.rglob("*.py"):
+                    if "__pycache__" not in str(f):
+                        yield f
+
+    def test_smtplib_is_only_used_in_email_utils(self):
+        """One chokepoint for outbound mail, so one place to gate it."""
+        offenders = [
+            f.name for f in self._python_files()
+            if f.name != "email_utils.py" and "smtplib" in f.read_text(encoding="utf-8")
+        ]
+        assert not offenders, (
+            "these open SMTP directly instead of going through "
+            "email_utils.send_email_smtp(), so no feature flag can gate them: "
+            f"{offenders}"
+        )
+
+    def test_every_send_call_declares_a_channel(self):
+        """
+        Each send_email_smtp() call must say which flag gates it - either a
+        flag path, or WORKFLOW_GATED to declare the workflow step already does.
+        """
+        import re
+        ungated = []
+        for f in self._python_files():
+            if f.name == "email_utils.py":
+                continue
+            text = f.read_text(encoding="utf-8")
+            for m in re.finditer(r"send_email_smtp\s*\(", text):
+                # take the call's argument list, balanced to the closing paren
+                i, depth = m.end() - 1, 0
+                while i < len(text):
+                    if text[i] == "(":
+                        depth += 1
+                    elif text[i] == ")":
+                        depth -= 1
+                        if depth == 0:
+                            break
+                    i += 1
+                call = text[m.end():i]
+                if "channel=" not in call:
+                    line = text[:m.start()].count(chr(10)) + 1
+                    ungated.append(f"{f.name}:{line}")
+        assert not ungated, (
+            "send_email_smtp() called without channel= (state the gating flag, "
+            f"or WORKFLOW_GATED if the workflow step gates it): {ungated}"
+        )
+
+    def test_disabled_channel_suppresses_the_send(self, monkeypatch):
+        """A flagged-off channel must return False without touching SMTP."""
+        import email_utils
+
+        def boom(*a, **k):
+            raise AssertionError("SMTP was contacted despite the flag being off")
+
+        monkeypatch.setattr(email_utils.smtplib, "SMTP", boom)
+        monkeypatch.setenv("KT_FEATURE_EMAILS_BMS_ALERTS_ADMIN", "false")
+        features.reset_cache()
+        assert email_utils.send_email_smtp(
+            "x@example.com", "s", "b", channel="emails.bms_alerts_admin"
+        ) is False
+
+    def test_workflow_gated_sends_are_not_blocked_by_the_flag_layer(self):
+        """WORKFLOW_GATED must not consult features.json - the step already did."""
+        import email_utils
+        assert email_utils.WORKFLOW_GATED == "workflow-gated"
+
+
 class TestAnomalySeverityFlags:
     """check_anomaly.py must honour the severity flags."""
 

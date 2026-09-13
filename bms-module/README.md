@@ -39,6 +39,13 @@ tested; the hardware half is waiting on the on-site install.
 - **No WiFi password is compiled in.** The installer enters the customer's WiFi on
   site, so one build works anywhere and no customer credential enters this repo.
 
+## Turning the alerts off
+
+Alert mail from `ingest_bms_reading.py` is gated by the `emails.bms_alerts_admin` flag in
+[`features.json`](../src/main/java/org/ktronics/config/features.json). Set it to `false`
+to silence BMS alerts without touching the ingest path, or override for one run with
+`KT_FEATURE_EMAILS_BMS_ALERTS_ADMIN=false`. Alerts go to `ktronicssolar@gmail.com`.
+
 ## Hardware
 
 | Item | Notes |

@@ -6,7 +6,7 @@ Uses shared email_utils for HTML formatting and SMTP sending.
 
 import os
 import sys
-from email_utils import send_email_smtp, convert_plain_text_to_simple_html
+from email_utils import send_email_smtp, convert_plain_text_to_simple_html, WORKFLOW_GATED
 
 def convert_text_to_html_legacy(text_body):
     """Convert plain text alert body to formatted HTML."""
@@ -318,7 +318,7 @@ def main():
     body = os.getenv("EMAIL_BODY", "")
 
     # Send email using shared utility (HTML will be auto-generated)
-    success = send_email_smtp(to_addr, subject, body)
+    success = send_email_smtp(to_addr, subject, body, channel=WORKFLOW_GATED)
 
     return 0 if success else 2
 

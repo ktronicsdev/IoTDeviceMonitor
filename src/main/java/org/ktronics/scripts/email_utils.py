@@ -204,7 +204,14 @@ def convert_plain_text_to_simple_html(text_body):
     return create_html_template(content_html, header_class, title)
 
 
-def send_email_smtp(to_addr, subject, body_text, body_html=None):
+# Every outbound email in this repo goes through send_email_smtp(), so the
+# feature-flag check lives here rather than at each caller. A caller that is
+# already gated upstream (a workflow step with an `if:` on steps.flags.outputs)
+# passes WORKFLOW_GATED to say so explicitly.
+WORKFLOW_GATED = "workflow-gated"
+
+
+def send_email_smtp(to_addr, subject, body_text, body_html=None, channel=WORKFLOW_GATED):
     """
     Send email via SMTP with both plain text and HTML versions.
 
@@ -213,10 +220,22 @@ def send_email_smtp(to_addr, subject, body_text, body_html=None):
         subject: Email subject
         body_text: Plain text version
         body_html: HTML version (optional, will be auto-generated if None)
+        channel: Feature-flag path gating this send (e.g. "emails.bms_alerts_admin"),
+                 or WORKFLOW_GATED when the calling workflow step already gates it.
 
     Returns:
-        True if sent successfully, False otherwise
+        True if sent successfully, False otherwise (including when the channel
+        is switched off — a suppressed send is not an error).
     """
+    if channel and channel != WORKFLOW_GATED:
+        try:
+            from features import is_enabled
+        except Exception:  # noqa: BLE001
+            is_enabled = None          # fail open: never silence mail on an import error
+        if is_enabled is not None and not is_enabled(channel):
+            print(f"Skipping email to {to_addr}: feature flag '{channel}' is off")
+            return False
+
     smtp_config = get_smtp_config()
 
     if not smtp_config['user'] or not smtp_config['pass']:

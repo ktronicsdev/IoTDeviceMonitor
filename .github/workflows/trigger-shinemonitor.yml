@@ -67,8 +67,10 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           set -e
 
-          # Install pytest
-          pip install pytest
+          # pytest plus the suite's only third-party import: test_feature_flags.py parses the
+          # workflow YAML, and without pyyaml pytest aborts at COLLECTION - so a single missing
+          # dep takes down the whole run, not just that file.
+          pip install pytest pyyaml
 
           # Run ALL integration tests (no filters)
           pytest src/test/java/org/ktronics/scripts/integration/ \

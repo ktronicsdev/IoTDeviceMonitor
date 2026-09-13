@@ -256,7 +256,7 @@ def send_admin_email(cfg, subject, body):
         print(f"  [warn] email_utils unavailable: {e}")
         return False
     admin = cfg.get("admin_email", DEFAULT_ADMIN_EMAIL)
-    return send_email_smtp(admin, subject, body)
+    return send_email_smtp(admin, subject, body, channel="emails.solis_switch_admin")
 
 
 def handle_inverter(client, cfg, inv, state, dry_run):

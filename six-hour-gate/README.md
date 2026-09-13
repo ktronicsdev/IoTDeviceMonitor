@@ -4,6 +4,12 @@ Decides which device alarms are worth a human's attention. One rule: an alarm ha
 **still be wrong six hours later**. Everything the fleet shouts about in between is
 recorded in state and never mailed.
 
+**Escalations go to the admin** (`ktronicssolar@gmail.com`), not to customers. The gate
+does not depend on customer email addresses — only 6 of 23 ShineMonitor accounts and 1 of
+3 DessMonitor accounts have one, and that is irrelevant to whether an alarm escalates.
+Customer-facing device-alarm mail is a separate, independently flagged channel
+(`emails.device_alarms_customer`).
+
 ```
   ShineMonitor          check_*_alarms.sh
   DessMonitor    -->    parse_alarm_files()   -->   [ SIX-HOUR GATE ]   -->  filter_alarms_to_send()
@@ -74,6 +80,14 @@ Every outbound email is gated by
 `Load feature flags` step in each workflow. Turning a channel off needs a one-line
 config change, not a code deletion.
 
+Gating happens in two places. Workflow steps that shell out to `send_email.py` carry an
+`if:` on `steps.flags.outputs.*`. Scripts that mail from inside Python are gated at the
+chokepoint instead: **every** outbound email in this repo goes through
+`email_utils.send_email_smtp()`, which takes a `channel=` naming the flag that gates it
+(or `WORKFLOW_GATED` when the workflow step already does). Two BVT tests keep that true —
+one fails if any script imports `smtplib` directly, one fails if any
+`send_email_smtp()` call omits `channel=`.
+
 **Current profile — critical only** (set 13 Sep 2026):
 
 | Channel | State |
@@ -83,6 +97,8 @@ config change, not a code deletion.
 | `emails.device_alarms_admin` / `_customer` | on |
 | `emails.production_alerts_admin` / `_customer` | on |
 | `emails.build_verification`, `emails.test_regression` | on |
+| `emails.solis_switch_admin` | on (workflow dormant) |
+| `emails.bms_alerts_admin` | on (no hardware deployed) |
 | `alerts.production_red_3day` | on |
 | `alerts.production_orange_3month` | **off** |
 

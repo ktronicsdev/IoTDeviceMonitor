@@ -70,7 +70,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pytest
+          pip install pytest pyyaml   # pyyaml: test_feature_flags.py parses the workflow YAML
           sudo apt-get update && sudo apt-get install -y jq
 
       - name: Run DessMonitor monthly fetch

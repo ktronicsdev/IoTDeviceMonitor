@@ -203,7 +203,8 @@ def main():
 
     subject = f"🔔 BMS ALERT: {device} ({len(to_send)} issue(s))"
     body = format_email(device, reading, to_send)
-    ok = send_email_smtp(ADMIN_EMAIL, subject, body)
+    ok = send_email_smtp(ADMIN_EMAIL, subject, body,
+                         channel="emails.bms_alerts_admin")
     print(f"Alert email to {ADMIN_EMAIL}: {'sent' if ok else 'FAILED'}")
 
     if not ok:

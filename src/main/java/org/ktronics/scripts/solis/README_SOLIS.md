@@ -82,6 +82,13 @@ When OFF:
 - Auto-control configured + permitted → send ON command, email *"auto re-enabled"*.
 - Otherwise → email *"switch it on manually"*, throttled to once / 12 h.
 
+## Turning the alerts off
+
+The admin mail this watchdog sends is gated by `emails.solis_switch_admin` in
+[`features.json`](../../config/features.json). Set it to `false` to silence it while
+leaving detection and auto-switch-on running, or override for one run with
+`KT_FEATURE_EMAILS_SOLIS_SWITCH_ADMIN=false`.
+
 ## CLI
 
 ```bash

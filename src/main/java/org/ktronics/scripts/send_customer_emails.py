@@ -9,7 +9,7 @@ import os
 import sys
 import json
 from pathlib import Path
-from email_utils import send_email_smtp, convert_plain_text_to_simple_html
+from email_utils import send_email_smtp, convert_plain_text_to_simple_html, WORKFLOW_GATED
 
 def convert_text_to_html_legacy(text_body):
     """Convert plain text email body to formatted HTML (reuse from send_email.py)."""
@@ -145,7 +145,7 @@ def convert_text_to_html_legacy(text_body):
 def send_email(to_addr, subject, body):
     """Send email using shared SMTP utility."""
     # Use shared utility (HTML will be auto-generated)
-    return send_email_smtp(to_addr, subject, body)
+    return send_email_smtp(to_addr, subject, body, channel=WORKFLOW_GATED)
 
 def format_customer_alert_email(customer, alerts):
     """Format alert email for a specific customer."""
