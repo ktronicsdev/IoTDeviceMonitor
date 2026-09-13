@@ -160,3 +160,153 @@ class TestHistorySplit:
         assert len(b._recent_days(self.S, 30)) == 30
         assert b._recent_days(self.S, 0) == self.S            # 0 -> no trim
         assert b._recent_days([], 7) == []
+
+
+def _day(date, blocks, step_min=5):
+    """blocks = [(hours, amps)] -> consecutive samples at the device's real ~5-min cadence.
+
+    Sampling matters: battery_balance() only integrates intervals of 15 min or less (the same
+    cap energy_by_date_kwh uses), so a datalogger outage is never extrapolated into hours of
+    phantom current. Fixtures must therefore look like the real feed, not hourly points.
+    """
+    rows, t = [], 0
+    for hours, amps in blocks:
+        for _ in range(int(hours * 60 / step_min)):
+            rows.append({"timestamp": f"{date} {t // 60:02d}:{t % 60:02d}:00", "battery_a": amps})
+            t += step_min
+    return rows
+
+
+def _week(blocks):
+    s = []
+    for d in range(1, 8):
+        s += _day(f"2026-09-{d:02d}", blocks)
+    return s
+
+
+class TestBatteryBalance:
+    """The coulomb count: does what goes into the battery come back out?
+
+    A battery's net Ah must average ~zero over time. Verified against production data
+    2026-09: Chandika nets +5 Ah/day (healthy) while Gayan-IMH books +146 Ah/day on a
+    ~215 Ah pack whose voltage completes a full cycle daily — impossible, so the current
+    reading is at fault. This is published as a data-quality signal, never silently
+    "corrected": `Batt Current` is the only battery figure the inverter exposes, and
+    deriving the battery from the energy balance measured WORSE (it charges conversion
+    losses to the battery and degrades the plants that currently read correctly).
+    """
+
+    def test_charge_and_discharge_are_split_by_sign(self):
+        # negative = charging, matching charge_state(): 5 h at -20 A then 5 h at +20 A
+        bal = b.battery_balance(_day("2026-09-01", [(5, -20), (5, 20)]))["2026-09-01"]
+        assert bal["ah_in"] > 95 and bal["ah_out"] > 95        # ~100 Ah each way
+        assert bal["imbalance_pct"] <= 2                       # balances to within a sample
+
+    def test_long_gaps_are_not_integrated(self):
+        """A datalogger outage must not be extrapolated into hours of phantom current."""
+        s = [{"timestamp": "2026-09-01 00:00:00", "battery_a": -10},
+             {"timestamp": "2026-09-01 06:00:00", "battery_a": -10}]
+        # Nothing is integrated at all, so the day never appears in the result.
+        assert b.battery_balance(s).get("2026-09-01", {}).get("ah_in", 0) == 0.0
+
+    def test_missing_current_is_skipped(self):
+        s = [{"timestamp": "2026-09-01 00:00:00", "battery_a": None},
+             {"timestamp": "2026-09-01 00:05:00", "battery_a": -12}]
+        assert b.battery_balance(s).get("2026-09-01", {}).get("ah_in", 0) == 0.0
+
+    def test_imbalance_pct_is_share_of_throughput(self):
+        # 5 h charging at -40 A (~200 Ah in), 5 h discharging at +10 A (~50 Ah out)
+        bal = b.battery_balance(_day("2026-09-01", [(5, -40), (5, 10)]))["2026-09-01"]
+        assert bal["net_ah"] > 140
+        assert 70 <= bal["imbalance_pct"] <= 80                # ~150/200
+
+
+class TestBatteryHealth:
+    BALANCED = [(5, -20), (5, 20)]          # in == out
+    ACCUMULATING = [(5, -40), (5, 5)]       # ~200 Ah in, ~25 Ah out — impossible sustained
+    DRAINING = [(5, -5), (5, 40)]           # the mirror image
+
+    def test_balanced_pack_is_ok(self):
+        h = b.battery_health(b.battery_balance(_week(self.BALANCED)), "lfp")
+        assert h["ok"] is True and "balances" in h["reason"]
+
+    def test_accumulating_pack_is_flagged(self):
+        h = b.battery_health(b.battery_balance(_week(self.ACCUMULATING)), "lfp")
+        assert h["ok"] is False
+        assert h["mean_net_ah_per_day"] > 0
+        assert "sensor" in h["reason"]          # LFP cannot absorb charge it never returns
+
+    def test_too_few_days_is_undecided_not_a_flag(self):
+        """A brand-new or mostly-offline plant must not be accused."""
+        s = _day("2026-09-01", self.ACCUMULATING) + _day("2026-09-02", self.ACCUMULATING)
+        h = b.battery_health(b.battery_balance(s), "lfp")
+        assert h["ok"] is None and "not enough" in h["reason"]
+
+    def test_lead_acid_gets_a_wider_tolerance_and_its_own_diagnosis(self):
+        """Float/gassing genuinely consumes charge on a lead bank, so the same imbalance
+        that condemns an LFP sensor may just be an ageing battery."""
+        bal = b.battery_balance(_week(self.ACCUMULATING))
+        lfp, lead = b.battery_health(bal, "lfp"), b.battery_health(bal, "lead")
+        assert lead["threshold_pct"] > lfp["threshold_pct"]
+        assert lead["ok"] is False and "sulfated" in lead["reason"]
+        assert "LFP" not in lead["reason"]      # don't blame LFP chemistry on a lead bank
+
+    def test_a_mild_imbalance_passes_on_lead_but_fails_on_lfp(self):
+        """The tolerance split has to actually change a verdict, or it is decoration."""
+        mild = _week([(5, -22), (5, 18)])       # ~18% imbalance: over 10%, under 25%
+        bal = b.battery_balance(mild)
+        assert b.battery_health(bal, "lfp")["ok"] is False
+        assert b.battery_health(bal, "lead")["ok"] is True
+
+    def test_draining_pack_reports_the_opposite_problem(self):
+        h = b.battery_health(b.battery_balance(_week(self.DRAINING)), "lead")
+        assert h["ok"] is False and h["mean_net_ah_per_day"] < 0
+        assert "losing charge" in h["reason"]
+
+    def test_idle_plant_is_not_flagged(self):
+        """Negligible-throughput days are ignored, so a plant that simply isn't cycling
+        doesn't get reported as broken."""
+        h = b.battery_health(b.battery_balance(_week([(5, -0.2)])), "lfp")
+        assert h["ok"] is None
+
+
+class TestAccumulatorMapping:
+    """The inverter's lifetime kWh counters are the only AUTHORITATIVE energy figures it
+    reports — no integration, so none of the integration error. Three of the four were
+    fetched and discarded until 2026-09."""
+
+    @pytest.mark.parametrize("title,key", [
+        ("Accumulated PV Power", "acc_pv_kwh"),
+        ("Accumulated Load Power", "acc_load_kwh"),
+        ("Accumulated Sell Power", "acc_sell_kwh"),
+        ("Accumulated Self_Use Power", "acc_selfuse_kwh"),
+    ])
+    def test_each_accumulator_maps(self, title, key):
+        assert b._map_key(title)[0] == key
+
+    def test_accumulators_do_not_collide_with_instantaneous_fields(self):
+        """'Accumulated Load Power' must not be swallowed by the PLoad rule, etc."""
+        live = ["Battery Voltage", "Batt Current", "Charger Power", "PLoad", "PGrid",
+                "Grid Voltage", "Inverter Voltage", "rated power", "work state",
+                "Accumulated PV Power", "Accumulated Load Power",
+                "Accumulated Sell Power", "Accumulated Self_Use Power"]
+        keys = [b._map_key(t)[0] for t in live]
+        assert all(k is not None for k in keys)
+        assert len(keys) == len(set(keys)), f"duplicate mapping: {keys}"
+
+
+class TestChemistry:
+    def test_plant_block_carries_chem(self):
+        assert b.build_plant_block({}, {"alias": "x"}, [], caps={"chem": "lead"})["chem"] == "lead"
+
+    def test_plant_block_defaults_chem_to_lfp(self):
+        """Unflagged accounts keep the previous behaviour exactly."""
+        assert b.build_plant_block({}, {"alias": "x"}, [], caps={})["chem"] == "lfp"
+
+    def test_accounts_loader_reads_chem(self, tmp_path):
+        p = tmp_path / "c.json"
+        p.write_text(json.dumps({"company_key": "ck", "accounts": [
+            {"label": "L", "username": "u", "password": "p", "ph1800": True, "chem": "LEAD"}]}),
+            encoding="utf-8")
+        _ck, accts = b.load_ph1800_accounts(p)
+        assert accts[0][3]["chem"] == "lead"       # normalised to lowercase

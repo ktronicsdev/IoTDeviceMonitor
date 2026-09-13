@@ -147,12 +147,68 @@ check('8S curve reports a plausible high SOC (85-100%)', soc8 >= 85 && soc8 <= 1
 run('DATA = __fx.pack8s; BATT_CAP_W = 2400; PACK_S = inferPackS(); renderBattery();');
 out = el('battwrap').innerHTML;
 check('Battery tab renders for the 8S plant', out.includes('27.3'));
-check('tab states which pack curve is assumed', out.includes('8S LFP curve'));
+check('tab states which pack curve is assumed', out.includes('8-cell LFP curve'));
 check('no undefined/NaN leaked', !/undefined|NaN/.test(out));
 
 // A plant with no battery series at all (Thusharasameera) must not crash the inference.
 ctx.__fx.noBatt = { latest: {}, series7d: [], plant: {}, device: {} };
 check('empty series falls back to 16S', run('DATA = __fx.noBatt; inferPackS();') === 16);
+
+
+// 6. MIXED CHEMISTRY: the fleet is not all LFP. FaizalIsmail and Thusharasameera run
+// lead-acid banks, whose discharge curve is nothing like LFP's flat plateau. Feeding a
+// lead pack through the LFP table read ~13% when it was actually ~71% charged.
+console.log('\n[chemistry-aware SOC]');
+const atL = (h) => `${day} ${String(h).padStart(2, '0')}:00:00`;
+ctx.__fx.lead48 = {
+  latest: { battery_v: { value: '49.5' }, battery_a: { value: '0' }, battery_w: { value: '0' } },
+  series7d: [
+    { timestamp: atL(6),  battery_v: 48.7, battery_w: 0 },
+    { timestamp: atL(12), battery_v: 57.6, battery_w: -900 },
+    { timestamp: atL(18), battery_v: 49.9, battery_w: 0 },
+  ],
+  plant: { batt_cap_w: 4800, chem: 'lead' }, device: {},
+};
+check('lead 48V bank is detected as 24 cells',
+      run('DATA = __fx.lead48; inferPackS();') === 24,
+      'got ' + run('DATA = __fx.lead48; inferPackS();'));
+const socLead = run('DATA = __fx.lead48; PACK_S = inferPackS(); socFromV(49.5);');
+check('lead curve reports a plausible mid-high SOC (55-85%)',
+      socLead >= 55 && socLead <= 85, 'got ' + socLead);
+check('LFP curve would have badly understated it (<25%)',
+      run('DATA = __fx.withBattery; PACK_S = 16; socFromV(49.5);') < 25);
+run('DATA = __fx.lead48; BATT_CAP_W = 4800; PACK_S = inferPackS(); renderBattery();');
+out = el('battwrap').innerHTML;
+check('tab names the lead-acid curve', out.includes('24-cell lead-acid curve'));
+check('no undefined/NaN leaked (lead)', !/undefined|NaN/.test(out));
+
+// REGRESSION: an LFP plant must be completely unaffected by the chemistry split.
+check('LFP plant unchanged by the chemistry split (16S, 52.4 V -> 58%)',
+      run('DATA = __fx.withBattery; PACK_S = 16; socFromV(52.4);') === 58);
+check('LFP plant with no chem flag still infers LFP',
+      run('DATA = __fx.pack8s; inferPackS();') === 8);
+
+
+// 7. The Charge/Discharge reliability banner. Charge/Discharge is integrated from the
+// whole-amp-quantized `Batt Current`; the publisher reports whether the coulomb count
+// actually closes (plant.battery_health), and a plant whose battery books +79 Ah/day is
+// physically impossible, so the bars must be labelled rather than shown as fact.
+console.log('\n[battery-balance warning banner]');
+run('DATA = { plant: { battery_health: { ok: true, reason: "balances" } } }; renderBattWarn();');
+check('healthy plant shows no banner', el('battwarn').style.display === 'none');
+
+run('DATA = { plant: { battery_health: { ok: false, ' +
+    'reason: "battery current does not balance: +79.3 Ah/day net across 7 days." } } }; renderBattWarn();');
+check('flagged plant shows the banner', el('battwarn').style.display === '');
+check('banner carries the publisher reason', el('battwarn').innerHTML.includes('+79.3 Ah/day'));
+check('banner scopes the damage to the battery bars',
+      el('battwarn').innerHTML.includes('Production, Consumption and Grid figures are unaffected'));
+
+run('DATA = { plant: {} }; renderBattWarn();');      // payload published before this field existed
+check('missing battery_health degrades silently', el('battwarn').style.display === 'none');
+
+run('DATA = { plant: { battery_health: { ok: null, reason: "not enough cycling days" } } }; renderBattWarn();');
+check('undecided (ok:null) shows no banner', el('battwarn').style.display === 'none');
 
 console.log(fails ? `\n${fails} CHECK(S) FAILED` : '\nALL CHECKS PASSED');
 process.exit(fails ? 1 : 0);

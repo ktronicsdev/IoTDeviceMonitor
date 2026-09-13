@@ -188,6 +188,8 @@
         <div class="seg" id="hm_seg"><button data-p="D">D</button><button data-p="M" class="on">M</button><button data-p="Y">Y</button><button data-p="T">T</button></div>
         <div class="sel"><button id="hm_prev">‹</button><select class="d" id="hm_date"></select><button id="hm_next">›</button></div>
       </div></div>
+    <div id="battwarn" style="display:none;margin:0 0 10px;padding:9px 12px;border-radius:8px;
+         background:#3a2a12;border:1px solid #7c5310;color:#f0c78a;font-size:12px;line-height:1.5"></div>
     <canvas id="hist"></canvas>
   </div>
 
@@ -320,20 +322,35 @@ const SOC_TABLE=[[48.0,0],[50.4,20],[51.5,40],[52.5,60],[53.2,78],[53.7,85],
 // to 0%. So infer the series count per plant and scale the curve per-cell. Top-of-charge is the
 // discriminator: mid-range voltages are ambiguous between 15S and 16S, but a full pack lands
 // near 3.45 V/cell whatever the count. PACK_S=16 reproduces the original numbers exactly.
+// The fleet is MIXED CHEMISTRY and the two discharge curves are nothing alike: LFP sits on a
+// long flat plateau (~3.2 V/cell for most of its range) while lead-acid falls off steadily
+// (2.12 V/cell full -> 1.95 V/cell empty). Applying the LFP table to a lead bank therefore
+// reads badly wrong. `chem` comes from the publisher (credentials, per account).
+// Tables are per-cell x series count; the LFP one below reproduces the original 16S numbers
+// exactly (3.00/3.15/3.22/3.28/3.325/3.356/3.388/3.419/3.45 V/cell).
+const SOC_TABLE_LEAD=[[46.8,0],[48.0,20],[48.7,40],[49.2,60],[49.7,78],[50.0,85],
+                      [50.4,93],[50.7,97],[50.9,100]];   // 24-cell / 48V nominal, rested
 const LFP_SERIES=[4,8,15,16], FULL_V_PER_CELL=3.45;
+const LEAD_SERIES=[6,12,24], LEAD_FULL_V_PER_CELL=2.12;  // 12V / 24V / 48V nominal banks
 let PACK_S=16;
+// DATA is the per-plant block (load() does DATA=j.plants[plantIdx]), so chem sits at
+// DATA.plant.chem — same shape as genSeries()/PV_CAP_W read it.
+const packChem = () => ((DATA&&DATA.plant&&DATA.plant.chem)||'lfp').toLowerCase();
 function inferPackS(){
   const vs=((DATA&&DATA.series7d)||[]).map(r=>num(r.battery_v)).filter(v=>v>0);
   const lv=num(DATA&&DATA.latest&&DATA.latest.battery_v&&DATA.latest.battery_v.value);
   if(lv>0) vs.push(lv);
-  if(!vs.length) return 16;
+  const lead=packChem()==='lead';
+  const series=lead?LEAD_SERIES:LFP_SERIES, full=lead?LEAD_FULL_V_PER_CELL:FULL_V_PER_CELL;
+  if(!vs.length) return lead?24:16;
   const vmax=Math.max(...vs);
-  return LFP_SERIES.reduce((a,b)=>
-    Math.abs(vmax/b-FULL_V_PER_CELL)<Math.abs(vmax/a-FULL_V_PER_CELL)?b:a);
+  return series.reduce((a,b)=>
+    Math.abs(vmax/b-full)<Math.abs(vmax/a-full)?b:a);
 }
 const socFromV = v => {
   if(v==null) return null;
-  const t=SOC_TABLE, k=PACK_S/16;              // k=1 => identical to the original 16S curve
+  const lead=packChem()==='lead';
+  const t=lead?SOC_TABLE_LEAD:SOC_TABLE, k=PACK_S/(lead?24:16);   // k=1 => the original curve
   if(v<=t[0][0]*k) return 0;
   if(v>=t[t.length-1][0]*k) return 100;
   for(let i=1;i<t.length;i++) if(v<=t[i][0]*k){
@@ -572,8 +589,24 @@ function energyBarCfg(labels,rows,xt){
        tooltip:{callbacks:{label:c=>c.dataset.label+': '+Math.abs(c.parsed.y)+' kWh'}}}}};
 }
 
+// Charge/Discharge on this chart is integrated from `Batt Current`, the only battery figure the
+// inverter reports — and it is quantized to whole amps. The publisher checks whether the day's
+// coulomb count actually closes (plant.battery_health); when it does not, the bars are not
+// trustworthy and saying so is better than quietly showing a wrong number. Deriving the battery
+// from the energy balance instead was measured to be WORSE — it charges conversion losses to the
+// battery and degrades the plants that currently read correctly.
+function renderBattWarn(){
+  const el=document.getElementById('battwarn'); if(!el) return;
+  const h=DATA&&DATA.plant&&DATA.plant.battery_health;
+  if(!h||h.ok!==false){ el.style.display='none'; return; }
+  el.style.display='';
+  el.innerHTML='<strong>⚠ Charge / Discharge on this plant is unreliable.</strong> '+
+    (h.reason||'')+' Production, Consumption and Grid figures are unaffected.';
+}
+
 function renderHistory(){
   if(!DATA) return;
+  renderBattWarn();
   document.getElementById('hm_seg').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.p===hmPeriod));
   const list=ppList(hmPeriod);
   const sel=document.getElementById('hm_date').parentElement;
@@ -716,7 +749,7 @@ function renderBattery(){
         </div>
         <div style="height:8px;background:#222c3b;border-radius:5px;margin-top:8px;overflow:hidden">
           <div style="height:100%;width:${Math.max(0,Math.min(100,soc||0))}%;background:linear-gradient(90deg,#22c55e,#16a34a)"></div></div>
-        <div style="font-size:11px;color:var(--muted);margin-top:7px">Estimated from pack voltage (${PACK_S}S LFP curve) — rises under charge and sags under load. A BMS reading is the source of truth.</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:7px">Estimated from pack voltage (${PACK_S}-cell ${packChem()==='lead'?'lead-acid':'LFP'} curve) — rises under charge and sags under load. A BMS reading is the source of truth.</div>
       </div>
       <div style="font-size:15px;font-weight:700;color:${fc};text-transform:capitalize;min-width:120px">${flow}</div>
     </div>

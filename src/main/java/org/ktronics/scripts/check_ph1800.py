@@ -206,7 +206,8 @@ def load_ph1800_accounts(creds_path, customer=None):
         #   "pro" (default) = grid-tie MUST: PGrid<0 import, >0 export
         #   "vhm"           = off-grid PV-1800: PGrid>0 import, never exports
         caps = {"pv_kw": acc.get("pv_kw"), "batt_kw": acc.get("batt_kw"),
-                "variant": (acc.get("variant") or "pro").lower()}
+                "variant": (acc.get("variant") or "pro").lower(),
+                "chem": (acc.get("chem") or "lfp").lower()}
         out.append((label, acc.get("username"), acc.get("password"), caps))
     return company_key, out
 
@@ -261,7 +262,14 @@ FIELD_MAP = [
     (["grid voltage"], "grid_v", "V"),
     (["inverter voltage"], "inverter_v", "V"),
     (["rated power"], "rated_power_w", "W"),       # inverter rating, straight from ShineMonitor
-    (["accumulated pv power"], "acc_pv_kwh", "kWh"),  # lifetime PV generation counter
+    # Lifetime kWh counters. These are the only AUTHORITATIVE energy figures the inverter
+    # reports: they need no integration, so they carry none of the error that integrating a
+    # quantized instantaneous current does. Live snapshot only — the 15-column history feed
+    # does NOT include them, so they cannot be backfilled; difference them across live cycles.
+    (["accumulated pv power"], "acc_pv_kwh", "kWh"),        # lifetime PV generation
+    (["accumulated load power"], "acc_load_kwh", "kWh"),    # lifetime load consumption
+    (["accumulated sell power"], "acc_sell_kwh", "kWh"),    # lifetime grid export
+    (["accumulated self_use power"], "acc_selfuse_kwh", "kWh"),  # lifetime self-consumption
     (["work state", "working state"], "work_state", ""),
 ]
 
@@ -395,6 +403,107 @@ def energy_by_date_kwh(series):
             {d: v / 1000.0 for d, v in load_wh.items()})
 
 
+def battery_balance(series):
+    """Per-day coulomb count from Batt Current: {date: {ah_in, ah_out, net_ah, imbalance_pct}}.
+
+    A battery's net Ah MUST average ~zero over time — whatever goes in comes back out, minus a
+    few percent. Sustained one-way accumulation is physically impossible and means the current
+    sensor is drifting. Verified 2026-09: Chandika (healthy) nets +5 Ah/day, while Gayan-IMH
+    books +146 Ah/day (+590 Ah over six days) on a ~215 Ah pack whose voltage completes a full
+    cycle daily. Same code path, same devcode — so this is per-device, not a software fault.
+
+    We publish the count rather than "correcting" it: `Batt Current` is the only battery
+    measurement the inverter exposes (there is no discharge-current field and no accumulated
+    charge/discharge counter), and deriving the battery from the energy balance was measured to
+    be WORSE — it charges inverter/charger losses to the battery and degrades the known-good
+    plant. So surface the discrepancy instead of restating it as fact.
+    """
+    from collections import defaultdict
+    per_day, prev = defaultdict(lambda: {"ah_in": 0.0, "ah_out": 0.0}), None
+    for r in sorted(series, key=lambda x: str(x.get("timestamp", ""))):
+        try:
+            dt = datetime.strptime(str(r.get("timestamp", ""))[:19], "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            continue
+        amps = _to_float(r.get("battery_a"))
+        if prev is not None and prev[1] is not None:
+            dh = (dt - prev[0]).total_seconds() / 3600.0
+            if 0 < dh <= 0.25:                       # same gap rule as energy_by_date_kwh
+                d = prev[0].strftime("%Y-%m-%d")
+                # sign convention matches charge_state(): negative = charging
+                if prev[1] < 0:
+                    per_day[d]["ah_in"] += -prev[1] * dh
+                else:
+                    per_day[d]["ah_out"] += prev[1] * dh
+        prev = (dt, amps)
+    out = {}
+    for d, v in per_day.items():
+        ah_in, ah_out = round(v["ah_in"], 1), round(v["ah_out"], 1)
+        throughput = max(ah_in, ah_out)
+        out[d] = {
+            "ah_in": ah_in,
+            "ah_out": ah_out,
+            "net_ah": round(ah_in - ah_out, 1),
+            # |net| as a share of the day's throughput; >10% sustained is not physical.
+            "imbalance_pct": round(abs(ah_in - ah_out) / throughput * 100) if throughput else 0,
+        }
+    return out
+
+
+# Tolerance differs by chemistry, so the same net-Ah reading means different things:
+#   lfp  — ~99% coulombic efficiency, so anything but a few percent is a measurement fault.
+#   lead — float/gassing genuinely consumes charge that never comes back out, so a healthy
+#          bank runs a real positive imbalance. Typical float is ~1-3 mA/Ah (a few Ah/day on
+#          a 100 Ah bank); well beyond that means sulfation, not a sensor.
+BALANCE_TOLERANCE_PCT = {"lfp": 10, "lead": 25}
+
+
+def battery_health(balance, chem="lfp", min_days=3):
+    """Flag a plant whose coulomb count refuses to close. Returns a small dict for the payload.
+
+    Ignores days with negligible throughput (offline / no cycling) so an idle plant is not
+    flagged, and requires the imbalance to persist across several days so a single odd day
+    (a datalogger gap, a deep-discharge event) doesn't trip it.
+    """
+    chem = (chem or "lfp").lower()
+    threshold_pct = BALANCE_TOLERANCE_PCT.get(chem, 10)
+    days = [(d, v) for d, v in sorted(balance.items()) if max(v["ah_in"], v["ah_out"]) >= 5]
+    recent = days[-7:]
+    if len(recent) < min_days:
+        return {"ok": None, "chem": chem, "days": len(recent),
+                "reason": "not enough cycling days to judge"}
+    bad = [v for _d, v in recent if v["imbalance_pct"] > threshold_pct]
+    nets = [v["net_ah"] for _d, v in recent]
+    mean_net = round(sum(nets) / len(nets), 1)
+    flagged = len(bad) >= max(min_days, len(recent) * 2 // 3)
+
+    if not flagged:
+        reason = "coulomb count balances within tolerance"
+    elif mean_net < 0:
+        # More out than in, sustained — the bank is being drained faster than it is refilled.
+        reason = (f"battery is losing charge it never regains: {mean_net:+} Ah/day across "
+                  f"{len(recent)} days. Check that charging is actually happening.")
+    elif chem == "lead":
+        reason = (f"charge absorbed far exceeds charge returned: {mean_net:+} Ah/day across "
+                  f"{len(recent)} days. Some positive imbalance is normal float on a lead-acid "
+                  f"bank, but not this much — suspect a sulfated/ageing bank (or the current "
+                  f"sensor). Charge/Discharge figures are unreliable on this plant.")
+    else:
+        reason = (f"battery current does not balance: {mean_net:+} Ah/day net across "
+                  f"{len(recent)} days. LFP is ~99% coulombic-efficient and cannot accumulate "
+                  f"charge indefinitely — suspect current-sensor calibration. "
+                  f"Charge/Discharge figures are unreliable on this plant.")
+    return {
+        "ok": not flagged,
+        "chem": chem,
+        "mean_net_ah_per_day": mean_net,
+        "days_considered": len(recent),
+        "days_over_threshold": len(bad),
+        "threshold_pct": threshold_pct,
+        "reason": reason,
+    }
+
+
 def build_plant_block(plant_info, device, series, tz_offset=0, caps=None,
                       rated_w_cloud=None, cloud_energy=None, acc_pv_kwh=None):
     """Plant block. Rated power + daily/monthly/yearly energy come straight from ShineMonitor;
@@ -411,10 +520,16 @@ def build_plant_block(plant_info, device, series, tz_offset=0, caps=None,
 
     nom = _to_float((plant_info or {}).get("nominalPower"))
     rated_w = rated_w_cloud or (round(nom * 1000) if nom else None)
+    balance = battery_balance(series)       # walks the whole series — compute once
 
     return {
         "type": "PH1800",
         "variant": (caps.get("variant") or "pro"),   # dashboard grid-sign convention (pro/vhm)
+        # Battery chemistry: selects the dashboard's voltage->SOC curve. The fleet is mixed
+        # (LFP at Gayan-IMH/Chandika, lead-acid at FaizalIsmail/Thusharasameera) and the two
+        # curves are nothing alike, so an LFP curve on a lead bank reads badly wrong.
+        # Defaults to lfp to preserve existing behaviour for any unflagged account.
+        "chem": (caps.get("chem") or "lfp"),
         "name": (plant_info or {}).get("name") or device.get("alias") or "Plant",
         "nominal_power_kw": round(rated_w / 1000.0, 2) if rated_w else None,
         "pv_cap_w": cap_w("pv_kw"),
@@ -433,6 +548,10 @@ def build_plant_block(plant_info, device, series, tz_offset=0, caps=None,
         },
         "energy_note": "Energy (daily/monthly/yearly) and rated power come straight from "
                        "ShineMonitor; total is the inverter's accumulated-PV lifetime counter.",
+        # Data-quality signal, not a reading: does the battery's coulomb count close?
+        # See battery_balance() for why this is published rather than silently corrected.
+        "battery_balance": balance,
+        "battery_health": battery_health(balance, caps.get("chem")),
     }
 
 
