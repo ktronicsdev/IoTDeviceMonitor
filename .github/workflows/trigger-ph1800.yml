@@ -10,11 +10,14 @@ on:
   workflow_dispatch:
     inputs:
       iterations:
-        description: "fetch+publish iterations before re-launch"
-        default: "26"
+        description: "hard cap on iterations (blank = run until the time budget is spent)"
+        default: ""
       sleep_s:
         description: "seconds between iterations"
         default: "600"
+      budget_min:
+        description: "minutes of wall clock before ending cleanly (keep under timeout-minutes)"
+        default: "300"
 
 permissions:
   contents: write
@@ -82,13 +85,24 @@ jobs:
         env:
           GH_PAT:   ${{ secrets.GH_PAT }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ITERATIONS: ${{ github.event.inputs.iterations || '26' }}
+          ITERATIONS: ${{ github.event.inputs.iterations || '' }}   # empty = purely time-bounded
           SLEEP_S:    ${{ github.event.inputs.sleep_s || '600' }}
+          BUDGET_MIN: ${{ github.event.inputs.budget_min || '300' }}
           REPO:       ${{ github.repository }}
         run: |
           set +e
-          for i in $(seq 1 "${ITERATIONS}"); do
-            echo "::group::iteration $i / ${ITERATIONS} ($(date -u +%H:%M:%S) UTC)"
+          # TIME-bounded, not count-bounded. A fixed `seq 1 26` made run length scale with plant
+          # count (26 x work + 25 x sleep), so a 5th plant pushed the job past timeout-minutes and
+          # it was killed mid-loop -> tail iterations never publish. That is the Aug-2026 staleness
+          # signature by another route (see site/ph1800/README.md, the two-CI rule). Budget stays
+          # 30 min under the job timeout so we always end cleanly and hand over to the standby.
+          START=$(date +%s)
+          BUDGET_S=$(( BUDGET_MIN * 60 ))
+          i=0
+          while :; do
+            i=$((i+1))
+            iter_start=$(date +%s)
+            echo "::group::iteration $i ($(date -u +%H:%M:%S) UTC, $(( (BUDGET_S - (iter_start - START)) / 60 ))m of budget left)"
             rm -rf publish; mkdir -p publish
 
             # Pure pass-through for every ph1800-flagged account -> one <hash>.json each.
@@ -109,6 +123,28 @@ jobs:
             fi
 
             echo "::endgroup::"
-            if [ "$i" -lt "${ITERATIONS}" ]; then sleep "${SLEEP_S}"; fi
+
+            work=$(( $(date +%s) - iter_start ))
+            elapsed=$(( $(date +%s) - START ))
+
+            # Optional hard cap, for short manual runs via workflow_dispatch.
+            if [ -n "${ITERATIONS}" ] && [ "$i" -ge "${ITERATIONS}" ]; then
+              echo "[loop] reached the requested ${ITERATIONS} iterations."; break
+            fi
+
+            # End cleanly while a full iteration still fits. Being killed by the job timeout
+            # mid-publish is what starved the dashboards in Aug-2026; the pre-queued standby
+            # picks the chain up either way, so stopping early costs nothing.
+            if [ $(( elapsed + SLEEP_S + work )) -ge "${BUDGET_S}" ]; then
+              echo "[loop] ${elapsed}s elapsed; another iteration (${work}s work + ${SLEEP_S}s sleep) would exceed the ${BUDGET_MIN}m budget — ending cleanly after $i iterations."
+              break
+            fi
+
+            # Surface the scaling problem before it bites.
+            if [ "${work}" -gt $(( SLEEP_S / 2 )) ]; then
+              echo "::warning::iteration work ${work}s exceeds half the ${SLEEP_S}s poll interval — the live loop is approaching its budget. See site/ph1800/README.md (two-CI rule) before adding plants."
+            fi
+
+            sleep "${SLEEP_S}"
           done
-          echo "loop finished ${ITERATIONS} iterations"   # exits 0; the pre-queued standby now starts
+          echo "[loop] finished $i iterations in $(( ($(date +%s) - START) / 60 ))m."   # exits 0; the pre-queued standby now starts

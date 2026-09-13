@@ -149,6 +149,28 @@ job). Adding a plant then only lengthens an **hourly** job, never the every-10-m
 **Do NOT** re-add `--history-days 30` to `trigger-ph1800.yml`/`trigger-ph1000.yml` — that reverts
 the trap. History belongs in the `*-hist` workflows.
 
+### Corollary (2026-09): the loop is time-bounded, not count-bounded
+The same starvation could be reached **without** breaking the rule above, because the loop used to
+run a fixed `for i in $(seq 1 26)`. Run length was therefore `26 × work + 25 × sleep`, and `work`
+scales with plant count:
+
+| Plants | Work/iteration | Run length | vs `timeout-minutes: 330` |
+|---|---|---|---|
+| 4 | 155 s (~39 s/plant) | 317 min | 96% — fits, 29 s/iteration spare |
+| **5** | 194 s | **334 min** | **overruns — job killed mid-loop** |
+| 6 | 233 s | 351 min | overruns by 21 min |
+
+So flagging a 5th plant — a one-line credentials change — would have silently pushed the job past
+its timeout, killing it before the tail iterations published. Both live loops now run
+`while :` against a **`BUDGET_MIN` wall-clock budget (default 300 min, 30 min under the job
+timeout)** and stop while a full iteration still fits, handing over to the pre-queued standby.
+
+**What this means for you:** adding plants now **shortens the chain** (fewer iterations per run)
+instead of overrunning the job. The per-iteration `::warning::` — fired when work exceeds half the
+poll interval — is the signal that the fleet has outgrown the live cycle and work needs splitting
+into a separate workflow, per the rule above. `ITERATIONS` still exists as an optional hard cap for
+short manual `workflow_dispatch` runs; leave it blank for scheduled runs.
+
 ## Usage
 ```bash
 # One plant (bypasses the flag) — dump its live fields:
