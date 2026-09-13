@@ -1,0 +1,28 @@
+# Line-ending policy.
+#
+# 2026-09-13: common_config.sh was committed from Windows with CRLF. Every fetch script
+# sources it, so bash on the runner read the trailing \r as part of a command
+# ("line 6: $'\r': command not found", exit 127) and BOTH the ShineMonitor and DessMonitor
+# pipelines failed on every run until it was converted back. Nothing enforced LF, so a
+# single editor's default broke all data collection.
+#
+# Anything executed by bash, or read by a Linux runner, MUST be LF in the repo.
+
+* text=auto
+
+*.sh   text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.py   text eol=lf
+*.json text eol=lf
+
+# Keep binaries untouched.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.bin  binary
+*.woff binary
+*.woff2 binary
