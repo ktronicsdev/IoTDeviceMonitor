@@ -17,8 +17,6 @@
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • anuradha-gajanayaka-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│   • chamila-chamila-119h
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • ganishka-ganishka-home-3kw
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • lahiru-ryan-lahiru-plant

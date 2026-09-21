@@ -1275,5 +1275,14 @@
     "customer": "Mifanza",
     "plant": "Mifanza Solar System",
     "message": "Solar charger stops due to over load"
+  },
+  "1592739:D70000210150180785:6ab0958a93320501682e3c7b": {
+    "send_count": 1,
+    "first_seen": "2026-09-21T08:22:31.264416",
+    "ignored": false,
+    "last_sent": "2026-09-21T08:22:31.264416",
+    "customer": "Mifanza",
+    "plant": "Mifanza Solar System",
+    "message": "Inverter over current protection error"
   }
 }
