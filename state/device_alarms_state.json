@@ -1284,5 +1284,14 @@
     "customer": "Mifanza",
     "plant": "Mifanza Solar System",
     "message": "Inverter over current protection error"
+  },
+  "1592739:D70000210150180785:6ab11e499332050168f1711d": {
+    "send_count": 1,
+    "first_seen": "2026-09-21T13:26:39.497686",
+    "ignored": false,
+    "last_sent": "2026-09-21T13:26:39.497686",
+    "customer": "Mifanza",
+    "plant": "Mifanza Solar System",
+    "message": "Inverter over current protection error"
   }
 }
