@@ -1295,12 +1295,21 @@
     "message": "Inverter over current protection error"
   },
   "1592739:D70000210150180785:6ab1cdf79332050168920284": {
-    "send_count": 1,
+    "send_count": 2,
     "first_seen": "2026-09-22T01:08:41.868718",
     "ignored": false,
-    "last_sent": "2026-09-22T01:08:41.868718",
+    "last_sent": "2026-09-22T08:07:34.033658",
     "customer": "Mifanza",
     "plant": "Mifanza Solar System",
+    "message": "Inverter over current protection error"
+  },
+  "1101493:D70000210186250779:6ab2032e9332050168cfa16d": {
+    "send_count": 1,
+    "first_seen": "2026-09-22T08:07:34.033658",
+    "ignored": false,
+    "last_sent": "2026-09-22T08:07:34.033658",
+    "customer": "Abeetha",
+    "plant": "PLANT",
     "message": "Inverter over current protection error"
   }
 }
