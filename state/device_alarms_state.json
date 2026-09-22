@@ -1304,12 +1304,21 @@
     "message": "Inverter over current protection error"
   },
   "1101493:D70000210186250779:6ab2032e9332050168cfa16d": {
-    "send_count": 1,
+    "send_count": 2,
     "first_seen": "2026-09-22T08:07:34.033658",
     "ignored": false,
-    "last_sent": "2026-09-22T08:07:34.033658",
+    "last_sent": "2026-09-22T12:10:13.004862",
     "customer": "Abeetha",
     "plant": "PLANT",
     "message": "Inverter over current protection error"
+  },
+  "1592739:D70000210150180785:6ab23c2f93320501681643dd": {
+    "send_count": 1,
+    "first_seen": "2026-09-22T12:10:13.004862",
+    "ignored": false,
+    "last_sent": "2026-09-22T12:10:13.004862",
+    "customer": "Mifanza",
+    "plant": "Mifanza Solar System",
+    "message": "Solar charger stops due to over load"
   }
 }
