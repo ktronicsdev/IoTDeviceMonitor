@@ -1,12 +1,12 @@
 ================================================================================
 ║                                                                              ║
-║                  [SHINEMONITOR] CONNECTIVITY - ALL LINKS UP                  ║
+║                        [SHINEMONITOR] DATA LINK DOWN                         ║
 ║                                                                              ║
 ║            This is a CONNECTIVITY report, NOT a production fault             ║
 ║                                                                              ║
 ================================================================================
 
-Report Time: 2026-09-23 15:19:38 UTC
+Report Time: 2026-09-23 18:38:51 UTC
 
 ┌─ FLEET STATUS ───────────────────────────────────────────────────────────────┐
 │
@@ -17,10 +17,90 @@ Report Time: 2026-09-23 15:19:38 UTC
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
-┌─ STATUS ─────────────────────────────────────────────────────────────────────┐
+┌─ WHAT THIS MEANS ────────────────────────────────────────────────────────────┐
 │
-│ 8 plant(s) still have a dead data link, but every one has already
-│ been reported 3 times and is now auto-ignored until it reports again.
+│ These plants have sent NO data for 3+ days.
+│
+│ That is a MONITORING problem, not a production fault. The usual cause is
+│ the customer's WiFi or the monitoring dongle being offline. The solar
+│ system itself is very probably running normally — do NOT record these as
+│ dead or failed systems, and do NOT quote them as lost production.
+│
+│ We cannot confirm production either way while the link is down. Restoring
+│ the link is the only way to find out.
+│
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ PLANTS WITH A DEAD LINK ────────────────────────────────────────────────────┐
+│
+│ 📡 abeetha-plant
+│    Customer:    Abeetha
+│    Last data:   never  (114 days ago)
+│    Symptom:     no non-zero reading has ever been recorded
+│    Diagnosis:   DATA LINK DOWN — not a production fault
+│    Status:      Send #2/3
+│
+│ 📡 ganishka-ganishka-home-3kw
+│    Customer:    Ganishka
+│    Contact:     ganishkawa@gmail.com
+│    Last data:   never  (114 days ago)
+│    Symptom:     no non-zero reading has ever been recorded
+│    Diagnosis:   DATA LINK DOWN — not a production fault
+│    Status:      Send #2/3
+│
+│ 📡 mifanza-mifanza-solar-system
+│    Customer:    Mifanza
+│    Last data:   never  (114 days ago)
+│    Symptom:     no non-zero reading has ever been recorded
+│    Diagnosis:   DATA LINK DOWN — not a production fault
+│    Status:      Send #2/3
+│
+│ 📡 samurdi-kohuwala
+│    Customer:    Samurdi
+│    Last data:   never  (114 days ago)
+│    Symptom:     no non-zero reading has ever been recorded
+│    Diagnosis:   DATA LINK DOWN — not a production fault
+│    Status:      Send #2/3
+│
+│ 📡 upulatheja-3kw-pro-kadawath
+│    Customer:    Upulatheja
+│    Last data:   never  (114 days ago)
+│    Symptom:     no non-zero reading has ever been recorded
+│    Diagnosis:   DATA LINK DOWN — not a production fault
+│    Status:      Send #2/3
+│
+│ 📡 anuradha-gajanayaka-plant
+│    Customer:    Anuradha Gajanayaka
+│    Last data:   2026-06-10  (105 days ago)
+│    Symptom:     rows still arriving but every reading is 0.0000 kWh
+│    Diagnosis:   DATA LINK DOWN — not a production fault
+│    Status:      Send #2/3
+│
+│ 📡 lahiru-ryan-lahiru-plant
+│    Customer:    Lahiru Ryan
+│    Last data:   2026-07-14  (71 days ago)
+│    Symptom:     rows still arriving but every reading is 0.0000 kWh
+│    Diagnosis:   DATA LINK DOWN — not a production fault
+│    Status:      Send #2/3
+│
+│ 📡 chandika-plant
+│    Customer:    Chandika
+│    Contact:     pcgayan@gmail.com
+│    Last data:   2026-09-20  (3 days ago)
+│    Symptom:     rows still arriving but every reading is 0.0000 kWh
+│    Diagnosis:   DATA LINK DOWN — not a production fault
+│    Status:      Send #2/3
+│
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ RECOMMENDED ACTIONS ────────────────────────────────────────────────────────┐
+│
+│ 1. Ask the customer to confirm their WiFi / router is on and online
+│ 2. Check the monitoring dongle's LED and that it is still paired
+│ 3. Re-provision the dongle onto the current WiFi password if it changed
+│ 4. Only once data is flowing again can production be judged
+│ 5. If the customer will not keep the link alive, add the plant to
+│    src/main/java/org/ktronics/config/excluded_plants.json
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
