@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from collections import defaultdict
 
+import exclusions
 from config import CREDENTIALS_PATH
 
 def load_credentials(creds_file, platform=None):
@@ -299,9 +300,18 @@ def main():
     # Generate reports for customers with email addresses
     reports_generated = 0
 
+    # Say out loud what is off the platform before reporting on what is on it.
+    for line in exclusions.log_lines():
+        print(line)
+
     for customer in customers:
         customer_label = customer['label']
         customer_email = customer.get('email')
+
+        # An excluded customer gets no report at all — that is what exclusion means.
+        if exclusions.is_customer_excluded(customer_label):
+            print(f"EXCLUDED {customer_label}: {exclusions.reason_for_customer(customer_label)}")
+            continue
 
         if not customer_email:
             print(f"Skipping {customer_label} - no email address", file=sys.stderr)
@@ -311,6 +321,11 @@ def main():
 
         # Find customer's plants (filtered by platform)
         plants = get_customer_plants(data_dir, customer_label, args.platform)
+
+        # An individually excluded plant drops out of their report and totals.
+        plants, dropped = exclusions.split_plants(plants)
+        for item in dropped:
+            print(f"  EXCLUDED {item['plant_key']}: {item['reason']}")
 
         if not plants:
             print(f"  No plants found for {customer_label}", file=sys.stderr)

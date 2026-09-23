@@ -31,6 +31,153 @@ Automated monitoring system for **multi-cloud solar panel installations** with i
 
 ---
 
+## Design
+
+This section is the design of record. The use cases below say *what* the system
+does; this says *how it is put together*, and which rules may not be broken.
+**Keep it current in the same commit as the code** — a use case that changes its
+state file, its flag or its schedule changes this section too.
+
+### One run, five steps
+
+Every scheduled run does the same five things in the same order:
+
+```
+  ShineMonitor API ─┐
+  DessMonitor  API ─┼─► COLLECT   check_*_monthly.sh / _yearly.sh   (bash, per platform)
+  SolisCloud   API ─┘             └─► data/{plant}-YYYY-MM.csv      date,kwh
+                                      data/{plant}-YYYY.csv         month,kwh
+                                                │
+                                                ▼
+                                  CLASSIFY  (python, in this order)
+                                  1. exclusions.py    is this plant still ours?
+                                  2. connectivity.py  is the data link alive?
+                                  3. check_anomaly.py is production where it should be?
+                                                │
+                                                ▼
+                                  DECIDE    features.py  — is this channel live?
+                                            state/*.json — sent already, how often?
+                                                │
+                                                ▼
+                                  NOTIFY    send_email.py           (admin)
+                                            send_customer_emails.py (customers)
+                                                │
+                                                ▼
+                                  REMEMBER  state/*.json, committed back by the
+                                            workflow so the next run knows
+```
+
+### Why that order
+
+Exclusions and connectivity run **before** any production judgement, and that is
+the most important decision in the system.
+
+A plant whose WiFi or monitoring dongle is offline records `0.0000` kWh every
+day — byte for byte what a dead inverter looks like in the CSV. For months the
+platform could not tell those apart and reported healthy systems as failed ones.
+So:
+
+- A plant with **no new reading for `--stale-days` days (default 3)** is
+  classified **LINK DOWN** and reported as a *connectivity* problem. It is never
+  turned into a RED production alert.
+- A plant on the **exclusion list** is off the platform entirely: no alarms, no
+  report, no place in the counts. Exclusion is a *business decision*, never a
+  symptom.
+- Only what survives both checks is judged on its production.
+
+### Components
+
+| File | Job |
+|---|---|
+| `check_shinemonitor_monthly.sh` / `_yearly.sh` / `_daily.sh` | Collect ShineMonitor production into `data/` |
+| `check_dessmonitor_monthly.sh` / `_yearly.sh` | Collect DessMonitor production (UC10) |
+| `check_device_alarms.sh`, `check_dessmonitor_device_alarms.sh` | Fetch device alarms into `alarms/` |
+| `shinemonitor_common.sh`, `dessmonitor_common.sh`, `common_config.sh` | Signed API calls, shared paths |
+| `exclusions.py` | Who is still on the platform. Reads `excluded_plants.json` |
+| `connectivity.py` | Link alive or dead, and why. The fleet counts |
+| `check_connectivity.py` | UC14 entry point: CONNECTIVITY alert and its state |
+| `check_anomaly.py` | RED/ORANGE production alerts, per platform |
+| `generate_device_alarms.py` | UC3 alarm processing, admin and customer emails |
+| `generate_weekly_report.py` | UC2 customer weekly reports |
+| `generate_admin_summary.py` | Admin roll-up, including the three coverage counts |
+| `send_email.py`, `send_customer_emails.py`, `email_utils.py` | Delivery |
+| `features.py` | Which channels are live |
+| `config.py` | The one place `credentials.json` is located |
+| `fleet_benchmark.py` | Weather-adjusted benchmark for production disputes |
+| `check_solis_switch.py`, `solis_common.py` | UC13 SolisCloud watchdog |
+| `check_ph1000*.py`, `check_ph1800.py` | UC12 live inverter and BMS dashboards |
+
+### Where the truth lives
+
+| File | Holds | If it is missing or broken |
+|---|---|---|
+| `config/credentials.json` | ShineMonitor accounts, plants, customer emails, the `solis` block | Gitignored. In CI it comes from `SHINEMONITOR_CREDENTIALS_JSON` |
+| `config/dessmonitor_credentials.json` | DessMonitor accounts (UC10) | Gitignored. From `DESSMONITOR_CREDENTIALS_JSON` |
+| `config/features.json` | Which emails and alerts are live | **Fails open** — an unknown flag reads as ON, so adding a channel never silently mutes an existing one. Override for one run with `KT_FEATURE_<DOTTED_PATH>=true` |
+| `config/excluded_plants.json` | Plants deliberately dropped, each with a reason and a date | **Fails closed** — it excludes nothing. Losing the file must never silently drop a paying customer off the platform |
+
+Matching in `exclusions.py`, and in the plant-to-customer mapping, is on a
+normalised key — lower-cased with every non-alphanumeric character stripped — so
+`Gayan-IMH`, `gayan imh` and `gayanimh` are the same thing.
+
+### State, and the sending discipline
+
+| File | Remembers |
+|---|---|
+| `state/alerts_state.json` | Production alerts sent, keyed `plant:severity` |
+| `state/dessmonitor_alerts_state.json` | The same, for DessMonitor |
+| `state/device_alarms_state.json` | Device alarms: `send_count`, `last_sent`, `ignored`, plus `customer`, `plant`, `message` |
+| `state/connectivity_state.json` | Link-down alerts per plant, and the fleet alert |
+| `state/solis_switch_state.json` | SolisCloud watchdog |
+| `state/admin_email_state.txt` | UC9 content hash, so an unchanged admin email is not resent |
+
+Every repeating alert channel obeys the same rule: **at most 3 sends, at least 4
+hours apart, then auto-ignored.** A customer who never fixes their WiFi cannot
+flood the inbox for ever. When the plant reports again its state is cleared, so
+the next outage starts a fresh cycle.
+
+### Data conventions
+
+- `data/{plant}-YYYY-MM.csv` — daily rows, `date,kwh`
+- `data/{plant}-YYYY.csv` — monthly rows, `month,kwh`
+- `data/dessmonitor-{plant}-*.csv` — the prefix is the platform boundary. Every
+  reader filters on it, so the two platforms never mix in a report or a count
+- **Today is never analysed.** Collection runs mid-day, so the current date is a
+  half-filled row that reads as a cloudy day that never happened
+
+### Schedule
+
+| Workflow | Runs | Does |
+|---|---|---|
+| `trigger-shinemonitor.yml` | 6x daily, 02:30 UTC and every 4 h after | Collect, connectivity, anomalies, device alarms, admin email |
+| `trigger-dessmonitor.yml` | Daily, 03:00 UTC | The same for DessMonitor (UC10) |
+| `trigger-customer-reports.yml` | Sunday, 04:00 UTC | UC2 weekly reports and the admin summary |
+| `trigger-dessmonitor-weekly-reports.yml` | Sunday, 04:00 UTC | UC2 for DessMonitor |
+| `trigger-ph1000.yml`, `trigger-ph1800.yml` | Every 2 h, restarting a self-chaining loop | UC12 live dashboards |
+| `trigger-ph1000-hist.yml`, `trigger-ph1800-hist.yml` | Hourly | UC12 30-day history, on its own branch |
+| `trigger-solis-switch.yml` | **Schedule commented out** — manual only until the Solis Control API key is added | UC13 watchdog |
+| `trigger-bms-ingest.yml` | On demand | BMS cell data |
+
+Customer-facing email goes out **only on scheduled runs**; admin email goes out
+on every trigger, including a developer's push (UC8). The test customer
+Gayan-IMH is the exception and receives on all triggers (UC4), which is how a
+change is proven end to end without mailing the customer base.
+
+### Rules that may not be broken
+
+1. **A dead link is never a dead system.** Silence is a connectivity finding.
+2. **An exclusion is a decision, not a symptom.** A quiet plant stays monitored
+   and stays in the counts; only a plant the business has dropped is excluded.
+3. **Feature flags fail open, exclusions fail closed.** Opposite directions, on
+   purpose: in each case the failure that shows is preferred to the one that hides.
+4. **Three sends, four hours apart, then quiet** — for every repeating alert.
+5. **Platform data never mixes.** Filter on the `dessmonitor-` prefix.
+6. **Credentials never enter the repo.** They arrive from GitHub secrets.
+7. **Every skip is logged with its reason**, so nobody has to wonder where a
+   plant went.
+
+---
+
 ## Use Cases
 
 ### UC1: Admin Production Alerts
@@ -423,7 +570,64 @@ py check_solis_switch.py --list     # list inverters on the account
 py check_solis_switch.py --discover <INVERTER_ID>   # find the on/off cid
 ```
 
-**Test Coverage:** 31/31 PASSED (100%) — `test_solis_switch.py`
+**Test Coverage:** 40/40 PASSED (100%) — `test_solis_switch.py`
+
+---
+
+### UC14: Connectivity (Link Down) + Plant Exclusions
+
+Separates **"the data link died"** from **"the system died"**, and makes the fleet counts honest.
+
+**Implementation Status:** ✅ **IMPLEMENTED** (Session 18)
+
+**Motivation:** A plant whose WiFi or monitoring dongle is offline writes `0.0000` kWh every day, exactly like a plant whose inverter has failed. The platform could not tell them apart, so customers with nothing worse than a dead router were being counted — and nearly reported — as failed systems. Their solar is usually fine.
+
+**How it works:**
+
+1. `connectivity.py` reads the same CSV fleet the production checks read and classifies every plant:
+
+   | Kind | Meaning |
+   |------|---------|
+   | `reporting` | Data is arriving normally |
+   | `no_rows` | The portal has no data rows for this plant at all |
+   | `zeros_only` | Rows still arrive, every reading is `0.0000` kWh |
+   | `never_reported` | No non-zero reading in its whole history |
+
+2. A plant with no new reading for `--stale-days` days (**default 3**, which is about six missed collection runs) is **LINK DOWN**.
+3. `check_connectivity.py` writes `alerts/connectivity.txt` and exits **2**, which is what gates the admin email. The email says in as many words that this is a connectivity problem and **not** a production fault.
+4. `check_anomaly.py` reclassifies a link-down plant instead of firing RED, so no customer's 3-alert budget is spent on a fault at our end.
+5. `generate_admin_summary.py` prints the three counts the business is actually asked for: **plants reporting**, **plants with a dead link**, **plants excluded** — and monitored = reporting + dead link.
+
+**Exclusions:** `config/excluded_plants.json` is the single list of plants deliberately taken off the platform, each with a `reason` and a `since` date. An excluded plant is skipped by device alarms, production alerts, weekly reports and the counts, and every skip is printed in the log. A plant that has merely gone quiet is **not** excluded — it stays monitored and shows as LINK DOWN. The list currently ships **empty**: no customer has been dropped.
+
+**Alert discipline:** the same as device alarms — 3 sends per plant, at least 4 hours apart, then auto-ignored. A plant that starts reporting again has its state cleared, so the next outage alerts from scratch.
+
+**Feature flags:** `emails.connectivity_admin`, `alerts.connectivity_link_down`.
+
+**State File:** `state/connectivity_state.json`
+
+**Scripts:**
+
+| Script | Purpose |
+|--------|---------|
+| `connectivity.py` | Classify the fleet: link alive, dead, or excluded |
+| `exclusions.py` | Read and match `excluded_plants.json` |
+| `check_connectivity.py` | Entry point: alert, state, exit code 2 |
+
+**CLI:**
+
+```bash
+python3 src/main/java/org/ktronics/scripts/check_connectivity.py \
+  --data-dir data \
+  --out-dir alerts \
+  --state-file state/connectivity_state.json \
+  --stale-days 3 \
+  --platform shinemonitor
+```
+
+**Exit codes:** `0` nothing to send, `2` connectivity alerts to send.
+
+**Test Coverage:** 62/62 PASSED (100%) — `test_connectivity.py`
 
 ---
 
@@ -528,14 +732,6 @@ jq -cS '{alerts, suppressed, ignored}' alerts/alerts.json | sha256sum
 **Commit:** `5356e75`
 
 ---
-
-## Architecture
-
-- **Data Collection**: Bash scripts fetch data from ShineMonitor API
-- **Anomaly Detection**: Python-based ML detection with configurable thresholds
-- **Alerting**: Email notifications via SMTP
-- **Automation**: GitHub Actions workflows for scheduled execution
-- **Storage**: CSV files for time-series data, JSON for alert state
 
 ## Quick Start
 
@@ -658,7 +854,9 @@ Default thresholds in `check_anomaly.py`:
 ├── src/main/java/org/ktronics/
 │   ├── config/
 │   │   ├── credentials.json           # ShineMonitor credentials (gitignored)
-│   │   └── dessmonitor_credentials.json # DessMonitor credentials (gitignored)
+│   │   ├── dessmonitor_credentials.json # DessMonitor credentials (gitignored)
+│   │   ├── features.json              # Which emails and alerts are live
+│   │   └── excluded_plants.json       # Plants deliberately off the platform (UC14)
 │   └── scripts/
 │       ├── config.py                  # Centralized Python config
 │       ├── common_config.sh           # Centralized Bash config
@@ -668,6 +866,11 @@ Default thresholds in `check_anomaly.py`:
 │       ├── check_shinemonitor_yearly.sh   # ShineMonitor yearly data
 │       ├── check_dessmonitor_monthly.sh   # DessMonitor monthly data (UC10)
 │       ├── check_device_alarms.sh     # Fetch device alarms
+│       ├── features.py                # Feature flags (fails open)
+│       ├── exclusions.py              # Plant exclusions (fails closed) (UC14)
+│       ├── connectivity.py            # Link-down classification + counts (UC14)
+│       ├── check_connectivity.py      # CONNECTIVITY alert entry point (UC14)
+│       ├── fleet_benchmark.py         # Weather-adjusted production benchmark
 │       ├── check_anomaly.py           # Anomaly detection (multi-platform)
 │       ├── generate_device_alarms.py  # Device alarm processing
 │       ├── generate_weekly_report.py  # Weekly report generation
@@ -692,6 +895,7 @@ Default thresholds in `check_anomaly.py`:
     ├── dessmonitor_alerts_state.json  # DessMonitor alert state (UC10)
     ├── admin_email_state.txt          # UC9 hash state
     ├── device_alarms_state.json       # Device alarm state
+    ├── connectivity_state.json        # Link-down alert state (UC14)
     └── solis_switch_state.json        # SolisCloud watchdog state (UC13)
 ```
 
@@ -701,30 +905,45 @@ Default thresholds in `check_anomaly.py`:
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 283 tests (100% pass rate)
+#### Test Coverage: 545 tests — 489 passed, 56 skipped on Windows (bash and API tests run in CI)
 
-**PH1000 Inverter + BMS (21 tests):**
+**Live inverters + BMS (150 tests):**
 
-| Suite | Tests | Status |
-| ----- | ----- | ------ |
-| UC12 (PH1000 + BMS) | 21 | PASSED |
+| Suite | Tests | File |
+| ----- | ----- | ---- |
+| UC12 (PH1000) | 39 | `test_ph1000.py` |
+| UC12 (PH1800) | 41 | `test_ph1800.py` |
+| UC12 (PH1800 battery tab) | 8 | `test_ph1800_battery_tab.py` |
+| UC12 (BMS ingest) | 16 | `test_bms_ingest.py` |
+| UC12 (BMS cell frames) | 9 | `test_bms_cell_frame.py` |
+| UC12 (BMS carry-forward) | 5 | `test_bms_carry_forward.py` |
+| UC12 (dashboard clock) | 16 | `test_dashboard_clock.py` |
+| UC12 (live loop budget) | 16 | `test_live_loop_budget.py` |
 
-**SolisCloud Watchdog (31 tests):**
+**SolisCloud Watchdog (40 tests):**
 
-| Suite | Tests | Status |
-| ----- | ----- | ------ |
-| UC13 (Solis ON/OFF Watchdog) | 31 | PASSED |
+| Suite | Tests | File |
+| ----- | ----- | ---- |
+| UC13 (Solis ON/OFF Watchdog) | 40 | `test_solis_switch.py` |
+
+**Connectivity, exclusions and flags (124 tests):**
+
+| Suite | Tests | File |
+| ----- | ----- | ---- |
+| UC14 (Connectivity + Exclusions) | 62 | `test_connectivity.py` |
+| Feature flags | 34 | `test_feature_flags.py` |
+| Fleet benchmark | 28 | `test_fleet_benchmark.py` |
 
 **ShineMonitor (119 tests):**
 
-| Suite | Tests | Status |
-| ----- | ----- | ------ |
-| UC1 (Admin Alerts) | 15 | PASSED |
-| UC2 (Customer Weekly) | 16 | PASSED |
-| UC3-UC8 (Device Alarms) | 38 | PASSED |
-| UC9 (Email Optimization) | 9 | PASSED |
-| UC11 (Plant ROI) | 19 | PASSED |
-| BVT (Centralized Config) | 14 | PASSED |
+| Suite | Tests | File |
+| ----- | ----- | ---- |
+| UC1 (Admin Alerts) | 15 | `test_admin_alerts.py` |
+| UC2 (Customer Weekly) | 16 | `test_customer_weekly.py` |
+| UC3-UC8 (Device Alarms) | 38 | `test_device_alarms.py` |
+| UC9 (Email Optimization) | 9 | `test_uc9_admin_email.py` |
+| UC11 (Plant ROI) | 19 | `test_uc11_plant_roi.py` |
+| BVT (Centralized Config) | 14 | `test_centralized_config.py` |
 | API Tests | 8 | PASSED in CI |
 
 **DessMonitor (112 tests):**
@@ -739,6 +958,9 @@ The project includes comprehensive integration tests covering all business logic
 | BVT (Centralized Config) | 13 | PASSED |
 | API Tests | 18 | PASSED in CI |
 
+Run the lot with `py -m pytest integration/ -q`. The count above is what that
+prints; if a change moves it, update this table in the same commit.
+
 ```bash
 # Run all tests
 cd src/test/java/org/ktronics/scripts
@@ -751,6 +973,8 @@ py -m pytest integration/test_device_alarms.py -v     # UC3: Device alarms
 py -m pytest integration/test_centralized_config.py -v # BVT: Config tests
 py -m pytest integration/test_uc9_admin_email.py -v    # UC9: Email optimization
 py -m pytest integration/test_uc11_plant_roi.py -v     # UC11: Plant ROI
+py -m pytest integration/test_connectivity.py -v       # UC14: Connectivity + exclusions
+py -m pytest integration/test_feature_flags.py -v      # Feature flags
 
 # Run specific test suite - DessMonitor
 py -m pytest integration/test_dessmonitor_*.py -v     # All DessMonitor tests (112)

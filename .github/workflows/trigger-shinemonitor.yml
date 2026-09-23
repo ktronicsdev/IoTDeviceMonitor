@@ -221,6 +221,46 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           exit 0
 
+      - name: Check plant connectivity (data link, not production)
+        id: connectivity
+        shell: bash
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📡 CONNECTIVITY CHECK (has the data link died, or the system?)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          set +e
+          mkdir -p state alerts
+          python3 src/main/java/org/ktronics/scripts/check_connectivity.py \
+            --data-dir data \
+            --out-dir alerts \
+            --state-file state/connectivity_state.json \
+            --stale-days 3 \
+            --platform shinemonitor 2>&1
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          if [ $code -eq 2 ]; then
+            echo "📡 DATA LINK DOWN - connectivity email will be sent (NOT a production fault)"
+          else
+            echo "✅ No new connectivity alerts"
+          fi
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          exit 0
+
+      - name: Send connectivity alert email to admin
+        if: steps.connectivity.outputs.exit_code == '2' && steps.flags.outputs.emails_connectivity_admin == 'true'
+        shell: bash
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📧 SENDING CONNECTIVITY EMAIL TO ADMIN"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          set -e
+          subject="📡 DATA LINK DOWN (connectivity, not production) - ShineMonitor"
+          body="$(cat alerts/connectivity.txt)"
+
+          EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 src/main/java/org/ktronics/scripts/send_email.py 2>&1
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
       - name: Check device alarms for all customers
         shell: bash
         run: |

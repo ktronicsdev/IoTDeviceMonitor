@@ -13,14 +13,18 @@ from pathlib import Path
 from collections import defaultdict
 import re
 
+import connectivity
+import exclusions
 from config import CREDENTIALS_PATH
 
 # Reuse functions from generate_weekly_report
 sys.path.insert(0, str(Path(__file__).parent))
+from check_anomaly import load_daily_series, utc_today
 from generate_weekly_report import load_credentials, get_customer_plants, get_weekly_summary
 
 
-def generate_admin_summary(credentials_file, data_dir, output_file, platform=None):
+def generate_admin_summary(credentials_file, data_dir, output_file, platform=None,
+                           stale_days=connectivity.DEFAULT_STALE_DAYS):
     """Generate comprehensive admin summary of all customers.
 
     Args:
@@ -28,10 +32,24 @@ def generate_admin_summary(credentials_file, data_dir, output_file, platform=Non
         data_dir: Directory containing CSV files
         output_file: Output file path
         platform: Optional platform filter ('shinemonitor', 'dessmonitor', or None for default)
+        stale_days: Days with no new reading before a plant counts as link-down
     """
 
     data_path = Path(data_dir)
     accounts = load_credentials(credentials_file, platform=platform)
+
+    # The three numbers the owner is actually asked for — how many systems are
+    # monitored, how many have lost their data link, how many we have dropped.
+    # Taken from the CSV fleet, the same source the production checks read, so
+    # the figure quoted on the website is the figure the platform can defend.
+    fleet = connectivity.classify_fleet(
+        connectivity.select_platform(load_daily_series(data_path), platform),
+        utc_today(), stale_days=stale_days,
+    )
+    for line in exclusions.log_lines():
+        print(line)
+    for line in fleet.counts_lines():
+        print(line)
 
     today = datetime.now()
     week_ago = today - timedelta(days=7)
@@ -48,8 +66,18 @@ def generate_admin_summary(credentials_file, data_dir, output_file, platform=Non
     for customer in accounts:
         customer_label = customer['label']
 
+        # Excluded customers are off the platform: no report, no totals, no count.
+        if exclusions.is_customer_excluded(customer_label):
+            print(f"EXCLUDED {customer_label}: {exclusions.reason_for_customer(customer_label)}")
+            continue
+
         # Get customer's plants (filter by platform)
         plant_names = get_customer_plants(data_path, customer_label, platform=platform)
+
+        # ...and an individually excluded plant drops out of their totals too.
+        plant_names, dropped = exclusions.split_plants(plant_names)
+        for item in dropped:
+            print(f"EXCLUDED {item['plant_key']}: {item['reason']}")
 
         if not plant_names:
             continue
@@ -85,6 +113,20 @@ def generate_admin_summary(credentials_file, data_dir, output_file, platform=Non
 
 Report Period: {week_ago.strftime('%Y-%m-%d')} to {today.strftime('%Y-%m-%d')}
 Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
+
+┌─ PLATFORM COVERAGE ─────────────────────────────────────────────────────────┐
+│
+│ Plants reporting:        {fleet.counts['reporting']:>3}   sending data normally
+│ Plants with a dead link: {fleet.counts['link_down']:>3}   no data for {stale_days}+ days — CONNECTIVITY, not a fault
+│ Plants excluded:         {fleet.counts['excluded']:>3}   deliberately off the platform
+│ ─────────────────────────────
+│ Plants monitored:        {fleet.counts['monitored']:>3}   reporting + dead link
+│
+│ A dead link means the customer's WiFi or monitoring dongle is offline. Those
+│ solar systems are very probably fine — they are NOT failed systems, and their
+│ production cannot be judged until the link is restored.
+│
+└──────────────────────────────────────────────────────────────────────────────┘
 
 ┌─ OVERALL SUMMARY ───────────────────────────────────────────────────────────┐
 │
@@ -124,9 +166,36 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
 │
 """
 
-    email_body += """└──────────────────────────────────────────────────────────────────────────────┘
+    email_body += "└──────────────────────────────────────────────────────────────────────────────┘\n\n"
 
-┌─ STATISTICS ────────────────────────────────────────────────────────────────┐
+    if fleet.link_down:
+        email_body += """┌─ 📡 PLANTS WITH A DEAD LINK ────────────────────────────────────────────────┐
+│
+│ No data is reaching us from these plants. That is a monitoring problem, not
+│ a production fault — check the customer's WiFi and dongle before anything.
+│
+"""
+        for status in fleet.link_down:
+            last_seen = status.last_nonzero_date or 'never'
+            email_body += f"│ • {status.plant_key}\n"
+            email_body += f"│   Last reading: {last_seen} ({status.days_stale} days ago)\n"
+            email_body += f"│   Symptom: {status.meaning}\n"
+        email_body += "│\n└──────────────────────────────────────────────────────────────────────────────┘\n\n"
+
+    if fleet.excluded:
+        email_body += """┌─ EXCLUDED PLANTS (OFF THE PLATFORM BY DECISION) ────────────────────────────┐
+│
+│ Not monitored, not counted, no reports. Listed so nobody wonders where they
+│ went. Remove an entry from excluded_plants.json to bring a plant back.
+│
+"""
+        for item in fleet.excluded:
+            since = f" (since {item['since']})" if item.get('since') else ""
+            email_body += f"│ • {item['plant_key']}{since}\n"
+            email_body += f"│   Reason: {item['reason']}\n"
+        email_body += "│\n└──────────────────────────────────────────────────────────────────────────────┘\n\n"
+
+    email_body += """┌─ STATISTICS ────────────────────────────────────────────────────────────────┐
 │
 """
 
@@ -163,13 +232,20 @@ For support: ktronicssolar@gmail.com
     print(f"Admin summary generated: {output_file}")
     print(f"Customers: {len(customer_summaries)}, Total Plants: {total_plants}")
     print(f"Total Weekly: {total_weekly:.2f} kWh")
+    print(f"Coverage: {fleet.counts['reporting']} reporting, "
+          f"{fleet.counts['link_down']} dead link, "
+          f"{fleet.counts['excluded']} excluded")
 
     return {
         'customers_count': len(customer_summaries),
         'total_plants': total_plants,
         'total_weekly': total_weekly,
         'total_monthly': total_monthly,
-        'total_yearly': total_yearly
+        'total_yearly': total_yearly,
+        'plants_reporting': fleet.counts['reporting'],
+        'plants_link_down': fleet.counts['link_down'],
+        'plants_excluded': fleet.counts['excluded'],
+        'plants_monitored': fleet.counts['monitored'],
     }
 
 
@@ -182,10 +258,13 @@ def main():
     parser.add_argument('--output', default='reports/admin_summary.txt', help='Output file path')
     parser.add_argument('--platform', default=None, choices=['shinemonitor', 'dessmonitor'],
                         help='Filter by platform (shinemonitor or dessmonitor). If not specified, defaults to ShineMonitor.')
+    parser.add_argument('--stale-days', type=int, default=connectivity.DEFAULT_STALE_DAYS,
+                        help='Days with no new reading before a plant counts as link-down (default: 3)')
 
     args = parser.parse_args()
 
-    result = generate_admin_summary(args.credentials, args.data_dir, args.output, platform=args.platform)
+    result = generate_admin_summary(args.credentials, args.data_dir, args.output,
+                                    platform=args.platform, stale_days=args.stale_days)
 
     return 0
 

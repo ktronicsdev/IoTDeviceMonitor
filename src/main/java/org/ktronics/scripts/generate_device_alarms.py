@@ -18,7 +18,37 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from collections import defaultdict
 
+import exclusions
 from config import CREDENTIALS_PATH
+
+
+def drop_excluded_alarms(alarms):
+    """
+    Remove alarms belonging to plants that are off the platform.
+
+    Returns (kept, dropped). An excluded plant must not raise alarms for the
+    admin or the customer — that is the whole point of excluding it — but the
+    drop is returned rather than swallowed so the caller can log it.
+
+    Matched on the customer label the alarm file was named for, and on the
+    plant name the portal reports, so either form of exclusion entry works.
+    """
+    kept, dropped = [], []
+    for alarm in alarms:
+        customer_label = alarm.get('customer_label', '')
+        plant_name = alarm.get('plant', alarm.get('pName', ''))
+
+        entry = (exclusions.match_for_customer(customer_label)
+                 or exclusions.match_for_plant(plant_name))
+        if entry:
+            dropped.append({
+                'plant_key': plant_name or customer_label,
+                'reason': entry['reason'],
+                'since': entry['since'],
+            })
+        else:
+            kept.append(alarm)
+    return kept, dropped
 
 
 def load_alarm_state(state_file):
@@ -422,6 +452,17 @@ def main():
     print(f"  Filtering for platform: {args.platform if args.platform else 'all'}")
     all_alarms = parse_alarm_files(args.alarms_dir, platform=args.platform)
     print(f"✓ Found {len(all_alarms)} UNHANDLED alarms{platform_info}")
+
+    # Plants deliberately off the platform raise no alarms — but say so, loudly,
+    # so a missing customer is never a mystery.
+    all_alarms, dropped = drop_excluded_alarms(all_alarms)
+    if dropped:
+        print(f"  Excluded plants: dropped {len(dropped)} alarm(s)")
+        for item in dropped:
+            print(f"    - EXCLUDED {item['plant_key']}: {item['reason']}")
+    else:
+        for line in exclusions.log_lines():
+            print(f"  {line}")
 
     # Filter alarms to send
     print("[3/5] Filtering alarms (max 3 sends per alarm, 4-hour interval)...")
