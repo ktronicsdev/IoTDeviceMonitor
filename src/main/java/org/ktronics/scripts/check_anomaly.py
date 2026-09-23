@@ -11,6 +11,8 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 
+import connectivity
+import exclusions
 from config import CREDENTIALS_PATH
 from features import is_enabled
 
@@ -172,6 +174,11 @@ def main() -> int:
     # Ignore rule
     ap.add_argument("--ignore-zero-months", type=int, default=1, help="If month total == 0 for N months, ignore plant")
 
+    # Connectivity rule: a plant with no new reading for this many days has a dead
+    # DATA LINK, not a dead system, so it must never be dressed up as a RED alert.
+    ap.add_argument("--stale-days", type=int, default=connectivity.DEFAULT_STALE_DAYS,
+                    help="Days with no new reading before a plant counts as link-down (default: 3)")
+
     # UC10: Multi-platform support
     ap.add_argument("--platform", default=None, help="Filter CSV files by platform prefix (e.g., 'dessmonitor' for dessmonitor-*.csv)")
     ap.add_argument("--output-file", default=None, help="Custom output file path for alerts text")
@@ -227,12 +234,30 @@ def main() -> int:
     # UC10: Platform label for reporting
     platform_label = args.platform.upper() if args.platform else "SHINEMONITOR"
 
+    # --- Connectivity & exclusions, before any production judgement ---
+    # A plant whose data has not advanced has a dead LINK, and a plant on the
+    # exclusion list is off the platform entirely. Neither is a production
+    # finding, and neither may be reported as a failed system.
+    fleet = connectivity.classify_fleet(plants_daily, today, stale_days=args.stale_days)
+    excluded_keys = {e["plant_key"] for e in fleet.excluded if e.get("in_data")}
+    link_down_by_key = {s.plant_key: s for s in fleet.link_down}
+
+    for line in exclusions.log_lines():
+        print(line, file=sys.stderr)
+    for line in fleet.counts_lines():
+        print(line, file=sys.stderr)
+
     alerts: List[dict] = []
     suppressed: List[dict] = []
     ignored: List[dict] = []
+    link_down: List[dict] = [s.as_dict() for s in fleet.link_down]
 
     for plant_key, daily in plants_daily.items():
         if not daily:
+            continue
+
+        # Excluded plants take no part in alerting, reports or counts.
+        if plant_key in excluded_keys:
             continue
 
         # --- Monthly ignore rule: if a full month total is 0 for 1 consecutive month, ignore ---
@@ -242,10 +267,15 @@ def main() -> int:
             # Check ignore window: last N months including latest_month
             ignore_months = [add_months(latest_month, -i) for i in range(args.ignore_zero_months)]
             if all(month_totals.get(m, 0.0) == 0.0 for m in ignore_months):
+                status = link_down_by_key.get(plant_key)
                 ignored.append({
                     "plant_key": plant_key,
                     "reason": f"ignored: month total == 0 for {args.ignore_zero_months} consecutive month(s)",
                     "months": ignore_months,
+                    # Say WHY it is silent. A month of zeros almost always means
+                    # the data link died, not that the system did.
+                    "link_down": status is not None,
+                    "days_stale": status.days_stale if status else None,
                 })
                 continue
 
@@ -285,16 +315,31 @@ def main() -> int:
             continue
 
         if red_run >= args.red_days and baseline_avg > 0 and not args.no_red:
-            alerts.append({
-                "severity": "RED",
-                "plant_key": plant_key,
-                "today": str(today),
-                "baseline_avg_kwh_per_day": round(baseline_avg, 4),
-                "threshold_kwh_per_day": round(red_threshold, 4),
-                "rule": f"< {args.red_pct}% baseline for {args.red_days} consecutive days",
-                "window": [str(d) for d in window_days],
-                "details": [{"date": str(d), "kwh": v} for d, v in red_details],
-            })
+            # A plant that has sent nothing for --stale-days has a dead data
+            # link. Its "production collapse" is an artefact of the silence, so
+            # it is reported as CONNECTIVITY instead of RED — the system is
+            # very probably fine and must not be written off as dead.
+            if plant_key in link_down_by_key:
+                status = link_down_by_key[plant_key]
+                suppressed.append({
+                    "plant_key": plant_key,
+                    "reason": (f"reclassified as CONNECTIVITY: no data for "
+                               f"{status.days_stale} days ({status.meaning}) — "
+                               "data link down, NOT a production fault"),
+                    "days_stale": status.days_stale,
+                    "link_down": True,
+                })
+            else:
+                alerts.append({
+                    "severity": "RED",
+                    "plant_key": plant_key,
+                    "today": str(today),
+                    "baseline_avg_kwh_per_day": round(baseline_avg, 4),
+                    "threshold_kwh_per_day": round(red_threshold, 4),
+                    "rule": f"< {args.red_pct}% baseline for {args.red_days} consecutive days",
+                    "window": [str(d) for d in window_days],
+                    "details": [{"date": str(d), "kwh": v} for d, v in red_details],
+                })
 
         # --- ORANGE alert: < 40% baseline for 3 consecutive months ---
         if month_totals and not args.no_orange:
@@ -332,6 +377,9 @@ def main() -> int:
         "alerts": alerts,
         "suppressed": suppressed,
         "ignored": ignored,
+        "link_down": link_down,
+        "excluded": fleet.excluded,
+        "counts": fleet.counts,
     }
 
     # UC10: Write to custom JSON output path
@@ -358,7 +406,11 @@ def main() -> int:
         lines.append("║" + status_line.center(78) + "║")
 
     lines.append("║" + " " * 78 + "║")
-    lines.append("║" + f"Date: {today}  |  Total Plants Monitored: {len(plants_daily)}".center(78) + "║")
+    counts = fleet.counts
+    lines.append("║" + f"Date: {today}  |  Total Plants Monitored: {counts['monitored']}".center(78) + "║")
+    lines.append("║" + (f"Reporting: {counts['reporting']}  |  "
+                      f"Dead link: {counts['link_down']}  |  "
+                      f"Excluded: {counts['excluded']}").center(78) + "║")
     lines.append("║" + " " * 78 + "║")
     lines.append("=" * 80)
     lines.append("")
@@ -434,6 +486,42 @@ def main() -> int:
         lines.append("└" + "─" * 78 + "┘")
         lines.append("")
 
+    # --- Connectivity Section ---
+    # Deliberately its own block, above the production detail: these plants are
+    # not producing numbers because we cannot hear them, which is a different
+    # problem with a different fix and a different person to call.
+    if link_down:
+        lines.append("┌─ 📡 DATA LINK DOWN (CONNECTIVITY — NOT A PRODUCTION FAULT) " + "─" * 18 + "┐")
+        lines.append("│")
+        lines.append(f"│ These plants have sent no data for {args.stale_days}+ days. The usual cause is the")
+        lines.append("│ customer's WiFi or monitoring dongle being offline. The solar system is")
+        lines.append("│ very probably running normally — do NOT record these as dead systems.")
+        lines.append("│ Production cannot be judged either way until the link is restored.")
+        lines.append("│")
+        for x in link_down:
+            last_seen = x["last_nonzero_date"] or "never"
+            lines.append(f"│   • {x['plant_key']}")
+            lines.append(f"│     Last reading: {last_seen} ({x['days_stale']} days ago)")
+            lines.append(f"│     Symptom: {x['meaning']}")
+        lines.append("│")
+        lines.append("└" + "─" * 78 + "┘")
+        lines.append("")
+
+    # --- Excluded Section ---
+    if fleet.excluded:
+        lines.append("┌─ EXCLUDED PLANTS (OFF THE PLATFORM BY DECISION) " + "─" * 29 + "┐")
+        lines.append("│")
+        lines.append("│ These are not monitored and are not counted. They are listed so nobody")
+        lines.append("│ has to wonder where a plant went.")
+        lines.append("│")
+        for x in fleet.excluded:
+            since = f" (since {x['since']})" if x.get("since") else ""
+            lines.append(f"│   • {x['plant_key']}{since}")
+            lines.append(f"│     Reason: {x['reason']}")
+        lines.append("│")
+        lines.append("└" + "─" * 78 + "┘")
+        lines.append("")
+
     # --- Suppressed/Ignored Section ---
     if suppressed or ignored:
         lines.append("┌─ ADDITIONAL INFORMATION " + "─" * 52 + "┐")
@@ -444,6 +532,9 @@ def main() -> int:
             for x in ignored:
                 lines.append(f"│   • {x['plant_key']}")
                 lines.append(f"│     Reason: {x['reason']}")
+                if x.get("link_down"):
+                    lines.append(f"│     Link: DATA LINK DOWN for {x['days_stale']} days — "
+                                 "connectivity, not a production fault")
             lines.append("│")
 
         if suppressed:

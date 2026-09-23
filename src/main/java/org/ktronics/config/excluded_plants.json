@@ -1,0 +1,33 @@
+{
+  "_comment": [
+    "Plants deliberately taken OFF the monitoring platform.",
+    "",
+    "This is not the same thing as a plant that is quiet. A quiet plant is still",
+    "monitored and shows up as CONNECTIVITY / LINK DOWN in the reports. A plant",
+    "listed here has been dropped by decision — usually because the customer will",
+    "not keep the monitoring link alive after being told it is mandatory.",
+    "",
+    "An excluded plant is skipped by device alarms, production alerts, weekly",
+    "customer reports and the admin summary, and every script prints the exclusion",
+    "in its log so nobody has to wonder where the plant went.",
+    "",
+    "Matching (see exclusions.py) is on a normalised key — lower-cased with every",
+    "non-alphanumeric character removed, so 'Gayan-IMH' == 'gayan imh' == 'gayanimh':",
+    "  plant    — the data-file key, e.g. 'abeetha-plant' for data/abeetha-plant-2026-09.csv",
+    "  customer — OPTIONAL account label from credentials.json, e.g. 'Abeetha'.",
+    "             Excluding a customer excludes every plant key beginning with that",
+    "             label, plus their device alarms and weekly report.",
+    "  reason   — REQUIRED free text. It is printed in the logs and the admin summary.",
+    "  since    — REQUIRED YYYY-MM-DD, the date the decision was taken.",
+    "",
+    "Example entry (copy, do not uncomment this one):",
+    "  { \"plant\": \"someone-plant\", \"customer\": \"Someone\",",
+    "    \"reason\": \"Dongle offline since 2026-03; customer declined to restore it\",",
+    "    \"since\": \"2026-09-21\" }",
+    "",
+    "Removing an entry puts the plant straight back on the platform on the next run."
+  ],
+  "version": 1,
+
+  "excluded": []
+}

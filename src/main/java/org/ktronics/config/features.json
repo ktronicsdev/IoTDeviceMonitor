@@ -16,6 +16,8 @@
     "device_alarms_admin": true,
     "device_alarms_customer": true,
 
+    "connectivity_admin": true,
+
     "production_alerts_admin": true,
     "production_alerts_customer": true,
 
@@ -28,6 +30,8 @@
 
   "alerts": {
     "production_red_3day": true,
-    "production_orange_3month": false
+    "production_orange_3month": false,
+
+    "connectivity_link_down": true
   }
 }
