@@ -11,7 +11,7 @@ py -m pytest integration/ -v
 
 ## Test Summary
 
-**Total: 409 tests** (353 passed on Windows, 56 skipped - bash tests run in CI)
+**Total: 545 tests** (489 passed on Windows, 56 skipped - bash tests run in CI)
 
 ## Use Cases
 
@@ -29,6 +29,7 @@ py -m pytest integration/ -v
 | UC10 | DessMonitor Multi-Platform | 50      | `test_dessmonitor_integration.py`|
 | UC11 | Plant ROI Analysis         | 19      | `test_uc11_plant_roi.py`         |
 | UC12 | PH1000 Inverter + BMS      | 21      | `test_ph1000.py`                 |
+| UC14 | Connectivity + Exclusions  | 62      | `test_connectivity.py`           |
 | BVT  | Dashboard Clocks (SL time) | 16      | `test_dashboard_clock.py`        |
 | BVT  | Centralized Config         | 14      | `test_centralized_config.py`     |
 | API  | ShineMonitor API           | 9       | `test_shinemonitor_api.py`       |
@@ -92,6 +93,23 @@ Live MUST PH1000 inverter + Hystorix/PACEEX battery monitoring:
 - Charge-state sign logic (ChargerPower < 0 = charging)
 - BMS `WIFI_Band` hex-frame decode (SOC/V/A/SOH/capacity/cycles), validated against the live app
 - CSV append/dedup, account opt-in (`"ph1000": true`), dashboard JSON shape
+
+### UC14: Connectivity + Exclusions
+
+Separates "the data link died" from "the system died", and makes the fleet count honest:
+
+- A plant with no new reading for N days (`--stale-days`, default 3) raises a CONNECTIVITY
+  alert saying the LINK is down — explicitly NOT a production fault, and never written off
+  as a dead system. `check_anomaly.py` reclassifies such a plant instead of firing RED.
+- Symptoms are distinguished: rows still arriving but all zero (dongle offline) vs no rows
+  at all (the portal has nothing for us) vs never reported.
+- Fleet-wide silence is reported once, as our own collector/API failure, not as N customer
+  faults — so no customer's alert budget is burned on a fault at our end.
+- Alerts follow the device-alarm discipline: 3 sends, 4 hours apart, then auto-ignored;
+  state clears when a plant reports again.
+- `config/excluded_plants.json` names plants deliberately off the platform. They are skipped
+  by alarms, weekly reports and the summary counts, and every skip is logged with its reason.
+- The admin summary states three counts plainly: reporting, dead link, excluded.
 
 ### BVT: Dashboard Clocks (SL time)
 
