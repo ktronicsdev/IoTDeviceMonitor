@@ -264,16 +264,7 @@
     }
   ],
   "excluded": [],
-  "generated_at": "2026-09-23T18:38:51.740286Z",
+  "generated_at": "2026-09-23T21:45:19.418095Z",
   "fleet_wide_outage": false,
-  "alerting_now": [
-    "abeetha-plant",
-    "ganishka-ganishka-home-3kw",
-    "mifanza-mifanza-solar-system",
-    "samurdi-kohuwala",
-    "upulatheja-3kw-pro-kadawath",
-    "anuradha-gajanayaka-plant",
-    "lahiru-ryan-lahiru-plant",
-    "chandika-plant"
-  ]
+  "alerting_now": []
 }
