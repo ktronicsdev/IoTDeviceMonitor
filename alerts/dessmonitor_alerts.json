@@ -1,6 +1,14 @@
 {
-  "generated_at": "2026-09-23T12:27:42.169119Z",
+  "generated_at": "2026-09-23T13:26:45.152276Z",
   "alerts": [],
   "suppressed": [],
-  "ignored": []
+  "ignored": [],
+  "link_down": [],
+  "excluded": [],
+  "counts": {
+    "reporting": 2,
+    "link_down": 0,
+    "excluded": 0,
+    "monitored": 2
+  }
 }

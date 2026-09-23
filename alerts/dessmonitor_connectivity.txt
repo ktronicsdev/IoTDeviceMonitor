@@ -1,0 +1,37 @@
+================================================================================
+║                                                                              ║
+║                  [DESSMONITOR] CONNECTIVITY - ALL LINKS UP                   ║
+║                                                                              ║
+║            This is a CONNECTIVITY report, NOT a production fault             ║
+║                                                                              ║
+================================================================================
+
+Report Time: 2026-09-23 13:26:45 UTC
+
+┌─ FLEET STATUS ───────────────────────────────────────────────────────────────┐
+│
+│ Plants reporting:          2
+│ Plants with a dead link:   0   (no data for 3+ days — connectivity, not a fault)
+│ Plants excluded:           0   (deliberately off the platform)
+│ Plants monitored:          2   (reporting + dead link)
+│
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ STATUS ─────────────────────────────────────────────────────────────────────┐
+│
+│ ✅ Every monitored plant is sending data.
+│
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ NOTES ──────────────────────────────────────────────────────────────────────┐
+│
+│ • A link is called down after 3 days with no new reading
+│ • Each plant is reported 3 times, 4 hours apart, then auto-ignored
+│ • A plant that starts reporting again is reset and will alert afresh
+│
+└──────────────────────────────────────────────────────────────────────────────┘
+
+This is an automated connectivity monitoring report.
+
+For support: ktronicssolar@gmail.com
+

@@ -1,0 +1,38 @@
+{
+  "stale_days": 3,
+  "counts": {
+    "reporting": 2,
+    "link_down": 0,
+    "excluded": 0,
+    "monitored": 2
+  },
+  "reporting": [
+    {
+      "plant_key": "dessmonitor-dushanthatiqri-plant",
+      "kind": "reporting",
+      "meaning": "reporting normally",
+      "link_down": false,
+      "days_stale": 0,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-09-23",
+      "last_data_date": "2026-09-23",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "dessmonitor-mifrazmarsoon-plant",
+      "kind": "reporting",
+      "meaning": "reporting normally",
+      "link_down": false,
+      "days_stale": 0,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-09-23",
+      "last_data_date": "2026-09-23",
+      "stale_days_threshold": 3
+    }
+  ],
+  "link_down": [],
+  "excluded": [],
+  "generated_at": "2026-09-23T13:26:45.306002Z",
+  "fleet_wide_outage": false,
+  "alerting_now": []
+}
