@@ -2,44 +2,46 @@
 ║                                                                              ║
 ║                      [SHINEMONITOR] PRODUCTION MONITOR                       ║
 ║                                                                              ║
-║                            ⚠ ATTENTION REQUIRED ⚠                            ║
+║                          ✓ ALL SYSTEMS OPERATIONAL                           ║
 ║                                                                              ║
-║                        Status: 1 CRITICAL, 0 WARNING                         ║
+║                          Status: NO ALERTS DETECTED                          ║
 ║                                                                              ║
 ║               Date: 2026-09-23  |  Total Plants Monitored: 25                ║
+║                Reporting: 17  |  Dead link: 8  |  Excluded: 0                ║
 ║                                                                              ║
 ================================================================================
 
-┌─ ALERT SUMMARY ──────────────────────────────────────────────────────────────┐
+┌─ 📡 DATA LINK DOWN (CONNECTIVITY — NOT A PRODUCTION FAULT) ──────────────────┐
 │
-│ 🔴 [RED] chandika-plant
+│ These plants have sent no data for 3+ days. The usual cause is the
+│ customer's WiFi or monitoring dongle being offline. The solar system is
+│ very probably running normally — do NOT record these as dead systems.
+│ Production cannot be judged either way until the link is restored.
 │
-│   Issue: Production dropped 100.0% below normal
-│   Normal: 7.82 kWh/day  →  Current: 0.00 kWh/day
-│   Rule: < 20.0% baseline for 3 consecutive days
-│
-└──────────────────────────────────────────────────────────────────────────────┘
-
-┌─ RECOMMENDED ACTIONS ────────────────────────────────────────────────────────┐
-│
-│ chandika-plant:
-│   1. Check inverter status and error codes
-│   2. Verify grid connection and breaker status
-│   3. Inspect panels for shading or physical damage
-│   4. Contact maintenance team if issue persists
-│
-└──────────────────────────────────────────────────────────────────────────────┘
-
-┌─ DETAILED BREAKDOWN ─────────────────────────────────────────────────────────┐
-│
-│ [RED] chandika-plant
-│
-│   Baseline (avg/day): 7.8214 kWh
-│   Alert Threshold: < 1.5643 kWh/day
-│   Recent Production:
-│     2026-09-21: 0.0000 kWh (0.0% of baseline)
-│     2026-09-22: 0.0000 kWh (0.0% of baseline)
-│     2026-09-23: 0.0000 kWh (0.0% of baseline)
+│   • abeetha-plant
+│     Last reading: never (114 days ago)
+│     Symptom: no non-zero reading has ever been recorded
+│   • ganishka-ganishka-home-3kw
+│     Last reading: never (114 days ago)
+│     Symptom: no non-zero reading has ever been recorded
+│   • mifanza-mifanza-solar-system
+│     Last reading: never (114 days ago)
+│     Symptom: no non-zero reading has ever been recorded
+│   • samurdi-kohuwala
+│     Last reading: never (114 days ago)
+│     Symptom: no non-zero reading has ever been recorded
+│   • upulatheja-3kw-pro-kadawath
+│     Last reading: never (114 days ago)
+│     Symptom: no non-zero reading has ever been recorded
+│   • anuradha-gajanayaka-plant
+│     Last reading: 2026-06-10 (105 days ago)
+│     Symptom: rows still arriving but every reading is 0.0000 kWh
+│   • lahiru-ryan-lahiru-plant
+│     Last reading: 2026-07-14 (71 days ago)
+│     Symptom: rows still arriving but every reading is 0.0000 kWh
+│   • chandika-plant
+│     Last reading: 2026-09-20 (3 days ago)
+│     Symptom: rows still arriving but every reading is 0.0000 kWh
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
@@ -48,18 +50,29 @@
 │ IGNORED PLANTS (No production for extended period):
 │   • abeetha-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│     Link: DATA LINK DOWN for 114 days — connectivity, not a production fault
 │   • anuradha-gajanayaka-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│     Link: DATA LINK DOWN for 105 days — connectivity, not a production fault
 │   • ganishka-ganishka-home-3kw
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│     Link: DATA LINK DOWN for 114 days — connectivity, not a production fault
 │   • lahiru-ryan-lahiru-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│     Link: DATA LINK DOWN for 71 days — connectivity, not a production fault
 │   • mifanza-mifanza-solar-system
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│     Link: DATA LINK DOWN for 114 days — connectivity, not a production fault
 │   • samurdi-kohuwala
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│     Link: DATA LINK DOWN for 114 days — connectivity, not a production fault
 │   • upulatheja-3kw-pro-kadawath
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│     Link: DATA LINK DOWN for 114 days — connectivity, not a production fault
+│
+│ SUPPRESSED ALERTS (Already notified, zero production continues):
+│   • chandika-plant
+│     Reason: reclassified as CONNECTIVITY: no data for 3 days (rows still arriving but every reading is 0.0000 kWh) — data link down, NOT a production fault
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
