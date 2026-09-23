@@ -99,3 +99,56 @@ Below is the execution path when a solar installation underperforms on a Tuesday
    - Personalized alert notification received by customer
 
 ---
+
+## 6. Admin vs. Customer Communications
+
+Instead of sending the same updates to everyone, the system separates communications into two distinct roles to ensure admins get complete system oversight while customers receive only clean, relevant reports.
+
+### 1. System Administrator (`ktronicssolar@gmail.com`)
+
+- **Core Purpose:** System-wide monitoring, infrastructure debugging, and change detection across all 26 installations.
+- **What They Receive:**
+  - **Global Anomaly Alerts:** Combined reports covering all active RED and ORANGE faults across the entire fleet.
+  - **System Health Logs:** Notifications about unmapped solar plants, missing customer credentials, or API connection errors.
+  - **State Hash Updates (UC9):** Alerts triggered whenever the global system state changes (via SHA256 hash comparison).
+- **Delivery Schedule:** **On EVERY run** — triggered across scheduled 6x daily cron runs, manual workflow triggers, and git push events (for build verification).
+
+### 2. End Customers (Mapped in `credentials.json`)
+
+- **Core Purpose:** Individual performance tracking and localized hardware warning notices.
+- **What They Receive:**
+  - **Personalized Yield Reports (UC2):** Weekly progress emails sent every Sunday morning containing YTD (year-to-date), monthly, and 7-day production figures.
+  - **Specific Anomaly Alerts (UC1):** Notifications sent only when their specific plant drops below 20% baseline for 3 consecutive days.
+  - **Filtered Device Alarms (UC3):** Hardware error notifications specific to their equipment, controlled by the 3-send rule.
+- **Delivery Schedule:** **STRICTLY on Scheduled Runs** — customers are completely shielded from push triggers, manual test runs, and system-wide debug logs (UC8 filter).
+
+---
+
+### Comparison Summary
+
+| Attribute             | System Admin (`ktronicssolar@gmail.com`)  | Individual Customers                               |
+| :-------------------- | :---------------------------------------- | :------------------------------------------------- |
+| **Data Scope**        | Fleet-wide (All 26 solar plants)          | Restricted to owned plant(s) only                  |
+| **Workflow Triggers** | All triggers (Schedule, Manual, Git Push) | Scheduled runs ONLY (Schedule filter - UC8)        |
+| **Content Type**      | Error logs, state hashes, global faults   | Weekly reports, local device alarms, severe alerts |
+| **Noise Protection**  | Receives all operational updates          | Protected by 3-send rule & schedule filters        |
+
+---
+
+## 7. Dataset Structure & Schema Analysis
+
+- **Total Tracked Plants in `data/`:** **26 distinct solar plants** across ShineMonitor and DessMonitor platforms.
+- **Daily CSV Column Headers:** `date, kwh, baseline_kwh`
+- **Granularity of One Row:** Represents **one complete calendar day of energy generation** for a specific solar installation.
+
+---
+
+## 8. Production Bug Analysis: UC9 SHA256 Hash Timestamp Bug
+
+* **What Broke:** The admin email optimization logic (UC9) was built to stop spamming administrators by suppressing repetitive alerts whenever system anomaly states stayed unchanged. However, admins were still receiving up to 6 duplicate emails every single day. The root cause was that `alerts/alerts.json` contained a dynamic `generated_at` timestamp parameter at the top level. Because this timestamp updated on every execution, computing the raw SHA256 hash of `alerts.json` produced a brand-new hash every single run—causing the system to falsely assume the alert state had changed.
+
+* **How It Was Found:** It was identified in production when administrators noticed receiving duplicate daily emails despite no active solar plant alerts changing or clearing. Inspection of `state/admin_email_state.txt` revealed that stored hashes were constantly shifting on scheduled cron executions even when the alert content remained identical.
+
+* **How It Was Fixed & Prevented:** The GitHub Actions workflow (`trigger-shinemonitor.yml`) was updated to pipe `alerts.json` through `jq` before hashing, stripping out dynamic execution timestamps and hashing only the structural content keys (`alerts`, `suppressed`, `ignored`). To permanently prevent regression, the integration test `src/test/java/org/ktronics/scripts/integration/test_uc9_admin_email.py` was introduced to verify that hash generation remains strictly deterministic across consecutive executions regardless of timestamp variations.
+
+---
