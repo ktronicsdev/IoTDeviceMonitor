@@ -6,12 +6,12 @@
 ║                                                                              ║
 ================================================================================
 
-Report Time: 2026-09-24 00:47:35 UTC
+Report Time: 2026-09-24 07:55:19 UTC
 
 ┌─ FLEET STATUS ───────────────────────────────────────────────────────────────┐
 │
-│ Plants reporting:         14
-│ Plants with a dead link:   9   (no data for 3+ days — connectivity, not a fault)
+│ Plants reporting:         15
+│ Plants with a dead link:   8   (no data for 3+ days — connectivity, not a fault)
 │ Plants excluded:           0   (deliberately off the platform)
 │ Plants monitored:         23   (reporting + dead link)
 │
@@ -33,70 +33,12 @@ Report Time: 2026-09-24 00:47:35 UTC
 
 ┌─ PLANTS WITH A DEAD LINK ────────────────────────────────────────────────────┐
 │
-│ 📡 abeetha-plant
-│    Customer:    Abeetha
-│    Last data:   never  (115 days ago)
-│    Symptom:     no non-zero reading has ever been recorded
-│    Diagnosis:   DATA LINK DOWN — not a production fault
-│    Status:      Send #3/3
-│
-│ 📡 ganishka-ganishka-home-3kw
-│    Customer:    Ganishka
-│    Contact:     ganishkawa@gmail.com
-│    Last data:   never  (115 days ago)
-│    Symptom:     no non-zero reading has ever been recorded
-│    Diagnosis:   DATA LINK DOWN — not a production fault
-│    Status:      Send #3/3
-│
-│ 📡 mifanza-mifanza-solar-system
-│    Customer:    Mifanza
-│    Last data:   never  (115 days ago)
-│    Symptom:     no non-zero reading has ever been recorded
-│    Diagnosis:   DATA LINK DOWN — not a production fault
-│    Status:      Send #3/3
-│
-│ 📡 samurdi-kohuwala
-│    Customer:    Samurdi
-│    Last data:   never  (115 days ago)
-│    Symptom:     no non-zero reading has ever been recorded
-│    Diagnosis:   DATA LINK DOWN — not a production fault
-│    Status:      Send #3/3
-│
-│ 📡 upulatheja-3kw-pro-kadawath
-│    Customer:    Upulatheja
-│    Last data:   never  (115 days ago)
-│    Symptom:     no non-zero reading has ever been recorded
-│    Diagnosis:   DATA LINK DOWN — not a production fault
-│    Status:      Send #3/3
-│
-│ 📡 anuradha-gajanayaka-plant
-│    Customer:    Anuradha Gajanayaka
-│    Last data:   2026-06-10  (106 days ago)
-│    Symptom:     rows still arriving but every reading is 0.0000 kWh
-│    Diagnosis:   DATA LINK DOWN — not a production fault
-│    Status:      Send #3/3
-│
-│ 📡 lahiru-ryan-lahiru-plant
-│    Customer:    Lahiru Ryan
-│    Last data:   2026-07-14  (72 days ago)
-│    Symptom:     rows still arriving but every reading is 0.0000 kWh
-│    Diagnosis:   DATA LINK DOWN — not a production fault
-│    Status:      Send #3/3
-│
-│ 📡 chandika-plant
-│    Customer:    Chandika
-│    Contact:     pcgayan@gmail.com
-│    Last data:   2026-09-20  (4 days ago)
-│    Symptom:     rows still arriving but every reading is 0.0000 kWh
-│    Diagnosis:   DATA LINK DOWN — not a production fault
-│    Status:      Send #3/3
-│
 │ 📡 chamila-chamila-119h
 │    Customer:    Chamila
 │    Last data:   2026-09-21  (3 days ago)
 │    Symptom:     rows still arriving but every reading is 0.0000 kWh
 │    Diagnosis:   DATA LINK DOWN — not a production fault
-│    Status:      Send #1/3
+│    Status:      Send #2/3
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 

@@ -28,20 +28,9 @@
     "ignored": false,
     "kind": "zeros_only",
     "last_data": "2026-09-24",
-    "last_sent": "2026-09-24T00:47:35.299448",
+    "last_sent": "2026-09-24T07:55:19.171253",
     "plant": "chamila-chamila-119h",
-    "send_count": 1
-  },
-  "chandika-plant": {
-    "customer": "Chandika",
-    "days_stale": 4,
-    "first_seen": "2026-09-23T13:37:05.798955",
-    "ignored": true,
-    "kind": "zeros_only",
-    "last_data": "2026-09-24",
-    "last_sent": "2026-09-24T00:47:35.299448",
-    "plant": "chandika-plant",
-    "send_count": 3
+    "send_count": 2
   },
   "ganishka-ganishka-home-3kw": {
     "customer": "Ganishka",

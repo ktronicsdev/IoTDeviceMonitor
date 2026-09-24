@@ -1,17 +1,39 @@
 {
-  "generated_at": "2026-09-24T00:47:35.207829Z",
-  "alerts": [],
+  "generated_at": "2026-09-24T07:55:19.078588Z",
+  "alerts": [
+    {
+      "severity": "RED",
+      "plant_key": "chandika-plant",
+      "today": "2026-09-24",
+      "baseline_avg_kwh_per_day": 7.25,
+      "threshold_kwh_per_day": 1.45,
+      "rule": "< 20.0% baseline for 3 consecutive days",
+      "window": [
+        "2026-09-22",
+        "2026-09-23",
+        "2026-09-24"
+      ],
+      "details": [
+        {
+          "date": "2026-09-22",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-09-23",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-09-24",
+          "kwh": 0.6
+        }
+      ]
+    }
+  ],
   "suppressed": [
     {
       "plant_key": "chamila-chamila-119h",
       "reason": "reclassified as CONNECTIVITY: no data for 3 days (rows still arriving but every reading is 0.0000 kWh) \u2014 data link down, NOT a production fault",
       "days_stale": 3,
-      "link_down": true
-    },
-    {
-      "plant_key": "chandika-plant",
-      "reason": "reclassified as CONNECTIVITY: no data for 4 days (rows still arriving but every reading is 0.0000 kWh) \u2014 data link down, NOT a production fault",
-      "days_stale": 4,
       "link_down": true
     }
   ],
@@ -159,17 +181,6 @@
       "stale_days_threshold": 3
     },
     {
-      "plant_key": "chandika-plant",
-      "kind": "zeros_only",
-      "meaning": "rows still arriving but every reading is 0.0000 kWh",
-      "link_down": true,
-      "days_stale": 4,
-      "days_since_data": 0,
-      "last_nonzero_date": "2026-09-20",
-      "last_data_date": "2026-09-24",
-      "stale_days_threshold": 3
-    },
-    {
       "plant_key": "chamila-chamila-119h",
       "kind": "zeros_only",
       "meaning": "rows still arriving but every reading is 0.0000 kWh",
@@ -183,8 +194,8 @@
   ],
   "excluded": [],
   "counts": {
-    "reporting": 16,
-    "link_down": 9,
+    "reporting": 17,
+    "link_down": 8,
     "excluded": 0,
     "monitored": 25
   }

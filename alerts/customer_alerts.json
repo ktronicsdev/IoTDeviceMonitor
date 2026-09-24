@@ -1,3 +1,19 @@
 {
-  "customer_alerts": {}
+  "customer_alerts": {
+    "Chandika": {
+      "email": "pcgayan@gmail.com",
+      "alerts": [
+        {
+          "plant": "chandika-plant",
+          "level": "RED",
+          "issue": "< 20.0% baseline for 3 consecutive days",
+          "normal": 7.25,
+          "current": {
+            "date": "2026-09-24",
+            "kwh": 0.6
+          }
+        }
+      ]
+    }
+  }
 }
