@@ -152,3 +152,14 @@ Instead of sending the same updates to everyone, the system separates communicat
 * **How It Was Fixed & Prevented:** The GitHub Actions workflow (`trigger-shinemonitor.yml`) was updated to pipe `alerts.json` through `jq` before hashing, stripping out dynamic execution timestamps and hashing only the structural content keys (`alerts`, `suppressed`, `ignored`). To permanently prevent regression, the integration test `src/test/java/org/ktronics/scripts/integration/test_uc9_admin_email.py` was introduced to verify that hash generation remains strictly deterministic across consecutive executions regardless of timestamp variations.
 
 ---
+
+## 9. Concepts Requiring Further Clarification
+
+1. What are the main objectives of having several platforms as Dessmonitor?  
+2. What files need to be run manually apart from automation?  
+3. Why has a Java-based file structure been used?  
+4. What tasks are handled by Azure Functions in this project?  
+5. What files need to be kept under regular observation?  
+6. What issues and problems occurred earlier from the developers who worked on this repo (apart from bugs)?
+
+---
