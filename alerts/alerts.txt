@@ -15,8 +15,8 @@
 │
 │ 🔴 [RED] chandika-plant
 │
-│   Issue: Production dropped 91.7% below normal
-│   Normal: 7.25 kWh/day  →  Current: 0.60 kWh/day
+│   Issue: Production dropped 80.7% below normal
+│   Normal: 7.25 kWh/day  →  Current: 1.40 kWh/day
 │   Rule: < 20.0% baseline for 3 consecutive days
 │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -40,7 +40,7 @@
 │   Recent Production:
 │     2026-09-22: 0.0000 kWh (0.0% of baseline)
 │     2026-09-23: 0.0000 kWh (0.0% of baseline)
-│     2026-09-24: 0.6000 kWh (8.3% of baseline)
+│     2026-09-24: 1.4000 kWh (19.3% of baseline)
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 

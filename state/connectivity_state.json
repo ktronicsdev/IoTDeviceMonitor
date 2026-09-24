@@ -25,12 +25,12 @@
     "customer": "Chamila",
     "days_stale": 3,
     "first_seen": "2026-09-24T00:47:35.299448",
-    "ignored": false,
+    "ignored": true,
     "kind": "zeros_only",
     "last_data": "2026-09-24",
-    "last_sent": "2026-09-24T07:55:19.171253",
+    "last_sent": "2026-09-24T12:16:22.413927",
     "plant": "chamila-chamila-119h",
-    "send_count": 2
+    "send_count": 3
   },
   "ganishka-ganishka-home-3kw": {
     "customer": "Ganishka",

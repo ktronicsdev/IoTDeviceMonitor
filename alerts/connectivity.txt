@@ -6,7 +6,7 @@
 ║                                                                              ║
 ================================================================================
 
-Report Time: 2026-09-24 07:55:19 UTC
+Report Time: 2026-09-24 12:16:22 UTC
 
 ┌─ FLEET STATUS ───────────────────────────────────────────────────────────────┐
 │
@@ -38,7 +38,7 @@ Report Time: 2026-09-24 07:55:19 UTC
 │    Last data:   2026-09-21  (3 days ago)
 │    Symptom:     rows still arriving but every reading is 0.0000 kWh
 │    Diagnosis:   DATA LINK DOWN — not a production fault
-│    Status:      Send #2/3
+│    Status:      Send #3/3
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
