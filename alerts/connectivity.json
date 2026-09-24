@@ -1,32 +1,21 @@
 {
   "stale_days": 3,
   "counts": {
-    "reporting": 15,
-    "link_down": 8,
+    "reporting": 14,
+    "link_down": 9,
     "excluded": 0,
     "monitored": 23
   },
   "reporting": [
     {
-      "plant_key": "chamila-chamila-119h",
-      "kind": "reporting",
-      "meaning": "reporting normally",
-      "link_down": false,
-      "days_stale": 2,
-      "days_since_data": 0,
-      "last_nonzero_date": "2026-09-21",
-      "last_data_date": "2026-09-23",
-      "stale_days_threshold": 3
-    },
-    {
       "plant_key": "crdesilva-home",
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 0,
+      "days_stale": 1,
       "days_since_data": 0,
       "last_nonzero_date": "2026-09-23",
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     },
     {
@@ -34,10 +23,10 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 0,
+      "days_stale": 1,
       "days_since_data": 0,
       "last_nonzero_date": "2026-09-23",
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     },
     {
@@ -45,10 +34,10 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 0,
+      "days_stale": 1,
       "days_since_data": 0,
       "last_nonzero_date": "2026-09-23",
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     },
     {
@@ -56,10 +45,10 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 0,
+      "days_stale": 1,
       "days_since_data": 0,
       "last_nonzero_date": "2026-09-23",
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     },
     {
@@ -67,10 +56,10 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 0,
+      "days_stale": 1,
       "days_since_data": 0,
       "last_nonzero_date": "2026-09-23",
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     },
     {
@@ -78,10 +67,10 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 0,
+      "days_stale": 1,
       "days_since_data": 0,
       "last_nonzero_date": "2026-09-23",
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     },
     {
@@ -89,10 +78,10 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 0,
+      "days_stale": 1,
       "days_since_data": 0,
       "last_nonzero_date": "2026-09-23",
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     },
     {
@@ -100,10 +89,10 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 0,
+      "days_stale": 1,
       "days_since_data": 0,
       "last_nonzero_date": "2026-09-23",
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     },
     {
@@ -111,10 +100,10 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 0,
+      "days_stale": 1,
       "days_since_data": 0,
       "last_nonzero_date": "2026-09-23",
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     },
     {
@@ -122,10 +111,10 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 0,
+      "days_stale": 1,
       "days_since_data": 0,
       "last_nonzero_date": "2026-09-23",
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     },
     {
@@ -133,10 +122,10 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 0,
+      "days_stale": 1,
       "days_since_data": 0,
       "last_nonzero_date": "2026-09-23",
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     },
     {
@@ -144,10 +133,10 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 0,
+      "days_stale": 1,
       "days_since_data": 0,
       "last_nonzero_date": "2026-09-23",
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     },
     {
@@ -155,10 +144,10 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 0,
+      "days_stale": 1,
       "days_since_data": 0,
       "last_nonzero_date": "2026-09-23",
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     },
     {
@@ -166,10 +155,10 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 0,
+      "days_stale": 1,
       "days_since_data": 0,
       "last_nonzero_date": "2026-09-23",
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     }
   ],
@@ -179,10 +168,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 114,
+      "days_stale": 115,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     },
     {
@@ -190,10 +179,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 114,
+      "days_stale": 115,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     },
     {
@@ -201,10 +190,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 114,
+      "days_stale": 115,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     },
     {
@@ -212,10 +201,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 114,
+      "days_stale": 115,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     },
     {
@@ -223,10 +212,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 114,
+      "days_stale": 115,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     },
     {
@@ -234,10 +223,10 @@
       "kind": "zeros_only",
       "meaning": "rows still arriving but every reading is 0.0000 kWh",
       "link_down": true,
-      "days_stale": 105,
+      "days_stale": 106,
       "days_since_data": 0,
       "last_nonzero_date": "2026-06-10",
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     },
     {
@@ -245,10 +234,10 @@
       "kind": "zeros_only",
       "meaning": "rows still arriving but every reading is 0.0000 kWh",
       "link_down": true,
-      "days_stale": 71,
+      "days_stale": 72,
       "days_since_data": 0,
       "last_nonzero_date": "2026-07-14",
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     },
     {
@@ -256,15 +245,36 @@
       "kind": "zeros_only",
       "meaning": "rows still arriving but every reading is 0.0000 kWh",
       "link_down": true,
-      "days_stale": 3,
+      "days_stale": 4,
       "days_since_data": 0,
       "last_nonzero_date": "2026-09-20",
-      "last_data_date": "2026-09-23",
+      "last_data_date": "2026-09-24",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "chamila-chamila-119h",
+      "kind": "zeros_only",
+      "meaning": "rows still arriving but every reading is 0.0000 kWh",
+      "link_down": true,
+      "days_stale": 3,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-09-21",
+      "last_data_date": "2026-09-24",
       "stale_days_threshold": 3
     }
   ],
   "excluded": [],
-  "generated_at": "2026-09-23T21:45:19.418095Z",
+  "generated_at": "2026-09-24T00:47:35.299131Z",
   "fleet_wide_outage": false,
-  "alerting_now": []
+  "alerting_now": [
+    "abeetha-plant",
+    "ganishka-ganishka-home-3kw",
+    "mifanza-mifanza-solar-system",
+    "samurdi-kohuwala",
+    "upulatheja-3kw-pro-kadawath",
+    "anuradha-gajanayaka-plant",
+    "lahiru-ryan-lahiru-plant",
+    "chandika-plant",
+    "chamila-chamila-119h"
+  ]
 }
