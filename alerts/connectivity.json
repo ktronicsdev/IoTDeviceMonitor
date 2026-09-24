@@ -264,9 +264,7 @@
     }
   ],
   "excluded": [],
-  "generated_at": "2026-09-24T12:16:22.413467Z",
+  "generated_at": "2026-09-24T15:30:08.062847Z",
   "fleet_wide_outage": false,
-  "alerting_now": [
-    "chamila-chamila-119h"
-  ]
+  "alerting_now": []
 }

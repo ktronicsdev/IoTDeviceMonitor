@@ -2,47 +2,14 @@
 ║                                                                              ║
 ║                      [SHINEMONITOR] PRODUCTION MONITOR                       ║
 ║                                                                              ║
-║                            ⚠ ATTENTION REQUIRED ⚠                            ║
+║                          ✓ ALL SYSTEMS OPERATIONAL                           ║
 ║                                                                              ║
-║                        Status: 1 CRITICAL, 0 WARNING                         ║
+║                          Status: NO ALERTS DETECTED                          ║
 ║                                                                              ║
 ║               Date: 2026-09-24  |  Total Plants Monitored: 25                ║
 ║                Reporting: 17  |  Dead link: 8  |  Excluded: 0                ║
 ║                                                                              ║
 ================================================================================
-
-┌─ ALERT SUMMARY ──────────────────────────────────────────────────────────────┐
-│
-│ 🔴 [RED] chandika-plant
-│
-│   Issue: Production dropped 80.7% below normal
-│   Normal: 7.25 kWh/day  →  Current: 1.40 kWh/day
-│   Rule: < 20.0% baseline for 3 consecutive days
-│
-└──────────────────────────────────────────────────────────────────────────────┘
-
-┌─ RECOMMENDED ACTIONS ────────────────────────────────────────────────────────┐
-│
-│ chandika-plant:
-│   1. Check inverter status and error codes
-│   2. Verify grid connection and breaker status
-│   3. Inspect panels for shading or physical damage
-│   4. Contact maintenance team if issue persists
-│
-└──────────────────────────────────────────────────────────────────────────────┘
-
-┌─ DETAILED BREAKDOWN ─────────────────────────────────────────────────────────┐
-│
-│ [RED] chandika-plant
-│
-│   Baseline (avg/day): 7.2500 kWh
-│   Alert Threshold: < 1.4500 kWh/day
-│   Recent Production:
-│     2026-09-22: 0.0000 kWh (0.0% of baseline)
-│     2026-09-23: 0.0000 kWh (0.0% of baseline)
-│     2026-09-24: 1.4000 kWh (19.3% of baseline)
-│
-└──────────────────────────────────────────────────────────────────────────────┘
 
 ┌─ 📡 DATA LINK DOWN (CONNECTIVITY — NOT A PRODUCTION FAULT) ──────────────────┐
 │
