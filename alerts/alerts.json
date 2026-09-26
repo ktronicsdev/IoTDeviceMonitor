@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-09-25T21:53:49.008096Z",
+  "generated_at": "2026-09-26T00:51:42.562392Z",
   "alerts": [],
   "suppressed": [
     {
       "plant_key": "chamila-chamila-119h",
-      "reason": "reclassified as CONNECTIVITY: no data for 4 days (rows still arriving but every reading is 0.0000 kWh) \u2014 data link down, NOT a production fault",
-      "days_stale": 4,
+      "reason": "reclassified as CONNECTIVITY: no data for 5 days (rows still arriving but every reading is 0.0000 kWh) \u2014 data link down, NOT a production fault",
+      "days_stale": 5,
       "link_down": true
     }
   ],
@@ -17,7 +17,7 @@
         "2026-09"
       ],
       "link_down": true,
-      "days_stale": 116
+      "days_stale": 117
     },
     {
       "plant_key": "anuradha-gajanayaka-plant",
@@ -26,7 +26,7 @@
         "2026-09"
       ],
       "link_down": true,
-      "days_stale": 107
+      "days_stale": 108
     },
     {
       "plant_key": "ganishka-ganishka-home-3kw",
@@ -35,7 +35,7 @@
         "2026-09"
       ],
       "link_down": true,
-      "days_stale": 116
+      "days_stale": 117
     },
     {
       "plant_key": "lahiru-ryan-lahiru-plant",
@@ -44,7 +44,7 @@
         "2026-09"
       ],
       "link_down": true,
-      "days_stale": 73
+      "days_stale": 74
     },
     {
       "plant_key": "mifanza-mifanza-solar-system",
@@ -53,7 +53,7 @@
         "2026-09"
       ],
       "link_down": true,
-      "days_stale": 116
+      "days_stale": 117
     },
     {
       "plant_key": "samurdi-kohuwala",
@@ -62,7 +62,7 @@
         "2026-09"
       ],
       "link_down": true,
-      "days_stale": 116
+      "days_stale": 117
     },
     {
       "plant_key": "upulatheja-3kw-pro-kadawath",
@@ -71,7 +71,7 @@
         "2026-09"
       ],
       "link_down": true,
-      "days_stale": 116
+      "days_stale": 117
     }
   ],
   "link_down": [
@@ -80,10 +80,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 116,
+      "days_stale": 117,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-09-25",
+      "last_data_date": "2026-09-26",
       "stale_days_threshold": 3
     },
     {
@@ -91,10 +91,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 116,
+      "days_stale": 117,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-09-25",
+      "last_data_date": "2026-09-26",
       "stale_days_threshold": 3
     },
     {
@@ -102,10 +102,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 116,
+      "days_stale": 117,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-09-25",
+      "last_data_date": "2026-09-26",
       "stale_days_threshold": 3
     },
     {
@@ -113,10 +113,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 116,
+      "days_stale": 117,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-09-25",
+      "last_data_date": "2026-09-26",
       "stale_days_threshold": 3
     },
     {
@@ -124,10 +124,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 116,
+      "days_stale": 117,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-09-25",
+      "last_data_date": "2026-09-26",
       "stale_days_threshold": 3
     },
     {
@@ -135,10 +135,10 @@
       "kind": "zeros_only",
       "meaning": "rows still arriving but every reading is 0.0000 kWh",
       "link_down": true,
-      "days_stale": 107,
+      "days_stale": 108,
       "days_since_data": 0,
       "last_nonzero_date": "2026-06-10",
-      "last_data_date": "2026-09-25",
+      "last_data_date": "2026-09-26",
       "stale_days_threshold": 3
     },
     {
@@ -146,10 +146,10 @@
       "kind": "zeros_only",
       "meaning": "rows still arriving but every reading is 0.0000 kWh",
       "link_down": true,
-      "days_stale": 73,
+      "days_stale": 74,
       "days_since_data": 0,
       "last_nonzero_date": "2026-07-14",
-      "last_data_date": "2026-09-25",
+      "last_data_date": "2026-09-26",
       "stale_days_threshold": 3
     },
     {
@@ -157,10 +157,10 @@
       "kind": "zeros_only",
       "meaning": "rows still arriving but every reading is 0.0000 kWh",
       "link_down": true,
-      "days_stale": 4,
+      "days_stale": 5,
       "days_since_data": 0,
       "last_nonzero_date": "2026-09-21",
-      "last_data_date": "2026-09-25",
+      "last_data_date": "2026-09-26",
       "stale_days_threshold": 3
     }
   ],
