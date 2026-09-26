@@ -1322,10 +1322,10 @@
     "message": "Solar charger stops due to over load"
   },
   "1116664:D70000210150900869:6ab667a5933205016815e82b": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-09-25T15:31:55.817517",
-    "ignored": false,
-    "last_sent": "2026-09-25T21:54:28.852797",
+    "ignored": true,
+    "last_sent": "2026-09-26T08:10:38.584339",
     "customer": "Ravindra",
     "plant": "Ravindra 3kw",
     "message": "Inverter bus voltage is too low"
