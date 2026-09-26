@@ -1,0 +1,1281 @@
+{
+  "ok": true,
+  "lat": 6.942118,
+  "lon": 79.858673,
+  "location_source": "plant",
+  "source": "open-meteo",
+  "generated": "2026-09-26T18:58:53.482365+00:00",
+  "current": {
+    "temp_c": 27.3,
+    "cloud_pct": 80.0,
+    "rain_mm": 0.1,
+    "ghi_wm2": 0,
+    "code": 51,
+    "condition": "Light drizzle",
+    "category": "drizzle"
+  },
+  "today": {
+    "date": "2026-09-26",
+    "code": 3,
+    "condition": "Overcast",
+    "category": "cloudy",
+    "cloud_pct": 88,
+    "rain_mm": 7.4,
+    "ghi_kwh_m2": 5.29,
+    "clear_kwh_m2": 7.7,
+    "harvest_factor": 0.687,
+    "loss_pct": 31
+  },
+  "daily": [
+    {
+      "date": "2026-09-19",
+      "code": 51,
+      "condition": "Light drizzle",
+      "category": "drizzle",
+      "cloud_pct": 66,
+      "rain_mm": 11.3,
+      "ghi_kwh_m2": 5.72,
+      "clear_kwh_m2": 7.74,
+      "harvest_factor": 0.739,
+      "loss_pct": 26
+    },
+    {
+      "date": "2026-09-20",
+      "code": 80,
+      "condition": "Light showers",
+      "category": "rain",
+      "cloud_pct": 100,
+      "rain_mm": 54.4,
+      "ghi_kwh_m2": 2.79,
+      "clear_kwh_m2": 7.74,
+      "harvest_factor": 0.36,
+      "loss_pct": 64
+    },
+    {
+      "date": "2026-09-21",
+      "code": 51,
+      "condition": "Light drizzle",
+      "category": "drizzle",
+      "cloud_pct": 84,
+      "rain_mm": 12.3,
+      "ghi_kwh_m2": 5.33,
+      "clear_kwh_m2": 7.73,
+      "harvest_factor": 0.69,
+      "loss_pct": 31
+    },
+    {
+      "date": "2026-09-22",
+      "code": 51,
+      "condition": "Light drizzle",
+      "category": "drizzle",
+      "cloud_pct": 83,
+      "rain_mm": 18.5,
+      "ghi_kwh_m2": 5.43,
+      "clear_kwh_m2": 7.73,
+      "harvest_factor": 0.702,
+      "loss_pct": 30
+    },
+    {
+      "date": "2026-09-23",
+      "code": 53,
+      "condition": "Drizzle",
+      "category": "drizzle",
+      "cloud_pct": 83,
+      "rain_mm": 25.9,
+      "ghi_kwh_m2": 5.27,
+      "clear_kwh_m2": 7.72,
+      "harvest_factor": 0.683,
+      "loss_pct": 32
+    },
+    {
+      "date": "2026-09-24",
+      "code": 80,
+      "condition": "Light showers",
+      "category": "rain",
+      "cloud_pct": 100,
+      "rain_mm": 42.5,
+      "ghi_kwh_m2": 2.32,
+      "clear_kwh_m2": 7.72,
+      "harvest_factor": 0.301,
+      "loss_pct": 70
+    },
+    {
+      "date": "2026-09-25",
+      "code": 3,
+      "condition": "Overcast",
+      "category": "cloudy",
+      "cloud_pct": 98,
+      "rain_mm": 13.5,
+      "ghi_kwh_m2": 4.9,
+      "clear_kwh_m2": 7.71,
+      "harvest_factor": 0.636,
+      "loss_pct": 36
+    },
+    {
+      "date": "2026-09-26",
+      "code": 3,
+      "condition": "Overcast",
+      "category": "cloudy",
+      "cloud_pct": 88,
+      "rain_mm": 7.4,
+      "ghi_kwh_m2": 5.29,
+      "clear_kwh_m2": 7.7,
+      "harvest_factor": 0.687,
+      "loss_pct": 31
+    }
+  ],
+  "hourly_ghi": [
+    {
+      "timestamp": "2026-09-19 00:00",
+      "ghi": 0,
+      "cloud": 45,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-19 01:00",
+      "ghi": 0,
+      "cloud": 40,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-19 02:00",
+      "ghi": 0,
+      "cloud": 75,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-19 03:00",
+      "ghi": 0,
+      "cloud": 91,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-19 04:00",
+      "ghi": 0,
+      "cloud": 78,
+      "rain": 0.4
+    },
+    {
+      "timestamp": "2026-09-19 05:00",
+      "ghi": 0,
+      "cloud": 20,
+      "rain": 1.2
+    },
+    {
+      "timestamp": "2026-09-19 06:00",
+      "ghi": 11,
+      "cloud": 38,
+      "rain": 0.2
+    },
+    {
+      "timestamp": "2026-09-19 07:00",
+      "ghi": 155,
+      "cloud": 37,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-19 08:00",
+      "ghi": 369,
+      "cloud": 79,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-19 09:00",
+      "ghi": 474,
+      "cloud": 67,
+      "rain": 0.9
+    },
+    {
+      "timestamp": "2026-09-19 10:00",
+      "ghi": 583,
+      "cloud": 52,
+      "rain": 0.5
+    },
+    {
+      "timestamp": "2026-09-19 11:00",
+      "ghi": 786,
+      "cloud": 23,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-19 12:00",
+      "ghi": 895,
+      "cloud": 66,
+      "rain": 0.2
+    },
+    {
+      "timestamp": "2026-09-19 13:00",
+      "ghi": 660,
+      "cloud": 51,
+      "rain": 0.5
+    },
+    {
+      "timestamp": "2026-09-19 14:00",
+      "ghi": 745,
+      "cloud": 66,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-19 15:00",
+      "ghi": 561,
+      "cloud": 86,
+      "rain": 0.2
+    },
+    {
+      "timestamp": "2026-09-19 16:00",
+      "ghi": 331,
+      "cloud": 98,
+      "rain": 0.3
+    },
+    {
+      "timestamp": "2026-09-19 17:00",
+      "ghi": 134,
+      "cloud": 99,
+      "rain": 0.2
+    },
+    {
+      "timestamp": "2026-09-19 18:00",
+      "ghi": 17,
+      "cloud": 100,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-19 19:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 0.4
+    },
+    {
+      "timestamp": "2026-09-19 20:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-19 21:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-19 22:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 1.7
+    },
+    {
+      "timestamp": "2026-09-19 23:00",
+      "ghi": 0,
+      "cloud": 99,
+      "rain": 3.9
+    },
+    {
+      "timestamp": "2026-09-20 00:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 3.6
+    },
+    {
+      "timestamp": "2026-09-20 01:00",
+      "ghi": 0,
+      "cloud": 96,
+      "rain": 1.5
+    },
+    {
+      "timestamp": "2026-09-20 02:00",
+      "ghi": 0,
+      "cloud": 94,
+      "rain": 0.9
+    },
+    {
+      "timestamp": "2026-09-20 03:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 1.5
+    },
+    {
+      "timestamp": "2026-09-20 04:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 2.8
+    },
+    {
+      "timestamp": "2026-09-20 05:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 2.4
+    },
+    {
+      "timestamp": "2026-09-20 06:00",
+      "ghi": 6,
+      "cloud": 100,
+      "rain": 2.9
+    },
+    {
+      "timestamp": "2026-09-20 07:00",
+      "ghi": 87,
+      "cloud": 100,
+      "rain": 7.4
+    },
+    {
+      "timestamp": "2026-09-20 08:00",
+      "ghi": 71,
+      "cloud": 100,
+      "rain": 5.6
+    },
+    {
+      "timestamp": "2026-09-20 09:00",
+      "ghi": 233,
+      "cloud": 100,
+      "rain": 2.7
+    },
+    {
+      "timestamp": "2026-09-20 10:00",
+      "ghi": 414,
+      "cloud": 100,
+      "rain": 4.3
+    },
+    {
+      "timestamp": "2026-09-20 11:00",
+      "ghi": 314,
+      "cloud": 99,
+      "rain": 2.4
+    },
+    {
+      "timestamp": "2026-09-20 12:00",
+      "ghi": 469,
+      "cloud": 98,
+      "rain": 0.7
+    },
+    {
+      "timestamp": "2026-09-20 13:00",
+      "ghi": 386,
+      "cloud": 99,
+      "rain": 0.5
+    },
+    {
+      "timestamp": "2026-09-20 14:00",
+      "ghi": 352,
+      "cloud": 100,
+      "rain": 2.3
+    },
+    {
+      "timestamp": "2026-09-20 15:00",
+      "ghi": 252,
+      "cloud": 100,
+      "rain": 3.6
+    },
+    {
+      "timestamp": "2026-09-20 16:00",
+      "ghi": 144,
+      "cloud": 100,
+      "rain": 2.3
+    },
+    {
+      "timestamp": "2026-09-20 17:00",
+      "ghi": 55,
+      "cloud": 100,
+      "rain": 1.4
+    },
+    {
+      "timestamp": "2026-09-20 18:00",
+      "ghi": 10,
+      "cloud": 100,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-20 19:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 0.2
+    },
+    {
+      "timestamp": "2026-09-20 20:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 0.8
+    },
+    {
+      "timestamp": "2026-09-20 21:00",
+      "ghi": 0,
+      "cloud": 99,
+      "rain": 0.6
+    },
+    {
+      "timestamp": "2026-09-20 22:00",
+      "ghi": 0,
+      "cloud": 99,
+      "rain": 3.6
+    },
+    {
+      "timestamp": "2026-09-20 23:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 0.3
+    },
+    {
+      "timestamp": "2026-09-21 00:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 0.3
+    },
+    {
+      "timestamp": "2026-09-21 01:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-21 02:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 0.3
+    },
+    {
+      "timestamp": "2026-09-21 03:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-21 04:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 0.2
+    },
+    {
+      "timestamp": "2026-09-21 05:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-21 06:00",
+      "ghi": 7,
+      "cloud": 98,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-21 07:00",
+      "ghi": 117,
+      "cloud": 98,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-21 08:00",
+      "ghi": 363,
+      "cloud": 35,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-21 09:00",
+      "ghi": 561,
+      "cloud": 98,
+      "rain": 0.3
+    },
+    {
+      "timestamp": "2026-09-21 10:00",
+      "ghi": 553,
+      "cloud": 100,
+      "rain": 3.2
+    },
+    {
+      "timestamp": "2026-09-21 11:00",
+      "ghi": 552,
+      "cloud": 80,
+      "rain": 0.6
+    },
+    {
+      "timestamp": "2026-09-21 12:00",
+      "ghi": 824,
+      "cloud": 74,
+      "rain": 0.6
+    },
+    {
+      "timestamp": "2026-09-21 13:00",
+      "ghi": 891,
+      "cloud": 48,
+      "rain": 0.5
+    },
+    {
+      "timestamp": "2026-09-21 14:00",
+      "ghi": 760,
+      "cloud": 84,
+      "rain": 0.4
+    },
+    {
+      "timestamp": "2026-09-21 15:00",
+      "ghi": 404,
+      "cloud": 97,
+      "rain": 0.3
+    },
+    {
+      "timestamp": "2026-09-21 16:00",
+      "ghi": 201,
+      "cloud": 97,
+      "rain": 0.3
+    },
+    {
+      "timestamp": "2026-09-21 17:00",
+      "ghi": 84,
+      "cloud": 89,
+      "rain": 0.7
+    },
+    {
+      "timestamp": "2026-09-21 18:00",
+      "ghi": 17,
+      "cloud": 95,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-21 19:00",
+      "ghi": 0,
+      "cloud": 95,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-21 20:00",
+      "ghi": 0,
+      "cloud": 98,
+      "rain": 1.0
+    },
+    {
+      "timestamp": "2026-09-21 21:00",
+      "ghi": 0,
+      "cloud": 58,
+      "rain": 0.5
+    },
+    {
+      "timestamp": "2026-09-21 22:00",
+      "ghi": 0,
+      "cloud": 70,
+      "rain": 1.2
+    },
+    {
+      "timestamp": "2026-09-21 23:00",
+      "ghi": 0,
+      "cloud": 95,
+      "rain": 1.7
+    },
+    {
+      "timestamp": "2026-09-22 00:00",
+      "ghi": 0,
+      "cloud": 79,
+      "rain": 0.3
+    },
+    {
+      "timestamp": "2026-09-22 01:00",
+      "ghi": 0,
+      "cloud": 73,
+      "rain": 2.7
+    },
+    {
+      "timestamp": "2026-09-22 02:00",
+      "ghi": 0,
+      "cloud": 70,
+      "rain": 0.6
+    },
+    {
+      "timestamp": "2026-09-22 03:00",
+      "ghi": 0,
+      "cloud": 84,
+      "rain": 0.7
+    },
+    {
+      "timestamp": "2026-09-22 04:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 0.9
+    },
+    {
+      "timestamp": "2026-09-22 05:00",
+      "ghi": 0,
+      "cloud": 97,
+      "rain": 0.7
+    },
+    {
+      "timestamp": "2026-09-22 06:00",
+      "ghi": 7,
+      "cloud": 97,
+      "rain": 1.6
+    },
+    {
+      "timestamp": "2026-09-22 07:00",
+      "ghi": 99,
+      "cloud": 94,
+      "rain": 1.5
+    },
+    {
+      "timestamp": "2026-09-22 08:00",
+      "ghi": 264,
+      "cloud": 84,
+      "rain": 1.2
+    },
+    {
+      "timestamp": "2026-09-22 09:00",
+      "ghi": 428,
+      "cloud": 95,
+      "rain": 0.9
+    },
+    {
+      "timestamp": "2026-09-22 10:00",
+      "ghi": 586,
+      "cloud": 95,
+      "rain": 3.2
+    },
+    {
+      "timestamp": "2026-09-22 11:00",
+      "ghi": 485,
+      "cloud": 68,
+      "rain": 1.0
+    },
+    {
+      "timestamp": "2026-09-22 12:00",
+      "ghi": 839,
+      "cloud": 34,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-22 13:00",
+      "ghi": 895,
+      "cloud": 56,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-22 14:00",
+      "ghi": 781,
+      "cloud": 84,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-22 15:00",
+      "ghi": 560,
+      "cloud": 99,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-22 16:00",
+      "ghi": 332,
+      "cloud": 98,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-22 17:00",
+      "ghi": 139,
+      "cloud": 74,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-22 18:00",
+      "ghi": 18,
+      "cloud": 98,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-22 19:00",
+      "ghi": 0,
+      "cloud": 79,
+      "rain": 0.6
+    },
+    {
+      "timestamp": "2026-09-22 20:00",
+      "ghi": 0,
+      "cloud": 83,
+      "rain": 0.6
+    },
+    {
+      "timestamp": "2026-09-22 21:00",
+      "ghi": 0,
+      "cloud": 91,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-22 22:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 0.5
+    },
+    {
+      "timestamp": "2026-09-22 23:00",
+      "ghi": 0,
+      "cloud": 99,
+      "rain": 0.8
+    },
+    {
+      "timestamp": "2026-09-23 00:00",
+      "ghi": 0,
+      "cloud": 98,
+      "rain": 0.7
+    },
+    {
+      "timestamp": "2026-09-23 01:00",
+      "ghi": 0,
+      "cloud": 98,
+      "rain": 1.5
+    },
+    {
+      "timestamp": "2026-09-23 02:00",
+      "ghi": 0,
+      "cloud": 99,
+      "rain": 1.1
+    },
+    {
+      "timestamp": "2026-09-23 03:00",
+      "ghi": 0,
+      "cloud": 98,
+      "rain": 2.4
+    },
+    {
+      "timestamp": "2026-09-23 04:00",
+      "ghi": 0,
+      "cloud": 96,
+      "rain": 2.0
+    },
+    {
+      "timestamp": "2026-09-23 05:00",
+      "ghi": 0,
+      "cloud": 82,
+      "rain": 0.8
+    },
+    {
+      "timestamp": "2026-09-23 06:00",
+      "ghi": 8,
+      "cloud": 88,
+      "rain": 1.2
+    },
+    {
+      "timestamp": "2026-09-23 07:00",
+      "ghi": 103,
+      "cloud": 62,
+      "rain": 1.5
+    },
+    {
+      "timestamp": "2026-09-23 08:00",
+      "ghi": 348,
+      "cloud": 96,
+      "rain": 0.8
+    },
+    {
+      "timestamp": "2026-09-23 09:00",
+      "ghi": 479,
+      "cloud": 85,
+      "rain": 1.2
+    },
+    {
+      "timestamp": "2026-09-23 10:00",
+      "ghi": 612,
+      "cloud": 87,
+      "rain": 3.2
+    },
+    {
+      "timestamp": "2026-09-23 11:00",
+      "ghi": 497,
+      "cloud": 71,
+      "rain": 1.1
+    },
+    {
+      "timestamp": "2026-09-23 12:00",
+      "ghi": 817,
+      "cloud": 63,
+      "rain": 0.6
+    },
+    {
+      "timestamp": "2026-09-23 13:00",
+      "ghi": 865,
+      "cloud": 69,
+      "rain": 0.3
+    },
+    {
+      "timestamp": "2026-09-23 14:00",
+      "ghi": 727,
+      "cloud": 88,
+      "rain": 0.4
+    },
+    {
+      "timestamp": "2026-09-23 15:00",
+      "ghi": 415,
+      "cloud": 81,
+      "rain": 0.7
+    },
+    {
+      "timestamp": "2026-09-23 16:00",
+      "ghi": 276,
+      "cloud": 89,
+      "rain": 0.2
+    },
+    {
+      "timestamp": "2026-09-23 17:00",
+      "ghi": 115,
+      "cloud": 98,
+      "rain": 0.3
+    },
+    {
+      "timestamp": "2026-09-23 18:00",
+      "ghi": 10,
+      "cloud": 100,
+      "rain": 0.7
+    },
+    {
+      "timestamp": "2026-09-23 19:00",
+      "ghi": 0,
+      "cloud": 98,
+      "rain": 0.9
+    },
+    {
+      "timestamp": "2026-09-23 20:00",
+      "ghi": 0,
+      "cloud": 98,
+      "rain": 0.5
+    },
+    {
+      "timestamp": "2026-09-23 21:00",
+      "ghi": 0,
+      "cloud": 96,
+      "rain": 1.9
+    },
+    {
+      "timestamp": "2026-09-23 22:00",
+      "ghi": 0,
+      "cloud": 95,
+      "rain": 1.1
+    },
+    {
+      "timestamp": "2026-09-23 23:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 0.8
+    },
+    {
+      "timestamp": "2026-09-24 00:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 1.5
+    },
+    {
+      "timestamp": "2026-09-24 01:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 3.0
+    },
+    {
+      "timestamp": "2026-09-24 02:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 3.0
+    },
+    {
+      "timestamp": "2026-09-24 03:00",
+      "ghi": 0,
+      "cloud": 99,
+      "rain": 1.2
+    },
+    {
+      "timestamp": "2026-09-24 04:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 1.6
+    },
+    {
+      "timestamp": "2026-09-24 05:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 1.1
+    },
+    {
+      "timestamp": "2026-09-24 06:00",
+      "ghi": 7,
+      "cloud": 97,
+      "rain": 1.3
+    },
+    {
+      "timestamp": "2026-09-24 07:00",
+      "ghi": 95,
+      "cloud": 99,
+      "rain": 1.6
+    },
+    {
+      "timestamp": "2026-09-24 08:00",
+      "ghi": 204,
+      "cloud": 100,
+      "rain": 3.3
+    },
+    {
+      "timestamp": "2026-09-24 09:00",
+      "ghi": 348,
+      "cloud": 100,
+      "rain": 1.1
+    },
+    {
+      "timestamp": "2026-09-24 10:00",
+      "ghi": 368,
+      "cloud": 100,
+      "rain": 4.3
+    },
+    {
+      "timestamp": "2026-09-24 11:00",
+      "ghi": 260,
+      "cloud": 100,
+      "rain": 1.7
+    },
+    {
+      "timestamp": "2026-09-24 12:00",
+      "ghi": 261,
+      "cloud": 100,
+      "rain": 1.4
+    },
+    {
+      "timestamp": "2026-09-24 13:00",
+      "ghi": 258,
+      "cloud": 100,
+      "rain": 4.2
+    },
+    {
+      "timestamp": "2026-09-24 14:00",
+      "ghi": 182,
+      "cloud": 100,
+      "rain": 1.3
+    },
+    {
+      "timestamp": "2026-09-24 15:00",
+      "ghi": 196,
+      "cloud": 100,
+      "rain": 3.3
+    },
+    {
+      "timestamp": "2026-09-24 16:00",
+      "ghi": 61,
+      "cloud": 100,
+      "rain": 2.3
+    },
+    {
+      "timestamp": "2026-09-24 17:00",
+      "ghi": 71,
+      "cloud": 100,
+      "rain": 2.2
+    },
+    {
+      "timestamp": "2026-09-24 18:00",
+      "ghi": 9,
+      "cloud": 100,
+      "rain": 0.3
+    },
+    {
+      "timestamp": "2026-09-24 19:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-24 20:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 1.0
+    },
+    {
+      "timestamp": "2026-09-24 21:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 1.1
+    },
+    {
+      "timestamp": "2026-09-24 22:00",
+      "ghi": 0,
+      "cloud": 99,
+      "rain": 0.5
+    },
+    {
+      "timestamp": "2026-09-24 23:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-25 00:00",
+      "ghi": 0,
+      "cloud": 99,
+      "rain": 1.4
+    },
+    {
+      "timestamp": "2026-09-25 01:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 0.6
+    },
+    {
+      "timestamp": "2026-09-25 02:00",
+      "ghi": 0,
+      "cloud": 98,
+      "rain": 0.4
+    },
+    {
+      "timestamp": "2026-09-25 03:00",
+      "ghi": 0,
+      "cloud": 92,
+      "rain": 0.3
+    },
+    {
+      "timestamp": "2026-09-25 04:00",
+      "ghi": 0,
+      "cloud": 96,
+      "rain": 3.2
+    },
+    {
+      "timestamp": "2026-09-25 05:00",
+      "ghi": 0,
+      "cloud": 94,
+      "rain": 3.3
+    },
+    {
+      "timestamp": "2026-09-25 06:00",
+      "ghi": 10,
+      "cloud": 96,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-25 07:00",
+      "ghi": 91,
+      "cloud": 91,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-25 08:00",
+      "ghi": 251,
+      "cloud": 96,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-25 09:00",
+      "ghi": 508,
+      "cloud": 98,
+      "rain": 1.0
+    },
+    {
+      "timestamp": "2026-09-25 10:00",
+      "ghi": 720,
+      "cloud": 97,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-25 11:00",
+      "ghi": 641,
+      "cloud": 100,
+      "rain": 1.7
+    },
+    {
+      "timestamp": "2026-09-25 12:00",
+      "ghi": 726,
+      "cloud": 100,
+      "rain": 0.7
+    },
+    {
+      "timestamp": "2026-09-25 13:00",
+      "ghi": 666,
+      "cloud": 100,
+      "rain": 0.6
+    },
+    {
+      "timestamp": "2026-09-25 14:00",
+      "ghi": 473,
+      "cloud": 100,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-25 15:00",
+      "ghi": 433,
+      "cloud": 99,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-25 16:00",
+      "ghi": 263,
+      "cloud": 100,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-25 17:00",
+      "ghi": 110,
+      "cloud": 96,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-25 18:00",
+      "ghi": 12,
+      "cloud": 99,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-25 19:00",
+      "ghi": 0,
+      "cloud": 98,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-25 20:00",
+      "ghi": 0,
+      "cloud": 97,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-25 21:00",
+      "ghi": 0,
+      "cloud": 97,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-25 22:00",
+      "ghi": 0,
+      "cloud": 97,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-25 23:00",
+      "ghi": 0,
+      "cloud": 98,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-26 00:00",
+      "ghi": 0,
+      "cloud": 100,
+      "rain": 0.7
+    },
+    {
+      "timestamp": "2026-09-26 01:00",
+      "ghi": 0,
+      "cloud": 83,
+      "rain": 0.3
+    },
+    {
+      "timestamp": "2026-09-26 02:00",
+      "ghi": 0,
+      "cloud": 90,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-26 03:00",
+      "ghi": 0,
+      "cloud": 68,
+      "rain": 1.2
+    },
+    {
+      "timestamp": "2026-09-26 04:00",
+      "ghi": 0,
+      "cloud": 59,
+      "rain": 0.7
+    },
+    {
+      "timestamp": "2026-09-26 05:00",
+      "ghi": 0,
+      "cloud": 95,
+      "rain": 1.2
+    },
+    {
+      "timestamp": "2026-09-26 06:00",
+      "ghi": 8,
+      "cloud": 98,
+      "rain": 0.4
+    },
+    {
+      "timestamp": "2026-09-26 07:00",
+      "ghi": 145,
+      "cloud": 100,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-26 08:00",
+      "ghi": 259,
+      "cloud": 100,
+      "rain": 0.4
+    },
+    {
+      "timestamp": "2026-09-26 09:00",
+      "ghi": 506,
+      "cloud": 88,
+      "rain": 1.2
+    },
+    {
+      "timestamp": "2026-09-26 10:00",
+      "ghi": 642,
+      "cloud": 76,
+      "rain": 0.2
+    },
+    {
+      "timestamp": "2026-09-26 11:00",
+      "ghi": 753,
+      "cloud": 92,
+      "rain": 0.6
+    },
+    {
+      "timestamp": "2026-09-26 12:00",
+      "ghi": 764,
+      "cloud": 91,
+      "rain": 0.2
+    },
+    {
+      "timestamp": "2026-09-26 13:00",
+      "ghi": 653,
+      "cloud": 95,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-26 14:00",
+      "ghi": 627,
+      "cloud": 85,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-26 15:00",
+      "ghi": 508,
+      "cloud": 89,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-26 16:00",
+      "ghi": 295,
+      "cloud": 92,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-26 17:00",
+      "ghi": 120,
+      "cloud": 78,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-26 18:00",
+      "ghi": 14,
+      "cloud": 60,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-26 19:00",
+      "ghi": 0,
+      "cloud": 52,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-26 20:00",
+      "ghi": 0,
+      "cloud": 70,
+      "rain": 0.1
+    },
+    {
+      "timestamp": "2026-09-26 21:00",
+      "ghi": 0,
+      "cloud": 52,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-26 22:00",
+      "ghi": 0,
+      "cloud": 58,
+      "rain": 0.0
+    },
+    {
+      "timestamp": "2026-09-26 23:00",
+      "ghi": 0,
+      "cloud": 77,
+      "rain": 0.1
+    }
+  ]
+}
