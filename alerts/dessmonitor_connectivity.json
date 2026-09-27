@@ -12,10 +12,10 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
-      "days_since_data": 1,
-      "last_nonzero_date": "2026-09-26",
-      "last_data_date": "2026-09-26",
+      "days_stale": 0,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-09-27",
+      "last_data_date": "2026-09-27",
       "stale_days_threshold": 3
     },
     {
@@ -32,7 +32,7 @@
   ],
   "link_down": [],
   "excluded": [],
-  "generated_at": "2026-09-27T01:07:32.642962Z",
+  "generated_at": "2026-09-27T08:38:29.489668Z",
   "fleet_wide_outage": false,
   "alerting_now": []
 }
