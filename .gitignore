@@ -88,3 +88,9 @@ bms-module/dist/
 
 # Vendor installers: MyHarmony-App.msi alone is 36 MB and is not source.
 *.msi
+
+# Customer and prospect data - this repo is public. Named customers with their
+# production figures, and third-party contact details, must never be committed.
+# (Personal Data Protection Act No. 9 of 2022; Cl. 8.3 of the intern agreement.)
+review-outreach.csv
+DSE710/sl-automation-panel-companies.csv
