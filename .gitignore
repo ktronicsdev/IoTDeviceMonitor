@@ -80,3 +80,11 @@ site/ph1000/*.xlsx
 
 # BMS module: built firmware images contain the GitHub token - never commit (public repo)
 bms-module/dist/
+
+# Browser/tool scratch - a Chrome profile carries cookies and session tokens,
+# which must never reach a public repo.
+.chrome-pdf-profile/
+.playwright-mcp/
+
+# Vendor installers: MyHarmony-App.msi alone is 36 MB and is not source.
+*.msi

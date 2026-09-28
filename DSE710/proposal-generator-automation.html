@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ktronics — Generator Remote Start Automation Proposal</title>
+<style>
+  @page { size: A4; margin: 12mm 14mm; }
+
+  :root {
+    --ink:      #16202a;
+    --muted:    #55636e;
+    --accent:   #1a6d99;   /* deep brand blue — print-legible */
+    --brand:    #2ea1db;   /* Ktronics blue */
+    --amber:    #f7a72e;   /* Ktronics orange */
+    --rule:     #ccd9e2;
+    --wash:     #eef6fb;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 9.2pt;
+    line-height: 1.32;
+    color: var(--ink);
+    margin: 0;
+    background: #8e948f;
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 12mm 14mm;
+    margin: 8mm auto;
+    background: #fff;
+    box-shadow: 0 2px 12px rgba(0,0,0,.3);
+  }
+
+  /* ---- masthead ---- */
+  .mast { border-bottom: 2.5px solid var(--brand); padding-bottom: 5px; margin-bottom: 10px; }
+  .mast-row { display: flex; justify-content: space-between; align-items: flex-end; }
+  .mast-left { display: flex; align-items: flex-end; gap: 9px; }
+  .logo { height: 8mm; width: auto; display: block; }
+  .regno { font-size: 7.2pt; color: var(--muted); padding-bottom: 1px; }
+  .doctype { font-size: 8.2pt; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); }
+
+  h1 { font-size: 12.4pt; margin: 0 0 6px; font-weight: 600; }
+
+  /* ---- meta block ---- */
+  .meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px 10px;
+          font-size: 8.4pt; background: var(--wash); padding: 6px 9px;
+          border-left: 3px solid var(--accent); margin-bottom: 11px; }
+  .meta dt { color: var(--muted); text-transform: uppercase; letter-spacing: .5px; font-size: 7.2pt; margin: 0; }
+  .meta dd { margin: 0 0 2px; font-weight: 600; }
+
+  h2 { font-size: 9.4pt; margin: 6px 0 3px; color: var(--accent);
+       text-transform: uppercase; letter-spacing: .8px; font-weight: 700; }
+  h2:first-of-type { margin-top: 0; }
+  h3 { font-size: 8.8pt; margin: 6px 0 2px; font-weight: 700; }
+
+  p { margin: 0 0 5px; }
+  ul { margin: 0 0 5px; padding-left: 15px; }
+  li { margin-bottom: 1.5px; }
+
+  .lead { font-size: 9.7pt; line-height: 1.4; }
+
+  /* ---- callout ---- */
+  .note { background: var(--wash); border-left: 3px solid var(--accent);
+          padding: 5px 9px; margin: 5px 0; }
+  .note p:last-child { margin-bottom: 0; }
+  .warn { border-left-color: var(--amber); background: #fff8ec; }
+
+  /* ---- tables ---- */
+  table { width: 100%; border-collapse: collapse; margin: 4px 0 6px; font-size: 8.5pt; }
+  th { text-align: left; background: var(--accent); color: #fff;
+       padding: 3.5px 8px; font-size: 7.6pt; text-transform: uppercase; letter-spacing: .5px; }
+  td { padding: 2.8px 8px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  td.k { font-weight: 600; white-space: nowrap; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+
+  /* ---- diagram ---- */
+  figure { margin: 5px 0 6px; }
+  figure svg { width: 69%; height: auto; display: block; margin: 0 auto; }
+  figcaption { font-size: 7.6pt; color: var(--muted); margin-top: 3px; text-align: center; }
+
+  /* ---- signature ---- */
+  .sign { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 8px; }
+  .sigline { border-top: 1px solid var(--ink); padding-top: 4px; margin-top: 18px;
+             font-size: 8.2pt; color: var(--muted); }
+
+  .foot { margin-top: 7px; padding-top: 5px; border-top: 1px solid var(--rule);
+          font-size: 7.6pt; color: var(--muted); display: flex; justify-content: space-between; }
+
+  @media print {
+    body { background: #fff; }
+    .page { margin: 0; padding: 0; width: auto; min-height: 0;
+            box-shadow: none; page-break-after: always; }
+    .page:last-child { page-break-after: auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════ PAGE 1 ════════════════════ -->
+<section class="page">
+
+  <div class="mast">
+    <div class="mast-row">
+      <div class="mast-left"><img class="logo" src="logo.ktronics.png" alt="Ktronics"><div class="regno">Ktronics (Pvt) Ltd &nbsp;·&nbsp; PV 124279</div></div>
+      <div class="doctype">Proposal</div>
+    </div>
+  </div>
+
+  <h1>Generator Remote Start &amp; Automation</h1>
+
+  <dl class="meta">
+    <div><dt>Prepared for</dt><dd>Dilanka</dd></div>
+    <div><dt>Site</dt><dd>Polonnaruwa</dd></div>
+    <div><dt>Date</dt><dd>13 September 2026</dd></div>
+    <div><dt>Reference</dt><dd>KT-DSE710-001</dd></div>
+  </dl>
+
+  <h2>1. Summary</h2>
+  <p class="lead">Your 35&nbsp;kVA standby generator needs a person at the panel to start it, and
+  its battery must be disconnected between runs. We propose to make the set start on command from a
+  phone or computer, keep its battery charged and ready, and report its own status — using the
+  automatic start controller <em>already fitted</em> to your machine.</p>
+
+  <h2>2. The situation today</h2>
+  <p>Starting the generator takes five manual steps: reconnect the battery, reset the controller,
+  select manual mode, press start, then throw the changeover.</p>
+
+  <div class="note">
+    <p><strong>Disconnecting the battery is not carelessness — it is currently necessary.</strong>
+    The 710 controller draws roughly 150&nbsp;mA continuously — about 25&nbsp;Ah a week, which
+    flattens the starting battery in about a fortnight. With the charger clipped on by hand rather
+    than permanently wired, disconnecting is the only thing protecting it.</p>
+  </div>
+
+  <p>That same disconnection blocks automation: a controller with no power cannot receive a start
+  command. Restoring permanent, charged power is the foundation of this work, and is in scope.</p>
+
+  <h2>3. What you will get</h2>
+  <ul>
+    <li><strong>Start and stop the generator remotely</strong> from a phone or web browser</li>
+    <li><strong>No more disconnecting the battery</strong> — permanently connected and charged</li>
+    <li><strong>Automatic weekly test run</strong> — keeps a standby engine healthy and proves it starts</li>
+    <li><strong>Automatic alerts</strong> — running, failed to start, controller alarm, unit offline (section 9)</li>
+  </ul>
+
+  <h2>4. Scope of works</h2>
+  <div class="cols">
+    <div>
+      <h3>Battery &amp; charging</h3>
+      <ul>
+        <li><strong>Permanently wire your existing UPE 24-10A charger</strong> on its own breaker,
+          replacing the clip-on leads — subject to the float-voltage check below</li>
+        <li>Fused, properly lugged battery cabling and a 250&nbsp;A isolator, retained for
+          maintenance isolation only</li>
+        <li>Test the batteries and the engine's charging alternator</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Controls &amp; monitoring</h3>
+      <ul>
+        <li>Configure the existing 710 auto start controller for automatic operation</li>
+        <li>Build and install the isolated remote start control unit</li>
+        <li>Commission to the manufacturer's published test procedure</li>
+        <li>Connect to the Ktronics platform; configure alerts and the weekly test run</li>
+        <li>Handover and operating instructions for your staff</li>
+      </ul>
+    </div>
+  </div>
+
+  <p style="font-size:8.4pt; margin:3px 0 0"><strong>Charger check.</strong> A permanently
+  connected charger must settle to a float voltage of about 27.2–27.6&nbsp;V. We will confirm your
+  UPE unit does; if it holds a higher voltage indefinitely it would gas the batteries dry, and we
+  would quote a replacement rather than wire it in.</p>
+
+  <h2>5. What stays manual — and why</h2>
+  <div class="note warn">
+    <p><strong>The changeover from mains to generator remains manual, by design.</strong> Automatic
+    transfer without a properly interlocked switchboard can push generator power back into the CEB
+    network. That is dangerous to line workers and not permitted. Your operator continues to throw
+    the changeover once the set is running and warmed up.</p>
+    <p>Fully automatic transfer can be added later with an interlocked transfer switch, quoted
+    separately — this design makes that upgrade an addition, not a rebuild.</p>
+  </div>
+
+  <h2>6. Timeline</h2>
+  <p>Site survey and testing (1 day) → battery, charger and cabling works (1 day) →
+  <strong>7-day settling period</strong> → automation, commissioning and handover (1 day). The
+  settling period is deliberate: we confirm the set holds charge unattended before automating it.</p>
+
+  <h2>7. Assumptions and exclusions</h2>
+  <div class="cols">
+    <div>
+      <h3>Assumed</h3>
+      <ul>
+        <li>Mains supply point at the generator for the charger</li>
+        <li>Wi-Fi or mobile data coverage at the generator</li>
+        <li>Engine mechanically sound and cranks reliably</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Not included</h3>
+      <ul>
+        <li>Replacement batteries or charger, if testing shows either unserviceable</li>
+        <li>Engine, fuel, exhaust and charging alternator repairs</li>
+        <li>Automatic transfer switch and switchboard interlocking</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span>Ktronics (Pvt) Ltd — Generator Remote Start &amp; Automation</span>
+    <span>Page 1 of 2</span>
+  </div>
+
+</section>
+
+<!-- ════════════════════ PAGE 2 ════════════════════ -->
+<section class="page">
+
+  <div class="mast">
+    <div class="mast-row">
+      <div class="mast-left"><img class="logo" src="logo.ktronics.png" alt="Ktronics"><div class="regno">Ktronics (Pvt) Ltd &nbsp;·&nbsp; PV 124279</div></div>
+      <div class="doctype">Proposal · KT-DSE710-001</div>
+    </div>
+  </div>
+
+  <h2>8. Technical design</h2>
+  <p>The 710 controller starts the set when its <strong>remote start input (connector B, terminal
+  14)</strong> is connected to plant supply negative. Our control unit provides exactly that, as an
+  <strong>isolated, volt-free contact</strong> — so no Ktronics equipment becomes part of the
+  generator's control circuit, and its protections and timers are unchanged.</p>
+
+  <figure>
+  <svg viewBox="0 0 740 342" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+    <defs>
+      <marker id="ag" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+        <path d="M0,0 L7,3 L0,6 z" fill="#1a6d99"/>
+      </marker>
+      <marker id="ak" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+        <path d="M0,0 L7,3 L0,6 z" fill="#5a6b76"/>
+      </marker>
+    </defs>
+
+    <!-- existing equipment -->
+    <g fill="#f3f5f7" stroke="#8a99a3" stroke-width="1.3">
+      <rect x="14"  y="14"  width="118" height="32" rx="2"/>
+      <rect x="14"  y="140" width="118" height="42" rx="2"/>
+      <rect x="470" y="14"  width="256" height="196" rx="3"/>
+      <rect x="470" y="246" width="256" height="44" rx="3"/>
+    </g>
+
+    <!-- new equipment -->
+    <g fill="#e9f4fa" stroke="#1a6d99" stroke-width="1.4">
+      <rect x="14"  y="72"  width="118" height="42" rx="2"/>
+      <rect x="172" y="140" width="118" height="42" rx="2"/>
+      <rect x="28"  y="252" width="100" height="38" rx="2"/>
+      <rect x="152" y="246" width="100" height="50" rx="2"/>
+      <rect x="280" y="240" width="104" height="30" rx="2"/>
+      <rect x="280" y="284" width="104" height="30" rx="2"/>
+    </g>
+
+    <!-- control-unit boundary -->
+    <rect x="14" y="230" width="400" height="96" rx="3" fill="none"
+          stroke="#1a6d99" stroke-width="1.1" stroke-dasharray="5 3"/>
+    <text x="18" y="338" font-size="10.5" fill="#1a6d99" font-weight="600">Ktronics control unit (new)</text>
+
+    <!-- box labels -->
+    <g font-size="11.5" fill="#16202a" text-anchor="middle">
+      <text x="73"  y="34">Mains 230 V AC</text>
+      <text x="73"  y="89" font-weight="600">Float charger</text>
+      <text x="73"  y="104">24 V automatic</text>
+      <text x="73"  y="157" font-weight="600">Battery 24 V</text>
+      <text x="73"  y="172">2 × 12 V</text>
+      <text x="231" y="157" font-weight="600">Isolator + fuse</text>
+      <text x="231" y="172">250 A</text>
+      <text x="78"  y="268" font-weight="600">Buck 24→5 V</text>
+      <text x="78"  y="282">isolated, 9–36 V</text>
+      <text x="202" y="266" font-weight="600">ESP32</text>
+      <text x="202" y="281">Wi-Fi</text>
+      <text x="332" y="253" font-weight="600">Relay</text>
+      <text x="332" y="266">volt-free contact</text>
+      <text x="332" y="297" font-weight="600">Opto-isolator</text>
+      <text x="332" y="310">feedback</text>
+      <text x="598" y="264" font-weight="600">Engine</text>
+      <text x="598" y="279">fuel solenoid + starter</text>
+    </g>
+
+    <!-- DSE710 -->
+    <text x="598" y="34" font-size="13" font-weight="700" fill="#16202a" text-anchor="middle">MODEL 710</text>
+    <text x="598" y="48" font-size="10.5" fill="#5a6b76" text-anchor="middle">existing controller — unchanged</text>
+    <g font-size="11.5" fill="#16202a">
+      <text x="480" y="80">A-2 &nbsp;Plant supply +</text>
+      <text x="480" y="108">A-1 &nbsp;Plant supply −</text>
+      <text x="480" y="136">A-3 &nbsp;E-stop (untouched)</text>
+      <text x="480" y="164" font-weight="700">B-14 Remote start in</text>
+      <text x="480" y="192" font-weight="700">A-6…9 Status outputs</text>
+    </g>
+
+    <!-- power path -->
+    <g stroke="#5a6b76" stroke-width="1.5" fill="none">
+      <path d="M73,46 L73,72" marker-end="url(#ak)"/>
+      <path d="M73,114 L73,140" marker-end="url(#ak)"/>
+      <path d="M132,161 L172,161" marker-end="url(#ak)"/>
+      <path d="M290,161 L350,161 L350,76 L470,76" marker-end="url(#ak)"/>
+      <path d="M100,182 L100,212 L430,212 L430,104 L470,104" marker-end="url(#ak)"/>
+      <path d="M40,182 L40,252" marker-end="url(#ak)"/>
+      <path d="M598,210 L598,246" marker-end="url(#ak)"/>
+    </g>
+    <g font-size="10.5" fill="#5a6b76">
+      <text x="356" y="70">+24 V</text>
+      <text x="436" y="98">0 V</text>
+      <text x="46"  y="205">24 V</text>
+      <text x="606" y="232">fuel + start</text>
+    </g>
+
+    <!-- signal path -->
+    <g stroke="#1a6d99" stroke-width="1.6" fill="none">
+      <path d="M128,271 L152,271" marker-end="url(#ag)"/>
+      <path d="M252,255 L280,255" marker-end="url(#ag)"/>
+      <path d="M384,248 L450,248 L450,160 L470,160" marker-end="url(#ag)"/>
+      <path d="M384,262 L400,262 L400,212"/>
+      <path d="M470,188 L462,188 L462,299 L384,299" marker-end="url(#ag)"/>
+      <path d="M280,299 L252,299" marker-end="url(#ag)"/>
+    </g>
+    <circle cx="400" cy="212" r="3" fill="#1a6d99"/>
+    <g font-size="10.5" fill="#1a6d99">
+      <text x="254" y="249">GPIO 26</text>
+      <text x="390" y="242">NO</text>
+      <text x="390" y="277">COM</text>
+      <text x="396" y="320">3k3</text>
+      <text x="254" y="293">GPIO 27</text>
+    </g>
+  </svg>
+  <figcaption>Grey = existing plant. Blue = supplied by Ktronics. The only connection into the controller is a volt-free contact across B-14 and A-1.</figcaption>
+  </figure>
+
+  <h2>9. Interface and pin mapping</h2>
+  <div class="cols">
+    <div>
+      <h3>Control unit (ESP32)</h3>
+      <table>
+        <thead><tr><th>Pin</th><th>Function</th></tr></thead>
+        <tbody>
+          <tr><td class="k">VIN / 5 V</td><td>Supply from isolated buck converter</td></tr>
+          <tr><td class="k">GND</td><td>Unit ground — isolated from battery −</td></tr>
+          <tr><td class="k">GPIO 26</td><td>Output → relay driver (remote start)</td></tr>
+          <tr><td class="k">GPIO 27 / 14</td><td>In ← engine running, common alarm</td></tr>
+          <tr><td class="k">GPIO 25 / 33</td><td>In ← <strong>system in auto</strong>, fail to start</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h3>Generator side (710 controller)</h3>
+      <table>
+        <thead><tr><th>Terminal</th><th>Connection</th></tr></thead>
+        <tbody>
+          <tr><td class="k">B-14</td><td>Remote start input → relay contact NO</td></tr>
+          <tr><td class="k">A-1</td><td>Plant supply negative → relay contact COM</td></tr>
+          <tr><td class="k">A-6 … A-9</td><td>Four configurable outputs → opto-isolators: engine running, common alarm, system in auto, fail to start</td></tr>
+          <tr><td class="k">A-2, A-3</td><td>Supply positive and emergency stop — untouched</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h3>Design notes</h3>
+  <ul>
+    <li><strong>Fail-safe at power-up.</strong> GPIO 26 carries a 10 kΩ pull-down, so the relay
+      cannot close while the ESP32 boots or resets — a rebooting unit can never start your set.</li>
+    <li><strong>Maintained signal.</strong> The contact stays closed for the whole run; opening it
+      begins the controller's own cooldown and stop sequence. Nothing is pulsed or forced.</li>
+    <li><strong>Local control always wins.</strong> If the unit or network fails, the set behaves as
+      it does today and stays startable from the panel. No protection is bypassed — alarms,
+      shutdowns and the emergency stop remain the controller's authority.</li>
+    <li><strong>It knows when it is not ready.</strong> The controller reports <em>system in
+      auto</em>, so being left out of automatic mode raises an alert instead of failing silently.
+      Hold-up capacitance keeps it powered through cranking voltage sag.</li>
+  </ul>
+
+  <h3>How the alerts work</h3>
+  <table>
+    <thead><tr><th>Alert</th><th>Detected by</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Started / stopped</td><td>Controller's <em>engine running</em> output changes state</td></tr>
+      <tr><td class="k">Failed to start</td><td>Controller's <em>fail to start</em> output, backed by a 90 s timeout</td></tr>
+      <tr><td class="k">Controller alarm</td><td>Common alarm — oil, temperature, battery, charge failure, e-stop</td></tr>
+      <tr><td class="k">Not in auto</td><td><em>System in auto</em> output lost — set will not accept a remote start</td></tr>
+      <tr><td class="k">Unit offline</td><td>Platform stops receiving the 5-minute heartbeat</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:8.4pt">Every alert is a real signal off the controller, not an inference.</p>
+
+  <h2>10. Acceptance</h2>
+  <p><strong>Commercial terms and pricing will be issued separately.</strong>
+  To proceed on scope, please sign below and return a copy to Ktronics.</p>
+
+  <div class="sign">
+    <div><div class="sigline">For and on behalf of the Customer &nbsp;·&nbsp; Name, position, date</div></div>
+    <div><div class="sigline">For and on behalf of Ktronics (Pvt) Ltd &nbsp;·&nbsp; Name, position, date</div></div>
+  </div>
+
+  <div class="foot">
+    <span>Ktronics (Pvt) Ltd &nbsp;·&nbsp; [address] &nbsp;·&nbsp; [phone] &nbsp;·&nbsp; [email]</span>
+    <span>Page 2 of 2</span>
+  </div>
+
+</section>
+
+</body>
+</html>
