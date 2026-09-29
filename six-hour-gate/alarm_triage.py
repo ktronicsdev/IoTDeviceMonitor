@@ -65,13 +65,17 @@ def _open_flag(raw: Mapping[str, Any], vendor: str) -> bool:
         value = _first(raw, "open", "is_open", default=False)
         return value in (1, "1", True, "true", "True", "open", "OPEN")
     value = _first(raw, "status", "state", default=False)
-    if vendor.lower() == "solis":
+    if _is_solis_vendor(vendor):
         return value in (1, "1", True, "true", "TRUE", "open", "OPEN")
     return value in (False, 0, "0", "false", "False", "closed", "resolved")
 
 
 def _message(raw: Mapping[str, Any]) -> str:
     return str(_first(raw, "message", "alarmMessage", "alarmMsg", "warning", "content", default=""))
+
+
+def _is_solis_vendor(vendor: str) -> bool:
+    return vendor.casefold() in {"solis", "soliscloud"}
 
 
 def normalize(raw: dict[str, Any], vendor: str) -> dict[str, Any]:
@@ -92,7 +96,7 @@ def normalize(raw: dict[str, Any], vendor: str) -> dict[str, Any]:
     vendor_code = str(_first(raw, "vendor_code", "alarmCode",
                       "alarm_code", "code", default=""))
 
-    if vendor_name == "solis":
+    if _is_solis_vendor(vendor_name):
         plant = _first(raw, "plant", "stationName",
                        "station_name", "plantName")
         device = _first(raw, "device", "deviceName", "inverterName", "sn")
@@ -126,6 +130,7 @@ def classify(message: str, config: dict[str, Any]) -> str:
     matches = [
         (pattern.casefold(), alarm_class)
         for alarm_class, patterns in config.get("match", {}).items()
+        if not alarm_class.startswith("_")
         for pattern in patterns
         if pattern.casefold() in lowered
     ]
