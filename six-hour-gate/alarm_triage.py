@@ -1,22 +1,19 @@
 """Pure alarm normalization, classification, and six-hour gate logic.
 
 The vendor adapters accept the small variations used by ShineMonitor,
-DessMonitor, and SolisCloud.  Policy is loaded once when this module is
-imported; the decision functions perform no I/O and receive ``now`` from
-their caller so they are deterministic and easy to test.
+DessMonitor, and SolisCloud.  Policy is supplied by the caller; the decision
+functions perform no file I/O and receive ``now`` from their caller so they
+are deterministic and easy to test.
 """
 
 from __future__ import annotations
 
-import json
+import logging
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from typing import Any, Mapping
 
 
-_CONFIG_PATH = Path(__file__).with_name("config") / "alarm_triage.json"
-with _CONFIG_PATH.open(encoding="utf-8") as _config_file:
-    _DEFAULT_CONFIG: dict[str, Any] = json.load(_config_file)
+LOGGER = logging.getLogger(__name__)
 
 
 Record = dict[str, Any]
@@ -78,16 +75,41 @@ def _is_solis_vendor(vendor: str) -> bool:
     return vendor.casefold() in {"solis", "soliscloud"}
 
 
-def normalize(raw: dict[str, Any], vendor: str) -> dict[str, Any]:
+def _plant_offset_minutes(raw: Mapping[str, Any], config: Mapping[str, Any]) -> int:
+    """Read a plant timezone from API seconds, falling back to policy minutes."""
+    minute_value = _first(
+        raw, "plant_tz_offset_minutes", "timezone_offset_minutes", default=None)
+    if minute_value is not None:
+        return int(minute_value)
+
+    address = raw.get("address")
+    address_timezone = address.get(
+        "timezone") if isinstance(address, Mapping) else None
+    second_value = _first(
+        raw,
+        "plant_tz_offset_seconds",
+        "timezone_offset_seconds",
+        "timezone",
+        default=address_timezone,
+    )
+    if second_value is not None and second_value != "":
+        return int(second_value) // 60
+
+    timezone_config = config.get("timezone", {})
+    return int(timezone_config.get("plant_tz_offset_minutes_default", 330))
+
+
+def normalize(
+    raw: Mapping[str, Any], vendor: str, config: Mapping[str, Any]
+) -> dict[str, Any]:
     """Convert one vendor alarm payload to the common gate record schema.
 
     ShineMonitor and DessMonitor ``gts`` values are plant-local.  SolisCloud
     supplies ``alarmBeginTime`` as an epoch timestamp.  A per-record offset,
     when supplied by the caller, takes precedence over the policy fallback.
     """
-    vendor_name = vendor.lower()
-    offset = int(_first(raw, "plant_tz_offset_minutes", "timezone_offset_minutes",
-                 default=_DEFAULT_CONFIG["timezone"]["plant_tz_offset_minutes_default"]))
+    vendor_name = vendor.casefold()
+    offset = _plant_offset_minutes(raw, config)
     timestamp = _first(raw, "alarmBeginTime", "alarm_begin_time",
                        "started_at_utc", "gts", "first_seen")
     started_at = _parse_datetime(
@@ -112,33 +134,44 @@ def normalize(raw: dict[str, Any], vendor: str) -> dict[str, Any]:
         "device": str(device),
         "vendor_code": vendor_code,
         "message": message,
-        "class": classify(message, _DEFAULT_CONFIG),
+        "class": classify(message, config),
         "started_at_utc": started_at,
         "open": _open_flag(raw, vendor_name),
         "customer": str(customer),
+        "plant_tz_offset_minutes": offset,
     }
-    code_class = _DEFAULT_CONFIG.get("vendor_codes", {}).get(
-        vendor_name, {}).get(vendor_code)
+    vendor_codes = config.get("vendor_codes", {})
+    code_map = vendor_codes.get(
+        "solis", {}) if _is_solis_vendor(vendor_name) else vendor_codes.get(
+            vendor_name, {})
+    code_class = code_map.get(vendor_code)
     if code_class:
         record["class"] = code_class
     return record
 
 
-def classify(message: str, config: dict[str, Any]) -> str:
+def classify(message: str, config: Mapping[str, Any]) -> str:
     """Classify a message; ties are resolved by config order, longest wins."""
     lowered = message.casefold()
     matches = [
         (pattern.casefold(), alarm_class)
         for alarm_class, patterns in config.get("match", {}).items()
         if not alarm_class.startswith("_")
+        if isinstance(patterns, (list, tuple))
         for pattern in patterns
         if pattern.casefold() in lowered
     ]
-    return max(matches, key=lambda match: len(match[0]))[1] if matches else "UNKNOWN"
+    if matches:
+        return max(matches, key=lambda match: len(match[0]))[1]
+    if config.get("classes", {}).get("UNKNOWN", {}).get("log"):
+        LOGGER.warning("Unclassified alarm message: %s", message)
+    return "UNKNOWN"
 
 
-def is_actionable(record: dict[str, Any], now: datetime, config: dict[str, Any]) -> tuple[bool, str | None]:
-    """Return whether an open alarm has passed its configured gate."""
+def is_actionable(
+    record: Mapping[str, Any], now: datetime, config: Mapping[str, Any]
+) -> tuple[bool, str | None]:
+    """Return whether an open alarm has passed its gate and its mail hint."""
     if not record.get("open", False):
         return False, "alarm is resolved"
 
@@ -158,8 +191,10 @@ def is_actionable(record: dict[str, Any], now: datetime, config: dict[str, Any])
 
     if class_config.get("gate") == "daylight":
         daylight = config["daylight_window_local"]
-        offset = int(config["timezone"].get(
-            "plant_tz_offset_minutes_default", 330))
+        offset = int(record.get(
+            "plant_tz_offset_minutes",
+            config["timezone"].get("plant_tz_offset_minutes_default", 330),
+        ))
         local_started = started_at.astimezone(
             timezone(timedelta(minutes=offset)))
         local_now = current.astimezone(timezone(timedelta(minutes=offset)))
@@ -175,7 +210,10 @@ def is_actionable(record: dict[str, Any], now: datetime, config: dict[str, Any])
             return False, "SOC alarm has not survived the daylight window"
     else:
         dwell_hours = class_config.get(
-            "dwell_hours", config["dwell_hours_default"])
+            "dwell_hours",
+            class_config.get("fallback_dwell_hours",
+                             config["dwell_hours_default"]),
+        )
         if age < timedelta(hours=dwell_hours):
             return False, f"dwell time is less than {dwell_hours} hours"
-    return True, None
+    return True, config.get("escalation_hint", {}).get(alarm_class)

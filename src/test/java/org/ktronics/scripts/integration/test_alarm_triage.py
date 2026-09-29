@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import importlib.util
+from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -47,11 +48,11 @@ def test_r1_dwell_from_vendor_timestamp() -> None:
         "first_seen": "2026-09-28T12:00:00+00:00",
         "status": False,
     }
-    normalized = alarm_triage.normalize(raw, "ShineMonitor")
+    normalized = alarm_triage.normalize(raw, "ShineMonitor", CONFIG)
 
     assert alarm_triage.is_actionable(
         normalized, datetime(2026, 9, 28, 12, 30, tzinfo=UTC), CONFIG
-    ) == (True, None)
+    ) == (True, CONFIG["escalation_hint"]["GRID"])
     assert alarm_triage.is_actionable(
         normalized, datetime(2026, 9, 28, 12, 28, tzinfo=UTC), CONFIG
     )[0] is False
@@ -69,6 +70,7 @@ def test_r2_timezone_conversion_offset() -> None:
     normalized = alarm_triage.normalize(
         {"warning": "grid loss", "gts": "2026-09-28T12:00:00", "status": False},
         "ShineMonitor",
+        CONFIG,
     )
     assert normalized["started_at_utc"] == datetime(
         2026, 9, 28, 6, 30, tzinfo=UTC)
@@ -134,7 +136,8 @@ def test_r6_grid_loss_over_six_hours_is_actionable() -> None:
                    9, 28, 9, tzinfo=UTC), "GRID")
 
     assert alarm_triage.is_actionable(alarm, datetime(
-        2026, 9, 28, 16, tzinfo=UTC), CONFIG) == (True, None)
+        2026, 9, 28, 16, tzinfo=UTC), CONFIG) == (
+        True, CONFIG["escalation_hint"]["GRID"])
 
 
 def test_longest_configured_pattern_wins() -> None:
@@ -153,9 +156,48 @@ def test_normalize_solis_epoch_and_open_state() -> None:
             "state": 1,
         },
         "SolisCloud",
+        CONFIG,
     )
 
     assert normalized["plant"] == "Solis Plant"
     assert normalized["class"] == "GRID"
     assert normalized["open"] is True
     assert normalized["started_at_utc"].tzinfo is not None
+
+
+def test_unknown_alarm_is_logged(caplog: Any) -> None:
+    with caplog.at_level("WARNING"):
+        assert alarm_triage.classify("new vendor fault", CONFIG) == "UNKNOWN"
+    assert "new vendor fault" in caplog.text
+
+
+def test_soc_clock_uses_configured_fallback_dwell() -> None:
+    clock_config = deepcopy(CONFIG)
+    clock_config["classes"]["SOC"]["gate"] = "clock"
+    alarm = record("low battery", datetime(2026, 9, 28, tzinfo=UTC), "SOC")
+
+    assert alarm_triage.is_actionable(
+        alarm, datetime(2026, 9, 28, 13, tzinfo=UTC), clock_config
+    )[0] is False
+    assert alarm_triage.is_actionable(
+        alarm, datetime(2026, 9, 28, 14, tzinfo=UTC), clock_config
+    )[0] is True
+
+
+def test_daylight_gate_uses_per_plant_offset() -> None:
+    alarm = record("low battery", datetime(2026, 9, 28, 8, tzinfo=UTC), "SOC")
+    alarm["plant_tz_offset_minutes"] = 0
+
+    assert alarm_triage.is_actionable(
+        alarm, datetime(2026, 9, 28, 14, tzinfo=UTC), CONFIG
+    )[0] is False
+
+
+def test_comms_is_suppressed_at_any_age() -> None:
+    for hours in (1, 10, 100):
+        alarm = record("datalogger lost", datetime(
+            2026, 9, 28, tzinfo=UTC), "COMMS")
+        assert alarm_triage.is_actionable(
+            alarm, datetime(2026, 9, 28, tzinfo=UTC) +
+            timedelta(hours=hours), CONFIG
+        ) == (False, "COMMS alarms are not mailed")
