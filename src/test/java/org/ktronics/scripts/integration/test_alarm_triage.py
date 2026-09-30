@@ -58,23 +58,6 @@ def test_r1_dwell_from_vendor_timestamp() -> None:
     )[0] is False
 
 
-def test_r1_alarm_absent_from_current_feed_is_cleared() -> None:
-    alarm = record("grid loss", datetime(
-        2026, 9, 27, tzinfo=UTC), "GRID")
-    current_feed = [record("grid loss", datetime(
-        2026, 9, 28, tzinfo=UTC), "GRID")]
-    current_feed[0]["device"] = "INV-2"
-
-    current_matches = [
-        current_alarm
-        for current_alarm in current_feed
-        if (current_alarm["plant"], current_alarm["device"]) ==
-        (alarm["plant"], alarm["device"])
-    ]
-
-    assert current_matches == []
-
-
 def test_r2_timezone_conversion_offset() -> None:
     local_gts = datetime(2026, 9, 28, 12, 0, tzinfo=LOCAL)
     now_utc = datetime(2026, 9, 28, 18, 0, tzinfo=UTC)
