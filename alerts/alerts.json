@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-01T09:29:12.154302Z",
+  "generated_at": "2026-10-01T13:56:27.849310Z",
   "alerts": [],
   "suppressed": [],
   "ignored": [
@@ -74,15 +74,6 @@
       ],
       "link_down": true,
       "days_stale": 92
-    },
-    {
-      "plant_key": "thusharasameera-mendis-house",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-10"
-      ],
-      "link_down": false,
-      "days_stale": null
     },
     {
       "plant_key": "upulatheja-3kw-pro-kadawath",
