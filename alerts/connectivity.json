@@ -23,9 +23,9 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
+      "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-09-30",
+      "last_nonzero_date": "2026-10-01",
       "last_data_date": "2026-10-01",
       "stale_days_threshold": 3
     },
@@ -34,9 +34,9 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
+      "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-09-30",
+      "last_nonzero_date": "2026-10-01",
       "last_data_date": "2026-10-01",
       "stale_days_threshold": 3
     },
@@ -45,9 +45,9 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
+      "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-09-30",
+      "last_nonzero_date": "2026-10-01",
       "last_data_date": "2026-10-01",
       "stale_days_threshold": 3
     },
@@ -67,9 +67,9 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
+      "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-09-30",
+      "last_nonzero_date": "2026-10-01",
       "last_data_date": "2026-10-01",
       "stale_days_threshold": 3
     },
@@ -100,9 +100,9 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
+      "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-09-30",
+      "last_nonzero_date": "2026-10-01",
       "last_data_date": "2026-10-01",
       "stale_days_threshold": 3
     },
@@ -111,9 +111,9 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
+      "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-09-30",
+      "last_nonzero_date": "2026-10-01",
       "last_data_date": "2026-10-01",
       "stale_days_threshold": 3
     },
@@ -264,7 +264,7 @@
     }
   ],
   "excluded": [],
-  "generated_at": "2026-10-01T01:31:36.620480Z",
+  "generated_at": "2026-10-01T09:29:12.256589Z",
   "fleet_wide_outage": false,
   "alerting_now": []
 }

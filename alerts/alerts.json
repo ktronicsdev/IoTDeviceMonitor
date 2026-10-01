@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-01T01:31:36.505383Z",
+  "generated_at": "2026-10-01T09:29:12.154302Z",
   "alerts": [],
   "suppressed": [],
   "ignored": [
@@ -40,24 +40,6 @@
       "days_stale": null
     },
     {
-      "plant_key": "crdesilva-home",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-10"
-      ],
-      "link_down": false,
-      "days_stale": null
-    },
-    {
-      "plant_key": "faizalismail-faizal",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-10"
-      ],
-      "link_down": false,
-      "days_stale": null
-    },
-    {
       "plant_key": "ganishka-ganishka-home-3kw",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
@@ -65,24 +47,6 @@
       ],
       "link_down": true,
       "days_stale": 92
-    },
-    {
-      "plant_key": "gayan-imh-imbulgoda-3kw",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-10"
-      ],
-      "link_down": false,
-      "days_stale": null
-    },
-    {
-      "plant_key": "kasun-kasun",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-10"
-      ],
-      "link_down": false,
-      "days_stale": null
     },
     {
       "plant_key": "lahiru-ryan-lahiru-plant",
@@ -101,24 +65,6 @@
       ],
       "link_down": true,
       "days_stale": 92
-    },
-    {
-      "plant_key": "muadh-muadh-solar",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-10"
-      ],
-      "link_down": false,
-      "days_stale": null
-    },
-    {
-      "plant_key": "namila-waragoda-namila-plant",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-10"
-      ],
-      "link_down": false,
-      "days_stale": null
     },
     {
       "plant_key": "samurdi-kohuwala",
