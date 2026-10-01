@@ -1,77 +1,151 @@
 {
-  "generated_at": "2026-09-30T22:37:35.704326Z",
+  "generated_at": "2026-10-01T01:31:36.505383Z",
   "alerts": [],
-  "suppressed": [
-    {
-      "plant_key": "chamila-chamila-119h",
-      "reason": "reclassified as CONNECTIVITY: no data for 9 days (rows still arriving but every reading is 0.0000 kWh) \u2014 data link down, NOT a production fault",
-      "days_stale": 9,
-      "link_down": true
-    }
-  ],
+  "suppressed": [],
   "ignored": [
     {
       "plant_key": "abeetha-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-09"
+        "2026-10"
       ],
       "link_down": true,
-      "days_stale": 121
+      "days_stale": 92
     },
     {
       "plant_key": "anuradha-gajanayaka-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-09"
+        "2026-10"
       ],
       "link_down": true,
-      "days_stale": 112
+      "days_stale": 92
+    },
+    {
+      "plant_key": "chamila-chamila-119h",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-10"
+      ],
+      "link_down": true,
+      "days_stale": 10
+    },
+    {
+      "plant_key": "chandika-plant",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-10"
+      ],
+      "link_down": false,
+      "days_stale": null
+    },
+    {
+      "plant_key": "crdesilva-home",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-10"
+      ],
+      "link_down": false,
+      "days_stale": null
+    },
+    {
+      "plant_key": "faizalismail-faizal",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-10"
+      ],
+      "link_down": false,
+      "days_stale": null
     },
     {
       "plant_key": "ganishka-ganishka-home-3kw",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-09"
+        "2026-10"
       ],
       "link_down": true,
-      "days_stale": 121
+      "days_stale": 92
+    },
+    {
+      "plant_key": "gayan-imh-imbulgoda-3kw",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-10"
+      ],
+      "link_down": false,
+      "days_stale": null
+    },
+    {
+      "plant_key": "kasun-kasun",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-10"
+      ],
+      "link_down": false,
+      "days_stale": null
     },
     {
       "plant_key": "lahiru-ryan-lahiru-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-09"
+        "2026-10"
       ],
       "link_down": true,
-      "days_stale": 78
+      "days_stale": 79
     },
     {
       "plant_key": "mifanza-mifanza-solar-system",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-09"
+        "2026-10"
       ],
       "link_down": true,
-      "days_stale": 121
+      "days_stale": 92
+    },
+    {
+      "plant_key": "muadh-muadh-solar",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-10"
+      ],
+      "link_down": false,
+      "days_stale": null
+    },
+    {
+      "plant_key": "namila-waragoda-namila-plant",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-10"
+      ],
+      "link_down": false,
+      "days_stale": null
     },
     {
       "plant_key": "samurdi-kohuwala",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-09"
+        "2026-10"
       ],
       "link_down": true,
-      "days_stale": 121
+      "days_stale": 92
+    },
+    {
+      "plant_key": "thusharasameera-mendis-house",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-10"
+      ],
+      "link_down": false,
+      "days_stale": null
     },
     {
       "plant_key": "upulatheja-3kw-pro-kadawath",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-09"
+        "2026-10"
       ],
       "link_down": true,
-      "days_stale": 121
+      "days_stale": 92
     }
   ],
   "link_down": [
@@ -80,10 +154,21 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 121,
+      "days_stale": 92,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-09-30",
+      "last_data_date": "2026-10-01",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "anuradha-gajanayaka-plant",
+      "kind": "never_reported",
+      "meaning": "no non-zero reading has ever been recorded",
+      "link_down": true,
+      "days_stale": 92,
+      "days_since_data": 0,
+      "last_nonzero_date": null,
+      "last_data_date": "2026-10-01",
       "stale_days_threshold": 3
     },
     {
@@ -91,10 +176,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 121,
+      "days_stale": 92,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-09-30",
+      "last_data_date": "2026-10-01",
       "stale_days_threshold": 3
     },
     {
@@ -102,10 +187,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 121,
+      "days_stale": 92,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-09-30",
+      "last_data_date": "2026-10-01",
       "stale_days_threshold": 3
     },
     {
@@ -113,10 +198,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 121,
+      "days_stale": 92,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-09-30",
+      "last_data_date": "2026-10-01",
       "stale_days_threshold": 3
     },
     {
@@ -124,21 +209,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 121,
+      "days_stale": 92,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-09-30",
-      "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "anuradha-gajanayaka-plant",
-      "kind": "zeros_only",
-      "meaning": "rows still arriving but every reading is 0.0000 kWh",
-      "link_down": true,
-      "days_stale": 112,
-      "days_since_data": 0,
-      "last_nonzero_date": "2026-06-10",
-      "last_data_date": "2026-09-30",
+      "last_data_date": "2026-10-01",
       "stale_days_threshold": 3
     },
     {
@@ -146,10 +220,10 @@
       "kind": "zeros_only",
       "meaning": "rows still arriving but every reading is 0.0000 kWh",
       "link_down": true,
-      "days_stale": 78,
+      "days_stale": 79,
       "days_since_data": 0,
       "last_nonzero_date": "2026-07-14",
-      "last_data_date": "2026-09-30",
+      "last_data_date": "2026-10-01",
       "stale_days_threshold": 3
     },
     {
@@ -157,10 +231,10 @@
       "kind": "zeros_only",
       "meaning": "rows still arriving but every reading is 0.0000 kWh",
       "link_down": true,
-      "days_stale": 9,
+      "days_stale": 10,
       "days_since_data": 0,
       "last_nonzero_date": "2026-09-21",
-      "last_data_date": "2026-09-30",
+      "last_data_date": "2026-10-01",
       "stale_days_threshold": 3
     }
   ],
