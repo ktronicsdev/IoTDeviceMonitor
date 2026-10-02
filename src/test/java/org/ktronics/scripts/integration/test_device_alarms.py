@@ -4,19 +4,10 @@ Integration tests for device alarm monitoring system
 Tests UC3: Verify device alarms are fetched, processed, and sent correctly
 """
 
-import pytest
-import sys
-import os
-import json
-import tempfile
-import shutil
-from pathlib import Path
-from datetime import datetime, timedelta
-
-# Add scripts directory to path
-SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent.parent.parent / "main" / "java" / "org" / "ktronics" / "scripts"
-sys.path.insert(0, str(SCRIPTS_DIR))
-
+from send_customer_emails import (
+    format_customer_device_alarm_email,
+    send_customer_device_alarms
+)
 from generate_device_alarms import (
     parse_alarm_files,
     create_alarm_key,
@@ -27,13 +18,22 @@ from generate_device_alarms import (
     save_alarm_state,
     load_customer_mapping,
     create_customer_device_alarms,
-    get_most_recent_alarm
+    get_most_recent_alarm,
+    triage_alarms
 )
+import pytest
+import sys
+import os
+import json
+import tempfile
+import shutil
+from pathlib import Path
+from datetime import datetime, timedelta
 
-from send_customer_emails import (
-    format_customer_device_alarm_email,
-    send_customer_device_alarms
-)
+# Add scripts directory to path
+SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent.parent.parent / \
+    "main" / "java" / "org" / "ktronics" / "scripts"
+sys.path.insert(0, str(SCRIPTS_DIR))
 
 
 class TestDeviceAlarmSystem:
@@ -156,6 +156,45 @@ class TestDeviceAlarmSystem:
         assert 'customer1' in customer_labels
         assert 'customer2' in customer_labels
 
+    def test_parse_alarm_files_keeps_only_open_status(self, test_alarms_dir):
+        """R3: handled alarms must not enter the notification pipeline."""
+        alarms_data = [
+            {'id': 'open-bool', 'pid': 1, 'pn': 'dev-1', 'status': False,
+             'gts': '2026-01-07 10:30:00', 'desc': 'Grid loss'},
+            {'id': 'open-int', 'pid': 1, 'pn': 'dev-2', 'status': 0,
+             'gts': '2026-01-07 10:30:00', 'desc': 'Grid loss'},
+            {'id': 'handled', 'pid': 1, 'pn': 'dev-3', 'status': 1,
+             'gts': '2026-01-07 10:30:00', 'desc': 'Grid loss'},
+        ]
+
+        self.create_alarm_json(test_alarms_dir, 'customer1', alarms_data)
+
+        alarms = parse_alarm_files(test_alarms_dir)
+
+        assert {alarm['id'] for alarm in alarms} == {'open-bool', 'open-int'}
+
+    def test_triage_records_suppressed_alarm_metadata(self):
+        """Held alarms retain class, vendor timestamp conversion, and reason."""
+        alarm = {
+            'pid': 1,
+            'pn': 'dev-1',
+            'id': 'recent-grid-loss',
+            'status': False,
+            'gts': '2026-10-01 09:00:00',
+            'desc': 'Grid loss',
+        }
+        state = {}
+
+        actionable = triage_alarms(
+            [alarm], state, utc_now=datetime(2026, 10, 1, 4, 0)
+        )
+
+        alarm_state = state['1:dev-1:recent-grid-loss']
+        assert actionable == []
+        assert alarm_state['class'] == 'GRID'
+        assert alarm_state['started_at_utc'] == '2026-10-01T03:30:00+00:00'
+        assert 'dwell time is less than 6 hours' in alarm_state['suppressed_reason']
+
     def test_parse_alarm_files_api_warning_format(self, test_alarms_dir):
         """Parse alarm files with actual API response format (dat.warning structure)"""
         # Actual API response format: {"err":"0","dat":{"total":37,"warning":[...]}}
@@ -258,7 +297,8 @@ class TestDeviceAlarmSystem:
             assert '"warning"' in content and '[' in content, "API response must contain warning array"
             assert '"dat"' in content and '{' in content, "API response has dat as object"
             # Old broken format would have been "dat":[] (array directly)
-            assert not ('"dat": []' in content or '"dat":[]' in content), "Old format should not be present"
+            assert not (
+                '"dat": []' in content or '"dat":[]' in content), "Old format should not be present"
 
     def test_create_alarm_key_unique(self):
         """Verify alarm keys are unique per plant/device/warning
@@ -559,7 +599,8 @@ class TestDeviceAlarmSystem:
         updated_state = update_alarm_state(state, alarms_to_send)
 
         assert updated_state[alarm_key]['send_count'] == 2  # Incremented
-        assert updated_state[alarm_key]['ignored'] == False  # Not yet ignored (< 3 sends)
+        # Not yet ignored (< 3 sends)
+        assert updated_state[alarm_key]['ignored'] == False
 
     def test_update_alarm_state_auto_ignore_after_3_sends(self):
         """Update state after 3rd send - should auto-ignore
@@ -593,7 +634,8 @@ class TestDeviceAlarmSystem:
         updated_state = update_alarm_state(state, alarms_to_send)
 
         assert updated_state[alarm_key]['send_count'] == 3  # 3rd send
-        assert updated_state[alarm_key]['ignored'] == True  # Auto-ignored after 3 sends
+        # Auto-ignored after 3 sends
+        assert updated_state[alarm_key]['ignored'] == True
 
     def test_state_persistence(self, test_state_file):
         """Test alarm state save and load
@@ -719,7 +761,8 @@ class TestDeviceAlarmSystem:
         state = {}
 
         # Create customer device alarms
-        customer_alarms = create_customer_device_alarms(alarms_to_send, state, test_credentials)
+        customer_alarms = create_customer_device_alarms(
+            alarms_to_send, state, test_credentials)
 
         # Verify customer grouping
         assert 'Gayan-IMH' in customer_alarms
@@ -792,7 +835,8 @@ class TestDeviceAlarmSystem:
         state = {}
 
         # Create customer device alarms
-        customer_alarms = create_customer_device_alarms(alarms_to_send, state, test_credentials)
+        customer_alarms = create_customer_device_alarms(
+            alarms_to_send, state, test_credentials)
 
         # Verify both customers
         assert len(customer_alarms) == 2
@@ -844,7 +888,8 @@ class TestDeviceAlarmSystem:
         state = {}
 
         # Create customer device alarms
-        customer_alarms = create_customer_device_alarms(alarms_to_send, state, test_credentials)
+        customer_alarms = create_customer_device_alarms(
+            alarms_to_send, state, test_credentials)
 
         # Verify customer is skipped (no email)
         assert len(customer_alarms) == 0
@@ -909,7 +954,8 @@ class TestDeviceAlarmSystem:
             }
         ]
 
-        email_body = format_customer_device_alarm_email("Test Customer", alarms)
+        email_body = format_customer_device_alarm_email(
+            "Test Customer", alarms)
 
         assert "Status:   Send #3/3" in email_body
         assert "Some alarms have been sent 3 times and will be auto-ignored." in email_body
@@ -984,7 +1030,8 @@ class TestDeviceAlarmSystem:
 
         try:
             # Test with test_customer_only=True
-            sent, failed = send_customer_device_alarms(str(alarms_file), test_customer_only=True)
+            sent, failed = send_customer_device_alarms(
+                str(alarms_file), test_customer_only=True)
 
             # Should only send to Gayan-IMH
             assert sent == 1
@@ -1236,12 +1283,14 @@ class TestDeviceAlarmSystem:
         alarms_to_send_test = list(alarms_to_send_normal)  # Copy
         if len(alarms_to_send_test) == 0 and len(all_alarms) > 0:
             # Filter to Gayan-IMH alarms only (UC5 fix)
-            test_customer_alarms = [a for a in all_alarms if a.get('customer_label', '').lower() == 'gayan-imh']
+            test_customer_alarms = [a for a in all_alarms if a.get(
+                'customer_label', '').lower() == 'gayan-imh']
             if test_customer_alarms:
                 most_recent = get_most_recent_alarm(test_customer_alarms)
                 if most_recent:
                     alarm_key = create_alarm_key(most_recent)
-                    alarm_state = state.get(alarm_key, {'send_count': 0, 'ignored': False})
+                    alarm_state = state.get(
+                        alarm_key, {'send_count': 0, 'ignored': False})
                     # UC5 FIX: Check if alarm should be skipped
                     if not alarm_state.get('ignored', False) and alarm_state.get('send_count', 0) < 3:
                         alarms_to_send_test.append({
@@ -1251,7 +1300,8 @@ class TestDeviceAlarmSystem:
                         })
 
         # With FIXED test mode, ignored alarms should NOT be added
-        assert len(alarms_to_send_test) == 0, "Test mode should skip ignored alarms"
+        assert len(
+            alarms_to_send_test) == 0, "Test mode should skip ignored alarms"
 
     def test_test_mode_adds_non_ignored_alarm(self, tmp_path):
         """UC5: Test mode adds alarm only if it hasn't reached max sends
@@ -1305,12 +1355,14 @@ class TestDeviceAlarmSystem:
 
         # Simulate test mode with fix
         alarms_to_send_test = []
-        test_customer_alarms = [a for a in all_alarms if a.get('customer_label', '').lower() == 'gayan-imh']
+        test_customer_alarms = [a for a in all_alarms if a.get(
+            'customer_label', '').lower() == 'gayan-imh']
         if test_customer_alarms:
             most_recent = get_most_recent_alarm(test_customer_alarms)
             if most_recent:
                 alarm_key = create_alarm_key(most_recent)
-                alarm_state = state.get(alarm_key, {'send_count': 0, 'ignored': False})
+                alarm_state = state.get(
+                    alarm_key, {'send_count': 0, 'ignored': False})
                 # UC5 FIX: Only add if not ignored and under max sends
                 if not alarm_state.get('ignored', False) and alarm_state.get('send_count', 0) < 3:
                     alarms_to_send_test.append({
@@ -1371,8 +1423,10 @@ class TestDeviceAlarmSystem:
 
         # UC6: Calculate summary (same logic as in generate_device_alarms.py)
         if alarms_to_send:
-            unique_plants = set(item['alarm'].get('plant', 'Unknown') for item in alarms_to_send)
-            unique_customers = set(item['alarm'].get('customer_label', 'Unknown') for item in alarms_to_send)
+            unique_plants = set(item['alarm'].get(
+                'plant', 'Unknown') for item in alarms_to_send)
+            unique_customers = set(item['alarm'].get(
+                'customer_label', 'Unknown') for item in alarms_to_send)
             summary = f"📊 Summary: {len(alarms_to_send)} alarms from {len(unique_customers)} customers affecting {len(unique_plants)} plants"
             print(summary)
 
@@ -1437,9 +1491,11 @@ class TestDeviceAlarmSystem:
         from pathlib import Path
 
         # Find workflow file
-        workflow_path = Path(__file__).parents[7] / '.github' / 'workflows' / 'trigger-customer-reports.yml'
+        workflow_path = Path(
+            __file__).parents[7] / '.github' / 'workflows' / 'trigger-customer-reports.yml'
 
-        assert workflow_path.exists(), f"Workflow file not found at {workflow_path}"
+        assert workflow_path.exists(
+        ), f"Workflow file not found at {workflow_path}"
 
         with open(workflow_path, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -1501,7 +1557,8 @@ class TestDeviceAlarmSystem:
         # Simulate test mode logic (from generate_device_alarms.py lines 413-420)
         if most_recent:
             alarm_key_check = create_alarm_key(most_recent)
-            alarm_state = state.get(alarm_key_check, {'send_count': 0, 'ignored': False})
+            alarm_state = state.get(
+                alarm_key_check, {'send_count': 0, 'ignored': False})
 
             # UC4: Test mode bypasses 3-send limit
             alarms_to_send.append({
@@ -1511,7 +1568,8 @@ class TestDeviceAlarmSystem:
             })
 
         # Verify alarm was added despite ignored=True
-        assert len(alarms_to_send) == 1, "UC4: Test mode should bypass ignored flag"
+        assert len(
+            alarms_to_send) == 1, "UC4: Test mode should bypass ignored flag"
         assert alarms_to_send[0]['alarm_key'] == alarm_key
         assert alarms_to_send[0]['send_count'] == 3, "UC4: Should preserve send_count=3"
 
@@ -1554,7 +1612,8 @@ class TestDeviceAlarmSystem:
         # Simulate test mode logic
         if most_recent:
             alarm_key_check = create_alarm_key(most_recent)
-            alarm_state = state.get(alarm_key_check, {'send_count': 0, 'ignored': False})
+            alarm_state = state.get(
+                alarm_key_check, {'send_count': 0, 'ignored': False})
 
             # UC4: Test mode bypasses send count limit
             alarms_to_send.append({
@@ -1564,7 +1623,8 @@ class TestDeviceAlarmSystem:
             })
 
         # Verify alarm was added despite send_count >= 3
-        assert len(alarms_to_send) == 1, "UC4: Test mode should bypass send_count limit"
+        assert len(
+            alarms_to_send) == 1, "UC4: Test mode should bypass send_count limit"
         assert alarms_to_send[0]['send_count'] == 3, "UC4: Should include alarm with send_count=3"
 
     def test_uc4_test_mode_includes_fresh_alarms(self, test_alarms_dir):
@@ -1595,7 +1655,8 @@ class TestDeviceAlarmSystem:
         # Simulate test mode logic
         if most_recent:
             alarm_key_check = create_alarm_key(most_recent)
-            alarm_state = state.get(alarm_key_check, {'send_count': 0, 'ignored': False})
+            alarm_state = state.get(
+                alarm_key_check, {'send_count': 0, 'ignored': False})
 
             # UC4: Test mode includes fresh alarms
             alarms_to_send.append({
@@ -1605,7 +1666,8 @@ class TestDeviceAlarmSystem:
             })
 
         # Verify fresh alarm was added
-        assert len(alarms_to_send) == 1, "UC4: Test mode should include fresh alarms"
+        assert len(
+            alarms_to_send) == 1, "UC4: Test mode should include fresh alarms"
         assert alarms_to_send[0]['send_count'] == 0, "UC4: Fresh alarm should have send_count=0"
         assert alarms_to_send[0]['alarm']['plant'] == 'Gayan-IMH Plant'
 

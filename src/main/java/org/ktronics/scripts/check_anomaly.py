@@ -152,7 +152,8 @@ def read_state(state_path: Path) -> dict:
 
 def write_state(state_path: Path, state: dict) -> None:
     state_path.parent.mkdir(parents=True, exist_ok=True)
-    state_path.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")
+    state_path.write_text(json.dumps(
+        state, indent=2, sort_keys=True), encoding="utf-8")
 
 
 def main() -> int:
@@ -162,17 +163,24 @@ def main() -> int:
     ap.add_argument("--state-file", default="state/alerts_state.json")
 
     # Daily rules
-    ap.add_argument("--red-pct", type=float, default=20.0, help="Red: < this %% of baseline")
-    ap.add_argument("--red-days", type=int, default=3, help="Red: consecutive days")
-    ap.add_argument("--daily-baseline-days", type=int, default=14, help="Daily baseline lookback days")
+    ap.add_argument("--red-pct", type=float, default=20.0,
+                    help="Red: < this %% of baseline")
+    ap.add_argument("--red-days", type=int, default=3,
+                    help="Red: consecutive days")
+    ap.add_argument("--daily-baseline-days", type=int,
+                    default=14, help="Daily baseline lookback days")
 
     # Monthly rules
-    ap.add_argument("--orange-pct", type=float, default=40.0, help="Orange: < this %% of baseline")
-    ap.add_argument("--orange-months", type=int, default=3, help="Orange: consecutive months")
-    ap.add_argument("--monthly-baseline-months", type=int, default=6, help="Monthly baseline lookback months")
+    ap.add_argument("--orange-pct", type=float, default=40.0,
+                    help="Orange: < this %% of baseline")
+    ap.add_argument("--orange-months", type=int, default=3,
+                    help="Orange: consecutive months")
+    ap.add_argument("--monthly-baseline-months", type=int,
+                    default=6, help="Monthly baseline lookback months")
 
     # Ignore rule
-    ap.add_argument("--ignore-zero-months", type=int, default=1, help="If month total == 0 for N months, ignore plant")
+    ap.add_argument("--ignore-zero-months", type=int, default=1,
+                    help="If month total == 0 for N months, ignore plant")
 
     # Connectivity rule: a plant with no new reading for this many days has a dead
     # DATA LINK, not a dead system, so it must never be dressed up as a RED alert.
@@ -180,11 +188,16 @@ def main() -> int:
                     help="Days with no new reading before a plant counts as link-down (default: 3)")
 
     # UC10: Multi-platform support
-    ap.add_argument("--platform", default=None, help="Filter CSV files by platform prefix (e.g., 'dessmonitor' for dessmonitor-*.csv)")
-    ap.add_argument("--output-file", default=None, help="Custom output file path for alerts text")
-    ap.add_argument("--json-output", default=None, help="Custom output file path for alerts JSON")
-    ap.add_argument("--credentials", default=None, help="Path to credentials JSON file (default: config.CREDENTIALS_PATH)")
-    ap.add_argument("--customer-alerts-file", default=None, help="Output path for customer alerts JSON (default: alerts/customer_alerts.json)")
+    ap.add_argument("--platform", default=None,
+                    help="Filter CSV files by platform prefix (e.g., 'dessmonitor' for dessmonitor-*.csv)")
+    ap.add_argument("--output-file", default=None,
+                    help="Custom output file path for alerts text")
+    ap.add_argument("--json-output", default=None,
+                    help="Custom output file path for alerts JSON")
+    ap.add_argument("--credentials", default=None,
+                    help="Path to credentials JSON file (default: config.CREDENTIALS_PATH)")
+    ap.add_argument("--customer-alerts-file", default=None,
+                    help="Output path for customer alerts JSON (default: alerts/customer_alerts.json)")
 
     # Tri-state: --no-X forces off, --X forces on, neither defers to features.json.
     ap.add_argument("--no-orange", dest="no_orange", action="store_true", default=None,
@@ -238,8 +251,10 @@ def main() -> int:
     # A plant whose data has not advanced has a dead LINK, and a plant on the
     # exclusion list is off the platform entirely. Neither is a production
     # finding, and neither may be reported as a failed system.
-    fleet = connectivity.classify_fleet(plants_daily, today, stale_days=args.stale_days)
-    excluded_keys = {e["plant_key"] for e in fleet.excluded if e.get("in_data")}
+    fleet = connectivity.classify_fleet(
+        plants_daily, today, stale_days=args.stale_days)
+    excluded_keys = {e["plant_key"]
+                     for e in fleet.excluded if e.get("in_data")}
     link_down_by_key = {s.plant_key: s for s in fleet.link_down}
 
     for line in exclusions.log_lines():
@@ -265,7 +280,8 @@ def main() -> int:
         if month_totals:
             latest_month = max(month_totals.keys())
             # Check ignore window: last N months including latest_month
-            ignore_months = [add_months(latest_month, -i) for i in range(args.ignore_zero_months)]
+            ignore_months = [add_months(latest_month, -i)
+                             for i in range(args.ignore_zero_months)]
             if all(month_totals.get(m, 0.0) == 0.0 for m in ignore_months):
                 status = link_down_by_key.get(plant_key)
                 ignored.append({
@@ -280,15 +296,18 @@ def main() -> int:
                 continue
 
         # --- RED alert: < 20% baseline for 3 consecutive days ---
-        window_days = daterange(today - timedelta(days=args.red_days - 1), today)
+        window_days = daterange(
+            today - timedelta(days=args.red_days - 1), today)
 
         baseline_end = window_days[0] - timedelta(days=1)
-        baseline_start = baseline_end - timedelta(days=args.daily_baseline_days - 1)
+        baseline_start = baseline_end - \
+            timedelta(days=args.daily_baseline_days - 1)
         baseline_days = daterange(baseline_start, baseline_end)
 
         baseline_avg = avg([daily.get(d, 0.0) for d in baseline_days])
         # If baseline is 0, we can’t compute percentage meaningfully; still detect 0-run for suppression rule
-        red_threshold = (baseline_avg * (args.red_pct / 100.0)) if baseline_avg > 0 else 0.0
+        red_threshold = (baseline_avg * (args.red_pct / 100.0)
+                         ) if baseline_avg > 0 else 0.0
 
         def is_red(d: date, v: float) -> bool:
             if baseline_avg == 0.0:
@@ -296,13 +315,15 @@ def main() -> int:
                 return v == 0.0
             return v < red_threshold
 
-        red_run, red_details = consecutive_condition(window_days, daily, is_red)
+        red_run, red_details = consecutive_condition(
+            window_days, daily, is_red)
 
         # --- Special suppression: if production is 0 for 3 days AND red already sent => suppress ---
         def is_zero(d: date, v: float) -> bool:
             return v == 0.0
 
-        zero_run, zero_details = consecutive_condition(window_days, daily, is_zero)
+        zero_run, zero_details = consecutive_condition(
+            window_days, daily, is_zero)
 
         red_already_sent = bool(state.get("red_sent", {}).get(plant_key))
         if zero_run >= 3 and red_already_sent:
@@ -337,6 +358,7 @@ def main() -> int:
                     "baseline_avg_kwh_per_day": round(baseline_avg, 4),
                     "threshold_kwh_per_day": round(red_threshold, 4),
                     "rule": f"< {args.red_pct}% baseline for {args.red_days} consecutive days",
+                    "escalation": "no data or no production for 3 days — check the datalogger is online before dispatching",
                     "window": [str(d) for d in window_days],
                     "details": [{"date": str(d), "kwh": v} for d, v in red_details],
                 })
@@ -344,16 +366,22 @@ def main() -> int:
         # --- ORANGE alert: < 40% baseline for 3 consecutive months ---
         if month_totals and not args.no_orange:
             latest_month = max(month_totals.keys())
-            orange_months = [add_months(latest_month, -i) for i in reversed(range(args.orange_months))]
+            orange_months = [add_months(latest_month, -i)
+                             for i in reversed(range(args.orange_months))]
             # Baseline months: months immediately before orange window
-            baseline_start_month = add_months(orange_months[0], -args.monthly_baseline_months)
-            baseline_months = [add_months(baseline_start_month, i) for i in range(args.monthly_baseline_months)]
+            baseline_start_month = add_months(
+                orange_months[0], -args.monthly_baseline_months)
+            baseline_months = [add_months(baseline_start_month, i) for i in range(
+                args.monthly_baseline_months)]
 
-            baseline_month_vals = [month_totals.get(m, 0.0) for m in baseline_months]
+            baseline_month_vals = [month_totals.get(
+                m, 0.0) for m in baseline_months]
             monthly_baseline_avg = avg(baseline_month_vals)
-            orange_threshold = monthly_baseline_avg * (args.orange_pct / 100.0) if monthly_baseline_avg > 0 else 0.0
+            orange_threshold = monthly_baseline_avg * \
+                (args.orange_pct / 100.0) if monthly_baseline_avg > 0 else 0.0
 
-            orange_vals = [(m, month_totals.get(m, 0.0)) for m in orange_months]
+            orange_vals = [(m, month_totals.get(m, 0.0))
+                           for m in orange_months]
             orange_hit = (
                 monthly_baseline_avg > 0
                 and all(v < orange_threshold for _, v in orange_vals)
@@ -391,7 +419,8 @@ def main() -> int:
     # UC10: Include platform label in header
     lines.append("=" * 80)
     lines.append("║" + " " * 78 + "║")
-    lines.append("║" + f"[{platform_label}] PRODUCTION MONITOR".center(78) + "║")
+    lines.append(
+        "║" + f"[{platform_label}] PRODUCTION MONITOR".center(78) + "║")
     lines.append("║" + " " * 78 + "║")
     if not alerts:
         lines.append("║" + "✓ ALL SYSTEMS OPERATIONAL".center(78) + "║")
@@ -407,10 +436,11 @@ def main() -> int:
 
     lines.append("║" + " " * 78 + "║")
     counts = fleet.counts
-    lines.append("║" + f"Date: {today}  |  Total Plants Monitored: {counts['monitored']}".center(78) + "║")
+    lines.append(
+        "║" + f"Date: {today}  |  Total Plants Monitored: {counts['monitored']}".center(78) + "║")
     lines.append("║" + (f"Reporting: {counts['reporting']}  |  "
-                      f"Dead link: {counts['link_down']}  |  "
-                      f"Excluded: {counts['excluded']}").center(78) + "║")
+                        f"Dead link: {counts['link_down']}  |  "
+                        f"Excluded: {counts['excluded']}").center(78) + "║")
     lines.append("║" + " " * 78 + "║")
     lines.append("=" * 80)
     lines.append("")
@@ -422,21 +452,28 @@ def main() -> int:
 
         for a in alerts:
             severity_symbol = "🔴" if a["severity"] == "RED" else "🟠"
-            lines.append(f"│ {severity_symbol} [{a['severity']}] {a['plant_key']}")
+            lines.append(
+                f"│ {severity_symbol} [{a['severity']}] {a['plant_key']}")
             lines.append("│")
             if a["severity"] == "RED":
                 baseline = a['baseline_avg_kwh_per_day']
                 latest_kwh = a['details'][-1]['kwh'] if a['details'] else 0
-                drop_pct = ((baseline - latest_kwh) / baseline * 100) if baseline > 0 else 0
-                lines.append(f"│   Issue: Production dropped {drop_pct:.1f}% below normal")
-                lines.append(f"│   Normal: {baseline:.2f} kWh/day  →  Current: {latest_kwh:.2f} kWh/day")
+                drop_pct = ((baseline - latest_kwh) /
+                            baseline * 100) if baseline > 0 else 0
+                lines.append(
+                    f"│   Issue: Production dropped {drop_pct:.1f}% below normal")
+                lines.append(
+                    f"│   Normal: {baseline:.2f} kWh/day  →  Current: {latest_kwh:.2f} kWh/day")
                 lines.append(f"│   Rule: {a['rule']}")
             else:
                 baseline = a['baseline_avg_kwh_per_month']
                 latest_kwh = a['details'][-1]['kwh'] if a['details'] else 0
-                drop_pct = ((baseline - latest_kwh) / baseline * 100) if baseline > 0 else 0
-                lines.append(f"│   Issue: Production dropped {drop_pct:.1f}% below normal")
-                lines.append(f"│   Normal: {baseline:.2f} kWh/month  →  Current: {latest_kwh:.2f} kWh/month")
+                drop_pct = ((baseline - latest_kwh) /
+                            baseline * 100) if baseline > 0 else 0
+                lines.append(
+                    f"│   Issue: Production dropped {drop_pct:.1f}% below normal")
+                lines.append(
+                    f"│   Normal: {baseline:.2f} kWh/month  →  Current: {latest_kwh:.2f} kWh/month")
                 lines.append(f"│   Rule: {a['rule']}")
             lines.append("│")
 
@@ -450,13 +487,18 @@ def main() -> int:
             if a["severity"] == "RED":
                 lines.append(f"│ {a['plant_key']}:")
                 lines.append("│   1. Check inverter status and error codes")
-                lines.append("│   2. Verify grid connection and breaker status")
-                lines.append("│   3. Inspect panels for shading or physical damage")
-                lines.append("│   4. Contact maintenance team if issue persists")
+                lines.append(
+                    "│   2. Verify grid connection and breaker status")
+                lines.append(
+                    "│   3. Inspect panels for shading or physical damage")
+                lines.append(
+                    "│   4. Contact maintenance team if issue persists")
+                lines.append(f"│   {a['escalation']}")
             else:
                 lines.append(f"│ {a['plant_key']}:")
                 lines.append("│   1. Review monthly production trends")
-                lines.append("│   2. Check for seasonal factors (weather, shading)")
+                lines.append(
+                    "│   2. Check for seasonal factors (weather, shading)")
                 lines.append("│   3. Schedule maintenance inspection")
         lines.append("│")
         lines.append("└" + "─" * 78 + "┘")
@@ -469,19 +511,27 @@ def main() -> int:
             lines.append(f"│ [{a['severity']}] {a['plant_key']}")
             lines.append("│")
             if a["severity"] == "RED":
-                lines.append(f"│   Baseline (avg/day): {a['baseline_avg_kwh_per_day']:.4f} kWh")
-                lines.append(f"│   Alert Threshold: < {a['threshold_kwh_per_day']:.4f} kWh/day")
+                lines.append(
+                    f"│   Baseline (avg/day): {a['baseline_avg_kwh_per_day']:.4f} kWh")
+                lines.append(
+                    f"│   Alert Threshold: < {a['threshold_kwh_per_day']:.4f} kWh/day")
                 lines.append("│   Recent Production:")
                 for r in a["details"]:
-                    pct = (r['kwh'] / a['baseline_avg_kwh_per_day'] * 100) if a['baseline_avg_kwh_per_day'] > 0 else 0
-                    lines.append(f"│     {r['date']}: {r['kwh']:.4f} kWh ({pct:.1f}% of baseline)")
+                    pct = (r['kwh'] / a['baseline_avg_kwh_per_day'] *
+                           100) if a['baseline_avg_kwh_per_day'] > 0 else 0
+                    lines.append(
+                        f"│     {r['date']}: {r['kwh']:.4f} kWh ({pct:.1f}% of baseline)")
             else:
-                lines.append(f"│   Baseline (avg/month): {a['baseline_avg_kwh_per_month']:.4f} kWh")
-                lines.append(f"│   Alert Threshold: < {a['threshold_kwh_per_month']:.4f} kWh/month")
+                lines.append(
+                    f"│   Baseline (avg/month): {a['baseline_avg_kwh_per_month']:.4f} kWh")
+                lines.append(
+                    f"│   Alert Threshold: < {a['threshold_kwh_per_month']:.4f} kWh/month")
                 lines.append("│   Recent Months:")
                 for r in a["details"]:
-                    pct = (r['kwh'] / a['baseline_avg_kwh_per_month'] * 100) if a['baseline_avg_kwh_per_month'] > 0 else 0
-                    lines.append(f"│     {r['month']}: {r['kwh']:.4f} kWh ({pct:.1f}% of baseline)")
+                    pct = (r['kwh'] / a['baseline_avg_kwh_per_month'] *
+                           100) if a['baseline_avg_kwh_per_month'] > 0 else 0
+                    lines.append(
+                        f"│     {r['month']}: {r['kwh']:.4f} kWh ({pct:.1f}% of baseline)")
             lines.append("│")
         lines.append("└" + "─" * 78 + "┘")
         lines.append("")
@@ -491,17 +541,23 @@ def main() -> int:
     # not producing numbers because we cannot hear them, which is a different
     # problem with a different fix and a different person to call.
     if link_down:
-        lines.append("┌─ 📡 DATA LINK DOWN (CONNECTIVITY — NOT A PRODUCTION FAULT) " + "─" * 18 + "┐")
+        lines.append(
+            "┌─ 📡 DATA LINK DOWN (CONNECTIVITY — NOT A PRODUCTION FAULT) " + "─" * 18 + "┐")
         lines.append("│")
-        lines.append(f"│ These plants have sent no data for {args.stale_days}+ days. The usual cause is the")
-        lines.append("│ customer's WiFi or monitoring dongle being offline. The solar system is")
-        lines.append("│ very probably running normally — do NOT record these as dead systems.")
-        lines.append("│ Production cannot be judged either way until the link is restored.")
+        lines.append(
+            f"│ These plants have sent no data for {args.stale_days}+ days. The usual cause is the")
+        lines.append(
+            "│ customer's WiFi or monitoring dongle being offline. The solar system is")
+        lines.append(
+            "│ very probably running normally — do NOT record these as dead systems.")
+        lines.append(
+            "│ Production cannot be judged either way until the link is restored.")
         lines.append("│")
         for x in link_down:
             last_seen = x["last_nonzero_date"] or "never"
             lines.append(f"│   • {x['plant_key']}")
-            lines.append(f"│     Last reading: {last_seen} ({x['days_stale']} days ago)")
+            lines.append(
+                f"│     Last reading: {last_seen} ({x['days_stale']} days ago)")
             lines.append(f"│     Symptom: {x['meaning']}")
         lines.append("│")
         lines.append("└" + "─" * 78 + "┘")
@@ -509,9 +565,11 @@ def main() -> int:
 
     # --- Excluded Section ---
     if fleet.excluded:
-        lines.append("┌─ EXCLUDED PLANTS (OFF THE PLATFORM BY DECISION) " + "─" * 29 + "┐")
+        lines.append(
+            "┌─ EXCLUDED PLANTS (OFF THE PLATFORM BY DECISION) " + "─" * 29 + "┐")
         lines.append("│")
-        lines.append("│ These are not monitored and are not counted. They are listed so nobody")
+        lines.append(
+            "│ These are not monitored and are not counted. They are listed so nobody")
         lines.append("│ has to wonder where a plant went.")
         lines.append("│")
         for x in fleet.excluded:
@@ -528,7 +586,8 @@ def main() -> int:
         lines.append("│")
 
         if ignored:
-            lines.append("│ IGNORED PLANTS (No production for extended period):")
+            lines.append(
+                "│ IGNORED PLANTS (No production for extended period):")
             for x in ignored:
                 lines.append(f"│   • {x['plant_key']}")
                 lines.append(f"│     Reason: {x['reason']}")
@@ -538,7 +597,8 @@ def main() -> int:
             lines.append("│")
 
         if suppressed:
-            lines.append("│ SUPPRESSED ALERTS (Already notified, zero production continues):")
+            lines.append(
+                "│ SUPPRESSED ALERTS (Already notified, zero production continues):")
             for x in suppressed:
                 lines.append(f"│   • {x['plant_key']}")
                 lines.append(f"│     Reason: {x['reason']}")
@@ -555,7 +615,8 @@ def main() -> int:
     # Auto-ignore after 3 consecutive days to prevent alert fatigue
     auto_ignore_days = 3
     today_date = today
-    all_generated_alerts = list(alerts)  # Keep copy of all generated alerts for cleanup
+    # Keep copy of all generated alerts for cleanup
+    all_generated_alerts = list(alerts)
     alerts_to_send = []
     auto_ignored = []
 
@@ -607,8 +668,10 @@ def main() -> int:
 
     # --- Cleanup: Reset state when alert is resolved ---
     # If a plant no longer has an alert, remove its state entry
-    current_alert_keys = {f"{a['plant_key']}:{a['severity']}" for a in all_generated_alerts}
-    all_alert_keys = [k for k in list(state.keys()) if k != "red_sent"]  # Keep old red_sent for compatibility
+    current_alert_keys = {
+        f"{a['plant_key']}:{a['severity']}" for a in all_generated_alerts}
+    # Keep old red_sent for compatibility
+    all_alert_keys = [k for k in list(state.keys()) if k != "red_sent"]
     for alert_key in all_alert_keys:
         if alert_key not in current_alert_keys and ":" in alert_key:
             # Alert resolved, remove from state
@@ -617,7 +680,8 @@ def main() -> int:
     # --- Generate Customer-Specific Alerts ---
     # Load credentials to map plants to customers
     # UC10 Phase 2: Support custom credentials path for multi-platform
-    credentials_path = Path(args.credentials) if args.credentials else CREDENTIALS_PATH
+    credentials_path = Path(
+        args.credentials) if args.credentials else CREDENTIALS_PATH
     customer_alerts_output = {}
 
     if credentials_path.exists():
@@ -632,7 +696,8 @@ def main() -> int:
                 customer_email = account.get('email')
                 if customer_label:
                     # Normalize for matching
-                    normalized = re.sub(r'[^a-z0-9]', '', customer_label.lower())
+                    normalized = re.sub(
+                        r'[^a-z0-9]', '', customer_label.lower())
                     plant_to_customer[normalized] = {
                         'label': customer_label,
                         'email': customer_email
@@ -678,10 +743,12 @@ def main() -> int:
                 customer_alerts_file.parent.mkdir(parents=True, exist_ok=True)
             else:
                 customer_alerts_file = out_dir / "customer_alerts.json"
-            customer_alerts_file.write_text(json.dumps(customer_alerts_output, indent=2), encoding="utf-8")
+            customer_alerts_file.write_text(json.dumps(
+                customer_alerts_output, indent=2), encoding="utf-8")
 
         except Exception as e:
-            print(f"Warning: Could not generate customer alerts: {e}", file=sys.stderr)
+            print(
+                f"Warning: Could not generate customer alerts: {e}", file=sys.stderr)
 
     write_state(state_path, state)
 

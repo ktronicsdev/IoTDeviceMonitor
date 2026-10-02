@@ -14,12 +14,30 @@ import sys
 import json
 import re
 import argparse
-from datetime import datetime, timedelta
+import importlib.util
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from collections import defaultdict
 
 import exclusions
 from config import CREDENTIALS_PATH
+
+
+TRIAGE_CONFIG_PATH = Path(__file__).resolve(
+).parents[6] / 'six-hour-gate' / 'config' / 'alarm_triage.json'
+TRIAGE_MODULE_PATH = Path(__file__).resolve(
+).parents[6] / 'six-hour-gate' / 'alarm_triage.py'
+_triage_spec = importlib.util.spec_from_file_location(
+    'alarm_triage', TRIAGE_MODULE_PATH)
+alarm_triage = importlib.util.module_from_spec(_triage_spec)
+_triage_spec.loader.exec_module(alarm_triage)
+with open(TRIAGE_CONFIG_PATH, 'r', encoding='utf-8') as _config_file:
+    ALARM_TRIAGE_CONFIG = json.load(_config_file)
+
+
+def is_open_alarm(alarm):
+    """Return True only for vendor values representing an unhandled alarm."""
+    return alarm.get('status') in (False, 0, '0', 'false', 'False')
 
 
 def drop_excluded_alarms(alarms):
@@ -82,9 +100,11 @@ def parse_alarm_files(alarms_dir, platform=None):
 
     # Filter by platform
     if platform == 'dessmonitor':
-        alarm_files = [f for f in alarm_files if f.name.startswith('dessmonitor-')]
+        alarm_files = [
+            f for f in alarm_files if f.name.startswith('dessmonitor-')]
     elif platform == 'shinemonitor':
-        alarm_files = [f for f in alarm_files if not f.name.startswith('dessmonitor-')]
+        alarm_files = [
+            f for f in alarm_files if not f.name.startswith('dessmonitor-')]
 
     for alarm_file in alarm_files:
         try:
@@ -111,13 +131,56 @@ def parse_alarm_files(alarms_dir, platform=None):
                     alarm_list = []
 
                 for alarm in alarm_list:
-                    alarm['customer_label'] = customer_label
-                    all_alarms.append(alarm)
+                    if is_open_alarm(alarm):
+                        alarm['customer_label'] = customer_label
+                        all_alarms.append(alarm)
 
         except Exception as e:
-            print(f"Warning: Failed to parse {alarm_file}: {e}", file=sys.stderr)
+            print(
+                f"Warning: Failed to parse {alarm_file}: {e}", file=sys.stderr)
 
     return all_alarms
+
+
+def triage_alarms(alarms, state, platform=None, utc_now=None):
+    """Apply the six-hour gate and record held alarms without changing send rules."""
+    vendor = 'DessMonitor' if platform == 'dessmonitor' else 'ShineMonitor'
+    utc_now = utc_now or datetime.now(timezone.utc)
+    actionable = []
+
+    for alarm in alarms:
+        alarm_key = create_alarm_key(alarm)
+        try:
+            triage_input = dict(alarm)
+            triage_input.setdefault('message', alarm.get(
+                'desc', alarm.get('warnMsg', '')))
+            record = alarm_triage.normalize(
+                triage_input, vendor, ALARM_TRIAGE_CONFIG)
+            record['class'] = alarm_triage.classify(
+                record['message'], ALARM_TRIAGE_CONFIG)
+            allowed, reason = alarm_triage.is_actionable(
+                record, utc_now, ALARM_TRIAGE_CONFIG)
+        except (KeyError, TypeError, ValueError) as error:
+            allowed, reason = False, f'could not triage alarm: {error}'
+            record = {'class': 'UNKNOWN', 'started_at_utc': utc_now}
+
+        if allowed:
+            actionable.append(alarm)
+            continue
+
+        alarm_state = state.setdefault(alarm_key, {
+            'send_count': 0,
+            'last_sent': None,
+            'first_seen': record['started_at_utc'].isoformat(),
+            'ignored': False,
+        })
+        alarm_state.update({
+            'class': record['class'],
+            'started_at_utc': record['started_at_utc'].isoformat(),
+            'suppressed_reason': reason,
+        })
+
+    return actionable
 
 
 def create_alarm_key(alarm):
@@ -240,15 +303,19 @@ Report Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
 
         for item in customer_alarms:
             alarm = item['alarm']
-            send_count = item['send_count'] + 1  # +1 because we're about to send
+            # +1 because we're about to send
+            send_count = item['send_count'] + 1
 
             # Handle both old and new API field names
             # New API: plant, alias, desc, gts
             # Old API: pName, devName, warnMsg, warnTime
-            plant_name = alarm.get('plant', alarm.get('pName', 'Unknown Plant'))
-            device_name = alarm.get('alias', alarm.get('devName', 'Unknown Device'))
+            plant_name = alarm.get(
+                'plant', alarm.get('pName', 'Unknown Plant'))
+            device_name = alarm.get(
+                'alias', alarm.get('devName', 'Unknown Device'))
             warning_msg = alarm.get('desc', alarm.get('warnMsg', 'No message'))
-            warning_time = alarm.get('gts', alarm.get('warnTime', 'Unknown time'))
+            warning_time = alarm.get(
+                'gts', alarm.get('warnTime', 'Unknown time'))
 
             email_body += f"│    Plant:   {plant_name}\n"
             email_body += f"│    Device:  {device_name}\n"
@@ -298,7 +365,8 @@ def update_alarm_state(state, alarms_to_send):
         # UC7: Add human-readable customer, plant, and message
         state[alarm_key]['customer'] = alarm.get('customer_label', 'Unknown')
         state[alarm_key]['plant'] = alarm.get('plant', 'Unknown')
-        state[alarm_key]['message'] = alarm.get('desc', alarm.get('warnMsg', 'Unknown'))
+        state[alarm_key]['message'] = alarm.get(
+            'desc', alarm.get('warnMsg', 'Unknown'))
 
         # Auto-ignore after 3 sends
         if state[alarm_key]['send_count'] >= 3:
@@ -321,7 +389,8 @@ def load_customer_mapping(credentials_file, platform=None):
 
     # Auto-detect platform from filename if not specified
     if platform is None:
-        platform = 'dessmonitor' if 'dessmonitor' in str(credentials_file).lower() else 'shinemonitor'
+        platform = 'dessmonitor' if 'dessmonitor' in str(
+            credentials_file).lower() else 'shinemonitor'
 
     # Choose correct accounts key based on platform
     if platform == 'dessmonitor':
@@ -426,10 +495,14 @@ def get_most_recent_alarm(alarms):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Process device alarms and send notifications')
-    parser.add_argument('--alarms-dir', required=True, help='Directory containing alarm JSON files')
-    parser.add_argument('--state-file', required=True, help='Path to alarm state JSON file')
-    parser.add_argument('--output-file', required=True, help='Path to output email text file')
+    parser = argparse.ArgumentParser(
+        description='Process device alarms and send notifications')
+    parser.add_argument('--alarms-dir', required=True,
+                        help='Directory containing alarm JSON files')
+    parser.add_argument('--state-file', required=True,
+                        help='Path to alarm state JSON file')
+    parser.add_argument('--output-file', required=True,
+                        help='Path to output email text file')
     parser.add_argument('--test-mode', action='store_true',
                         help='Test mode: include most recent alarm even if max sends reached (for push/manual runs)')
     parser.add_argument('--platform', choices=['shinemonitor', 'dessmonitor'],
@@ -449,7 +522,8 @@ def main():
     # Parse alarm files
     print(f"[2/5] Parsing alarm files from {args.alarms_dir}...")
     platform_info = f" (platform: {args.platform})" if args.platform else ""
-    print(f"  Filtering for platform: {args.platform if args.platform else 'all'}")
+    print(
+        f"  Filtering for platform: {args.platform if args.platform else 'all'}")
     all_alarms = parse_alarm_files(args.alarms_dir, platform=args.platform)
     print(f"✓ Found {len(all_alarms)} UNHANDLED alarms{platform_info}")
 
@@ -464,26 +538,34 @@ def main():
         for line in exclusions.log_lines():
             print(f"  {line}")
 
-    # Filter alarms to send
+    # Apply policy gates before the existing three-send/four-hour filter.
+    print("[3/5] Applying alarm triage gates...")
+    all_alarms = triage_alarms(all_alarms, state, args.platform)
+    print(f"✓ {len(all_alarms)} alarms passed triage")
+
     print("[3/5] Filtering alarms (max 3 sends per alarm, 4-hour interval)...")
     alarms_to_send = filter_alarms_to_send(all_alarms, state)
     print(f"✓ {len(alarms_to_send)} alarms ready to send")
 
     # UC5: Test mode - if no alarms to send but alarms exist, include most recent from test customer
     if args.test_mode and len(alarms_to_send) == 0 and len(all_alarms) > 0:
-        print("  [TEST MODE] No alarms passed filter, adding most recent alarm for testing...")
+        print(
+            "  [TEST MODE] No alarms passed filter, adding most recent alarm for testing...")
         # UC5 FIX: Filter to test customer (Gayan-IMH) alarms only
-        test_customer_alarms = [a for a in all_alarms if a.get('customer_label', '').lower() == 'gayan-imh']
+        test_customer_alarms = [a for a in all_alarms if a.get(
+            'customer_label', '').lower() == 'gayan-imh']
         if test_customer_alarms:
             most_recent = get_most_recent_alarm(test_customer_alarms)
-            print(f"  [TEST MODE] Found {len(test_customer_alarms)} alarms for test customer (Gayan-IMH)")
+            print(
+                f"  [TEST MODE] Found {len(test_customer_alarms)} alarms for test customer (Gayan-IMH)")
         else:
             # Fallback: If test customer has no alarms, log and skip
             print("  [TEST MODE] No alarms found for test customer (Gayan-IMH)")
             most_recent = None
         if most_recent:
             alarm_key = create_alarm_key(most_recent)
-            alarm_state = state.get(alarm_key, {'send_count': 0, 'ignored': False})
+            alarm_state = state.get(
+                alarm_key, {'send_count': 0, 'ignored': False})
             # UC4: Test mode bypasses 3-send limit for Gayan-IMH testing
             # Always include the most recent alarm regardless of ignored/send_count
             alarms_to_send.append({
@@ -491,7 +573,8 @@ def main():
                 'alarm_key': alarm_key,
                 'send_count': alarm_state.get('send_count', 0)
             })
-            print(f"  [TEST MODE] Added alarm (bypassing limits): {most_recent.get('plant', 'Unknown')} - {most_recent.get('desc', 'No message')}")
+            print(
+                f"  [TEST MODE] Added alarm (bypassing limits): {most_recent.get('plant', 'Unknown')} - {most_recent.get('desc', 'No message')}")
 
     # Format email
     print("[4/5] Formatting email...")
@@ -520,7 +603,8 @@ def main():
             customer_filename = 'dessmonitor_customer_device_alarms.json'
         else:
             customer_filename = 'customer_device_alarms.json'
-        customer_alarms_file = Path(args.output_file).parent / customer_filename
+        customer_alarms_file = Path(
+            args.output_file).parent / customer_filename
         output_data = {'customer_device_alarms': customer_device_alarms}
 
         with open(customer_alarms_file, 'w', encoding='utf-8') as f:
@@ -536,7 +620,8 @@ def main():
             customer_filename = 'dessmonitor_customer_device_alarms.json'
         else:
             customer_filename = 'customer_device_alarms.json'
-        customer_alarms_file = Path(args.output_file).parent / customer_filename
+        customer_alarms_file = Path(
+            args.output_file).parent / customer_filename
         with open(customer_alarms_file, 'w', encoding='utf-8') as f:
             json.dump({'customer_device_alarms': {}}, f, indent=2)
         print(f"✓ Empty customer device alarms file created")
@@ -549,9 +634,12 @@ def main():
 
     # UC6: Print summary for admin visibility in logs
     if alarms_to_send:
-        unique_plants = set(item['alarm'].get('plant', 'Unknown') for item in alarms_to_send)
-        unique_customers = set(item['alarm'].get('customer_label', 'Unknown') for item in alarms_to_send)
-        print(f"📊 Summary: {len(alarms_to_send)} alarms from {len(unique_customers)} customers affecting {len(unique_plants)} plants")
+        unique_plants = set(item['alarm'].get('plant', 'Unknown')
+                            for item in alarms_to_send)
+        unique_customers = set(item['alarm'].get(
+            'customer_label', 'Unknown') for item in alarms_to_send)
+        print(
+            f"📊 Summary: {len(alarms_to_send)} alarms from {len(unique_customers)} customers affecting {len(unique_plants)} plants")
 
     print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
