@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-02T01:55:52.570063Z",
+  "generated_at": "2026-10-02T09:02:06.907640Z",
   "alerts": [],
   "suppressed": [],
   "ignored": [
@@ -29,15 +29,6 @@
       ],
       "link_down": true,
       "days_stale": 11
-    },
-    {
-      "plant_key": "chandika-plant",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-10"
-      ],
-      "link_down": false,
-      "days_stale": null
     },
     {
       "plant_key": "ganishka-ganishka-home-3kw",

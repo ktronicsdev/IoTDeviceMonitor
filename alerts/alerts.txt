@@ -57,8 +57,6 @@
 │   • chamila-chamila-119h
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │     Link: DATA LINK DOWN for 11 days — connectivity, not a production fault
-│   • chandika-plant
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • ganishka-ganishka-home-3kw
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │     Link: DATA LINK DOWN for 93 days — connectivity, not a production fault
