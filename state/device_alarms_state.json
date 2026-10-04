@@ -1331,10 +1331,10 @@
     "message": "Inverter bus voltage is too low"
   },
   "1116664:D70000210150900869:6ac23b4d9332050168b65b3a": {
-    "send_count": 1,
+    "send_count": 2,
     "first_seen": "2026-10-04T13:00:18.720454",
     "ignored": false,
-    "last_sent": "2026-10-04T13:00:18.720454",
+    "last_sent": "2026-10-04T18:25:25.004546",
     "customer": "Ravindra",
     "plant": "Ravindra 3kw",
     "message": "Bus soft start failed"
