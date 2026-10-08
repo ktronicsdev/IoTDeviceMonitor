@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-08T09:32:59.185473Z",
+  "generated_at": "2026-10-08T11:28:24.872183Z",
   "alerts": [],
   "suppressed": [],
   "ignored": [
@@ -7,7 +7,7 @@
       "plant_key": "abeetha-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-10"
+        "2026-09"
       ],
       "link_down": true,
       "days_stale": 99
@@ -16,25 +16,16 @@
       "plant_key": "anuradha-gajanayaka-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-10"
+        "2026-09"
       ],
       "link_down": true,
       "days_stale": 99
     },
     {
-      "plant_key": "chamila-chamila-119h",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-10"
-      ],
-      "link_down": true,
-      "days_stale": 17
-    },
-    {
       "plant_key": "ganishka-ganishka-home-3kw",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-10"
+        "2026-09"
       ],
       "link_down": true,
       "days_stale": 99
@@ -43,7 +34,7 @@
       "plant_key": "lahiru-ryan-lahiru-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-10"
+        "2026-09"
       ],
       "link_down": true,
       "days_stale": 86
@@ -52,7 +43,7 @@
       "plant_key": "mifanza-mifanza-solar-system",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-10"
+        "2026-09"
       ],
       "link_down": true,
       "days_stale": 99
@@ -61,7 +52,7 @@
       "plant_key": "samurdi-kohuwala",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-10"
+        "2026-09"
       ],
       "link_down": true,
       "days_stale": 99
@@ -70,7 +61,7 @@
       "plant_key": "upulatheja-3kw-pro-kadawath",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-10"
+        "2026-09"
       ],
       "link_down": true,
       "days_stale": 99
