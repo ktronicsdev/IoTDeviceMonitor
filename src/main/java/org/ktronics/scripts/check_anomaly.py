@@ -264,9 +264,20 @@ def main() -> int:
         month_totals = compute_month_totals(daily)
         if month_totals:
             latest_month = max(month_totals.keys())
-            # Check ignore window: last N months including latest_month
+            # The current calendar month is still running. A zero total for it means
+            # "nothing yet this month", not "a month of nothing" — so on the 1st a
+            # plant that went dark last week looked dark for a whole month, was
+            # filed as ignored, and `continue`d before reaching the connectivity
+            # reclassification below. That is why every suppressed link_down record
+            # vanished from alerts.json on 2026-10-01. Judge on complete months.
+            if latest_month == month_str(today):
+                latest_month = add_months(latest_month, -1)
+            # Check ignore window: last N complete months, ending at latest_month
             ignore_months = [add_months(latest_month, -i) for i in range(args.ignore_zero_months)]
-            if all(month_totals.get(m, 0.0) == 0.0 for m in ignore_months):
+            # Present AND zero. A month we hold no data for is not evidence of zero
+            # production — defaulting it to 0.0 would ignore a newly onboarded plant
+            # whose history does not reach back that far.
+            if all(m in month_totals and month_totals[m] == 0.0 for m in ignore_months):
                 status = link_down_by_key.get(plant_key)
                 ignored.append({
                     "plant_key": plant_key,
