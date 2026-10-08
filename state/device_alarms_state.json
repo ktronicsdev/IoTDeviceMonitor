@@ -1338,5 +1338,14 @@
     "customer": "Ravindra",
     "plant": "Ravindra 3kw",
     "message": "Bus soft start failed"
+  },
+  "1101493:D70000210186250779:6ac748f993320501685f5764": {
+    "send_count": 1,
+    "first_seen": "2026-10-08T09:33:33.848947",
+    "ignored": false,
+    "last_sent": "2026-10-08T09:33:33.848947",
+    "customer": "Abeetha",
+    "plant": "PLANT",
+    "message": "battery voltage is too high"
   }
 }
