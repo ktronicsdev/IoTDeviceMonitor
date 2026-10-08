@@ -1340,10 +1340,10 @@
     "message": "Bus soft start failed"
   },
   "1101493:D70000210186250779:6ac748f993320501685f5764": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-10-08T09:33:33.848947",
-    "ignored": false,
-    "last_sent": "2026-10-08T14:06:25.755513",
+    "ignored": true,
+    "last_sent": "2026-10-08T20:12:35.416189",
     "customer": "Abeetha",
     "plant": "PLANT",
     "message": "battery voltage is too high"
