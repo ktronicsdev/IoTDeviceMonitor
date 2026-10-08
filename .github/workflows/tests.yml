@@ -1,0 +1,68 @@
+name: Tests (pull requests)
+
+# Nothing else tests a pull request.
+#
+# Every other workflow here fires only on `schedule`, `workflow_dispatch`, or a
+# push to `main` — none of them on `pull_request`. So until this existed, a PR
+# showed a clean green "MERGEABLE" button with `checks: []` for code that had
+# never been run once. PR #17 sat like that for a week: 396 lines touching the
+# live alarm path, nothing verifying any of it.
+#
+# This runs the same full integration suite the ShineMonitor workflow runs on
+# main, so a regression is caught before merge rather than by a scheduled run
+# several hours afterwards.
+#
+# Deliberately NOT here: the failure email. A red check on the PR is already
+# the signal, and mailing the admin on every intern push would be noise. That
+# is also why this job takes only the credentials secret and no SMTP secrets.
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+# A new push to the same PR supersedes the previous run.
+concurrency:
+  group: pr-tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # test_centralized_config.py asserts the real credentials file exists and
+      # parses, and the API tests read it. It is gitignored, so without this the
+      # suite reports failures that say nothing about the change under review.
+      - name: Create credentials.json from GitHub Secrets
+        shell: bash
+        run: |
+          set -e
+          mkdir -p src/main/java/org/ktronics/config
+          cat <<'EOF' > src/main/java/org/ktronics/config/credentials.json
+          ${{ secrets.SHINEMONITOR_CREDENTIALS_JSON }}
+          EOF
+          chmod 600 src/main/java/org/ktronics/config/credentials.json
+
+      - name: Run integration tests
+        shell: bash
+        run: |
+          set -e
+          # pyyaml is the suite's only third-party import: test_feature_flags.py
+          # parses the workflow YAML, and without it pytest aborts at COLLECTION,
+          # taking down the whole run rather than one file.
+          pip install pytest pyyaml
+          pytest src/test/java/org/ktronics/scripts/integration/ -q --tb=short
