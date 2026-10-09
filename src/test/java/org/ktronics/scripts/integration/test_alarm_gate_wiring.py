@@ -20,8 +20,20 @@ import pytest
 
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent.parent.parent / \
     "main" / "java" / "org" / "ktronics" / "scripts"
-FEATURES_JSON = SCRIPTS_DIR.parent / "config" / "features.json"
 sys.path.insert(0, str(SCRIPTS_DIR))
+
+# Walk up to the repo root rather than counting `.parent`s: pytest.ini already
+# puts the scripts on sys.path, so SCRIPTS_DIR above is vestigial and does not
+# actually resolve — counting from it lands outside the tree.
+_FEATURES_REL = Path("src/main/java/org/ktronics/config/features.json")
+
+
+def _features_json():
+    for parent in Path(__file__).resolve().parents:
+        candidate = parent / _FEATURES_REL
+        if candidate.is_file():
+            return candidate
+    raise AssertionError(f"could not find {_FEATURES_REL} above {__file__}")
 
 import generate_device_alarms as gda  # noqa: E402
 
@@ -132,7 +144,7 @@ def test_the_gate_is_behind_a_flag_that_is_off_by_default():
     Off by default for the same reason `alerts.production_orange_3month` is:
     a channel ships dark and is switched on once it has been seen to behave.
     """
-    flags = json.loads(FEATURES_JSON.read_text(encoding="utf-8"))
+    flags = json.loads(_features_json().read_text(encoding="utf-8"))
 
     assert "six_hour_gate" in flags.get("alerts", {}), (
         "add `alerts.six_hour_gate` to features.json — the gate suppresses "
