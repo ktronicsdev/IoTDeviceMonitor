@@ -21,6 +21,7 @@ from collections import defaultdict
 
 import exclusions
 from config import CREDENTIALS_PATH
+from features import is_enabled
 
 
 TRIAGE_CONFIG_PATH = Path(__file__).resolve(
@@ -150,19 +151,23 @@ def triage_alarms(alarms, state, platform=None, utc_now=None):
 
     for alarm in alarms:
         alarm_key = create_alarm_key(alarm)
-        try:
-            triage_input = dict(alarm)
-            triage_input.setdefault('message', alarm.get(
-                'desc', alarm.get('warnMsg', '')))
-            record = alarm_triage.normalize(
-                triage_input, vendor, ALARM_TRIAGE_CONFIG)
-            allowed, reason = alarm_triage.is_actionable(
-                record, utc_now, ALARM_TRIAGE_CONFIG)
-        except (KeyError, TypeError, ValueError) as error:
-            reason = f'could not triage alarm; passing through: {error}'
-            print(f'Warning: {reason}', file=sys.stderr)
+        if is_enabled('alerts.six_hour_gate', default=False):
+            try:
+                triage_input = dict(alarm)
+                triage_input.setdefault('message', alarm.get(
+                    'desc', alarm.get('warnMsg', '')))
+                record = alarm_triage.normalize(
+                    triage_input, vendor, ALARM_TRIAGE_CONFIG)
+                allowed, reason = alarm_triage.is_actionable(
+                    record, utc_now, ALARM_TRIAGE_CONFIG)
+            except (KeyError, TypeError, ValueError) as error:
+                reason = f'could not triage alarm; passing through: {error}'
+                print(f'Warning: {reason}', file=sys.stderr)
+                allowed = True
+                record = {'class': 'UNKNOWN', 'started_at_utc': utc_now}
+        else:
             allowed = True
-            record = {'class': 'UNKNOWN', 'started_at_utc': utc_now}
+            reason = 'six_hour_gate disabled'
 
         if allowed:
             actionable.append(alarm)

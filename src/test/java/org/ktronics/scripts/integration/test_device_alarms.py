@@ -173,8 +173,9 @@ class TestDeviceAlarmSystem:
 
         assert {alarm['id'] for alarm in alarms} == {'open-bool', 'open-int'}
 
-    def test_triage_records_suppressed_alarm_metadata(self):
+    def test_triage_records_suppressed_alarm_metadata(self, monkeypatch):
         """Held alarms retain class, vendor timestamp conversion, and reason."""
+        monkeypatch.setenv("KT_FEATURE_ALERTS_SIX_HOUR_GATE", "true")
         alarm = {
             'pid': 1,
             'pn': 'dev-1',
