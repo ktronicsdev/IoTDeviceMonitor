@@ -156,12 +156,12 @@ def triage_alarms(alarms, state, platform=None, utc_now=None):
                 'desc', alarm.get('warnMsg', '')))
             record = alarm_triage.normalize(
                 triage_input, vendor, ALARM_TRIAGE_CONFIG)
-            record['class'] = alarm_triage.classify(
-                record['message'], ALARM_TRIAGE_CONFIG)
             allowed, reason = alarm_triage.is_actionable(
                 record, utc_now, ALARM_TRIAGE_CONFIG)
         except (KeyError, TypeError, ValueError) as error:
-            allowed, reason = False, f'could not triage alarm: {error}'
+            reason = f'could not triage alarm; passing through: {error}'
+            print(f'Warning: {reason}', file=sys.stderr)
+            allowed = True
             record = {'class': 'UNKNOWN', 'started_at_utc': utc_now}
 
         if allowed:
