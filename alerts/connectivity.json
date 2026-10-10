@@ -1,8 +1,8 @@
 {
   "stale_days": 3,
   "counts": {
-    "reporting": 15,
-    "link_down": 8,
+    "reporting": 14,
+    "link_down": 9,
     "excluded": 0,
     "monitored": 23
   },
@@ -12,10 +12,10 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 0,
+      "days_stale": 1,
       "days_since_data": 0,
       "last_nonzero_date": "2026-10-09",
-      "last_data_date": "2026-10-09",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     },
     {
@@ -23,10 +23,10 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 0,
+      "days_stale": 1,
       "days_since_data": 0,
       "last_nonzero_date": "2026-10-09",
-      "last_data_date": "2026-10-09",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     },
     {
@@ -36,19 +36,8 @@
       "link_down": false,
       "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-09",
-      "last_data_date": "2026-10-09",
-      "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "gayan-imh-imbulgoda-3kw",
-      "kind": "reporting",
-      "meaning": "reporting normally",
-      "link_down": false,
-      "days_stale": 2,
-      "days_since_data": 0,
-      "last_nonzero_date": "2026-10-07",
-      "last_data_date": "2026-10-09",
+      "last_nonzero_date": "2026-10-10",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     },
     {
@@ -58,8 +47,8 @@
       "link_down": false,
       "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-09",
-      "last_data_date": "2026-10-09",
+      "last_nonzero_date": "2026-10-10",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     },
     {
@@ -69,8 +58,8 @@
       "link_down": false,
       "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-09",
-      "last_data_date": "2026-10-09",
+      "last_nonzero_date": "2026-10-10",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     },
     {
@@ -80,8 +69,8 @@
       "link_down": false,
       "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-09",
-      "last_data_date": "2026-10-09",
+      "last_nonzero_date": "2026-10-10",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     },
     {
@@ -91,8 +80,8 @@
       "link_down": false,
       "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-09",
-      "last_data_date": "2026-10-09",
+      "last_nonzero_date": "2026-10-10",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     },
     {
@@ -102,8 +91,8 @@
       "link_down": false,
       "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-09",
-      "last_data_date": "2026-10-09",
+      "last_nonzero_date": "2026-10-10",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     },
     {
@@ -113,8 +102,8 @@
       "link_down": false,
       "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-09",
-      "last_data_date": "2026-10-09",
+      "last_nonzero_date": "2026-10-10",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     },
     {
@@ -124,8 +113,8 @@
       "link_down": false,
       "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-09",
-      "last_data_date": "2026-10-09",
+      "last_nonzero_date": "2026-10-10",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     },
     {
@@ -135,8 +124,8 @@
       "link_down": false,
       "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-09",
-      "last_data_date": "2026-10-09",
+      "last_nonzero_date": "2026-10-10",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     },
     {
@@ -146,8 +135,8 @@
       "link_down": false,
       "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-09",
-      "last_data_date": "2026-10-09",
+      "last_nonzero_date": "2026-10-10",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     },
     {
@@ -155,10 +144,10 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 0,
+      "days_stale": 1,
       "days_since_data": 0,
       "last_nonzero_date": "2026-10-09",
-      "last_data_date": "2026-10-09",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     },
     {
@@ -168,8 +157,8 @@
       "link_down": false,
       "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-09",
-      "last_data_date": "2026-10-09",
+      "last_nonzero_date": "2026-10-10",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     }
   ],
@@ -179,10 +168,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 100,
+      "days_stale": 101,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-10-09",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     },
     {
@@ -190,10 +179,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 100,
+      "days_stale": 101,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-10-09",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     },
     {
@@ -201,10 +190,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 100,
+      "days_stale": 101,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-10-09",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     },
     {
@@ -212,10 +201,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 100,
+      "days_stale": 101,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-10-09",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     },
     {
@@ -223,10 +212,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 100,
+      "days_stale": 101,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-10-09",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     },
     {
@@ -234,10 +223,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 100,
+      "days_stale": 101,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-10-09",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     },
     {
@@ -245,10 +234,10 @@
       "kind": "zeros_only",
       "meaning": "rows still arriving but every reading is 0.0000 kWh",
       "link_down": true,
-      "days_stale": 87,
+      "days_stale": 88,
       "days_since_data": 0,
       "last_nonzero_date": "2026-07-14",
-      "last_data_date": "2026-10-09",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     },
     {
@@ -256,15 +245,28 @@
       "kind": "zeros_only",
       "meaning": "rows still arriving but every reading is 0.0000 kWh",
       "link_down": true,
-      "days_stale": 18,
+      "days_stale": 19,
       "days_since_data": 0,
       "last_nonzero_date": "2026-09-21",
-      "last_data_date": "2026-10-09",
+      "last_data_date": "2026-10-10",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "gayan-imh-imbulgoda-3kw",
+      "kind": "zeros_only",
+      "meaning": "rows still arriving but every reading is 0.0000 kWh",
+      "link_down": true,
+      "days_stale": 3,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-10-07",
+      "last_data_date": "2026-10-10",
       "stale_days_threshold": 3
     }
   ],
   "excluded": [],
-  "generated_at": "2026-10-09T22:55:37.830633Z",
+  "generated_at": "2026-10-10T02:00:02.022257Z",
   "fleet_wide_outage": false,
-  "alerting_now": []
+  "alerting_now": [
+    "gayan-imh-imbulgoda-3kw"
+  ]
 }
