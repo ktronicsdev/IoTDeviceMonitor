@@ -264,9 +264,7 @@
     }
   ],
   "excluded": [],
-  "generated_at": "2026-10-10T13:09:10.683375Z",
+  "generated_at": "2026-10-10T16:03:23.707269Z",
   "fleet_wide_outage": false,
-  "alerting_now": [
-    "gayan-imh-imbulgoda-3kw"
-  ]
+  "alerting_now": []
 }
