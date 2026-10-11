@@ -105,6 +105,7 @@ def test_a_vendor_code_outranks_the_message_text(monkeypatch):
     must win.
     """
     utc_now = datetime(2026, 10, 8, 6, 0, tzinfo=timezone.utc)
+    monkeypatch.setenv("KT_FEATURE_ALERTS_SIX_HOUR_GATE", "true")
 
     config = copy.deepcopy(gda.ALARM_TRIAGE_CONFIG)
     config.setdefault("vendor_codes", {})["shinemonitor"] = {"9001": "HARDWARE"}

@@ -41,17 +41,12 @@ fi
 
 echo "✓ Authenticated successfully (token: ${DM_TOKEN:0:8}...)"
 
-# Step 2: Fetch ALL alarms using shared API call function
-echo "[2/3] Fetching ALL device alarms (TESTING MODE)..."
+# Step 2: Fetch open alarms using the shared API call function
+echo "[2/3] Fetching open device alarms..."
 
 # Try multiple API endpoints for device alarms (DessMonitor API discovery)
 # Try 1: queryPlantAlert (plant-level alarm endpoint)
-alarms_response=$(dessmonitor_api_call "queryPlantAlert" "date=" || true)
-
-# DEBUG: Show raw API response to diagnose failures
-echo "DEBUG: Raw API response (queryPlantAlert):"
-echo "$alarms_response"
-echo ""
+alarms_response=$(dessmonitor_api_call "queryPlantAlert" "status=0" || true)
 
 err=$(echo "$alarms_response" | json_blob_get_first "err" || echo "unknown")
 
@@ -60,11 +55,7 @@ if [ "$err" != "0" ]; then
   echo "  → queryPlantAlert failed (err: ${err}), trying queryDeviceWarning..."
 
   # Try 2: webQueryPlantsWarning (same as ShineMonitor)
-  alarms_response=$(dessmonitor_api_call "webQueryPlantsWarning" "date=" || true)
-
-  echo "DEBUG: Raw API response (webQueryPlantsWarning):"
-  echo "$alarms_response"
-  echo ""
+  alarms_response=$(dessmonitor_api_call "webQueryPlantsWarning" "status=0" || true)
 
   err=$(echo "$alarms_response" | json_blob_get_first "err" || echo "unknown")
 fi
@@ -84,6 +75,17 @@ if [ "$err" != "0" ]; then
   exit 1
 fi
 
+# Keep the persisted response limited to open alarms even if the API ignores
+# the status parameter.
+alarms_response=$(printf '%s' "$alarms_response" | jq -c '
+  if (.dat | type) == "array" then
+    .dat = [.dat[] | select(.status == false or .status == 0 or .status == "0" or .status == "false")]
+  elif (.dat | type) == "object" and (.dat.warning | type) == "array" then
+    .dat.warning = [.dat.warning[] | select(.status == false or .status == 0 or .status == "0" or .status == "false")]
+    | .dat.total = (.dat.warning | length)
+  else .
+  end')
+
 # Step 3: Save response to file
 echo "[3/3] Saving alarms to ${OUTPUT_FILE}..."
 mkdir -p "$(dirname "$OUTPUT_FILE")"
@@ -97,9 +99,9 @@ if echo "$alarms_response" | grep -q '"warning":\['; then
   # Extract alarm count from "total" field if present
   total=$(echo "$alarms_response" | grep -o '"total":[0-9]*' | head -1 | cut -d':' -f2)
   if [ -n "$total" ]; then
-    echo "✓ Found ${total} alarms (TESTING MODE - includes HANDLED) - saved to ${OUTPUT_FILE}"
+    echo "✓ Found ${total} open alarms - saved to ${OUTPUT_FILE}"
   else
-    echo "✓ Found alarms (TESTING MODE - includes HANDLED) - saved to ${OUTPUT_FILE}"
+    echo "✓ Found open alarms - saved to ${OUTPUT_FILE}"
   fi
 else
   echo "✓ No alarms found"

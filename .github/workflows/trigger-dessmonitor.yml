@@ -6,8 +6,9 @@ name: DessMonitor Daily Monitor
 # Trigger: test SSH push 2026-01-19
 
 on:
-  # 6x daily scheduled runs (every 4 hours, offset by 30 min from ShineMonitor)
+  # Hourly alarm polling plus the existing 4-hour CSV schedules.
   schedule:
+    - cron: "0 * * * *"
     - cron: "0 3 * * *"
     - cron: "0 7 * * *"
     - cron: "0 11 * * *"
@@ -74,6 +75,7 @@ jobs:
           sudo apt-get update && sudo apt-get install -y jq
 
       - name: Run DessMonitor monthly fetch
+        if: github.event_name != 'schedule' || github.event.schedule != '0 * * * *'
         shell: bash
         run: |
           set -euo pipefail
@@ -108,6 +110,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Run DessMonitor yearly fetch
+        if: github.event_name != 'schedule' || github.event.schedule != '0 * * * *'
         shell: bash
         run: |
           set -euo pipefail

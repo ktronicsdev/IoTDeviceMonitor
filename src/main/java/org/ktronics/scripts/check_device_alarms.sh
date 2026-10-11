@@ -44,18 +44,11 @@ fi
 
 echo "✓ Authenticated successfully (token: ${SM_TOKEN:0:8}...)"
 
-# Step 2: Fetch ALL alarms using shared API call function
-echo "[2/3] Fetching ALL device alarms (TESTING MODE)..."
+# Step 2: Fetch open alarms using the API status filter
+echo "[2/3] Fetching open device alarms..."
 
-# API parameters for ALL alarms (TESTING MODE)
-# status=0 means UNHANDLED, status=1 means HANDLED
-# For testing, we fetch ALL alarms (no status filter) to test email feature
-alarms_response=$(shinemonitor_api_call "webQueryPlantsWarning" "date=")
-
-# DEBUG: Show raw API response to diagnose failures
-echo "DEBUG: Raw API response:"
-echo "$alarms_response"
-echo ""
+# status=0 means UNHANDLED. Do not include a test date or dump the payload.
+alarms_response=$(shinemonitor_api_call "webQueryPlantsWarning" "status=0")
 
 err=$(echo "$alarms_response" | json_blob_get_first "err")
 
@@ -74,6 +67,17 @@ if [ "$err" != "0" ]; then
   exit 1
 fi
 
+# Keep the persisted response limited to open alarms even if the API ignores
+# the status parameter.
+alarms_response=$(printf '%s' "$alarms_response" | jq -c '
+  if (.dat | type) == "array" then
+    .dat = [.dat[] | select(.status == false or .status == 0 or .status == "0" or .status == "false")]
+  elif (.dat | type) == "object" and (.dat.warning | type) == "array" then
+    .dat.warning = [.dat.warning[] | select(.status == false or .status == 0 or .status == "0" or .status == "false")]
+    | .dat.total = (.dat.warning | length)
+  else .
+  end')
+
 # Step 3: Save response to file
 echo "[3/3] Saving alarms to ${OUTPUT_FILE}..."
 mkdir -p "$(dirname "$OUTPUT_FILE")"
@@ -87,9 +91,9 @@ if echo "$alarms_response" | grep -q '"warning":\['; then
   # Extract alarm count from "total" field if present
   total=$(echo "$alarms_response" | grep -o '"total":[0-9]*' | head -1 | cut -d':' -f2)
   if [ -n "$total" ]; then
-    echo "✓ Found ${total} alarms (TESTING MODE - includes HANDLED) - saved to ${OUTPUT_FILE}"
+    echo "✓ Found ${total} open alarms - saved to ${OUTPUT_FILE}"
   else
-    echo "✓ Found alarms (TESTING MODE - includes HANDLED) - saved to ${OUTPUT_FILE}"
+    echo "✓ Found open alarms - saved to ${OUTPUT_FILE}"
   fi
 else
   echo "✓ No alarms found"

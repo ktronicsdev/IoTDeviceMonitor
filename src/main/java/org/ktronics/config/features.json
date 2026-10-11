@@ -32,6 +32,7 @@
     "production_red_3day": true,
     "production_orange_3month": false,
 
-    "connectivity_link_down": true
+    "connectivity_link_down": true,
+    "six_hour_gate": false
   }
 }
