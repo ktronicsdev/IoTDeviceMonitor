@@ -63,7 +63,7 @@ def _alarm(**overrides):
     return alarm
 
 
-def test_a_triage_error_still_lets_the_alarm_through():
+def test_a_triage_error_still_lets_the_alarm_through(monkeypatch):
     """
     If our own code throws while judging an alarm, the alarm must still be sent.
 
@@ -77,6 +77,10 @@ def test_a_triage_error_still_lets_the_alarm_through():
     deserves that treatment more, not less: an unrecognised message is at least
     data we managed to read.
     """
+    # The gate ships off, so a test that means to exercise it must say so —
+    # otherwise triage never runs and this passes without testing anything.
+    monkeypatch.setenv("KT_FEATURE_ALERTS_SIX_HOUR_GATE", "true")
+
     utc_now = datetime(2026, 10, 8, 6, 0, tzinfo=timezone.utc)
     # An unparseable timestamp makes normalize() raise ValueError.
     alarm = _alarm(gts="not a timestamp")
@@ -104,6 +108,9 @@ def test_a_vendor_code_outranks_the_message_text(monkeypatch):
     Here the message says battery (SOC) and the code says hardware. Hardware
     must win.
     """
+    # As above: the gate ships off, so switch it on to exercise it.
+    monkeypatch.setenv("KT_FEATURE_ALERTS_SIX_HOUR_GATE", "true")
+
     utc_now = datetime(2026, 10, 8, 6, 0, tzinfo=timezone.utc)
     monkeypatch.setenv("KT_FEATURE_ALERTS_SIX_HOUR_GATE", "true")
 
