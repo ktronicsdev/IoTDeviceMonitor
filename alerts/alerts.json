@@ -1,34 +1,6 @@
 {
-  "generated_at": "2026-10-11T01:14:16.247493Z",
-  "alerts": [
-    {
-      "severity": "RED",
-      "plant_key": "gayan-imh-imbulgoda-3kw",
-      "today": "2026-10-11",
-      "baseline_avg_kwh_per_day": 5.45,
-      "threshold_kwh_per_day": 1.09,
-      "rule": "< 20.0% baseline for 3 consecutive days",
-      "window": [
-        "2026-10-09",
-        "2026-10-10",
-        "2026-10-11"
-      ],
-      "details": [
-        {
-          "date": "2026-10-09",
-          "kwh": 0.0
-        },
-        {
-          "date": "2026-10-10",
-          "kwh": 0.0
-        },
-        {
-          "date": "2026-10-11",
-          "kwh": 0.1
-        }
-      ]
-    }
-  ],
+  "generated_at": "2026-10-11T09:21:27.883680Z",
+  "alerts": [],
   "suppressed": [],
   "ignored": [
     {
