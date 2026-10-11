@@ -6,12 +6,12 @@
 ║                                                                              ║
 ================================================================================
 
-Report Time: 2026-10-10 22:03:54 UTC
+Report Time: 2026-10-11 01:14:16 UTC
 
 ┌─ FLEET STATUS ───────────────────────────────────────────────────────────────┐
 │
-│ Plants reporting:         14
-│ Plants with a dead link:   9   (no data for 3+ days — connectivity, not a fault)
+│ Plants reporting:         15
+│ Plants with a dead link:   8   (no data for 3+ days — connectivity, not a fault)
 │ Plants excluded:           0   (deliberately off the platform)
 │ Plants monitored:         23   (reporting + dead link)
 │
@@ -19,7 +19,7 @@ Report Time: 2026-10-10 22:03:54 UTC
 
 ┌─ STATUS ─────────────────────────────────────────────────────────────────────┐
 │
-│ 9 plant(s) still have a dead data link, but every one has already
+│ 8 plant(s) still have a dead data link, but every one has already
 │ been reported 3 times and is now auto-ignored until it reports again.
 │
 └──────────────────────────────────────────────────────────────────────────────┘

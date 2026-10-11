@@ -2,14 +2,47 @@
 ║                                                                              ║
 ║                      [SHINEMONITOR] PRODUCTION MONITOR                       ║
 ║                                                                              ║
-║                          ✓ ALL SYSTEMS OPERATIONAL                           ║
+║                            ⚠ ATTENTION REQUIRED ⚠                            ║
 ║                                                                              ║
-║                          Status: NO ALERTS DETECTED                          ║
+║                        Status: 1 CRITICAL, 0 WARNING                         ║
 ║                                                                              ║
-║               Date: 2026-10-10  |  Total Plants Monitored: 25                ║
-║                Reporting: 16  |  Dead link: 9  |  Excluded: 0                ║
+║               Date: 2026-10-11  |  Total Plants Monitored: 25                ║
+║                Reporting: 17  |  Dead link: 8  |  Excluded: 0                ║
 ║                                                                              ║
 ================================================================================
+
+┌─ ALERT SUMMARY ──────────────────────────────────────────────────────────────┐
+│
+│ 🔴 [RED] gayan-imh-imbulgoda-3kw
+│
+│   Issue: Production dropped 98.2% below normal
+│   Normal: 5.45 kWh/day  →  Current: 0.10 kWh/day
+│   Rule: < 20.0% baseline for 3 consecutive days
+│
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ RECOMMENDED ACTIONS ────────────────────────────────────────────────────────┐
+│
+│ gayan-imh-imbulgoda-3kw:
+│   1. Check inverter status and error codes
+│   2. Verify grid connection and breaker status
+│   3. Inspect panels for shading or physical damage
+│   4. Contact maintenance team if issue persists
+│
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ DETAILED BREAKDOWN ─────────────────────────────────────────────────────────┐
+│
+│ [RED] gayan-imh-imbulgoda-3kw
+│
+│   Baseline (avg/day): 5.4500 kWh
+│   Alert Threshold: < 1.0900 kWh/day
+│   Recent Production:
+│     2026-10-09: 0.0000 kWh (0.0% of baseline)
+│     2026-10-10: 0.0000 kWh (0.0% of baseline)
+│     2026-10-11: 0.1000 kWh (1.8% of baseline)
+│
+└──────────────────────────────────────────────────────────────────────────────┘
 
 ┌─ 📡 DATA LINK DOWN (CONNECTIVITY — NOT A PRODUCTION FAULT) ──────────────────┐
 │
@@ -19,31 +52,28 @@
 │ Production cannot be judged either way until the link is restored.
 │
 │   • abeetha-plant
-│     Last reading: never (101 days ago)
+│     Last reading: never (102 days ago)
 │     Symptom: no non-zero reading has ever been recorded
 │   • anuradha-gajanayaka-plant
-│     Last reading: never (101 days ago)
+│     Last reading: never (102 days ago)
 │     Symptom: no non-zero reading has ever been recorded
 │   • ganishka-ganishka-home-3kw
-│     Last reading: never (101 days ago)
+│     Last reading: never (102 days ago)
 │     Symptom: no non-zero reading has ever been recorded
 │   • mifanza-mifanza-solar-system
-│     Last reading: never (101 days ago)
+│     Last reading: never (102 days ago)
 │     Symptom: no non-zero reading has ever been recorded
 │   • samurdi-kohuwala
-│     Last reading: never (101 days ago)
+│     Last reading: never (102 days ago)
 │     Symptom: no non-zero reading has ever been recorded
 │   • upulatheja-3kw-pro-kadawath
-│     Last reading: never (101 days ago)
+│     Last reading: never (102 days ago)
 │     Symptom: no non-zero reading has ever been recorded
 │   • lahiru-ryan-lahiru-plant
-│     Last reading: 2026-07-14 (88 days ago)
+│     Last reading: 2026-07-14 (89 days ago)
 │     Symptom: rows still arriving but every reading is 0.0000 kWh
 │   • chamila-chamila-119h
-│     Last reading: 2026-09-21 (19 days ago)
-│     Symptom: rows still arriving but every reading is 0.0000 kWh
-│   • gayan-imh-imbulgoda-3kw
-│     Last reading: 2026-10-07 (3 days ago)
+│     Last reading: 2026-09-21 (20 days ago)
 │     Symptom: rows still arriving but every reading is 0.0000 kWh
 │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -53,29 +83,25 @@
 │ IGNORED PLANTS (No production for extended period):
 │   • abeetha-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│     Link: DATA LINK DOWN for 101 days — connectivity, not a production fault
+│     Link: DATA LINK DOWN for 102 days — connectivity, not a production fault
 │   • anuradha-gajanayaka-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│     Link: DATA LINK DOWN for 101 days — connectivity, not a production fault
+│     Link: DATA LINK DOWN for 102 days — connectivity, not a production fault
 │   • ganishka-ganishka-home-3kw
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│     Link: DATA LINK DOWN for 101 days — connectivity, not a production fault
+│     Link: DATA LINK DOWN for 102 days — connectivity, not a production fault
 │   • lahiru-ryan-lahiru-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│     Link: DATA LINK DOWN for 88 days — connectivity, not a production fault
+│     Link: DATA LINK DOWN for 89 days — connectivity, not a production fault
 │   • mifanza-mifanza-solar-system
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│     Link: DATA LINK DOWN for 101 days — connectivity, not a production fault
+│     Link: DATA LINK DOWN for 102 days — connectivity, not a production fault
 │   • samurdi-kohuwala
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│     Link: DATA LINK DOWN for 101 days — connectivity, not a production fault
+│     Link: DATA LINK DOWN for 102 days — connectivity, not a production fault
 │   • upulatheja-3kw-pro-kadawath
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│     Link: DATA LINK DOWN for 101 days — connectivity, not a production fault
-│
-│ SUPPRESSED ALERTS (Already notified, zero production continues):
-│   • gayan-imh-imbulgoda-3kw
-│     Reason: reclassified as CONNECTIVITY: no data for 3 days (rows still arriving but every reading is 0.0000 kWh) — data link down, NOT a production fault
+│     Link: DATA LINK DOWN for 102 days — connectivity, not a production fault
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
