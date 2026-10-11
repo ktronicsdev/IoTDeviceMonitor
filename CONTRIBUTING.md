@@ -29,6 +29,21 @@ three; CI has the real file and checks them properly.
 
 Anything *else* red is yours.
 
+### Reading a failed build
+
+A "❌ Build FAILED" email does not always mean the code is broken. These
+workflows have two jobs, and they fail for very different reasons:
+
+- **`tests` failed** — a real problem. Something you changed broke a test, or
+  a test that was passing has started failing. Read it.
+- **`run` failed** — data collection. Usually an API that timed out, a vendor
+  portal having a bad day, or two workflows racing each other to commit
+  (see issue #18). It recovers on the next cycle by itself.
+
+So check *which job* went red before assuming it was you. The one case worth
+reacting to immediately is `tests` red on `main`, because that means something
+reached the live branch broken.
+
 ---
 
 ## Never push to `main`
