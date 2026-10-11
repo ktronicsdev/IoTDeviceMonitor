@@ -21,7 +21,7 @@ from collections import defaultdict
 
 import exclusions
 from config import CREDENTIALS_PATH
-from features import is_enabled
+from features import is_enabled, mode_of
 
 
 TRIAGE_CONFIG_PATH = Path(__file__).resolve(
@@ -151,7 +151,9 @@ def triage_alarms(alarms, state, platform=None, utc_now=None):
 
     for alarm in alarms:
         alarm_key = create_alarm_key(alarm)
-        if is_enabled('alerts.six_hour_gate', default=False):
+        mode = mode_of('alerts.six_hour_gate', default='off')
+        would_hold = False
+        if mode != 'off':
             try:
                 triage_input = dict(alarm)
                 triage_input.setdefault('message', alarm.get(
@@ -165,13 +167,23 @@ def triage_alarms(alarms, state, platform=None, utc_now=None):
                 print(f'Warning: {reason}', file=sys.stderr)
                 allowed = True
                 record = {'class': 'UNKNOWN', 'started_at_utc': utc_now}
+
+            would_hold = not allowed
+            if mode == 'dry_run':
+                # Decide and record, but act on nothing. This is how we find
+                # out what the gate would silence while it silences nothing.
+                if would_hold:
+                    reason = f'DRY RUN would hold: {reason}'
+                allowed = True
         else:
             allowed = True
             reason = 'six_hour_gate disabled'
 
-        if allowed:
+        if allowed and not would_hold:
             actionable.append(alarm)
             continue
+        if allowed:
+            actionable.append(alarm)
 
         alarm_state = state.setdefault(alarm_key, {
             'send_count': 0,

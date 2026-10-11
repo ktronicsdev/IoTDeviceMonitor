@@ -31,6 +31,7 @@ FEATURES_PATH = Path(__file__).resolve().parent.parent / "config" / "features.js
 
 _TRUE = {"1", "true", "yes", "on"}
 _FALSE = {"0", "false", "no", "off"}
+_MODES = {"off", "dry_run", "on"}
 
 _cache = None
 
@@ -78,6 +79,51 @@ def is_enabled(path, default=True):
         node = node[part]
 
     return bool(node) if isinstance(node, bool) else default
+
+
+def mode_of(path, default="off"):
+    """
+    The three-state mode of a flag: "off", "dry_run" or "on".
+
+    Most flags here are booleans and `is_enabled` is the right tool for them.
+    A flag that *suppresses* something wants a third state: decide and record,
+    but do not act — so its behaviour can be watched against live traffic
+    before it is trusted. See `alerts.six_hour_gate`.
+
+    A boolean, or a boolean-ish override such as "true"/"yes"/"1", maps to
+    "on" or "off". That matters: features.json carried `true` before this
+    existed, and a stale branch may still, so the old spelling must keep its
+    old meaning rather than falling through to the default.
+
+    Order of precedence, as `is_enabled`: environment override, then
+    features.json, then `default`.
+    """
+    raw = None
+
+    override = os.environ.get(env_name(path))
+    if override is not None:
+        raw = override.strip().lower()
+    else:
+        node = _load()
+        for part in path.split("."):
+            if not isinstance(node, dict) or part not in node:
+                node = None
+                break
+            node = node[part]
+        if isinstance(node, bool):
+            return "on" if node else "off"
+        if isinstance(node, str):
+            raw = node.strip().lower()
+
+    if raw is None:
+        return default
+    if raw in _MODES:          # checked first: "on"/"off" are also in _TRUE/_FALSE
+        return raw
+    if raw in _TRUE:
+        return "on"
+    if raw in _FALSE:
+        return "off"
+    return default             # unparseable is ignored rather than guessed at
 
 
 def all_flags():
