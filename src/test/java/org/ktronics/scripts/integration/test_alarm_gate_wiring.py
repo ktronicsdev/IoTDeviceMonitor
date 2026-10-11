@@ -138,18 +138,18 @@ def test_a_vendor_code_outranks_the_message_text(monkeypatch):
     )
 
 
-def test_the_gate_is_behind_a_flag_that_is_off_by_default():
+def test_the_gate_is_behind_a_flag():
     """
     Every other channel that can go quiet has a flag; so must this one.
 
     The gate decides which faults a human is told about. If it is wrong in the
     quiet direction it does not announce itself — the symptom is an inbox that
-    looks healthy. The flag is what lets us merge this, watch one full poll
-    cycle against live traffic, and turn it on deliberately rather than
-    discovering its behaviour in production.
+    looks healthy. The flag is the off switch for when that happens.
 
-    Off by default for the same reason `alerts.production_orange_3month` is:
-    a channel ships dark and is switched on once it has been seen to behave.
+    This asserted `is False` until 2026-10-11, because the gate had to merge
+    inert. It was then switched on deliberately, so the assertion is now only
+    that the flag exists and is readable — whether it is on is an operational
+    decision, not something a test should pin.
     """
     flags = json.loads(_features_json().read_text(encoding="utf-8"))
 
@@ -157,9 +157,8 @@ def test_the_gate_is_behind_a_flag_that_is_off_by_default():
         "add `alerts.six_hour_gate` to features.json — the gate suppresses "
         "alarms, and every suppressing channel in this repo carries a flag"
     )
-    assert flags["alerts"]["six_hour_gate"] is False, (
-        "`alerts.six_hour_gate` must ship as false, so the gate is merged but "
-        "inert until it has been watched for a cycle"
+    assert isinstance(flags["alerts"]["six_hour_gate"], bool), (
+        "`alerts.six_hour_gate` must be a boolean the workflows can read"
     )
 
 
