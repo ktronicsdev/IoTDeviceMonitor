@@ -91,6 +91,23 @@ live traffic for a cycle, and is switched on deliberately. Pass
 `default=False` as well, so the behaviour is off even if the flag is missing
 from the file.
 
+**A flag that suppresses something wants three states, not two.** Use
+`mode_of()` instead of `is_enabled()`:
+
+```python
+from features import mode_of
+
+mode = mode_of('alerts.six_hour_gate', default='off')   # off | dry_run | on
+```
+
+`dry_run` is the one that matters: the rule runs and records what it *would*
+have done, and acts on nothing. That is how you find out what a filter will
+silence before it silences anything — which the six-hour gate did not have
+when it went live, so nobody could answer that question in advance.
+
+A legacy `true`/`false` in the file still means `on`/`off`, so promoting a
+boolean flag to three states breaks nothing.
+
 **Why:** a channel that wrongly goes loud is irritating and obvious. A channel
 that wrongly goes quiet is invisible — the symptom is an inbox that looks
 healthy, and you can lose real faults for months before anyone notices. The flag

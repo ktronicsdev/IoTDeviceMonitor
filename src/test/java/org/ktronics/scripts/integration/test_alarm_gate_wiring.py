@@ -157,8 +157,10 @@ def test_the_gate_is_behind_a_flag():
         "add `alerts.six_hour_gate` to features.json — the gate suppresses "
         "alarms, and every suppressing channel in this repo carries a flag"
     )
-    assert isinstance(flags["alerts"]["six_hour_gate"], bool), (
-        "`alerts.six_hour_gate` must be a boolean the workflows can read"
+    value = flags["alerts"]["six_hour_gate"]
+    assert value in (True, False, "off", "dry_run", "on"), (
+        "`alerts.six_hour_gate` must be one of the three modes, or a legacy "
+        f"boolean meaning on/off. Got: {value!r}"
     )
 
 
@@ -188,3 +190,99 @@ def test_the_gate_does_nothing_while_its_flag_is_off(monkeypatch):
         "through unchanged — a flag that does not actually disable the "
         "behaviour is worse than not having one"
     )
+
+
+# --- #20: the gate has three modes, not two -------------------------------
+#
+# `off` and `on` are what the boolean already meant. `dry_run` is the one that
+# did not exist when the gate was switched on for live traffic on 2026-10-11,
+# and its absence is why nobody could say in advance which of 142 alarms would
+# be silenced. It decides and records, and suppresses nothing.
+
+
+def _held_alarm(utc_now):
+    """An alarm one hour old in plant-local terms — the gate would hold it."""
+    started_local = utc_now + PLANT_OFFSET - timedelta(hours=1)
+    return _alarm(gts=started_local.strftime("%Y-%m-%d %H:%M:%S"))
+
+
+def test_dry_run_records_what_it_would_hold_but_holds_nothing(monkeypatch):
+    """
+    The whole point: find out what the gate would silence, while it silences
+    nothing. The alarm still reaches the admin, and state says it would not
+    have.
+    """
+    monkeypatch.setenv("KT_FEATURE_ALERTS_SIX_HOUR_GATE", "dry_run")
+
+    utc_now = datetime(2026, 10, 12, 6, 0, tzinfo=timezone.utc)
+    alarm = _held_alarm(utc_now)
+    state = {}
+
+    actionable = gda.triage_alarms(
+        [alarm], state, platform="shinemonitor", utc_now=utc_now)
+
+    assert alarm in actionable, (
+        "dry_run must suppress nothing — that is the only reason it is safe "
+        "to turn on without watching it first"
+    )
+
+    key = gda.create_alarm_key(alarm)
+    assert key in state, "dry_run must still record its decision in state"
+    reason = state[key].get("suppressed_reason", "")
+    assert reason.startswith("DRY RUN"), (
+        "a dry-run decision must be marked as one, so nobody reads the state "
+        f"file and thinks the alarm was actually held. Got: {reason!r}"
+    )
+
+
+def test_mode_on_still_holds(monkeypatch):
+    """`on` keeps doing exactly what `true` did."""
+    monkeypatch.setenv("KT_FEATURE_ALERTS_SIX_HOUR_GATE", "on")
+
+    utc_now = datetime(2026, 10, 12, 6, 0, tzinfo=timezone.utc)
+    alarm = _held_alarm(utc_now)
+    state = {}
+
+    actionable = gda.triage_alarms(
+        [alarm], state, platform="shinemonitor", utc_now=utc_now)
+
+    assert alarm not in actionable, "`on` must hold what the gate decides to hold"
+    assert not state[gda.create_alarm_key(alarm)][
+        "suppressed_reason"].startswith("DRY RUN")
+
+
+def test_mode_off_holds_nothing_and_records_nothing(monkeypatch):
+    """`off` keeps doing exactly what `false` did: the gate never runs."""
+    monkeypatch.setenv("KT_FEATURE_ALERTS_SIX_HOUR_GATE", "off")
+
+    utc_now = datetime(2026, 10, 12, 6, 0, tzinfo=timezone.utc)
+    alarm = _held_alarm(utc_now)
+    state = {}
+
+    actionable = gda.triage_alarms(
+        [alarm], state, platform="shinemonitor", utc_now=utc_now)
+
+    assert alarm in actionable
+
+
+def test_a_legacy_boolean_still_means_what_it_used_to(monkeypatch):
+    """
+    Migration guard. features.json carried `true`/`false` before this change,
+    and a stale branch or an old override may still. `true` must mean `on` and
+    `false` must mean `off` — never silently fall through to a default, which
+    for a suppressing feature would be the dangerous kind of quiet.
+    """
+    utc_now = datetime(2026, 10, 12, 6, 0, tzinfo=timezone.utc)
+
+    monkeypatch.setenv("KT_FEATURE_ALERTS_SIX_HOUR_GATE", "true")
+    held_state = {}
+    held = gda.triage_alarms([_held_alarm(utc_now)], held_state,
+                             platform="shinemonitor", utc_now=utc_now)
+    assert held == [], "a legacy `true` must still mean the gate is on"
+
+    monkeypatch.setenv("KT_FEATURE_ALERTS_SIX_HOUR_GATE", "false")
+    passed_state = {}
+    alarm = _held_alarm(utc_now)
+    passed = gda.triage_alarms([alarm], passed_state,
+                               platform="shinemonitor", utc_now=utc_now)
+    assert alarm in passed, "a legacy `false` must still mean the gate is off"
