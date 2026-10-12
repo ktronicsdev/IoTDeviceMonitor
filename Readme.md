@@ -246,8 +246,8 @@ Monitors device-level warnings from ShineMonitor API and sends targeted notifica
 
 - Admin device alarms: Sent to <ktronicssolar@gmail.com>
 - Customer device alarms: Sent to individual customers (mapped by plant ownership)
-- 3-send rule: Each alarm sent 3 times (every 4 hours), then auto-ignored
-- 4-hour interval: Prevents spam
+- Six-hour gate: an alarm is mailed only if it is still open 6 hours after it started; comms/offline alarms are never mailed ([design](six-hour-gate/README.md))
+- 3-send rule: once an alarm passes the gate it is sent 3 times, at least 4 hours apart, then auto-ignored
 - State persistence with human-readable fields (customer, plant, message)
 
 **Test Coverage:** 38/38 PASSED (100%) - includes UC4, UC5, UC6, UC7, UC8 tests

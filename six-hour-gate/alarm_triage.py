@@ -138,7 +138,6 @@ def normalize(
         "started_at_utc": started_at,
         "open": _open_flag(raw, vendor_name),
         "customer": str(customer),
-        "plant_tz_offset_minutes": offset,
     }
     vendor_codes = config.get("vendor_codes", {})
     code_map = vendor_codes.get(
@@ -189,31 +188,8 @@ def is_actionable(
     age = current.astimezone(timezone.utc) - \
         started_at.astimezone(timezone.utc)
 
-    if class_config.get("gate") == "daylight":
-        daylight = config["daylight_window_local"]
-        offset = int(record.get(
-            "plant_tz_offset_minutes",
-            config["timezone"].get("plant_tz_offset_minutes_default", 330),
-        ))
-        local_started = started_at.astimezone(
-            timezone(timedelta(minutes=offset)))
-        local_now = current.astimezone(timezone(timedelta(minutes=offset)))
-        daylight_end = daylight["end_hour"]
-        crossed_daylight_end = any(
-            local_started <= datetime.combine(day, datetime.min.time()).replace(
-                hour=daylight_end, tzinfo=local_started.tzinfo
-            ) <= local_now
-            for day_offset in range((local_now.date() - local_started.date()).days + 1)
-            for day in [local_started.date() + timedelta(days=day_offset)]
-        )
-        if not crossed_daylight_end:
-            return False, "SOC alarm has not survived the daylight window"
-    else:
-        dwell_hours = class_config.get(
-            "dwell_hours",
-            class_config.get("fallback_dwell_hours",
-                             config["dwell_hours_default"]),
-        )
-        if age < timedelta(hours=dwell_hours):
-            return False, f"dwell time is less than {dwell_hours} hours"
+    dwell_hours = class_config.get(
+        "dwell_hours", config["dwell_hours_default"])
+    if age < timedelta(hours=dwell_hours):
+        return False, f"dwell time is less than {dwell_hours} hours"
     return True, config.get("escalation_hint", {}).get(alarm_class)
