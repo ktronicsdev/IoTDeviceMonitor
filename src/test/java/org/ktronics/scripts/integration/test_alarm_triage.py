@@ -107,20 +107,23 @@ def test_unknown_uses_default_six_hour_dwell() -> None:
     )
 
 
-def test_r5_soc_must_survive_daylight_window() -> None:
+def test_r6_battery_alarm_under_six_hours_is_suppressed() -> None:
     alarm = record("low battery", datetime(
         2026, 9, 28, 3, 30, tzinfo=UTC), "SOC")
 
     assert alarm_triage.is_actionable(alarm, datetime(
-        2026, 9, 28, 9, 30, tzinfo=UTC), CONFIG)[0] is True
+        2026, 9, 28, 9, 29, tzinfo=UTC), CONFIG)[0] is False
 
 
-def test_r5_soc_overnight_alarm_is_suppressed_before_daylight_end() -> None:
+def test_r6_battery_alarm_over_six_hours_is_actionable_even_overnight() -> None:
+    # 22:00 plant-local, judged at 04:01 the next morning. R5 used to hold this
+    # until 15:00; battery alarms are now on the same clock as every other class.
     alarm = record("low battery", datetime(
         2026, 9, 27, 16, 30, tzinfo=UTC), "SOC")
 
     assert alarm_triage.is_actionable(alarm, datetime(
-        2026, 9, 28, 3, 30, tzinfo=UTC), CONFIG)[0] is False
+        2026, 9, 27, 22, 31, tzinfo=UTC), CONFIG) == (
+        True, CONFIG["escalation_hint"]["SOC"])
 
 
 def test_r6_grid_loss_under_six_hours_is_suppressed() -> None:
@@ -171,26 +174,19 @@ def test_unknown_alarm_is_logged(caplog: Any) -> None:
     assert "new vendor fault" in caplog.text
 
 
-def test_soc_clock_uses_configured_fallback_dwell() -> None:
-    clock_config = deepcopy(CONFIG)
-    clock_config["classes"]["SOC"]["gate"] = "clock"
+def test_a_class_can_carry_its_own_dwell_hours() -> None:
+    # The way to quieten one class without a code change: 14 hours outlasts a
+    # 22:00 -> 07:00 overnight battery dip.
+    slow_config = deepcopy(CONFIG)
+    slow_config["classes"]["SOC"]["dwell_hours"] = 14
     alarm = record("low battery", datetime(2026, 9, 28, tzinfo=UTC), "SOC")
 
     assert alarm_triage.is_actionable(
-        alarm, datetime(2026, 9, 28, 13, tzinfo=UTC), clock_config
+        alarm, datetime(2026, 9, 28, 13, tzinfo=UTC), slow_config
     )[0] is False
     assert alarm_triage.is_actionable(
-        alarm, datetime(2026, 9, 28, 14, tzinfo=UTC), clock_config
+        alarm, datetime(2026, 9, 28, 14, tzinfo=UTC), slow_config
     )[0] is True
-
-
-def test_daylight_gate_uses_per_plant_offset() -> None:
-    alarm = record("low battery", datetime(2026, 9, 28, 8, tzinfo=UTC), "SOC")
-    alarm["plant_tz_offset_minutes"] = 0
-
-    assert alarm_triage.is_actionable(
-        alarm, datetime(2026, 9, 28, 14, tzinfo=UTC), CONFIG
-    )[0] is False
 
 
 def test_comms_is_suppressed_at_any_age() -> None:

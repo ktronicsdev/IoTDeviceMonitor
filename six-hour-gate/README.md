@@ -15,8 +15,8 @@ Customer-facing device-alarm mail is a separate, independently flagged channel
   DessMonitor    -->    parse_alarm_files()   -->   [ SIX-HOUR GATE ]   -->  filter_alarms_to_send()
   SolisCloud                                         normalize()             (3x / 4h — unchanged)
   SolaX (gap)                                        open?      R3                  |
-                                                     classify() R5 R6               v
-                                                     dwell()    R1 R2         admin + customer mail
+                                                     classify()                     v
+                                                     dwell()    R1 R2 R6      admin + customer mail
                                                           |
                                               held / suppressed
                                                           v
@@ -65,12 +65,12 @@ those four are `1015 NO-Grid`, a CEB outage that clears itself before anyone rea
 | **R2** | Convert `gts` from **plant-local** (UTC+5:30) before comparing to a UTC runner | A naive `datetime.now() - gts` under-reports age by exactly 5.5 h — the "6-hour" rule would silently behave as **11.5 h**, invisibly. Use `queryPlants -> address.timezone`, same as `check_ph1000.py:486` |
 | **R3** | Count only alarms that are **actually open** — `status` false/0, Solis `state == 1` | **Ship first.** The fetch scripts are still in "TESTING MODE" (`date=`, no status filter), so *resolved* alarms come back. Bolting a dwell gate onto that feed turns every stale fixed alarm into a fresh call-out — worse than today |
 | ~~**R4**~~ | ~~Offline-plant suppression + weekly offline digest~~ — **withdrawn 13 Sep 2026** | Offline is already detected downstream: a dark logger writes `0.0000` rows, so a sustained outage trips the **3-day production-loss RED alert** on the CSV side. The gate needs no digest and no offline-plant rule of its own. *`COMMS` alarms are still never mailed* — that lives in the class map, not as a rule. Number kept vacant so R5/R6 references stay stable |
-| **R5** | `SOC` alarms are measured in **daylight hours** — must survive 09:00–15:00 local still open | 74% of volume. "Battery too low" at 22:00 clears at 07:00 = 9 h; a wall-clock gate would escalate it nightly on every plant forever. A healthy system recharges in that window; one that doesn't has a real fault |
-| **R6** | Grid loss is on the clock like everything else — silent under 6 h | A 2–4 h CEB cut never reaches an inbox. What outlives 6 h is usually a tripped AC input breaker or blown input fuse — our call-out, not the utility's |
+| ~~**R5**~~ | ~~`SOC` alarms are measured in daylight hours — must survive 09:00–15:00 local still open~~ — **withdrawn 12 Oct 2026** | Battery alarms are on the same clock as everything else (R6): one rule to explain, one to test. **The cost is known:** "Battery too low" at 22:00 that clears at 07:00 is 9 h old, so it now mails at about 04:00, on every night a plant does that. Number kept vacant, as with R4 |
+| **R6** | **One clock for every class** — an alarm that outlives 6 h triggers an email; under 6 h it is silent. Grid loss and battery alarms get no special case | A 2–4 h CEB cut never reaches an inbox. What outlives 6 h is usually a tripped AC input breaker or blown input fuse — our call-out, not the utility's |
 
-**R5 cheaper variant:** if the daylight clock is more machinery than you want in v1, set
-`classes.SOC.gate` to `"clock"` with `dwell_hours: 14`. One config line, most of the same
-benefit, at the cost of alerting on a genuinely bad December night.
+**If battery mail gets noisy:** give `classes.SOC` a longer `dwell_hours` — 14 outlasts a
+22:00→07:00 overnight dip. One config line, no code, at the cost of hearing about a
+genuinely bad December night eight hours later.
 
 ## Feature flags
 
@@ -144,14 +144,14 @@ comes back.
 
 ## Class map
 
-Six classes, three gates. Counts are today's state files. `COMMS` is the "ignore offline"
+Six classes, two gates. Counts are today's state files. `COMMS` is the "ignore offline"
 rule from the original brief: never mailed, never digested — if a logger stays dark it
 shows up as a 3-day production-loss alert instead.
 
 | Class | How our fleet words it | Gate | Today |
 |---|---|---|---|
 | `COMMS` | offline · datalogger lost · device disconnected | **never mail** | — |
-| `SOC` | battery voltage too low (57) · Low battery (26) · too high (18) · charger stops, low battery (4) | **daylight** 09–15 | 105 |
+| `SOC` | battery voltage too low (57) · Low battery (26) · too high (18) · charger stops, low battery (4) | **6 h clock** | 105 |
 | `HARDWARE` | bus voltage too low (7) · battery connection open (5) · bus soft start failed (3) · sensor error · voltage class error | **6 h clock** | 17 |
 | `LOAD` | over current protection (9) · overload time out (2) · charger stops, over load (2) · overload | **6 h clock** | 14 |
 | `THERMAL` | radiator over temperature · fan locked (on) · fan locked (off) | **6 h clock** | 3 |
@@ -194,7 +194,7 @@ loggers elsewhere. **SolaX is genuinely unmonitored, and silence from it means n
 | File | Change |
 |---|---|
 | `six-hour-gate/alarm_triage.py` | **new** — `normalize()`, `classify()`, `is_actionable()`. Pure functions, no I/O |
-| `six-hour-gate/config/alarm_triage.json` | **new** — dwell hours per class, COMMS list, daylight window |
+| `six-hour-gate/config/alarm_triage.json` | **new** — dwell hours per class, COMMS list |
 | `generate_device_alarms.py` | one call inserted between `parse_alarm_files()` (L423) and `filter_alarms_to_send()` (L428). Rest untouched |
 | `check_device_alarms.sh`<br>`check_dessmonitor_device_alarms.sh` | drop TESTING MODE, filter to unhandled (R3), and drop the raw-response `DEBUG` dump currently printing every alarm payload into public workflow logs |
 | `state/*_device_alarms_state.json` | add `class`, `started_at_utc`, `suppressed_reason` — so *"why wasn't I told about this?"* is answerable from state alone |
@@ -209,8 +209,7 @@ new ones, named for the rule they defend:
 - **R2** — plant-local `gts` against a UTC runner yields the true age *(the regression that would otherwise hide for months)*
 - **R3** — a handled alarm never escalates, however old
 - **COMMS** — an offline/comms alarm is never mailed, at any age
-- **R5** — an SOC alarm spanning 22:00→07:00 does not escalate; one spanning 09:00→15:00 does
-- **R6** — a 3-hour grid cut is silent; a 7-hour one escalates
+- **R6** — a 3-hour grid cut is silent; a 7-hour one escalates. A battery alarm is held to the same clock, day or night: silent at 5 h 59 m, mailed at 6 h 01 m
 
 ## The CSV side
 
@@ -243,7 +242,7 @@ The first item is not optional and not reorderable.
 
 1. **R3 — the status filter.** Stop pulling resolved alarms. Must land before or with the gate
 2. **R2 + R1 — the gate itself.** Timezone conversion, six-hour dwell, and the `COMMS` never-mail class. The core commit
-3. **R5 — the daylight clock for SOC.** The volume win: 105 of 141 alarms stop shouting nightly
+3. ~~**R5 — the daylight clock for SOC.**~~ Withdrawn 12 Oct 2026 — battery alarms ride the six-hour clock from step 2
 4. **Hourly alarm poll.** Makes the six hours literal instead of six-to-ten
 5. **Solis adapter.** `alarmList` against the existing signed client — brings 44 plants under the same rule
 6. **CSV gating.** The fleet-benchmark gate, plus the "check the logger is online" line in the RED escalation text
@@ -254,11 +253,11 @@ The first item is not optional and not reorderable.
 **Today** — 142 alarms, each mailed three times regardless of merit; 121 already permanently
 silenced whether or not the fault was ever fixed.
 
-**After** — the 105 SOC alarms collapse to only those still open through midday; on a healthy
-fleet, close to none. Comms faults never mail. The 36 hardware, load, thermal, grid and PV
-alarms escalate on merit, six hours in, with a plant name and a first thing to check. On
-Solis, four open alarms become three `NO-Grid` on a clock most CEB cuts never reach, plus one
-battery alarm judged on whether it survives the sun.
+**After** — every alarm, battery included, mails only if it is still open six hours on, with
+a plant name and a first thing to check. Short dips never reach an inbox; an overnight
+battery dip that lasts until sunrise still does (the accepted cost of withdrawing R5). Comms
+faults never mail. On Solis, four open alarms become three `NO-Grid` on a clock most CEB cuts
+never reach, plus one battery alarm on the same clock.
 
 The number that matters is not how many emails we send. It's that when one arrives, someone
 gets in the van.
