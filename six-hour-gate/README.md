@@ -63,7 +63,7 @@ those four are `1015 NO-Grid`, a CEB outage that clears itself before anyone rea
 |---|---|---|
 | **R1** | Dwell is `now − alarm_start` from the **vendor's** timestamp, not our `first_seen`. Absence from the feed = cleared | An alarm already 12 h old at first poll counts as 12 h old. `first_seen` is fallback only |
 | **R2** | Convert `gts` from **plant-local** (UTC+5:30) before comparing to a UTC runner | A naive `datetime.now() - gts` under-reports age by exactly 5.5 h — the "6-hour" rule would silently behave as **11.5 h**, invisibly. Use `queryPlants -> address.timezone`, same as `check_ph1000.py:486` |
-| **R3** | Count only alarms that are **actually open** — `status` false/0, Solis `state == 1` | **Ship first.** The fetch scripts are still in "TESTING MODE" (`date=`, no status filter), so *resolved* alarms come back. Bolting a dwell gate onto that feed turns every stale fixed alarm into a fresh call-out — worse than today |
+| **R3** | Count only alarms that are **actually open** — `status` false/0, Solis `state == 1` | **Shipped first.** The fetch scripts used to run in "TESTING MODE" (`date=`, no status filter), so *resolved* alarms came back. A dwell gate on that feed would have turned every stale fixed alarm into a fresh call-out. They now ask for `status=0`, and anything not open is dropped again at parse time |
 | ~~**R4**~~ | ~~Offline-plant suppression + weekly offline digest~~ — **withdrawn 13 Sep 2026** | Offline is already detected downstream: a dark logger writes `0.0000` rows, so a sustained outage trips the **3-day production-loss RED alert** on the CSV side. The gate needs no digest and no offline-plant rule of its own. *`COMMS` alarms are still never mailed* — that lives in the class map, not as a rule. Number kept vacant so R5/R6 references stay stable |
 | ~~**R5**~~ | ~~`SOC` alarms are measured in daylight hours — must survive 09:00–15:00 local still open~~ — **withdrawn 12 Oct 2026** | Battery alarms are on the same clock as everything else (R6): one rule to explain, one to test. **The cost is known:** "Battery too low" at 22:00 that clears at 07:00 is 9 h old, so it now mails at about 04:00, on every night a plant does that. Number kept vacant, as with R4 |
 | **R6** | **One clock for every class** — an alarm that outlives 6 h triggers an email; under 6 h it is silent. Grid loss and battery alarms get no special case | A 2–4 h CEB cut never reaches an inbox. What outlives 6 h is usually a tripped AC input breaker or blown input fuse — our call-out, not the utility's |
@@ -88,19 +88,22 @@ chokepoint instead: **every** outbound email in this repo goes through
 one fails if any script imports `smtplib` directly, one fails if any
 `send_email_smtp()` call omits `channel=`.
 
-**Current profile — critical only** (set 13 Sep 2026):
+**Current profile — critical only** (set 13 Sep 2026; the connectivity and gate flags were added since):
 
 | Channel | State |
 |---|---|
 | `emails.weekly_customer_reports` | on |
 | `emails.weekly_admin_summary` | **off** |
 | `emails.device_alarms_admin` / `_customer` | on |
+| `emails.connectivity_admin` | on |
 | `emails.production_alerts_admin` / `_customer` | on |
 | `emails.build_verification`, `emails.test_regression` | on |
 | `emails.solis_switch_admin` | on (workflow dormant) |
 | `emails.bms_alerts_admin` | on (no hardware deployed) |
 | `alerts.production_red_3day` | on |
 | `alerts.production_orange_3month` | **off** |
+| `alerts.connectivity_link_down` | on |
+| `alerts.six_hour_gate` | on (three states: `off`, `dry_run`, `on`) |
 
 Override for a single run without a commit — the env var is `KT_FEATURE_` plus the
 dotted path, upper-cased:
@@ -119,7 +122,8 @@ no-op instead of generating reports nobody receives, so no CI minutes are spent.
 Everything **fails open** — a missing or corrupt `features.json`, or an unknown flag
 name, reads as *on*. A broken config must never silence alerting. Build-failure mail
 additionally uses `!= 'false'` rather than `== 'true'`, so a crash before the flags
-step still notifies.
+step still notifies. The gate is the one flag that *suppresses*, so it reads the other
+way: missing or unparseable means `off`, and nothing is held.
 
 ### What this profile costs — reviewed 13 Sep 2026
 
@@ -144,7 +148,7 @@ comes back.
 
 ## Class map
 
-Six classes, two gates. Counts are today's state files. `COMMS` is the "ignore offline"
+Six classes, two gates. Counts are the state files of 9 Sep 2026. `COMMS` is the "ignore offline"
 rule from the original brief: never mailed, never digested — if a logger stays dark it
 shows up as a 3-day production-loss alert instead.
 
@@ -170,14 +174,14 @@ gate never learns a vendor's name.
 
 | Inverter | Portal | Alarm source | Start time | Open flag | State |
 |---|---|---|---|---|---|
-| Voltronic / PowMr | ShineMonitor | `webQueryPlantsWarning` | `gts` · plant-local | `status = false` | built — add gate |
-| Deye | DessMonitor | same shape, `dessmonitor-*` | `gts` · plant-local | `status = false` | built — add gate |
-| Solis | SolisCloud | `POST /v1/api/alarmList` | `alarmBeginTime` · epoch ms | `state = 1` | adapter to write |
+| Voltronic / PowMr | ShineMonitor | `webQueryPlantsWarning` | `gts` · plant-local | `status = false` | live behind the gate |
+| Deye | DessMonitor | same shape, `dessmonitor-*` | `gts` · plant-local | `status = false` | live behind the gate |
+| Solis | SolisCloud | `POST /v1/api/alarmList` | `alarmBeginTime` · epoch ms | `state = 1` | adapter to write — needs an API key first |
 | SolaX | SolaX Cloud | — portal login only | — | — | **not covered** |
 
 **Solis is cheap:** `solis_common.py` already signs and posts arbitrary resources, so
-`alarmList` is a method plus a field map — and Ktronics AB holds distributor keys on that
-account.
+`alarmList` is a method plus a field map. Ktronics AB is the distributor on that account,
+but no API key has been issued yet, so nothing Solis has run.
 
 **SolaX is the weak link — say so out loud.** We have a web login and no API key, so SolaX
 plants are currently unmonitored by anything automated. Note that even the public SolaX
@@ -189,23 +193,24 @@ portal review. Note there is no digest to flag them in — SolaX plants are not 
 either, so the 3-day production-loss path does not cover them the way it covers offline
 loggers elsewhere. **SolaX is genuinely unmonitored, and silence from it means nothing.**
 
-## What changes
+## What changed
 
 | File | Change |
 |---|---|
-| `six-hour-gate/alarm_triage.py` | **new** — `normalize()`, `classify()`, `is_actionable()`. Pure functions, no I/O |
-| `six-hour-gate/config/alarm_triage.json` | **new** — dwell hours per class, COMMS list |
-| `generate_device_alarms.py` | one call inserted between `parse_alarm_files()` (L423) and `filter_alarms_to_send()` (L428). Rest untouched |
-| `check_device_alarms.sh`<br>`check_dessmonitor_device_alarms.sh` | drop TESTING MODE, filter to unhandled (R3), and drop the raw-response `DEBUG` dump currently printing every alarm payload into public workflow logs |
-| `state/*_device_alarms_state.json` | add `class`, `started_at_utc`, `suppressed_reason` — so *"why wasn't I told about this?"* is answerable from state alone |
-| `trigger-shinemonitor.yml`<br>`trigger-dessmonitor.yml` | alarm poll to hourly; leave the CSV data pull at 4 h |
+| `six-hour-gate/alarm_triage.py` | `normalize()`, `classify()`, `is_actionable()`. Pure functions, no I/O |
+| `six-hour-gate/config/alarm_triage.json` | dwell hours per class, COMMS list |
+| `generate_device_alarms.py` | `triage_alarms()` runs between `parse_alarm_files()` and `filter_alarms_to_send()`. Rest untouched |
+| `check_device_alarms.sh`<br>`check_dessmonitor_device_alarms.sh` | TESTING MODE dropped, feed filtered to unhandled (R3), raw-response `DEBUG` dump removed. The scripts still print the response body when a fetch fails — not done yet |
+| `state/*_device_alarms_state.json` | `class`, `started_at_utc`, `suppressed_reason` — so *"why wasn't I told about this?"* is answerable from state alone. Written only for alarms the gate holds — not done yet for the rest |
+| `trigger-shinemonitor.yml`<br>`trigger-dessmonitor.yml` | alarm poll is hourly; the CSV data pull stays at 4 h |
 
 ## Tests
 
-The existing 35 UC3 tests must keep passing untouched — the gate is additive. Roughly ten
-new ones, named for the rule they defend:
+The gate is additive: the UC3 tests pass untouched. Its own tests are named for the rule
+they defend — `test_alarm_triage.py` for the rules, `test_alarm_gate_wiring.py` for where
+the gate plugs in:
 
-- **R1** — escalates at 6 h 01 m, silent at 5 h 59 m; an alarm absent from the feed clears
+- **R1** — escalates at 6 h 01 m, silent at 5 h 59 m. *Not tested yet:* an alarm absent from the feed clears
 - **R2** — plant-local `gts` against a UTC runner yields the true age *(the regression that would otherwise hide for months)*
 - **R3** — a handled alarm never escalates, however old
 - **COMMS** — an offline/comms alarm is never mailed, at any age
@@ -224,7 +229,7 @@ missing is *is this actually ours?*
    alert path instead of two.
 
    The cost is that the CSV alone cannot tell *no data* from *no production* — a dead
-   router and a dead inverter look identical. So the RED escalation text must say so:
+   router and a dead inverter look identical. So the RED escalation text says so:
    *"no data or no production for 3 days — check the datalogger is online before
    dispatching."* Without that line a technician drives out to a plant that was working
    fine. `--ignore-zero-months` still ignores plants dark for a full month, which is the
@@ -238,19 +243,20 @@ missing is *is this actually ours?*
 
 ## Order of work
 
-The first item is not optional and not reorderable.
+The first item was not optional and not reorderable. Steps 1, 2 and 4 are done.
 
-1. **R3 — the status filter.** Stop pulling resolved alarms. Must land before or with the gate
-2. **R2 + R1 — the gate itself.** Timezone conversion, six-hour dwell, and the `COMMS` never-mail class. The core commit
+1. **R3 — the status filter.** *Done.* Stop pulling resolved alarms. Had to land before or with the gate
+2. **R2 + R1 — the gate itself.** *Done, live since 11 Oct 2026.* Timezone conversion, six-hour dwell, and the `COMMS` never-mail class. The core commit
 3. ~~**R5 — the daylight clock for SOC.**~~ Withdrawn 12 Oct 2026 — battery alarms ride the six-hour clock from step 2
-4. **Hourly alarm poll.** Makes the six hours literal instead of six-to-ten
-5. **Solis adapter.** `alarmList` against the existing signed client — brings 44 plants under the same rule
-6. **CSV gating.** The fleet-benchmark gate, plus the "check the logger is online" line in the RED escalation text
+4. **Hourly alarm poll.** *Done.* Makes the six hours literal instead of six-to-ten
+5. **Solis adapter.** *Waiting on an API key.* `alarmList` against the existing signed client — brings 44 plants under the same rule
+6. **CSV gating.** *Half done.* The "check the logger is online" line is in the RED escalation text; the fleet-benchmark gate is not built
 7. **SolaX API token.** Request in parallel — a procurement wait, not engineering work
+8. **SolaX adapter.** After the token, and only if the decision is to derive alarms from `inverterStatus` instead of keeping SolaX on manual portal review
 
 ## Expected effect
 
-**Today** — 142 alarms, each mailed three times regardless of merit; 121 already permanently
+**Before** — 142 alarms, each mailed three times regardless of merit; 121 already permanently
 silenced whether or not the fault was ever fixed.
 
 **After** — every alarm, battery included, mails only if it is still open six hours on, with
