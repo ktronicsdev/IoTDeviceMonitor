@@ -351,13 +351,15 @@ Controls when customer emails are sent based on workflow trigger type.
 
 ### UC9: Admin Alert Email Optimization
 
-Reduces admin email noise by only sending emails when alert state changes.
+Reduces admin email noise by sending the system-wide status email only when the alert state changes.
+
+**Scope:** the ShineMonitor production status email (UC1). Device alarm emails are not covered; they are limited by the six-hour gate and the 3-send rule (UC3). The DessMonitor workflow does not have this check.
 
 **Implementation:**
 
-Hash-based state detection in GitHub Actions workflow:
+Hash-based state detection in the `Send system-wide status email to admin` step of the GitHub Actions workflow:
 
-- **Calculate hash** of `alerts/alerts.json` using SHA256
+- **Calculate a SHA256 hash of the alert content** in `alerts/alerts.json`: the `alerts`, `suppressed` and `ignored` arrays only. The `generated_at` timestamp is left out, because it changes on every run
 - **Compare with previous hash** from `state/admin_email_state.txt`
 - **Send email when:**
   - Alert content changed (hash mismatch)
@@ -367,16 +369,18 @@ Hash-based state detection in GitHub Actions workflow:
 - **Skip email when:**
   - Scheduled run AND hash unchanged (same state)
 
+The step also sits behind the `emails.production_alerts_admin` feature flag.
+
 **State File:** `state/admin_email_state.txt`
 
-**Email Reduction:** From 6 emails/day to ~1-2 emails/day (83% reduction)
+**Email Reduction:** the workflow has 30 scheduled runs a day (hourly, plus six data-collection runs), and each would otherwise send a status email. With the check, a scheduled run sends one only when the alert content has changed: about 1-2 a day (22 in the two weeks to 12 Oct 2026).
 
-**Implementation File:** [trigger-shinemonitor.yml:247-321](/.github/workflows/trigger-shinemonitor.yml#L247-L321)
+**Implementation File:** [trigger-shinemonitor.yml:377-456](/.github/workflows/trigger-shinemonitor.yml#L377-L456)
 
 **How It Works:**
 
 1. Generate `alerts/alerts.json` with current alerts
-2. Calculate SHA256 hash of file content
+2. Calculate the SHA256 hash of the alert content (`jq -cS '{alerts, suppressed, ignored}'`), not of the whole file
 3. Load previous hash from state file
 4. Compare hashes to detect changes
 5. Send email only if changed or push/manual trigger

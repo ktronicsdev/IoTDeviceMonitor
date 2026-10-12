@@ -33,10 +33,10 @@ exactly as it is — an alarm that never qualifies simply never spends one of it
 | | |
 |---|---|
 | **Design** | Complete — [full design doc](https://claude.ai/code/artifact/378f7353-aa57-455e-aae0-a28f5030b484) |
-| **Code** | Not written. Nothing in `src/` has been changed yet |
+| **Code** | Live. Wired into `generate_device_alarms.py` behind the `alerts.six_hour_gate` flag, `on` since 11 Oct 2026 |
 | **Config** | [`config/alarm_triage.json`](config/alarm_triage.json) — class map, dwell hours, matchers |
-| **Blocking** | R3 (status filter) must ship before or with the gate — see below |
-| **Uncovered** | SolaX — web login only, no API key |
+| **Blocking** | Nothing. R3 (status filter) shipped with the gate |
+| **Uncovered** | SolaX — web login only, no API key. Solis — adapter not written yet |
 
 ## Why
 
