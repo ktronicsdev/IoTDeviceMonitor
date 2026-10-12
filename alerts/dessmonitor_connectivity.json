@@ -12,8 +12,8 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 0,
-      "days_since_data": 0,
+      "days_stale": 1,
+      "days_since_data": 1,
       "last_nonzero_date": "2026-10-11",
       "last_data_date": "2026-10-11",
       "stale_days_threshold": 3
@@ -23,8 +23,8 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 0,
-      "days_since_data": 0,
+      "days_stale": 1,
+      "days_since_data": 1,
       "last_nonzero_date": "2026-10-11",
       "last_data_date": "2026-10-11",
       "stale_days_threshold": 3
@@ -32,7 +32,7 @@
   ],
   "link_down": [],
   "excluded": [],
-  "generated_at": "2026-10-11T22:32:54.023024Z",
+  "generated_at": "2026-10-12T00:00:30.679342Z",
   "fleet_wide_outage": false,
   "alerting_now": []
 }
