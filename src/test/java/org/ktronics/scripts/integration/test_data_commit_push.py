@@ -453,3 +453,5 @@ def test_bms_ingest_goes_red_when_the_reading_cannot_be_pushed(box):
 
     assert result.returncode != 0, (
         "the reading could not be pushed and the step still reported success" + _log(result))
+
+# permission check update
