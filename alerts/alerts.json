@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-12T23:28:21.718517Z",
+  "generated_at": "2026-10-13T01:00:56.733673Z",
   "alerts": [],
   "suppressed": [],
   "ignored": [
@@ -10,7 +10,7 @@
         "2026-09"
       ],
       "link_down": true,
-      "days_stale": 315
+      "days_stale": 104
     },
     {
       "plant_key": "anuradha-gajanayaka-plant",
@@ -19,7 +19,7 @@
         "2026-09"
       ],
       "link_down": true,
-      "days_stale": 124
+      "days_stale": 104
     },
     {
       "plant_key": "ganishka-ganishka-home-3kw",
@@ -28,7 +28,7 @@
         "2026-09"
       ],
       "link_down": true,
-      "days_stale": 182
+      "days_stale": 104
     },
     {
       "plant_key": "lahiru-ryan-lahiru-plant",
@@ -37,7 +37,7 @@
         "2026-09"
       ],
       "link_down": true,
-      "days_stale": 90
+      "days_stale": 91
     },
     {
       "plant_key": "mifanza-mifanza-solar-system",
@@ -46,7 +46,7 @@
         "2026-09"
       ],
       "link_down": true,
-      "days_stale": 164
+      "days_stale": 104
     },
     {
       "plant_key": "samurdi-kohuwala",
@@ -55,7 +55,7 @@
         "2026-09"
       ],
       "link_down": true,
-      "days_stale": 315
+      "days_stale": 104
     },
     {
       "plant_key": "upulatheja-3kw-pro-kadawath",
@@ -64,7 +64,7 @@
         "2026-09"
       ],
       "link_down": true,
-      "days_stale": 207
+      "days_stale": 104
     }
   ],
   "link_down": [
@@ -73,54 +73,32 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 315,
+      "days_stale": 104,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-10-12",
+      "last_data_date": "2026-10-13",
       "stale_days_threshold": 3
     },
     {
-      "plant_key": "samurdi-kohuwala",
+      "plant_key": "anuradha-gajanayaka-plant",
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 315,
+      "days_stale": 104,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-10-12",
-      "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "upulatheja-3kw-pro-kadawath",
-      "kind": "zeros_only",
-      "meaning": "rows still arriving but every reading is 0.0000 kWh",
-      "link_down": true,
-      "days_stale": 207,
-      "days_since_data": 0,
-      "last_nonzero_date": "2026-03-19",
-      "last_data_date": "2026-10-12",
-      "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "sohan-must-pv1800-3024-pro",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 194,
-      "days_since_data": 165,
-      "last_nonzero_date": "2026-04-01",
-      "last_data_date": "2026-04-30",
+      "last_data_date": "2026-10-13",
       "stale_days_threshold": 3
     },
     {
       "plant_key": "ganishka-ganishka-home-3kw",
-      "kind": "zeros_only",
-      "meaning": "rows still arriving but every reading is 0.0000 kWh",
+      "kind": "never_reported",
+      "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 182,
+      "days_stale": 104,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-04-13",
-      "last_data_date": "2026-10-12",
+      "last_nonzero_date": null,
+      "last_data_date": "2026-10-13",
       "stale_days_threshold": 3
     },
     {
@@ -128,21 +106,32 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 164,
+      "days_stale": 104,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-10-12",
+      "last_data_date": "2026-10-13",
       "stale_days_threshold": 3
     },
     {
-      "plant_key": "anuradha-gajanayaka-plant",
-      "kind": "zeros_only",
-      "meaning": "rows still arriving but every reading is 0.0000 kWh",
+      "plant_key": "samurdi-kohuwala",
+      "kind": "never_reported",
+      "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 124,
+      "days_stale": 104,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-06-10",
-      "last_data_date": "2026-10-12",
+      "last_nonzero_date": null,
+      "last_data_date": "2026-10-13",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "upulatheja-3kw-pro-kadawath",
+      "kind": "never_reported",
+      "meaning": "no non-zero reading has ever been recorded",
+      "link_down": true,
+      "days_stale": 104,
+      "days_since_data": 0,
+      "last_nonzero_date": null,
+      "last_data_date": "2026-10-13",
       "stale_days_threshold": 3
     },
     {
@@ -150,10 +139,10 @@
       "kind": "zeros_only",
       "meaning": "rows still arriving but every reading is 0.0000 kWh",
       "link_down": true,
-      "days_stale": 90,
+      "days_stale": 91,
       "days_since_data": 0,
       "last_nonzero_date": "2026-07-14",
-      "last_data_date": "2026-10-12",
+      "last_data_date": "2026-10-13",
       "stale_days_threshold": 3
     },
     {
@@ -161,18 +150,18 @@
       "kind": "zeros_only",
       "meaning": "rows still arriving but every reading is 0.0000 kWh",
       "link_down": true,
-      "days_stale": 21,
+      "days_stale": 22,
       "days_since_data": 0,
       "last_nonzero_date": "2026-09-21",
-      "last_data_date": "2026-10-12",
+      "last_data_date": "2026-10-13",
       "stale_days_threshold": 3
     }
   ],
   "excluded": [],
   "counts": {
     "reporting": 17,
-    "link_down": 9,
+    "link_down": 8,
     "excluded": 0,
-    "monitored": 26
+    "monitored": 25
   }
 }
