@@ -454,4 +454,71 @@ def test_bms_ingest_goes_red_when_the_reading_cannot_be_pushed(box):
     assert result.returncode != 0, (
         "the reading could not be pushed and the step still reported success" + _log(result))
 
-# permission check update
+
+# --- prevention: two runs of one workflow must not overlap ----------------
+#
+# Everything above is about surviving a conflict. These two are about not
+# having one. They read the workflow YAML, because what they pin is how GitHub
+# is told to schedule the job, and no local run can exercise that.
+
+
+def _job_with_commit_step(key):
+    spec = STEPS[key]
+    workflow = yaml.safe_load(
+        (_workflows_dir() / spec["file"]).read_text(encoding="utf-8"))
+    for job in workflow["jobs"].values():
+        if any(step.get("name") == spec["step"] for step in job.get("steps", [])):
+            return workflow, job
+    raise AssertionError(
+        f"{spec['file']} has no step named {spec['step']!r}. If the step was "
+        "renamed, update STEPS in this file.")
+
+
+@pytest.mark.parametrize("key", ALL)
+def test_runs_of_one_workflow_do_not_overlap(key):
+    """
+    A same-file conflict needs two runs of the *same* workflow to be working at
+    once: a push-triggered run next to a scheduled one, or DessMonitor's two
+    crons that fire in the same minute six times a day. Both runs read the same
+    state, so both can send the same alarm email before either records it.
+
+    A `concurrency` group makes the second run wait for the first. It can sit
+    on the job that commits or on the whole workflow.
+
+    `cancel-in-progress` has to stay false. A run must never be killed halfway
+    through collecting and committing.
+    """
+    workflow, job = _job_with_commit_step(key)
+    concurrency = job.get("concurrency") or workflow.get("concurrency")
+
+    assert concurrency, (
+        f"{STEPS[key]['file']}: the job that commits has no `concurrency` "
+        "group, so two runs of this workflow can overlap")
+    if isinstance(concurrency, dict):
+        assert concurrency.get("group"), "the concurrency setting names no group"
+        assert concurrency.get("cancel-in-progress", False) is False, (
+            "cancel-in-progress must be false: a newer run must wait for a "
+            "run that is collecting and committing, not kill it")
+
+
+@pytest.mark.parametrize("key", ALL)
+def test_a_run_that_waited_starts_from_the_branch_as_it_is_now(key):
+    """
+    Making a run wait is only half of it. By default actions/checkout takes the
+    commit that *triggered* the run. For a run that waited behind another, that
+    commit is already behind what the first run pushed, so it still starts from
+    old state and an old CSV. For BMS ingest that means a conflict on every
+    queued reading, and with it a failed run and a lost reading.
+
+    Giving checkout an explicit `ref` (the branch) makes it take the branch as
+    it stands when the job starts.
+    """
+    _, job = _job_with_commit_step(key)
+    checkout = next((step for step in job.get("steps", [])
+                     if str(step.get("uses", "")).startswith("actions/checkout")), None)
+
+    assert checkout is not None, "the job that commits has no checkout step"
+    assert (checkout.get("with") or {}).get("ref"), (
+        f"{STEPS[key]['file']}: checkout has no `ref`, so a run that waited in "
+        "the queue starts from the commit that triggered it, not from the "
+        "branch as it is now")
