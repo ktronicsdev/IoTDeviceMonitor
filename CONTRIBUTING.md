@@ -38,7 +38,9 @@ workflows have two jobs, and they fail for very different reasons:
   a test that was passing has started failing. Read it.
 - **`run` failed** — data collection. Usually an API that timed out, a vendor
   portal having a bad day, or two workflows racing each other to commit
-  (see issue #18). It recovers on the next cycle by itself.
+  (see issue #18). Scheduled ShineMonitor and DessMonitor runs retry and can
+  recover on the next cycle, but a failed BMS ingest is urgent: it has no
+  scheduled recovery run and its reading exists only in that workflow run.
 
 So check *which job* went red before assuming it was you. The one case worth
 reacting to immediately is `tests` red on `main`, because that means something

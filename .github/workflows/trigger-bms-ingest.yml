@@ -58,46 +58,7 @@ jobs:
             git config user.email "actions@users.noreply.github.com"
             git add bms-module/data bms-module/state
             git commit -m "BMS reading ingest"
-            git stash push --include-untracked -m "workflow temporary files"
-
-            branch="main"
-            max_attempts=5
-            pushed=false
-
-            for attempt in $(seq 1 "$max_attempts"); do
-              echo "Push attempt $attempt/$max_attempts"
-              if ! git fetch origin "$branch"; then
-                echo "Could not fetch the latest $branch; retrying."
-                continue
-              fi
-
-              if ! git pull --rebase origin "$branch"; then
-                echo "Rebase conflict or failure; aborting the rebase before retrying."
-                git rebase --abort || true
-
-                # These files are regenerated or appended by the ingest run, so
-                # replay our commit and prefer its version on generated-file conflicts.
-                if ! git rebase -X theirs "origin/$branch"; then
-                  echo "Conflict retry could not be applied; aborting the rebase."
-                  git rebase --abort || true
-                  continue
-                fi
-              fi
-
-              if git push origin "HEAD:$branch"; then
-                pushed=true
-                break
-              fi
-
-              echo "Push lost a race; retrying with the latest $branch."
-            done
-
-            if [ "$pushed" != true ]; then
-              git rebase --abort || true
-              git checkout "$branch"
-              echo "::warning::Could not publish generated data after $max_attempts attempts. Data will land on the next scheduled run."
-              exit 0
-            fi
+            src/main/java/org/ktronics/scripts/push_data_commit.sh --must-succeed
           else
             echo "No new data to commit."
           fi

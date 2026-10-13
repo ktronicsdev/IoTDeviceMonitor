@@ -492,46 +492,7 @@ jobs:
           fi
 
           git commit -m "Update ShineMonitor data & alerts"
-          git stash push --include-untracked -m "workflow temporary files"
-
-          branch="main"
-          max_attempts=5
-          pushed=false
-
-          for attempt in $(seq 1 "$max_attempts"); do
-            echo "Push attempt $attempt/$max_attempts"
-            if ! git fetch origin "$branch"; then
-              echo "Could not fetch the latest $branch; retrying."
-              continue
-            fi
-
-            if ! git pull --rebase origin "$branch"; then
-              echo "Rebase conflict or failure; aborting the rebase before retrying."
-              git rebase --abort || true
-
-              # These files are regenerated on every run, so replay our commit and
-              # prefer its version if the same generated file changed on main.
-              if ! git rebase -X theirs "origin/$branch"; then
-                echo "Conflict retry could not be applied; aborting the rebase."
-                git rebase --abort || true
-                continue
-              fi
-            fi
-
-            if git push origin "HEAD:$branch"; then
-              pushed=true
-              break
-            fi
-
-            echo "Push lost a race; retrying with the latest $branch."
-          done
-
-          if [ "$pushed" != true ]; then
-            git rebase --abort || true
-            git checkout "$branch"
-            echo "::warning::Could not publish generated data after $max_attempts attempts. Data will land on the next scheduled run."
-            exit 0
-          fi
+          src/main/java/org/ktronics/scripts/push_data_commit.sh --allow-skip
 
       # ✅ Build verification email on every push (success)
       - name: Send build verification email (push + success)
