@@ -14,8 +14,8 @@
       "link_down": false,
       "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-12",
-      "last_data_date": "2026-10-12",
+      "last_nonzero_date": "2026-10-13",
+      "last_data_date": "2026-10-13",
       "stale_days_threshold": 3
     },
     {
@@ -25,14 +25,14 @@
       "link_down": false,
       "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-12",
-      "last_data_date": "2026-10-12",
+      "last_nonzero_date": "2026-10-13",
+      "last_data_date": "2026-10-13",
       "stale_days_threshold": 3
     }
   ],
   "link_down": [],
   "excluded": [],
-  "generated_at": "2026-10-12T23:25:59.381935Z",
+  "generated_at": "2026-10-13T01:00:46.754292Z",
   "fleet_wide_outage": false,
   "alerting_now": []
 }
