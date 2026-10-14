@@ -9,12 +9,15 @@
     "message": "battery voltage is too low"
   },
   "5025648:Q0025318040825:6acf1de4607e436e2f5a6ef4": {
-    "send_count": 0,
-    "last_sent": null,
+    "send_count": 1,
+    "last_sent": "2026-10-14T12:34:32.039082",
     "first_seen": "2026-10-14T06:14:46+00:00",
     "ignored": false,
     "class": "UNKNOWN",
     "started_at_utc": "2026-10-14T06:14:46+00:00",
-    "suppressed_reason": "dwell time is less than 6 hours"
+    "suppressed_reason": "dwell time is less than 6 hours",
+    "customer": "dessmonitor-mifrazmarsoon",
+    "plant": "PLANT",
+    "message": "Over temperature happen at PV circult"
   }
 }
