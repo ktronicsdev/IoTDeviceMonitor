@@ -9,8 +9,8 @@
     "message": "battery voltage is too low"
   },
   "5025648:Q0025318040825:6acf1de4607e436e2f5a6ef4": {
-    "send_count": 1,
-    "last_sent": "2026-10-14T12:34:32.039082",
+    "send_count": 2,
+    "last_sent": "2026-10-14T19:04:45.260923",
     "first_seen": "2026-10-14T06:14:46+00:00",
     "ignored": false,
     "class": "UNKNOWN",
