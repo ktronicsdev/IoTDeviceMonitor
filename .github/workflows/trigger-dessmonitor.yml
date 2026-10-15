@@ -30,6 +30,9 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
+    concurrency:
+      group: dessmonitor-commit
+      cancel-in-progress: false
 
     env:
       ALERT_TO: ktronicssolar@gmail.com
@@ -41,6 +44,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -422,5 +427,6 @@ jobs:
             echo "No DessMonitor changes to commit"
           else
             git commit -m "Update DessMonitor data & alerts"
-            src/main/java/org/ktronics/scripts/push_data_commit.sh --allow-skip
+            chmod +x src/main/java/org/ktronics/scripts/push_data_commit.sh
+            src/main/java/org/ktronics/scripts/push_data_commit.sh --resolve-conflicts
           fi

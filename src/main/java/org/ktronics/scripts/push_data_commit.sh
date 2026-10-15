@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 (--allow-skip|--must-succeed) [--branch BRANCH]" >&2
+  echo "Usage: $0 (--resolve-conflicts|--fail-on-conflict)" >&2
   exit 2
 }
 
@@ -10,14 +10,9 @@ mode=
 branch="${GITHUB_REF_NAME:-}"
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --allow-skip|--must-succeed)
+    --resolve-conflicts|--fail-on-conflict)
       [ -z "$mode" ] || usage
       mode="${1#--}"
-      ;;
-    --branch)
-      [ "$#" -ge 2 ] || usage
-      branch="$2"
-      shift
       ;;
     *)
       usage
@@ -84,7 +79,7 @@ for attempt in $(seq 1 "$max_attempts"); do
   fi
 
   if ! git rebase "origin/$branch"; then
-    if [ "$mode" = "must-succeed" ]; then
+    if [ "$mode" = "fail-on-conflict" ]; then
       echo "::error::Conflict in append-only BMS data; refusing to drop a reading." >&2
       git rebase --abort || true
       exit 1

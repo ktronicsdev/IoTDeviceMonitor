@@ -40,6 +40,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -104,6 +106,9 @@ jobs:
   # Data collection. No `needs: tests` on purpose - see the comment on `tests` above.
   run:
     runs-on: ubuntu-latest
+    concurrency:
+      group: shinemonitor-commit
+      cancel-in-progress: false
 
     env:
       ALERT_TO: ktronicssolar@gmail.com
@@ -115,6 +120,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -476,7 +483,7 @@ jobs:
       - name: Commit updated data + alert state
         shell: bash
         run: |
-          set -e
+          set -euo pipefail
           git config user.name "shinemonitor-bot"
           git config user.email "actions@users.noreply.github.com"
 
@@ -492,7 +499,8 @@ jobs:
           fi
 
           git commit -m "Update ShineMonitor data & alerts"
-          src/main/java/org/ktronics/scripts/push_data_commit.sh --allow-skip
+          chmod +x src/main/java/org/ktronics/scripts/push_data_commit.sh
+          src/main/java/org/ktronics/scripts/push_data_commit.sh --resolve-conflicts
 
       # ✅ Build verification email on every push (success)
       - name: Send build verification email (push + success)
