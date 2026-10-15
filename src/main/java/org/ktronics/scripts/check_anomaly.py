@@ -20,6 +20,13 @@ from features import is_enabled
 # Matches: <anything>-YYYY-MM.csv  (your monthly output files)
 CSV_PATTERN = re.compile(r"^(?P<plant_key>.+)-(?P<ym>\d{4}-\d{2})\.csv$")
 
+# How often the same production alert may repeat before it goes quiet.
+# Deliberately the same rule the device-alarm path uses: an alert said three
+# times four hours apart has been said; a fourth only teaches the reader to
+# stop looking.
+MAX_ALERT_SENDS = 3
+MIN_ALERT_SEND_INTERVAL_HOURS = 4
+
 
 @dataclass(frozen=True)
 class DayPoint:
@@ -409,6 +416,85 @@ def main() -> int:
                     "details": [{"month": m, "kwh": round(v, 4)} for m, v in orange_vals],
                 })
 
+    # --- Decide which alerts are actually sent ---
+    #
+    # This runs BEFORE the outputs are written, and that ordering is the point.
+    # It used to run afterwards, so alerts.json and alerts.txt always listed
+    # every alert while only the exit code reflected the filtering - meaning a
+    # capped alert would have produced an "ALL SYSTEMS OPERATIONAL" subject on
+    # a body still reporting it. Now the JSON, the text report, the UC9 hash,
+    # the subject and the exit code all describe the same set.
+    auto_ignore_days = 3
+    today_date = today
+    # Keep copy of all generated alerts for cleanup
+    all_generated_alerts = list(alerts)
+    alerts_to_send = []
+    auto_ignored = []
+
+    for a in all_generated_alerts:
+        plant_key = a["plant_key"]
+        severity = a["severity"]
+        alert_key = f"{plant_key}:{severity}"
+
+        # Initialize state for this alert if not exists
+        if alert_key not in state:
+            state[alert_key] = {
+                "first_seen": str(today_date),
+                "last_sent": None,
+                "send_count": 0,
+                "ignored_date": None
+            }
+
+        alert_state = state[alert_key]
+        first_seen = date.fromisoformat(alert_state['first_seen'])
+        days_active = (today_date - first_seen).days
+
+        # Auto-ignore rule: if alert active for >= auto_ignore_days, skip it
+        if days_active >= auto_ignore_days and not alert_state.get('ignored_date'):
+            alert_state['ignored_date'] = str(today_date)
+            auto_ignored.append({
+                "plant_key": plant_key,
+                "severity": severity,
+                "days_active": days_active,
+                "first_seen": str(first_seen),
+                "reason": f"Auto-ignored after {auto_ignore_days} days"
+            })
+            continue
+
+        # If already ignored, skip
+        if alert_state.get('ignored_date'):
+            continue
+
+        # Say it three times, four hours apart, then stop.
+        #
+        # auto_ignore_days above is a 3-DAY rule, and until now it was the only
+        # brake: send_count was incremented every run and never read, so the
+        # same alert went out on every poll for three days. The device-alarm
+        # path has enforced 3-sends-4-hours-apart for a year; this is the same
+        # rule, in the place that was missing it.
+        if alert_state['send_count'] >= MAX_ALERT_SENDS:
+            continue
+
+        last_sent_utc = alert_state.get('last_sent_utc')
+        if last_sent_utc:
+            try:
+                since = datetime.now(timezone.utc) -                     datetime.fromisoformat(last_sent_utc)
+                if since < timedelta(hours=MIN_ALERT_SEND_INTERVAL_HOURS):
+                    continue
+            except ValueError:
+                # An unreadable timestamp must never silence a real alert:
+                # fall through and send.
+                pass
+
+        # Update state and add to alerts_to_send
+        alert_state['last_sent'] = str(today_date)
+        alert_state['last_sent_utc'] = datetime.now(timezone.utc).isoformat()
+        alert_state['send_count'] += 1
+        alerts_to_send.append(a)
+
+    # Everything below reports on what is being SENT, not on what was generated.
+    alerts = alerts_to_send
+
     # --- Write outputs ---
     result = {
         "generated_at": datetime.utcnow().isoformat() + "Z",
@@ -419,6 +505,9 @@ def main() -> int:
         "excluded": fleet.excluded,
         "counts": fleet.counts,
     }
+
+    if auto_ignored:
+        result["auto_ignored"] = auto_ignored
 
     # UC10: Write to custom JSON output path
     output_json_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
@@ -619,62 +708,6 @@ def main() -> int:
 
     # UC10: Write to custom text output path
     output_txt_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-
-    # --- 3-Day Auto-Ignore Rule for Admin Alerts ---
-    # Track when alerts were first seen and how many times sent
-    # Auto-ignore after 3 consecutive days to prevent alert fatigue
-    auto_ignore_days = 3
-    today_date = today
-    # Keep copy of all generated alerts for cleanup
-    all_generated_alerts = list(alerts)
-    alerts_to_send = []
-    auto_ignored = []
-
-    for a in all_generated_alerts:
-        plant_key = a["plant_key"]
-        severity = a["severity"]
-        alert_key = f"{plant_key}:{severity}"
-
-        # Initialize state for this alert if not exists
-        if alert_key not in state:
-            state[alert_key] = {
-                "first_seen": str(today_date),
-                "last_sent": None,
-                "send_count": 0,
-                "ignored_date": None
-            }
-
-        alert_state = state[alert_key]
-        first_seen = date.fromisoformat(alert_state['first_seen'])
-        days_active = (today_date - first_seen).days
-
-        # Auto-ignore rule: if alert active for >= auto_ignore_days, skip it
-        if days_active >= auto_ignore_days and not alert_state.get('ignored_date'):
-            alert_state['ignored_date'] = str(today_date)
-            auto_ignored.append({
-                "plant_key": plant_key,
-                "severity": severity,
-                "days_active": days_active,
-                "first_seen": str(first_seen),
-                "reason": f"Auto-ignored after {auto_ignore_days} days"
-            })
-            continue
-
-        # If already ignored, skip
-        if alert_state.get('ignored_date'):
-            continue
-
-        # Update state and add to alerts_to_send
-        alert_state['last_sent'] = str(today_date)
-        alert_state['send_count'] += 1
-        alerts_to_send.append(a)
-
-    # Replace alerts with filtered list (only alerts not auto-ignored)
-    alerts = alerts_to_send
-
-    # Update result with auto-ignored alerts
-    if auto_ignored:
-        result["auto_ignored"] = auto_ignored
 
     # --- Cleanup: Reset state when alert is resolved ---
     # If a plant no longer has an alert, remove its state entry
