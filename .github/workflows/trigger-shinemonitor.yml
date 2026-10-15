@@ -206,6 +206,10 @@ jobs:
 
       - name: Run anomaly detection & generate customer alerts
         id: anomaly
+        # Reads data/, so it belongs to the data cycle: on the hourly alarm
+        # poll nothing is fetched, and analysing stale CSVs made the admin mail
+        # flap between two answers (see test_hourly_poll_scope.py).
+        if: github.event_name != 'schedule' || github.event.schedule != '0 * * * *'
         shell: bash
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -227,6 +231,10 @@ jobs:
 
       - name: Check plant connectivity (data link, not production)
         id: connectivity
+        # Reads data/, so it belongs to the data cycle: on the hourly alarm
+        # poll nothing is fetched, and analysing stale CSVs made the admin mail
+        # flap between two answers (see test_hourly_poll_scope.py).
+        if: github.event_name != 'schedule' || github.event.schedule != '0 * * * *'
         shell: bash
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -430,6 +438,30 @@ jobs:
               echo "⏭️ Skipping email: Same alerts (no change)"
             fi
             send_email="false"
+          fi
+
+          # A clean bill of health is a weekly thing, not an hourly one.
+          #
+          # ALERTS still go out whenever the alert content changes - that is the
+          # whole point of this step. But "ALL SYSTEMS OPERATIONAL" says nothing
+          # actionable, and since the poll went hourly it was arriving several
+          # times a day: concurrent runs overwrite each other's stored hash, so
+          # the hash flaps between two values and every flap reads as a change.
+          # Fixing that race is issue #18; this just stops the all-clear being
+          # the thing that reports it.
+          #
+          # So: no alerts -> send only on the Monday 06:30 UTC run, once a week.
+          # Push and manual runs still send, because there it is build
+          # verification rather than a status report.
+          if [ "$send_email" = "true" ] \
+             && [ "${{ steps.anomaly.outputs.exit_code }}" != "2" ] \
+             && [ "${{ github.event_name }}" = "schedule" ]; then
+            if [ "$(date -u +%u)" != "1" ] || [ "${{ github.event.schedule }}" != "30 6 * * *" ]; then
+              echo "⏭️ Skipping all-clear: not the Monday 06:30 run (alerts would still send)"
+              send_email="false"
+            else
+              echo "✓ Sending the weekly all-clear (Monday 06:30)"
+            fi
           fi
 
           # Send email if needed

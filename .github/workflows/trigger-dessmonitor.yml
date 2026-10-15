@@ -144,6 +144,10 @@ jobs:
 
       - name: Run anomaly detection (DessMonitor data only)
         id: anomaly
+        # Reads data/, so it belongs to the data cycle: on the hourly alarm
+        # poll nothing is fetched, and analysing stale CSVs made the admin mail
+        # flap between two answers (see test_hourly_poll_scope.py).
+        if: github.event_name != 'schedule' || github.event.schedule != '0 * * * *'
         shell: bash
         run: |
           set -euo pipefail
@@ -188,6 +192,10 @@ jobs:
 
       - name: Check DessMonitor plant connectivity (data link, not production)
         id: connectivity
+        # Reads data/, so it belongs to the data cycle: on the hourly alarm
+        # poll nothing is fetched, and analysing stale CSVs made the admin mail
+        # flap between two answers (see test_hourly_poll_scope.py).
+        if: github.event_name != 'schedule' || github.event.schedule != '0 * * * *'
         shell: bash
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
