@@ -2,48 +2,14 @@
 ║                                                                              ║
 ║                      [SHINEMONITOR] PRODUCTION MONITOR                       ║
 ║                                                                              ║
-║                            ⚠ ATTENTION REQUIRED ⚠                            ║
+║                          ✓ ALL SYSTEMS OPERATIONAL                           ║
 ║                                                                              ║
-║                        Status: 1 CRITICAL, 0 WARNING                         ║
+║                          Status: NO ALERTS DETECTED                          ║
 ║                                                                              ║
 ║               Date: 2026-10-15  |  Total Plants Monitored: 25                ║
 ║                Reporting: 17  |  Dead link: 8  |  Excluded: 0                ║
 ║                                                                              ║
 ================================================================================
-
-┌─ ALERT SUMMARY ──────────────────────────────────────────────────────────────┐
-│
-│ 🔴 [RED] thusharasameera-mendis-house
-│
-│   Issue: Production dropped 93.1% below normal
-│   Normal: 2.89 kWh/day  →  Current: 0.20 kWh/day
-│   Rule: < 20.0% baseline for 3 consecutive days
-│
-└──────────────────────────────────────────────────────────────────────────────┘
-
-┌─ RECOMMENDED ACTIONS ────────────────────────────────────────────────────────┐
-│
-│ thusharasameera-mendis-house:
-│   1. Check inverter status and error codes
-│   2. Verify grid connection and breaker status
-│   3. Inspect panels for shading or physical damage
-│   4. Contact maintenance team if issue persists
-│   no data or no production for 3 days — check the datalogger is online before dispatching
-│
-└──────────────────────────────────────────────────────────────────────────────┘
-
-┌─ DETAILED BREAKDOWN ─────────────────────────────────────────────────────────┐
-│
-│ [RED] thusharasameera-mendis-house
-│
-│   Baseline (avg/day): 2.8929 kWh
-│   Alert Threshold: < 0.5786 kWh/day
-│   Recent Production:
-│     2026-10-13: 0.2000 kWh (6.9% of baseline)
-│     2026-10-14: 0.3000 kWh (10.4% of baseline)
-│     2026-10-15: 0.2000 kWh (6.9% of baseline)
-│
-└──────────────────────────────────────────────────────────────────────────────┘
 
 ┌─ 📡 DATA LINK DOWN (CONNECTIVITY — NOT A PRODUCTION FAULT) ──────────────────┐
 │
