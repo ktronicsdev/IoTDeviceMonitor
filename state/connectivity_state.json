@@ -76,6 +76,17 @@
     "plant": "samurdi-kohuwala",
     "send_count": 3
   },
+  "sohan-must-pv1800-3024-pro": {
+    "customer": "Unknown",
+    "days_stale": 197,
+    "first_seen": "2026-10-15T08:49:35.184294",
+    "ignored": false,
+    "kind": "no_rows",
+    "last_data": "2026-04-30",
+    "last_sent": "2026-10-15T08:49:35.184294",
+    "plant": "sohan-must-pv1800-3024-pro",
+    "send_count": 1
+  },
   "upulatheja-3kw-pro-kadawath": {
     "customer": "Upulatheja",
     "days_stale": 115,
