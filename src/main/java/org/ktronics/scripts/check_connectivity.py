@@ -231,8 +231,18 @@ def clear_recovered(state, fleet):
     Without this a plant that went down, burned its 3 sends and later recovered
     would stay auto-ignored for ever and its next outage would be silent.
     """
-    down = {s.plant_key for s in fleet.link_down}
-    recovered = [key for key in list(state) if key != FLEET_KEY and key not in down]
+    # Only a plant we can SEE reporting has recovered.
+    #
+    # This used to clear everything not in link_down, which also matched a
+    # plant that simply was not classified this run - and that reset its
+    # send_count to 1, so it never reached 3, never auto-ignored, and mailed
+    # for ever. sohan-must-pv1800-3024-pro did exactly that from 12 to 16
+    # October 2026. Absence is not recovery: a fetch can fail, a CSV can be
+    # renamed, a vendor API can time out, and none of those mean the link is
+    # back. When in doubt, keep the state and let the counter stand.
+    reporting = {s.plant_key for s in fleet.reporting}
+    recovered = [key for key in list(state)
+                 if key != FLEET_KEY and key in reporting]
     for key in recovered:
         del state[key]
 
