@@ -26,3 +26,8 @@
 *.bin  binary
 *.woff binary
 *.woff2 binary
+
+# BMS readings are append-only rows. When two runs each append and collide, the
+# correct resolution is to keep BOTH lines, not to pick one or abort - a reading
+# exists only in the run that fetched it, so dropping it loses it permanently.
+bms-module/data/*.csv merge=union
