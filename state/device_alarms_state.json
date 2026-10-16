@@ -1347,5 +1347,14 @@
     "customer": "Abeetha",
     "plant": "PLANT",
     "message": "battery voltage is too high"
+  },
+  "1101493:D70000210186250779:6ad1d3e093320501687e7142": {
+    "send_count": 0,
+    "last_sent": null,
+    "first_seen": "2026-10-16T07:35:54+00:00",
+    "ignored": false,
+    "class": "SOC",
+    "started_at_utc": "2026-10-16T07:35:54+00:00",
+    "suppressed_reason": "dwell time is less than 6 hours"
   }
 }
