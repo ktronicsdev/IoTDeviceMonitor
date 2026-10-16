@@ -275,7 +275,8 @@ Monitors device-level warnings from ShineMonitor API and sends targeted notifica
 - 3-send rule: once an alarm passes the gate it is sent 3 times, at least 4 hours apart, then auto-ignored
 - State persistence with human-readable fields (customer, plant, message)
 
-**Test Coverage:** 38/38 PASSED (100%) - includes UC4, UC5, UC6, UC7, UC8 tests
+**Test Coverage:** 40/40 PASSED — `test_device_alarms.py`, which also
+carries the UC4, UC5, UC6, UC7 and UC8 tests
 
 ---
 
@@ -534,6 +535,9 @@ py analyze_plant_roi.py --input roi/abeetha-device-data-365days.csv --customer "
 
 **API Endpoint:** `queryDeviceDataOneDayPaging` - Returns 5-minute interval device metrics
 
+**Test Coverage:** 19/19 PASSED — `test_uc11_plant_roi.py`. The DessMonitor
+side has its own 19 in `test_dessmonitor_uc11_plant_roi.py`, listed under UC10.
+
 ---
 
 ### UC12: PH1000 Inverter Live Dashboard + Battery BMS
@@ -578,7 +582,14 @@ with **true battery SOC** read directly from the cracked **Hystorix/PACEEX BMS**
 - [README_BMS.md](src/main/java/org/ktronics/scripts/README_BMS.md) — how the Hystorix BMS cloud
   API was cracked (ADB root, Frida SSL-unpinning, Aliyun APIGW signing, `WIFI_Band` decode).
 
-**Test Coverage:** 21/21 PASSED (100%) — `test_ph1000.py`
+**Test Coverage:** 53/53 PASSED — `test_ph1000.py` (39),
+`test_bms_cell_frame.py` (9), `test_bms_carry_forward.py` (5).
+
+Not UC12, despite the name: `test_bms_ingest.py` (16) covers the **ESP32
+JK-BMS** module, a separate DIY `repository_dispatch` path, not the
+PH1000/PACEEX BMS. `test_dashboard_clock.py` and `test_live_loop_budget.py`
+are shared with PH1800. Both groups are listed under *Live inverters + BMS*
+in the test tables.
 
 ---
 
@@ -683,6 +694,62 @@ python3 src/main/java/org/ktronics/scripts/check_connectivity.py \
 
 **Test Coverage:** 65/65 PASSED — `test_connectivity.py` (62),
 `test_connectivity_state_retention.py` (3)
+
+---
+
+### UC15: PH1800 Live Dashboard (generic, all inverters)
+
+**Implementation Status:** ✅ **IMPLEMENTED**
+
+A live per-plant dashboard for any ShineMonitor inverter, as opposed to UC12's
+PH1000, which is a bespoke workaround for one plant's broken `devcode-697`
+feed. [`check_ph1800.py`](src/main/java/org/ktronics/scripts/check_ph1800.py)
+is a **pure pass-through**: for every account flagged `"ph1800": true` it walks
+the account's plants, auto-detects each device's devcode, and emits exactly
+what ShineMonitor returned — live fields, raw history, plant profile. No
+estimates, no energy integration, no register decode, no BMS, **no computed
+fields at all**. That is the point: when a number on the dashboard looks wrong,
+it is the vendor's number, so there is no local arithmetic to suspect first.
+
+**Privacy, because the repository is public.** One JSON per account, named
+`sha256(username:password).json`, so a plant's data file cannot be enumerated
+by someone who does not already have its credentials. The page carries the
+username; the viewer types the password; the browser derives the same filename.
+Four accounts are flagged today.
+
+**Pages:** `site/ph1800/<label>/index.html`, each a byte-for-byte copy of
+`site/ph1800/_app.html`. A page that differs from the template is re-stamped,
+so a template change propagates to every plant on the next run. `_app.html`
+is the hand-authored source and the only file here a human edits — which is
+why a merge conflict under `site/` is deliberately **not** auto-resolved (see
+#29 in Bug Fixes).
+
+**Two workflows, decoupled on purpose:**
+
+| Workflow | Cron | Publishes to | Window |
+| -------- | ---- | ------------ | ------ |
+| [`trigger-ph1800.yml`](.github/workflows/trigger-ph1800.yml) | `23 */2 * * *` | `ph1800-live` (force-push) | 7 days |
+| [`trigger-ph1800-hist.yml`](.github/workflows/trigger-ph1800-hist.yml) | `17 * * * *` | `ph1800-hist` (force-push) | 30 days |
+
+The live run is a long one: a `while :` loop publishing about every 10 minutes
+against a 300-minute budget inside a 330-minute job timeout, with the next run
+pre-queued as a hot standby and `cancel-in-progress: false` so a healthy loop
+is never killed. The budget is wall-clock, not an iteration count, because a
+fifth plant once pushed a fixed 26-iteration loop past the timeout and the tail
+iterations never published.
+
+The 30-day history is fetched on its **own** hourly schedule and never on the
+live cycle — fetching it there is what made the dashboards go stale in August
+2026. `test_live_loop_budget.py` guards both halves of that.
+
+Neither branch is a branch off `main`: each is a single orphan commit holding
+only the current payload, which is why they read as "1 ahead, thousands
+behind".
+
+**Test Coverage:** 49/49 PASSED — `test_ph1800.py` (41),
+`test_ph1800_battery_tab.py` (8). `test_dashboard_clock.py` (16) and
+`test_live_loop_budget.py` (16) cover this and UC12 jointly and are counted
+under *Live inverters + BMS* in the test tables.
 
 ---
 
@@ -1111,13 +1178,13 @@ The project includes comprehensive integration tests covering all business logic
 | Suite | Tests | File |
 | ----- | ----- | ---- |
 | UC12 (PH1000) | 39 | `test_ph1000.py` |
-| UC12 (PH1800) | 41 | `test_ph1800.py` |
-| UC12 (PH1800 battery tab) | 8 | `test_ph1800_battery_tab.py` |
-| UC12 (BMS ingest) | 16 | `test_bms_ingest.py` |
 | UC12 (BMS cell frames) | 9 | `test_bms_cell_frame.py` |
 | UC12 (BMS carry-forward) | 5 | `test_bms_carry_forward.py` |
-| UC12 (dashboard clock) | 16 | `test_dashboard_clock.py` |
-| UC12 (live loop budget) | 16 | `test_live_loop_budget.py` |
+| UC15 (PH1800) | 41 | `test_ph1800.py` |
+| UC15 (PH1800 battery tab) | 8 | `test_ph1800_battery_tab.py` |
+| UC12 + UC15 (dashboard clock) | 16 | `test_dashboard_clock.py` |
+| UC12 + UC15 (live loop budget) | 16 | `test_live_loop_budget.py` |
+| ESP32 BMS module (no UC yet) | 16 | `test_bms_ingest.py` |
 
 **SolisCloud Watchdog (40 tests):**
 

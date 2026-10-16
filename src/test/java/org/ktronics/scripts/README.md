@@ -33,10 +33,11 @@ update this file and the root `Readme.md` in the same commit.
 | UC10 | DessMonitor Multi-Platform | 112     | `test_dessmonitor_*.py` (7 files)|
 | UC11 | Plant ROI Analysis         | 19      | `test_uc11_plant_roi.py`         |
 | UC12 | PH1000 Inverter + BMS      | 39      | `test_ph1000.py`                 |
-| UC12 | PH1800 Inverter            | 41      | `test_ph1800.py`                 |
 | UC13 | Solis ON/OFF Watchdog      | 40      | `test_solis_switch.py`           |
 | UC14 | Connectivity + Exclusions  | 62      | `test_connectivity.py`           |
 | UC14 | Link-down state retention  | 3       | `test_connectivity_state_retention.py` |
+| UC15 | PH1800 Live Dashboard      | 41      | `test_ph1800.py`                 |
+| UC15 | PH1800 battery tab         | 8       | `test_ph1800_battery_tab.py`      |
 | BVT  | Dashboard Clocks (SL time) | 16      | `test_dashboard_clock.py`        |
 | BVT  | Centralized Config         | 14      | `test_centralized_config.py`     |
 | API  | ShineMonitor API           | 8       | `test_shinemonitor_api.py`       |
@@ -132,6 +133,22 @@ Separates "the data link died" from "the system died", and makes the fleet count
 - `config/excluded_plants.json` names plants deliberately off the platform. They are skipped
   by alarms, weekly reports and the summary counts, and every skip is logged with its reason.
 - The admin summary states three counts plainly: reporting, dead link, excluded.
+
+### UC15: PH1800 Live Dashboard (generic, all inverters)
+
+A live per-plant dashboard for any ShineMonitor inverter — a **pure pass-through**, unlike
+UC12's PH1000 which is a bespoke workaround for one broken feed. No computed fields at all,
+so a wrong number on the dashboard is the vendor's number.
+
+- One JSON per account at `sha256(username:password).json`: the repository is public, so a
+  plant's data file must not be enumerable without its credentials.
+- Pages are copies of `site/ph1800/_app.html`, re-stamped when they drift so a template
+  change reaches every plant. `_app.html` is the hand-authored source.
+- Live (7-day) and history (30-day) run on separate schedules and separate branches.
+  Fetching the 30-day window on the live cycle is what made the dashboards go stale in
+  August 2026; `test_live_loop_budget.py` guards both halves.
+- The live loop runs to a wall-clock budget, not an iteration count: a fifth plant once
+  pushed a fixed 26-iteration loop past the job timeout and the tail never published.
 
 ### BVT: Dashboard Clocks (SL time)
 
