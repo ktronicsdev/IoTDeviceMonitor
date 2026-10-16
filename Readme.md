@@ -203,9 +203,22 @@ Monitors all solar plants for production anomalies and sends system-wide alerts 
 - Auto-ignore: Plants with 0 production for 1 month
 - 3-day auto-ignore rule prevents alert fatigue
 
+**Alert discipline:** the same as device alarms and UC14 — **3 sends per alert,
+at least 4 hours apart**, then quiet. The 3-**day** auto-ignore
+(`auto_ignore_days`) applies independently; whichever limit is reached first
+stops the mail. Until 2026-10-16 `send_count` was incremented every run and
+never read, so the day rule was the only brake there was: at hourly polling
+that is ~90 emails for one fault.
+
+The filter that applies this runs **before** `alerts.json` and `alerts.txt` are
+written, so the report, the UC9 hash, the email subject and the exit code all
+describe the same set of alerts. It used to run after them, which meant the
+report listed alerts the exit code had already filtered out.
+
 **Email Recipient:** <ktronicssolar@gmail.com>
 
-**Test Coverage:** 15/15 PASSED (100%)
+**Test Coverage:** 19/19 PASSED — `test_admin_alerts.py` (15),
+`test_admin_alert_send_cap.py` (4)
 
 ---
 
@@ -383,11 +396,30 @@ Hash-based state detection in the `Send system-wide status email to admin` step 
 
 The step also sits behind the `emails.production_alerts_admin` feature flag.
 
+**The weekly all-clear (2026-10-16):** an "ALL SYSTEMS OPERATIONAL" email used
+to arrive daily, and some days more than once, although the fleet was quiet.
+Two causes, both now fixed:
+
+- The hourly run analysed **stale** CSVs and so produced a different
+  `alerts.json` from the 4-hourly run. The hash alternated between two fleet
+  views and every alternation read as "the state changed". The hourly run no
+  longer analyses CSVs at all (see Bug Fixes → *The October 2026 mail
+  flood*).
+- Nothing said how often an all-clear was wanted. Now, when there is nothing
+  at all to report — no alerts, no suppressions, no ignores — a scheduled run
+  sends only on **Monday 06:30 UTC**. A run that *has* something to report is
+  never gated this way: a real alert still sends on any run where the content
+  changes.
+
 **State File:** `state/admin_email_state.txt`
 
-**Email Reduction:** the workflow has 30 scheduled runs a day (hourly, plus six data-collection runs), and each would otherwise send a status email. With the check, a scheduled run sends one only when the alert content has changed: about 1-2 a day (22 in the two weeks to 12 Oct 2026).
+**Email Reduction:** the workflow has 30 scheduled runs a day (hourly, plus six
+data-collection runs), and each would otherwise send a status email. With the
+hash check and the Monday gate, a quiet fleet produces **one** admin status
+email a week; a fleet with alerts produces one per change of content, and UC1's
+send cap holds that to three per alert.
 
-**Implementation File:** [trigger-shinemonitor.yml:377-456](/.github/workflows/trigger-shinemonitor.yml#L377-L456)
+**Implementation File:** [trigger-shinemonitor.yml:390-492](/.github/workflows/trigger-shinemonitor.yml#L390-L492)
 
 **How It Works:**
 
@@ -398,9 +430,13 @@ The step also sits behind the `emails.production_alerts_admin` feature flag.
 5. Send email only if changed or push/manual trigger
 6. Save current hash for next run
 
-**Implementation Status:** ✅ **IMPLEMENTED** (Session 13)
+Step 5 also applies the Monday all-clear gate described above.
 
-**Test Coverage:** 9 tests (100% pass rate)
+**Implementation Status:** ✅ **IMPLEMENTED** (Session 13); all-clear gate
+added 2026-10-16
+
+**Test Coverage:** 21/21 PASSED — `test_uc9_admin_email.py` (9),
+`test_all_clear_cadence.py` (12)
 
 ---
 
@@ -618,6 +654,8 @@ Separates **"the data link died"** from **"the system died"**, and makes the fle
 
 **Alert discipline:** the same as device alarms — 3 sends per plant, at least 4 hours apart, then auto-ignored. A plant that starts reporting again has its state cleared, so the next outage alerts from scratch.
 
+Only a plant **positively seen reporting** is cleared. Until 2026-10-16 any plant merely absent from the run's fleet was cleared too, so when the hourly run looked at a smaller fleet than the 4-hourly one it wiped the send counts of everything it could not see, and the next run alerted those plants as new — three sends per plant, indefinitely.
+
 **Feature flags:** `emails.connectivity_admin`, `alerts.connectivity_link_down`.
 
 **State File:** `state/connectivity_state.json`
@@ -643,7 +681,8 @@ python3 src/main/java/org/ktronics/scripts/check_connectivity.py \
 
 **Exit codes:** `0` nothing to send, `2` connectivity alerts to send.
 
-**Test Coverage:** 62/62 PASSED (100%) — `test_connectivity.py`
+**Test Coverage:** 65/65 PASSED — `test_connectivity.py` (62),
+`test_connectivity_state_retention.py` (3)
 
 ---
 
@@ -691,6 +730,14 @@ resets anyone's counter.
 
 **4. Concurrent runs resolved state conflicts by discarding one side.** See
 below.
+
+**And one thing that was never a bug:** nothing had ever said how often a
+clean bill of health was wanted. Fixing #1 stops the all-clear flapping, but
+a correct hash on a quiet fleet still sends on the first run after the last
+alert clears. So the all-clear is now gated to the **Monday 06:30 UTC** run,
+once a week; anything with an actual alert in it is never gated. Pinned by
+`test_all_clear_cadence.py`, which lifts the gate out of the workflow YAML
+and runs it against a faked weekday rather than asserting on the text.
 
 ### #18/#28: whole-file resolution of a cumulative map
 
@@ -984,7 +1031,7 @@ Default thresholds in `check_anomaly.py`:
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 616 tests — 560 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 628 tests — 572 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 **Live inverters + BMS (150 tests):**
 
@@ -1005,7 +1052,7 @@ The project includes comprehensive integration tests covering all business logic
 | ----- | ----- | ---- |
 | UC13 (Solis ON/OFF Watchdog) | 40 | `test_solis_switch.py` |
 
-**Connectivity, exclusions and flags (124 tests):**
+**Connectivity, exclusions and flags (127 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
@@ -1021,12 +1068,13 @@ The project includes comprehensive integration tests covering all business logic
 | Gate rules (R1-R6, classes) | 14 | `test_alarm_triage.py` |
 | Gate wiring + feature mode | 8 | `test_alarm_gate_wiring.py` |
 
-**Alerting discipline (9 tests):**
+**Alerting discipline (21 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
 | UC1 (send cap + interval) | 4 | `test_admin_alert_send_cap.py` |
 | Hourly poll scope | 5 | `test_hourly_poll_scope.py` |
+| UC9 (weekly all-clear cadence) | 12 | `test_all_clear_cadence.py` |
 
 **Data-commit push (35 tests):**
 
@@ -1035,7 +1083,7 @@ The project includes comprehensive integration tests covering all business logic
 | Retry, abort and conflict policy | 27 | `test_data_commit_push.py` |
 | Cumulative state merge | 8 | `test_merge_alarm_state.py` |
 
-**ShineMonitor (119 tests):**
+**ShineMonitor (121 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
@@ -1073,6 +1121,7 @@ py -m pytest integration/test_customer_weekly.py -v   # UC2: Customer reports
 py -m pytest integration/test_device_alarms.py -v     # UC3: Device alarms
 py -m pytest integration/test_centralized_config.py -v # BVT: Config tests
 py -m pytest integration/test_uc9_admin_email.py -v    # UC9: Email optimization
+py -m pytest integration/test_all_clear_cadence.py -v  # UC9: Weekly all-clear gate
 py -m pytest integration/test_uc11_plant_roi.py -v     # UC11: Plant ROI
 py -m pytest integration/test_connectivity.py -v       # UC14: Connectivity + exclusions
 py -m pytest integration/test_feature_flags.py -v      # Feature flags

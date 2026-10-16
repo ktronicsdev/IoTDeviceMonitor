@@ -11,7 +11,10 @@ py -m pytest integration/ -v
 
 ## Test Summary
 
-**Total: 545 tests** (489 passed on Windows, 56 skipped - bash tests run in CI)
+**Total: 628 tests** (572 passed on Windows, 56 skipped - bash and API tests run in CI)
+
+The count is what `py -m pytest integration/ -q` prints. If a change moves it,
+update this file and the root `Readme.md` in the same commit.
 
 ## Use Cases
 
@@ -25,15 +28,28 @@ py -m pytest integration/ -v
 | UC6  | Log Summary Counts         | (in UC3)| `test_device_alarms.py`          |
 | UC7  | State JSON Enhancement     | (in UC3)| `test_device_alarms.py`          |
 | UC8  | Weekly Report Schedule     | (in UC3)| `test_device_alarms.py`          |
-| UC9  | Admin Email Optimization   | 10      | `test_uc9_admin_email.py`        |
-| UC10 | DessMonitor Multi-Platform | 50      | `test_dessmonitor_integration.py`|
+| UC9  | Admin Email Optimization   | 9       | `test_uc9_admin_email.py`        |
+| UC9  | Weekly all-clear cadence   | 12      | `test_all_clear_cadence.py`      |
+| UC10 | DessMonitor Multi-Platform | 112     | `test_dessmonitor_*.py` (7 files)|
 | UC11 | Plant ROI Analysis         | 19      | `test_uc11_plant_roi.py`         |
-| UC12 | PH1000 Inverter + BMS      | 21      | `test_ph1000.py`                 |
+| UC12 | PH1000 Inverter + BMS      | 39      | `test_ph1000.py`                 |
+| UC12 | PH1800 Inverter            | 41      | `test_ph1800.py`                 |
+| UC13 | Solis ON/OFF Watchdog      | 40      | `test_solis_switch.py`           |
 | UC14 | Connectivity + Exclusions  | 62      | `test_connectivity.py`           |
+| UC14 | Link-down state retention  | 3       | `test_connectivity_state_retention.py` |
 | BVT  | Dashboard Clocks (SL time) | 16      | `test_dashboard_clock.py`        |
 | BVT  | Centralized Config         | 14      | `test_centralized_config.py`     |
-| API  | ShineMonitor API           | 9       | `test_shinemonitor_api.py`       |
-| API  | DessMonitor API            | 13      | `test_dessmonitor_api.py`        |
+| API  | ShineMonitor API           | 8       | `test_shinemonitor_api.py`       |
+| API  | DessMonitor API            | 18      | `test_dessmonitor_api.py`        |
+
+Not in the table above, because they pin workflow and push behaviour rather than
+a single use case: `test_alarm_triage.py` (14) and `test_alarm_gate_wiring.py` (8)
+for the six-hour gate, `test_admin_alert_send_cap.py` (4) and
+`test_hourly_poll_scope.py` (5) for alerting cadence,
+`test_data_commit_push.py` (27) and `test_merge_alarm_state.py` (8) for the
+data-commit push, `test_feature_flags.py` (34), `test_fleet_benchmark.py` (28)
+and the remaining BMS and dashboard suites. The root
+[Readme.md](../../../../../../Readme.md) has the full breakdown.
 
 ## UC Descriptions
 
@@ -44,6 +60,7 @@ Detects production anomalies and sends alerts to admin:
 - RED alert: < 20% baseline for 3 consecutive days
 - ORANGE alert: < 40% baseline for 3 consecutive months
 - Auto-ignore: 0 production for 1 month
+- 3 sends per alert, at least 4 hours apart (`test_admin_alert_send_cap.py`)
 
 ### UC2: Customer Weekly Reports
 
@@ -68,6 +85,8 @@ Hash-based duplicate email prevention:
 
 - Only sends when alert state changes
 - Ignores timestamp changes
+- "ALL SYSTEMS OPERATIONAL" only on the Monday 06:30 UTC run; a run with an
+  actual alert in it is never gated (`test_all_clear_cadence.py`)
 
 ### UC10: DessMonitor Multi-Platform
 
@@ -106,7 +125,9 @@ Separates "the data link died" from "the system died", and makes the fleet count
 - Fleet-wide silence is reported once, as our own collector/API failure, not as N customer
   faults — so no customer's alert budget is burned on a fault at our end.
 - Alerts follow the device-alarm discipline: 3 sends, 4 hours apart, then auto-ignored;
-  state clears when a plant reports again.
+  state clears when a plant is positively seen reporting again. A plant merely absent from
+  a run is NOT treated as recovered — that reset the send counter for ever
+  (`test_connectivity_state_retention.py`).
 - `config/excluded_plants.json` names plants deliberately off the platform. They are skipped
   by alarms, weekly reports and the summary counts, and every skip is logged with its reason.
 - The admin summary states three counts plainly: reporting, dead link, excluded.
