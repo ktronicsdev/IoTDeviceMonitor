@@ -739,6 +739,45 @@ once a week; anything with an actual alert in it is never gated. Pinned by
 `test_all_clear_cadence.py`, which lifts the gate out of the workflow YAML
 and runs it against a faked weekday rather than asserting on the text.
 
+### #29: four workflows still pushed to main bare
+
+#28 gave the two data workflows a safe publish. Four others kept a plain
+`git push`: `trigger-customer-reports`, `trigger-dessmonitor-weekly-reports`,
+`trigger-solis-switch` and the PH1800 pages step. A bare push does not fetch,
+so when it loses a race the push is rejected non-fast-forward; it is the last
+command in its step, so the step fails and the commit dies with the runner,
+with nothing to retry it. Three of the four carried a `state/*.json`, so the
+lost commit meant send counters never reached `main` and the next run mailed
+the same fault as new — the flood above, by a different route.
+
+The two weekly workflows both fire at `0 04 * * 0`, the same minute every
+Sunday, so one of them lost by construction. Per-workflow `concurrency` groups
+do not help: a group only serialises a workflow against itself.
+
+All four now call `push_data_commit.sh --resolve-conflicts`.
+
+Two things that looked like part of the fix and were not:
+
+- **The conflict allowlist did not need widening.** `resolve_regenerated_conflicts()`
+  deliberately refuses anything outside `state/`, `data/` and `alerts/`. The
+  archive tarballs these workflows appear to commit are matched by `*.tar.gz`
+  in `.gitignore`, so `git add reports/archive/*` has always staged nothing —
+  the only thing they really commit is the state file, which the merger already
+  handles. The PH1800 pages are generated copies of `_app.html`, written by one
+  workflow that is serialised against itself; `_app.html` itself is
+  hand-authored, so allowlisting `site/` would have let a bot revert a human's
+  template. A conflict there should still fail loudly.
+- **The PH1800 step no longer hardcodes `main`.** It pushed `HEAD:main` from
+  whatever ref the run started on, so a "Run workflow" from a topic branch
+  would rebase that branch onto main and push it there. It now publishes to the
+  ref it ran from, which is what `test_a_manual_run_from_a_branch_never_writes_to_main`
+  already required of every other publisher.
+
+`test_no_bare_push_to_main.py` is the guard. It allows exactly one exemption:
+the force pushes to `ph1000-live`, `ph1000-hist`, `ph1800-live` and
+`ph1800-hist`, which have a single writer each and are decoupled from `main`
+on purpose.
+
 ### #18/#28: whole-file resolution of a cumulative map
 
 The data-commit step resolved a conflicting `state/*.json` with
@@ -1031,7 +1070,7 @@ Default thresholds in `check_anomaly.py`:
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 628 tests — 572 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 638 tests — 582 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 **Live inverters + BMS (150 tests):**
 
@@ -1076,12 +1115,13 @@ The project includes comprehensive integration tests covering all business logic
 | Hourly poll scope | 5 | `test_hourly_poll_scope.py` |
 | UC9 (weekly all-clear cadence) | 12 | `test_all_clear_cadence.py` |
 
-**Data-commit push (35 tests):**
+**Data-commit push (45 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
 | Retry, abort and conflict policy | 27 | `test_data_commit_push.py` |
 | Cumulative state merge | 8 | `test_merge_alarm_state.py` |
+| No bare push to main | 10 | `test_no_bare_push_to_main.py` |
 
 **ShineMonitor (121 tests):**
 

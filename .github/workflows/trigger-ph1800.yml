@@ -75,7 +75,15 @@ jobs:
             git add site/ph1800
             git -c user.email="actions@users.noreply.github.com" -c user.name="ph1800-bot" \
                 commit -q -m "PH1800: add page(s) for newly-flagged plant(s)"
-            git push origin HEAD:main && echo "[pages] pushed new plant page(s) to main"
+            # Publishes to the ref the run started from, not a hardcoded
+            # `main`. A "Run workflow" from a topic branch is the obvious way
+            # to try a change, and the old `HEAD:main` rebased that branch
+            # onto main and pushed it there - unreviewed commits on the live
+            # branch with no pull request. On schedule and on push to main this
+            # is the same thing it always did.
+            chmod +x src/main/java/org/ktronics/scripts/push_data_commit.sh
+            src/main/java/org/ktronics/scripts/push_data_commit.sh --resolve-conflicts
+            echo "[pages] published new plant page(s) to ${GITHUB_REF_NAME}"
           else
             echo "[pages] no new plant pages"
           fi

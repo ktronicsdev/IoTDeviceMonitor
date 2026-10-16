@@ -167,4 +167,5 @@ jobs:
           git add state/customer_alerts_state.json 2>/dev/null || true
 
           git commit -m "Archive weekly customer reports ${timestamp}" || exit 0
-          git push
+          chmod +x src/main/java/org/ktronics/scripts/push_data_commit.sh
+          src/main/java/org/ktronics/scripts/push_data_commit.sh --resolve-conflicts

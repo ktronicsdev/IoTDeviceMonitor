@@ -11,7 +11,7 @@ py -m pytest integration/ -v
 
 ## Test Summary
 
-**Total: 628 tests** (572 passed on Windows, 56 skipped - bash and API tests run in CI)
+**Total: 638 tests** (582 passed on Windows, 56 skipped - bash and API tests run in CI)
 
 The count is what `py -m pytest integration/ -q` prints. If a change moves it,
 update this file and the root `Readme.md` in the same commit.
@@ -46,8 +46,8 @@ Not in the table above, because they pin workflow and push behaviour rather than
 a single use case: `test_alarm_triage.py` (14) and `test_alarm_gate_wiring.py` (8)
 for the six-hour gate, `test_admin_alert_send_cap.py` (4) and
 `test_hourly_poll_scope.py` (5) for alerting cadence,
-`test_data_commit_push.py` (27) and `test_merge_alarm_state.py` (8) for the
-data-commit push, `test_feature_flags.py` (34), `test_fleet_benchmark.py` (28)
+`test_data_commit_push.py` (27), `test_merge_alarm_state.py` (8) and
+`test_no_bare_push_to_main.py` (10) for the data-commit push, `test_feature_flags.py` (34), `test_fleet_benchmark.py` (28)
 and the remaining BMS and dashboard suites. The root
 [Readme.md](../../../../../../Readme.md) has the full breakdown.
 
