@@ -149,8 +149,8 @@ the next outage starts a fresh cycle.
 
 | Workflow | Runs | Does |
 |---|---|---|
-| `trigger-shinemonitor.yml` | 6x daily, 02:30 UTC and every 4 h after | Collect, connectivity, anomalies, device alarms, admin email |
-| `trigger-dessmonitor.yml` | Daily, 03:00 UTC | The same for DessMonitor (UC10) |
+| `trigger-shinemonitor.yml` | Hourly, **plus** 6x daily at 02:30 UTC and every 4 h after | Hourly: device alarms only. 4-hourly: collect, connectivity, anomalies, admin email |
+| `trigger-dessmonitor.yml` | Hourly, **plus** 6x daily from 03:00 UTC | The same for DessMonitor (UC10) |
 | `trigger-customer-reports.yml` | Sunday, 04:00 UTC | UC2 weekly reports and the admin summary |
 | `trigger-dessmonitor-weekly-reports.yml` | Sunday, 04:00 UTC | UC2 for DessMonitor |
 | `trigger-ph1000.yml`, `trigger-ph1800.yml` | Every 2 h, restarting a self-chaining loop | UC12 live dashboards |
@@ -162,6 +162,18 @@ Customer-facing email goes out **only on scheduled runs**; admin email goes out
 on every trigger, including a developer's push (UC8). The test customer
 Gayan-IMH is the exception and receives on all triggers (UC4), which is how a
 change is proven end to end without mailing the customer base.
+
+The hourly run exists so the six-hour gate's dwell is literal rather than
+six-to-ten. It polls alarms and **nothing else**: it does not fetch CSVs, so it
+must not analyse them either. `check_anomaly.py` and `check_connectivity.py`
+carry the same hourly-skip guard as the fetch steps, and
+`test_hourly_poll_scope.py` keeps it that way — running them on stale data gave
+two alternating fleet views that overwrote each other's state and mailed the
+admin several times a day.
+
+"ALL SYSTEMS OPERATIONAL" goes out on the **Monday 06:30 UTC** run only. Alerts
+still send whenever the content changes; a clean bill of health is a weekly
+thing, not an hourly one.
 
 ### Rules that may not be broken
 
@@ -637,6 +649,69 @@ python3 src/main/java/org/ktronics/scripts/check_connectivity.py \
 
 ## Bug Fixes
 
+### The October 2026 mail flood — four bugs, one inbox
+
+Between 11 and 16 October the admin inbox filled with repeats: "ALL SYSTEMS
+OPERATIONAL" several times a day, one RED alert four times in nine hours, and
+`sohan-must-pv1800-3024-pro` reporting a dead link every few hours at
+"Send #1/3" without the counter ever advancing. It looked like one bug. It was four,
+and the first diagnosis — a push race — was wrong.
+
+**What gave it away:** every "wrong" commit was *byte-identical*. A race
+produces varied content; two alternating identical values mean two
+deterministic code paths.
+
+**1. The hourly run analysed CSVs it never fetched.** #10 added an hourly cron
+and guarded the fetch and cleanup steps to skip it — but not `check_anomaly.py`
+or `check_connectivity.py`. So the hourly run computed one fleet view from
+committed data and the 4-hourly run computed another from fresh data, each
+overwriting the other's state. Any UC9 hash change reads as news, hence the
+mail. Fixed by giving those two steps the same guard; pinned by
+`test_hourly_poll_scope.py`, which also asserts the alarm poll still runs
+hourly so nobody "fixes" it by guarding everything and reverting #10.
+
+**2. A production alert had no send limit.** `send_count` was incremented every
+run and never read; the only brake was the 3-**day** auto-ignore. At six runs a
+day that was survivable, at thirty it is ~90 emails for one fault. Now three
+sends, four hours apart, matching the device-alarm rule.
+
+The substantive part of that fix was **moving the send filter above the output
+writes**. It used to run after, so `alerts.json` and `alerts.txt` always listed
+every alert while only the exit code reflected the filtering — a cap bolted on
+there would have produced an "ALL SYSTEMS OPERATIONAL" subject over a body
+still reporting RED. The JSON, the text, the hash, the subject and the exit
+code now describe one set.
+
+**3. Absence from a poll was treated as recovery.** `clear_recovered()` dropped
+the state of every plant not in `fleet.link_down`, which also matches a plant
+that was not classified at all that run — so its `send_count` reset to 1, never
+reached 3, never auto-ignored. Now only a plant positively seen in
+`fleet.reporting` is cleared. A fetch failure or a vendor timeout no longer
+resets anyone's counter.
+
+**4. Concurrent runs resolved state conflicts by discarding one side.** See
+below.
+
+### #18/#28: whole-file resolution of a cumulative map
+
+The data-commit step resolved a conflicting `state/*.json` with
+`git checkout --ours`. A state file is one key → record map and two runs each
+add and update different keys, so whole-file resolution throws away everything
+the losing side recorded — not just the conflicting part.
+
+Reproduced in a sandbox: main at `{A:2, B:1}`, our run at `{A:1, B:2, C:1}`;
+after resolution main was `{A:2, B:1}`, the script printed "Published data
+commit to main." and exited 0. B's second send and alarm C were gone, so the
+next run mails them as new, for ever.
+
+`merge_alarm_state.py` merges instead: union of keys, higher `send_count` per
+key, `ignored` latches true, `first_seen` earliest and `last_sent` latest.
+Fixed alongside it: the unchecked `git checkout` return (which silently staged
+the opposite side), an unbounded `else` branch that would have resolved a
+`src/` conflict in the bot's favour, and a failed `git stash pop` turning an
+already-successful push into the false "production CSVs are NOT being updated"
+email.
+
 ### UC9: Hash Timestamp Bug (Session 14)
 
 **Problem:** Admin emails sent 6x daily even when alert content unchanged
@@ -909,7 +984,7 @@ Default thresholds in `check_anomaly.py`:
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 545 tests — 489 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 616 tests — 560 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 **Live inverters + BMS (150 tests):**
 
@@ -937,6 +1012,28 @@ The project includes comprehensive integration tests covering all business logic
 | UC14 (Connectivity + Exclusions) | 62 | `test_connectivity.py` |
 | Feature flags | 34 | `test_feature_flags.py` |
 | Fleet benchmark | 28 | `test_fleet_benchmark.py` |
+| UC14 (state retention) | 3 | `test_connectivity_state_retention.py` |
+
+**Six-hour gate (22 tests):**
+
+| Suite | Tests | File |
+| ----- | ----- | ---- |
+| Gate rules (R1-R6, classes) | 14 | `test_alarm_triage.py` |
+| Gate wiring + feature mode | 8 | `test_alarm_gate_wiring.py` |
+
+**Alerting discipline (9 tests):**
+
+| Suite | Tests | File |
+| ----- | ----- | ---- |
+| UC1 (send cap + interval) | 4 | `test_admin_alert_send_cap.py` |
+| Hourly poll scope | 5 | `test_hourly_poll_scope.py` |
+
+**Data-commit push (35 tests):**
+
+| Suite | Tests | File |
+| ----- | ----- | ---- |
+| Retry, abort and conflict policy | 27 | `test_data_commit_push.py` |
+| Cumulative state merge | 8 | `test_merge_alarm_state.py` |
 
 **ShineMonitor (119 tests):**
 
@@ -944,7 +1041,7 @@ The project includes comprehensive integration tests covering all business logic
 | ----- | ----- | ---- |
 | UC1 (Admin Alerts) | 15 | `test_admin_alerts.py` |
 | UC2 (Customer Weekly) | 16 | `test_customer_weekly.py` |
-| UC3-UC8 (Device Alarms) | 38 | `test_device_alarms.py` |
+| UC3-UC8 (Device Alarms) | 40 | `test_device_alarms.py` |
 | UC9 (Email Optimization) | 9 | `test_uc9_admin_email.py` |
 | UC11 (Plant ROI) | 19 | `test_uc11_plant_roi.py` |
 | BVT (Centralized Config) | 14 | `test_centralized_config.py` |
