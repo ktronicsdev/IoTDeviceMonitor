@@ -103,9 +103,13 @@ So:
 | `send_email.py`, `send_customer_emails.py`, `email_utils.py` | Delivery |
 | `features.py` | Which channels are live |
 | `config.py` | The one place `credentials.json` is located |
+| `push_data_commit.sh` | The only way anything publishes to `main`: fetch, rebase, retry |
+| `merge_alarm_state.py` | Merges a conflicting cumulative `state/*.json` instead of picking a side |
 | `fleet_benchmark.py` | Weather-adjusted benchmark for production disputes |
 | `check_solis_switch.py`, `solis_common.py` | UC13 SolisCloud watchdog |
-| `check_ph1000*.py`, `check_ph1800.py` | UC12 live inverter and BMS dashboards |
+| `check_ph1000*.py` | UC12 PH1000 dashboard and its PACEEX BMS decode |
+| `check_ph1800.py` | UC15 generic pass-through dashboard, any inverter |
+| `bms-module/scripts/ingest_bms_reading.py` | UC16 ESP32 reading: CSV, thresholds, alert |
 
 ### Where the truth lives
 
@@ -153,10 +157,18 @@ the next outage starts a fresh cycle.
 | `trigger-dessmonitor.yml` | Hourly, **plus** 6x daily from 03:00 UTC | The same for DessMonitor (UC10) |
 | `trigger-customer-reports.yml` | Sunday, 04:00 UTC | UC2 weekly reports and the admin summary |
 | `trigger-dessmonitor-weekly-reports.yml` | Sunday, 04:00 UTC | UC2 for DessMonitor |
-| `trigger-ph1000.yml`, `trigger-ph1800.yml` | Every 2 h, restarting a self-chaining loop | UC12 live dashboards |
-| `trigger-ph1000-hist.yml`, `trigger-ph1800-hist.yml` | Hourly | UC12 30-day history, on its own branch |
+| `trigger-ph1000.yml`, `trigger-ph1800.yml` | Every 2 h, restarting a self-chaining loop | UC12 / UC15 live dashboards |
+| `trigger-ph1000-hist.yml`, `trigger-ph1800-hist.yml` | Hourly | UC12 / UC15 30-day history, on its own branch |
 | `trigger-solis-switch.yml` | **Schedule commented out** — manual only until the Solis Control API key is added | UC13 watchdog |
-| `trigger-bms-ingest.yml` | On demand | BMS cell data |
+| `trigger-bms-ingest.yml` | On a device push (`repository_dispatch`), ~every 15 min | UC16 ESP32 BMS reading |
+| `tests.yml` | On every pull request to `main` | The full integration suite. **Nothing else tests a PR** |
+
+**Not part of the pipeline**, though they live beside it:
+`refresh_bms_creds.py` re-bootstraps the BMS credentials from the running
+PACEEX app and needs BlueStacks plus frida on a workstation; `solis_mcp.py` is
+a stdio MCP server that exposes SolisCloud to Claude; and
+`check_shinemonitor_query-plants.sh` is referenced by no workflow and no test —
+a manual query helper, which is worth knowing before anyone relies on it.
 
 Customer-facing email goes out **only on scheduled runs**; admin email goes out
 on every trigger, including a developer's push (UC8). The test customer
