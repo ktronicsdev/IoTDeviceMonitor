@@ -306,25 +306,20 @@ def compare_inverters(station_id: str, stale_after_min: int = 30) -> dict:
 
 
 @mcp.tool()
-def list_control_registers(inverter_id: str) -> dict:
-    """Read-only: list readable control registers (cid) for an inverter.
-    Needs the Control API permission on the key."""
-    return _call("/v2/api/atReadList", {"inverterId": str(inverter_id)})
-
-
-@mcp.tool()
-def read_control_register(inverter_id: str, cid: int) -> dict:
-    """Read-only: read one control register (e.g. battery reserve SOC) by cid."""
-    return _call("/v2/api/atRead", {"inverterId": str(inverter_id), "cid": int(cid)})
+def read_control_register(inverter_sn: str, cid: int) -> dict:
+    """Read-only: read one control register (e.g. battery reserve SOC) by cid.
+    The value is in data.msg. On/off on the hybrids is cid 52 and 54:
+    190 = ON, 222 = OFF. Needs the Control API permission on the key."""
+    return _call("/v2/api/atRead", {"inverterSn": str(inverter_sn), "cid": int(cid)})
 
 
 if os.environ.get("SOLIS_MCP_ALLOW_CONTROL") == "1":
     @mcp.tool()
-    def set_control_register(inverter_id: str, cid: int, value: str) -> dict:
+    def set_control_register(inverter_sn: str, cid: int, value: str) -> dict:
         """WRITES an inverter setting. Read the register first and confirm with the
         user - a wrong cid changes an unrelated setting."""
         return _call("/v2/api/control",
-                     {"inverterId": str(inverter_id), "cid": int(cid), "value": str(value)})
+                     {"inverterSn": str(inverter_sn), "cid": int(cid), "value": str(value)})
 
 
 if __name__ == "__main__":

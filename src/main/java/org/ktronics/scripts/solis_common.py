@@ -21,14 +21,17 @@ Read endpoints used here:
     POST /v1/api/inverterList     -> inverters under the account
     POST /v1/api/inverterDetail   -> live state + pac (AC power) for one inverter
 
-Control endpoints (require the Control API permission to be enabled by Solis):
+Control endpoints (require the Control API permission to be enabled by Solis).
+They address the inverter by **serial number** (`inverterSn`); an `inverterId`
+is rejected with "inverterSn cannot be empty":
     POST /v2/api/control          -> send a control command (cid + value)
-    POST /v2/api/atRead           -> read back a control register (cid)
-    POST /v2/api/atReadList       -> list readable control registers (discovery)
+    POST /v2/api/atRead           -> read back a control register (cid); value in data.msg
+(There is no "list registers" endpoint. /v2/api/atReadBatch exists but can take
+longer than the 30 s timeout, so cids are read one at a time.)
 
-Docs reference: "SolisCloud Platform API" / "Solis Control API" (request via your
-Solis distributor). The on/off control "cid" is account/model specific — see
-check_solis_switch.py --discover to find it before enabling auto-control.
+On/off on the hybrids: cid 52 (on) and cid 54 (off) both read back 190 = ON,
+222 = OFF; switching on is control cid 52 value 190. Check another model with
+check_solis_switch.py --discover <SN> before enabling auto-control for it.
 """
 
 import base64
@@ -121,17 +124,13 @@ class SolisClient:
             payload["sn"] = sn
         return self.post("/v1/api/inverterDetail", payload)
 
-    # --- control API (requires Control permission) ------------------------- #
-    def control(self, inverter_id, cid, value) -> dict:
+    # --- control API (requires Control permission; addressed by SN) -------- #
+    def control(self, sn, cid, value) -> dict:
         return self.post("/v2/api/control",
-                         {"inverterId": str(inverter_id), "cid": int(cid), "value": str(value)})
+                         {"inverterSn": str(sn), "cid": int(cid), "value": str(value)})
 
-    def at_read(self, inverter_id, cid) -> dict:
-        return self.post("/v2/api/atRead",
-                         {"inverterId": str(inverter_id), "cid": int(cid)})
-
-    def at_read_list(self, inverter_id) -> dict:
-        return self.post("/v2/api/atReadList", {"inverterId": str(inverter_id)})
+    def at_read(self, sn, cid) -> dict:
+        return self.post("/v2/api/atRead", {"inverterSn": str(sn), "cid": int(cid)})
 
 
 def is_success(resp: dict) -> bool:
@@ -141,3 +140,14 @@ def is_success(resp: dict) -> bool:
     if resp.get("success") is True:
         return True
     return str(resp.get("code")) == "0"
+
+
+def control_accepted(resp: dict) -> bool:
+    """A control call can succeed at the top level and still fail per command:
+    `data` is a list whose items carry their own `code`."""
+    if not is_success(resp):
+        return False
+    items = resp.get("data")
+    if not isinstance(items, list):
+        return True
+    return all(str(i.get("code", "0")) == "0" for i in items if isinstance(i, dict))

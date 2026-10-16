@@ -24,9 +24,16 @@ Built after **Ktronics Imbulgoda** latched OFF for **4 days** following repeated
 ## Setup
 
 ### 1. Get a SolisCloud API key
-SolisCloud → **Service → API Management** → request/create an API key. You get a
-**Key ID** and **Key Secret**. For automatic switch-on you also need the
-**Control API** permission enabled (ask your Solis distributor — it's gated).
+Solis turns API access on by request: a Service Centre ticket of type **API Access
+Request** (this account's was
+[ticket 1083215](https://solis-service.solisinverters.com/en/support/tickets/1083215)).
+Solis reviews it and a local authority activates access. Then SolisCloud →
+**Service → API Management → Activate now** (confirm with the emailed verification
+code) shows the **Key ID** and **Key Secret**. The key on this account has the
+**Control API** permission, which automatic switch-on needs.
+
+The SolisCloud Platform API Document (V2.0.3) covers the v1 read endpoints only;
+the v2 control calls here (`control`, `atRead`) were confirmed against the live API.
 
 ### 2. Fill in the `solis` block of `credentials.json`
 ```jsonc
@@ -38,9 +45,9 @@ SolisCloud → **Service → API Management** → request/create an API key. You
   "tz_offset_minutes": 330,          // Sri Lanka UTC+5:30
   "core_daylight_start_hour": 9,     // heuristic only acts 09:00–15:00 local
   "core_daylight_end_hour": 15,
-  "onoff_cid": null,                 // set to enable AUTO switch-on (see step 4)
-  "on_value": null,
-  "off_value": null,
+  "onoff_cid": 52,                   // null disables AUTO switch-on (see step 4)
+  "on_value": "190",
+  "off_value": "222",
   "inverters": [
     { "label": "Ktronics Imbulgoda",
       "inverter_id": "1308675217949897483",
@@ -59,15 +66,18 @@ repo secret, so add the same `solis` block there. SMTP secrets
 
 ### 4. (Optional) Enable automatic switch-on
 Detection works **without** Control permission (daylight + zero-output heuristic),
-but to let it actually flip the switch you must supply the on/off control register:
+but to let it actually flip the switch you must supply the on/off control register.
+On the hybrids it is **cid 52** (switch on) and **cid 54** (switch off); both read
+back `190` = ON and `222` = OFF, and switching on is cid 52 ← `190`. Check that an
+inverter answers before configuring it:
 
 ```bash
-python check_solis_switch.py --discover 1308675217949897483
+python check_solis_switch.py --discover 1031720254230285   # inverter SN, not id
 ```
-Find the on/off entry in the dump, then set `onoff_cid`, `on_value`, `off_value`
-in `credentials.json`. Until these are set, the watchdog **detects** an OFF
-inverter and **emails you to switch it on manually** — it never guesses a control
-command (a wrong `cid` could change an unrelated setting).
+The Control API addresses inverters by **SN** (`inverterSn`); it rejects an
+`inverterId`. With `onoff_cid` unset, the watchdog **detects** an OFF inverter and
+**emails you to switch it on manually** — it never guesses a control command (a
+wrong `cid` could change an unrelated setting).
 
 ## How detection works
 
@@ -96,7 +106,7 @@ python check_solis_switch.py              # check + act + email (what the cron r
 python check_solis_switch.py --dry-run    # detect + email, never send control
 python check_solis_switch.py --status     # print live state, no action
 python check_solis_switch.py --list       # list inverters on the account
-python check_solis_switch.py --discover <INVERTER_ID>   # find the on/off cid
+python check_solis_switch.py --discover <SN>   # read the on/off cids 52/54
 python check_solis_switch.py --detail     # per-MPPT DC volts/amps/watts
 python check_solis_switch.py --detail --raw   # raw inverterDetail JSON
 ```
@@ -104,7 +114,7 @@ python check_solis_switch.py --detail --raw   # raw inverterDetail JSON
 ## Tests
 ```bash
 py -m pytest src/test/java/org/ktronics/scripts/integration/test_solis_switch.py -q
-# 40 passed
+# 44 passed
 ```
 
 ## Array health (`--detail`)
@@ -146,8 +156,8 @@ Exposes SolisCloud to Claude as tools, reusing `SolisClient`. It is read-only by
 | `inverter_energy`, `station_energy` | History: `day` (5-min points), `month`, `year` |
 | `alarms` | Alarm list (default: last 7 days) |
 | `compare_inverters` | Per-inverter health for multi-inverter plants: flags stale data, missing values, yield < 50% of the best sibling |
-| `list_control_registers`, `read_control_register` | Read control registers (needs Control permission) |
-| `set_control_register` | **Writes** a setting. Registered only when `SOLIS_MCP_ALLOW_CONTROL=1` |
+| `read_control_register` | Read one control register by inverter SN and cid (needs Control permission) |
+| `set_control_register` | **Writes** a setting, by inverter SN. Registered only when `SOLIS_MCP_ALLOW_CONTROL=1` |
 
 Credentials come from `SOLIS_KEY_ID` / `SOLIS_KEY_SECRET` env vars, or else from the `solis` block of `credentials.json`.
 

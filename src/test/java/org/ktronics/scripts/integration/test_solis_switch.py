@@ -142,11 +142,20 @@ class TestDaylight:
 # --------------------------------------------------------------------------- #
 # Detection
 # --------------------------------------------------------------------------- #
+def _atread_resp(value):
+    """Shape of a real /v2/api/atRead answer: the register value is data.msg."""
+    return {"msg": "success", "code": "0",
+            "data": {"msg": value, "yuanzhi": value, "needLoop": "false"},
+            "inverterSn": "SN1", "cid": "52"}
+
+
 class _FakeClient:
     """Stub SolisClient for detect_off control-read path."""
     def __init__(self, atread=None):
         self._atread = atread or {"success": False}
-    def at_read(self, inverter_id, cid):
+        self.read_with = None
+    def at_read(self, sn, cid):
+        self.read_with = sn
         return self._atread
 
 
@@ -155,16 +164,32 @@ INV = {"inverter_id": "123", "sn": "SN1", "station_id": "999", "label": "Test"}
 
 class TestDetectOff:
     def test_authoritative_off(self):
-        cfg = {"onoff_cid": 5001, "off_value": "222"}
-        client = _FakeClient({"success": True, "data": {"value": "222"}})
+        cfg = {"onoff_cid": 52, "off_value": "222"}
+        client = _FakeClient(_atread_resp("222"))
         is_off, reason, mode = w.detect_off(client, cfg, INV, w.parse_detail(_detail_resp(0)))
         assert is_off and mode == "control"
 
     def test_authoritative_on(self):
-        cfg = {"onoff_cid": 5001, "off_value": "222"}
-        client = _FakeClient({"success": True, "data": {"value": "190"}})
+        cfg = {"onoff_cid": 52, "off_value": "222"}
+        client = _FakeClient(_atread_resp("190"))
         is_off, reason, mode = w.detect_off(client, cfg, INV, w.parse_detail(_detail_resp(0)))
         assert not is_off and mode == "control"
+        assert "190" in reason
+
+    def test_register_is_read_by_sn_not_inverter_id(self):
+        """The Control API rejects inverterId ("inverterSn cannot be empty")."""
+        client = _FakeClient(_atread_resp("190"))
+        w.detect_off(client, {"onoff_cid": 52, "off_value": "222"}, INV,
+                     w.parse_detail(_detail_resp(0)))
+        assert client.read_with == "SN1"
+
+    def test_no_sn_falls_back_to_heuristic(self, monkeypatch):
+        monkeypatch.setattr(w, "in_core_daylight", lambda cfg: True)
+        client = _FakeClient(_atread_resp("222"))
+        inv = {**INV, "sn": ""}
+        is_off, reason, mode = w.detect_off(client, {"onoff_cid": 52, "off_value": "222"},
+                                            inv, w.parse_detail(_detail_resp(0)))
+        assert mode == "heuristic" and client.read_with is None
 
     def test_heuristic_off_zero_pac_in_daylight(self, monkeypatch):
         monkeypatch.setattr(w, "in_core_daylight", lambda cfg: True)
@@ -201,27 +226,46 @@ class TestTryEnable:
         assert not attempted and not ok and "manual" in msg.lower()
 
     def test_dry_run_does_not_send(self):
-        cfg = {"onoff_cid": 5001, "on_value": "190"}
+        cfg = {"onoff_cid": 52, "on_value": "190"}
         attempted, ok, msg = w.try_enable(_FakeClient(), cfg, INV, dry_run=True)
         assert attempted and not ok and "dry-run" in msg.lower()
 
     def test_control_success(self):
-        cfg = {"onoff_cid": 5001, "on_value": "190"}
+        cfg = {"onoff_cid": 52, "on_value": "190"}
+        sent = []
 
         class C:
-            def control(self, inverter_id, cid, value):
-                return {"success": True, "code": "0"}
+            def control(self, sn, cid, value):
+                sent.append((sn, cid, value))
+                return {"success": True, "code": "0", "data": [{"code": "0", "msg": "ok"}]}
         attempted, ok, msg = w.try_enable(C(), cfg, INV, dry_run=False)
         assert attempted and ok
+        assert sent == [("SN1", 52, "190")]
 
     def test_control_failure_reports_permission_hint(self):
-        cfg = {"onoff_cid": 5001, "on_value": "190"}
+        cfg = {"onoff_cid": 52, "on_value": "190"}
 
         class C:
-            def control(self, inverter_id, cid, value):
+            def control(self, sn, cid, value):
                 return {"success": False, "msg": "no permission"}
         attempted, ok, msg = w.try_enable(C(), cfg, INV, dry_run=False)
         assert attempted and not ok and "Control API" in msg
+
+    def test_control_item_failure_is_not_success(self):
+        """Top-level code 0 but a failed command inside data[] must not count as ON."""
+        cfg = {"onoff_cid": 52, "on_value": "190"}
+
+        class C:
+            def control(self, sn, cid, value):
+                return {"success": True, "code": "0",
+                        "data": [{"code": "1", "msg": "device offline"}]}
+        attempted, ok, msg = w.try_enable(C(), cfg, INV, dry_run=False)
+        assert attempted and not ok and "device offline" in msg
+
+    def test_no_sn_means_manual(self):
+        cfg = {"onoff_cid": 52, "on_value": "190"}
+        attempted, ok, msg = w.try_enable(_FakeClient(), cfg, {**INV, "sn": ""}, dry_run=False)
+        assert not attempted and not ok and "manual" in msg.lower()
 
 
 # --------------------------------------------------------------------------- #
@@ -271,11 +315,11 @@ class TestHandleInverter:
         monkeypatch.setattr(w, "in_core_daylight", lambda cfg: True)
         sent = []
         monkeypatch.setattr(w, "send_admin_email", lambda cfg, subj, body: sent.append(subj))
-        cfg = {"onoff_cid": 5001, "on_value": "190", "off_value": "222"}
+        cfg = {"onoff_cid": 52, "on_value": "190", "off_value": "222"}
 
         class C:
             def inverter_detail(self, *a): return _detail_resp(0)
-            def at_read(self, *a): return {"success": True, "data": {"value": "222"}}
+            def at_read(self, *a): return _atread_resp("222")
             def control(self, *a): return {"success": True, "code": "0"}
         state = {}
         res = w.handle_inverter(C(), cfg, INV, state, dry_run=False)

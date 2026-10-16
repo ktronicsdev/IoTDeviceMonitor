@@ -3,13 +3,11 @@ name: Solis Inverter Switch Watchdog
 # Every 2 hours: check each configured Solis inverter; if it's switched OFF,
 # auto re-enable it (when Control API is configured) and email the admin.
 #
-# NOTE: the 2-hourly schedule is DISABLED until the SolisCloud API key is added
-# to the `solis` block of the SHINEMONITOR_CREDENTIALS_JSON secret. Until then
-# the watchdog can only be run manually (Run workflow button). To re-enable
-# automatic runs, uncomment the `schedule` block below.
+# The SolisCloud API key (with Control permission) lives in the `solis` block
+# of the SHINEMONITOR_CREDENTIALS_JSON secret.
 on:
-  # schedule:
-  #   - cron: "15 */2 * * *"      # every 2 hours (re-enable once API key is set)
+  schedule:
+    - cron: "15 */2 * * *"        # every 2 hours
   workflow_dispatch:
     inputs:
       dry_run:

@@ -27,7 +27,7 @@ Usage:
     python check_solis_switch.py                 # check + act (+ email)
     python check_solis_switch.py --dry-run       # detect + email, never send control
     python check_solis_switch.py --list          # list inverters on the account
-    python check_solis_switch.py --discover ID   # dump readable control cids (find onoff_cid)
+    python check_solis_switch.py --discover SN   # read the on/off cids 52/54 (check onoff_cid)
     python check_solis_switch.py --status         # print live state, take no action
     python check_solis_switch.py --detail         # per-MPPT DC volts/amps (array health)
 """
@@ -49,7 +49,7 @@ except Exception:
 
 sys.path.insert(0, str(Path(__file__).parent))
 from config import CREDENTIALS_PATH  # noqa: E402
-from solis_common import SolisClient, is_success  # noqa: E402
+from solis_common import SolisClient, control_accepted, is_success  # noqa: E402
 
 STATE_PATH = Path("state/solis_switch_state.json")
 DEFAULT_ADMIN_EMAIL = "ktronicssolar@gmail.com"
@@ -206,11 +206,12 @@ def detect_off(client, cfg, inv, detail):
     onoff_cid = cfg.get("onoff_cid")
     off_value = str(cfg.get("off_value", ""))
 
-    # Authoritative path: read the actual on/off switch register.
-    if onoff_cid:
-        resp = client.at_read(inv["inverter_id"], onoff_cid)
+    # Authoritative path: read the actual on/off switch register (by SN).
+    if onoff_cid and inv.get("sn"):
+        resp = client.at_read(inv["sn"], onoff_cid)
         if is_success(resp):
-            value = str((resp.get("data") or {}).get("value", resp.get("msg", "")))
+            # The register value is data.msg; the top-level msg is just "success".
+            value = str((resp.get("data") or {}).get("msg", ""))
             if off_value and value == off_value:
                 return True, f"on/off register (cid {onoff_cid}) = OFF ({value})", "control"
             return False, f"on/off register (cid {onoff_cid}) = {value}", "control"
@@ -239,12 +240,17 @@ def try_enable(client, cfg, inv, dry_run):
     if not onoff_cid or on_value is None:
         return False, False, ("auto-control not configured (onoff_cid/on_value missing) — "
                               "manual switch-on required")
+    if not inv.get("sn"):
+        return False, False, "no sn configured for this inverter — manual switch-on required"
     if dry_run:
         return True, False, f"[dry-run] would send control cid={onoff_cid} value={on_value}"
-    resp = client.control(inv["inverter_id"], onoff_cid, on_value)
-    if is_success(resp):
+    resp = client.control(inv["sn"], onoff_cid, on_value)
+    if control_accepted(resp):
         return True, True, f"control cid={onoff_cid} value={on_value} accepted"
-    return True, False, (f"control failed: {resp.get('msg') or resp.get('code')} "
+    items = resp.get("data") if isinstance(resp.get("data"), list) else []
+    item_msg = next((i.get("msg") for i in items
+                     if isinstance(i, dict) and str(i.get("code", "0")) != "0"), None)
+    return True, False, (f"control failed: {item_msg or resp.get('msg') or resp.get('code')} "
                          "(is the Control API permission enabled?)")
 
 
@@ -395,12 +401,22 @@ def mode_list(client):
     return 0
 
 
-def mode_discover(client, inverter_id):
-    resp = client.at_read_list(inverter_id)
-    print(json.dumps(resp, indent=2))
-    print("\nLook for the on/off control entry above; put its cid in `onoff_cid` "
-          "and the ON/OFF values in `on_value`/`off_value` in credentials.json.")
-    return 0 if is_success(resp) else 1
+ONOFF_CIDS = (52, 54)  # switch-on / switch-off registers on the hybrids
+
+
+def mode_discover(client, sn):
+    """There is no 'list registers' endpoint, so read the known on/off pair."""
+    ok = True
+    for cid in ONOFF_CIDS:
+        resp = client.at_read(sn, cid)
+        if is_success(resp):
+            print(f"cid {cid}: value={(resp.get('data') or {}).get('msg')}")
+        else:
+            ok = False
+            print(f"cid {cid}: read failed: {resp.get('msg') or resp.get('code')}")
+    print("\n190 = ON, 222 = OFF. If both cids answer, set onoff_cid=52, "
+          "on_value=\"190\", off_value=\"222\" in credentials.json.")
+    return 0 if ok else 1
 
 
 def mode_status(client, cfg, inverters):
@@ -476,8 +492,8 @@ def main():
                     help="detect and email, but never send a control command")
     ap.add_argument("--list", action="store_true",
                     help="list inverters on the account and exit")
-    ap.add_argument("--discover", metavar="INVERTER_ID",
-                    help="dump readable control registers for an inverter and exit")
+    ap.add_argument("--discover", metavar="SN",
+                    help="read the on/off control registers (cid 52/54) for an inverter SN and exit")
     ap.add_argument("--status", action="store_true",
                     help="print live state for configured inverters and exit")
     ap.add_argument("--detail", action="store_true",

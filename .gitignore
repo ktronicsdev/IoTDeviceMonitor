@@ -78,6 +78,10 @@ site/ph1000/*.docx
 site/ph1000/*.pdf
 site/ph1000/*.xlsx
 
+# Solis's own documents (Platform API Document, API request guide) - kept local,
+# not republished from a public repo.
+/solis/
+
 # BMS module: built firmware images contain the GitHub token - never commit (public repo)
 bms-module/dist/
 
