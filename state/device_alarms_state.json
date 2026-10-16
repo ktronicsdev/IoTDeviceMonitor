@@ -1214,10 +1214,10 @@
     "message": "Battery connection is open"
   },
   "1187499:D70000210184361276:6a65528dc60c522ded55b391": {
-    "send_count": 32,
+    "send_count": 33,
     "first_seen": "2026-07-26T05:58:20.926915",
     "ignored": true,
-    "last_sent": "2026-10-16T03:25:56.468324",
+    "last_sent": "2026-10-16T03:39:37.122132",
     "customer": "Gayan-IMH",
     "plant": "imbulgoda  3kw",
     "message": "Bus soft start failed"
