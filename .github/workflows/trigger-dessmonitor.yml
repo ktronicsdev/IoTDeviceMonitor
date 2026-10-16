@@ -101,7 +101,19 @@ jobs:
             echo "DEBUG: Accounts found: $(jq -r '.dessmonitor_accounts | length // 0' src/main/java/org/ktronics/config/dessmonitor_credentials.json 2>/dev/null || echo 'N/A')"
           else
             echo "ERROR: Credentials file is NOT valid JSON!"
-            echo "DEBUG: First 100 chars: $(head -c 100 src/main/java/org/ktronics/config/dessmonitor_credentials.json)"
+            # Never echo any part of it. GitHub masks a whole secret, but a
+            # cut-off fragment need not match the mask and would then be
+            # printed in full to a public log (#4). Size and jq's complaint
+            # are what actually tell you what went wrong.
+            echo "ERROR: $(wc -c < src/main/java/org/ktronics/config/dessmonitor_credentials.json) bytes (0 means the secret is not set)"
+            # Only jq's position is printed, matched against a whitelist. Some
+            # jq builds append the offending token to a parse error, which on a
+            # malformed credentials file is the credential. If the message ever
+            # stops matching this shape, nothing is printed at all.
+            creds=src/main/java/org/ktronics/config/dessmonitor_credentials.json
+            jq_msg=$(jq -e '.' "$creds" 2>&1 >/dev/null || true)
+            echo "$jq_msg" | grep -oE 'parse error: [A-Za-z ]+ at line [0-9]+, column [0-9]+' \
+              || echo "ERROR: jq's message was not in the expected form; withheld"
           fi
 
           # Fetch last month data (fail workflow if script fails - makes errors visible)

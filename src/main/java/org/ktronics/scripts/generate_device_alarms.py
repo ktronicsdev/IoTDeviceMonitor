@@ -590,8 +590,12 @@ def main():
                 'alarm_key': alarm_key,
                 'send_count': alarm_state.get('send_count', 0)
             })
+            # No plant name and no alarm text: test mode runs on every push
+            # and manual run, so this line used to write customer data into a
+            # world-readable log on every single run (#4). The alarm key is
+            # enough to correlate with the state file, which is not public.
             print(
-                f"  [TEST MODE] Added alarm (bypassing limits): {most_recent.get('plant', 'Unknown')} - {most_recent.get('desc', 'No message')}")
+                f"  [TEST MODE] Added alarm (bypassing limits): key={alarm_key}")
 
     # Format email
     print("[4/5] Formatting email...")

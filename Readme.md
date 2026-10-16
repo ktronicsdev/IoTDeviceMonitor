@@ -739,6 +739,40 @@ once a week; anything with an actual alert in it is never gated. Pinned by
 `test_all_clear_cadence.py`, which lifts the gate out of the workflow YAML
 and runs it against a faked weekday rather than asserting on the text.
 
+### #4: customer data in world-readable workflow logs
+
+The repository is public, so every workflow log is world-readable. Four places
+wrote customer data into one. Three only on a failure; the fourth ran on every
+push.
+
+- Both alarm fetch scripts echoed the **whole response body** when a fetch
+  failed. An error response still carries plant names, device serials and
+  sometimes a session token. They now print the error code and the response
+  size.
+- `generate_device_alarms.py` printed the plant name and the alarm text in
+  **test mode**, which runs on every push and manual run — so this was
+  continuous, not fault-triggered. It now prints the alarm key, which indexes
+  a state file that is not public.
+- `trigger-dessmonitor.yml` printed the first 100 characters of the
+  credentials file when it would not parse. GitHub masks a whole secret, but a
+  cut-off fragment need not match the mask, so masking does not help here. It
+  now prints the file size and jq's position only — and the position is matched
+  against a whitelisted shape first, because some jq builds append the
+  offending token to a parse error, which on a credentials file is the
+  credential.
+
+Already fixed earlier and confirmed gone: the account username both alarm
+scripts used to echo.
+
+Still printed, deliberately, pending a decision: both workflows log
+`Checking alarms for: $label`, i.e. the customer name, once per account per
+run. It is the main thing that makes a failing run diagnosable; the
+alternative is a position (`account 7/23`) and worse logs.
+
+`test_no_payloads_in_public_logs.py` is the guard. Each of the four has its own
+named test, and one test asserts the failure path still reports the error code
+so nobody satisfies the others by printing nothing.
+
 ### #29: four workflows still pushed to main bare
 
 #28 gave the two data workflows a safe publish. Four others kept a plain
@@ -1070,7 +1104,7 @@ Default thresholds in `check_anomaly.py`:
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 638 tests — 582 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 644 tests — 588 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 **Live inverters + BMS (150 tests):**
 
@@ -1114,6 +1148,12 @@ The project includes comprehensive integration tests covering all business logic
 | UC1 (send cap + interval) | 4 | `test_admin_alert_send_cap.py` |
 | Hourly poll scope | 5 | `test_hourly_poll_scope.py` |
 | UC9 (weekly all-clear cadence) | 12 | `test_all_clear_cadence.py` |
+
+**Public-log hygiene (6 tests):**
+
+| Suite | Tests | File |
+| ----- | ----- | ---- |
+| No payloads in public logs | 6 | `test_no_payloads_in_public_logs.py` |
 
 **Data-commit push (45 tests):**
 

@@ -63,7 +63,10 @@ if [ "$err" != "0" ]; then
   fi
 
   echo "❌ Failed to fetch alarms (err: ${err})"
-  echo "Response: ${alarms_response}"
+  # The error code and the size, never the body. This log is world-readable
+  # (public repo, #4) and an error response still carries plant names, device
+  # serials and sometimes a session token.
+  echo "   response was ${#alarms_response} bytes; body withheld - see #4"
   exit 1
 fi
 
