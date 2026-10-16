@@ -38,6 +38,7 @@ update this file and the root `Readme.md` in the same commit.
 | UC14 | Link-down state retention  | 3       | `test_connectivity_state_retention.py` |
 | UC15 | PH1800 Live Dashboard      | 41      | `test_ph1800.py`                 |
 | UC15 | PH1800 battery tab         | 8       | `test_ph1800_battery_tab.py`      |
+| UC16 | ESP32 BMS module (DIY)     | 16      | `test_bms_ingest.py`             |
 | BVT  | Dashboard Clocks (SL time) | 16      | `test_dashboard_clock.py`        |
 | BVT  | Centralized Config         | 14      | `test_centralized_config.py`     |
 | API  | ShineMonitor API           | 8       | `test_shinemonitor_api.py`       |
@@ -149,6 +150,20 @@ so a wrong number on the dashboard is the vendor's number.
   August 2026; `test_live_loop_budget.py` guards both halves.
 - The live loop runs to a wall-clock budget, not an iteration count: a fifth plant once
   pushed a fixed 26-iteration loop past the job timeout and the tail never published.
+
+### UC16: ESP32 BMS Module (DIY battery monitoring)
+
+An ESP32 reads a JK-compatible BMS over BLE and pushes readings here by
+`repository_dispatch` - device-driven, not cron. Proof of concept, one trial site.
+
+- The 10-second data stays on a LAN dashboard at the device; only a 15-minute sample goes
+  to the cloud, which is what keeps this to ~96 workflow runs per device per day.
+- Thresholds (SOC, pack under/overvoltage, temperature, current, cell imbalance) each have
+  an environment override, and an alert re-fires at most every 4 hours.
+- The only caller of `push_data_commit.sh --fail-on-conflict`: a reading is an observation
+  that happened, so a race must fail loudly rather than drop one.
+- `test_bms_ingest.py` is NOT a UC12 test despite the name - UC12 is the PH1000/PACEEX BMS
+  decode, this is the ESP32 path.
 
 ### BVT: Dashboard Clocks (SL time)
 

@@ -586,8 +586,8 @@ with **true battery SOC** read directly from the cracked **Hystorix/PACEEX BMS**
 `test_bms_cell_frame.py` (9), `test_bms_carry_forward.py` (5).
 
 Not UC12, despite the name: `test_bms_ingest.py` (16) covers the **ESP32
-JK-BMS** module, a separate DIY `repository_dispatch` path, not the
-PH1000/PACEEX BMS. `test_dashboard_clock.py` and `test_live_loop_budget.py`
+JK-BMS** module — a separate DIY `repository_dispatch` path, not the
+PH1000/PACEEX BMS. That is UC16. `test_dashboard_clock.py` and `test_live_loop_budget.py`
 are shared with PH1800. Both groups are listed under *Live inverters + BMS*
 in the test tables.
 
@@ -750,6 +750,76 @@ behind".
 `test_ph1800_battery_tab.py` (8). `test_dashboard_clock.py` (16) and
 `test_live_loop_budget.py` (16) cover this and UC12 jointly and are counted
 under *Live inverters + BMS* in the test tables.
+
+---
+
+### UC16: ESP32 BMS Module (DIY battery monitoring)
+
+**Implementation Status:** 🧪 **PROOF OF CONCEPT** — one trial site
+
+A self-built alternative to a commercial battery monitor: an **ESP32** running
+ESPHome reads a **JK-compatible BMS over BLE** and pushes readings to this
+repository. There is no server to host, because it reuses the pattern the rest
+of the platform already runs on — GitHub Actions, a CSV history, an email
+alert.
+
+```
+  JK-BMS --BLE--> ESP32 (ESPHome) --WiFi/HTTPS--> GitHub API
+                       |                               |
+                       | live, every 10s               | repository_dispatch, every ~15 min
+                       v                               v
+               LAN dashboard at             trigger-bms-ingest.yml
+               http://<device-ip>           -> append bms-module/data/<device>.csv
+                                            -> thresholds -> email admin
+```
+
+The split matters: the **10-second** data stays on the LAN and never leaves the
+site, and only a **15-minute** sample goes to the cloud for history and alerts.
+That keeps roughly 96 workflow runs per device per day rather than one every
+ten seconds.
+
+**Trigger:** `repository_dispatch` of type `bms_reading` — **device-driven, not
+cron**. The reading arrives as `client_payload` and is read from the
+`BMS_PAYLOAD` environment variable, so nothing is polled and nothing is
+scheduled.
+
+**[`ingest_bms_reading.py`](bms-module/scripts/ingest_bms_reading.py)** appends
+to a per-device CSV, keeps a readable snapshot in
+`bms-module/state/bms_latest.json`, and emails the admin when a threshold is
+**newly** crossed, with a 4-hour re-alert cooldown so a 15-minute push cadence
+cannot spam. It reuses `email_utils.send_email_smtp` from the ShineMonitor
+scripts rather than carrying its own SMTP stack.
+
+**Thresholds** (each overridable by environment variable):
+
+| Condition | Default | Variable |
+| --------- | ------- | -------- |
+| Low state of charge | 15 % | `BMS_SOC_MIN` |
+| Pack undervoltage | 48 V | `BMS_VOLT_MIN` |
+| Pack overvoltage | 58.4 V | `BMS_VOLT_MAX` |
+| Over-temperature | 50 °C | `BMS_TEMP_MAX` |
+| Over-current (absolute) | 100 A | `BMS_CURRENT_MAX` |
+| Cell imbalance | 0.1 V | `BMS_DELTA_CELL_MAX` |
+
+The voltage pair assumes a 16S LFP pack.
+
+**Append-only, and treated as such.** The commit step is the only caller of
+`push_data_commit.sh --fail-on-conflict` rather than `--resolve-conflicts`: a
+reading is an observation that happened, so dropping one to resolve a race is
+never acceptable, and a conflict here must fail loudly instead. `.gitattributes`
+also gives `bms-module/data/*.csv` `merge=union`, so two readings that arrive
+together are both kept.
+
+**Firmware is built locally, never in CI.** `firmware/jk-bms-monitor.yaml` plus
+a `secrets.yaml` the installer creates from `secrets.example.yaml`. The
+compiled `.bin` **embeds the GitHub token**, so
+[`build_firmware.sh`](bms-module/scripts/build_firmware.sh) is a workstation
+script — building it in a workflow on a public repository would publish the
+token in an artifact.
+
+**Test Coverage:** 16/16 PASSED — `test_bms_ingest.py`. Despite the name it is
+not UC12: this is the ESP32 `repository_dispatch` path, not the PH1000/PACEEX
+BMS that UC12 decodes.
 
 ---
 
@@ -1184,7 +1254,7 @@ The project includes comprehensive integration tests covering all business logic
 | UC15 (PH1800 battery tab) | 8 | `test_ph1800_battery_tab.py` |
 | UC12 + UC15 (dashboard clock) | 16 | `test_dashboard_clock.py` |
 | UC12 + UC15 (live loop budget) | 16 | `test_live_loop_budget.py` |
-| ESP32 BMS module (no UC yet) | 16 | `test_bms_ingest.py` |
+| UC16 (ESP32 BMS ingest) | 16 | `test_bms_ingest.py` |
 
 **SolisCloud Watchdog (40 tests):**
 
