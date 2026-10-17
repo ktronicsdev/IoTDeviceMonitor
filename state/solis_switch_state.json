@@ -1,10 +1,10 @@
 {
   "1308675217949897483": {
     "label": "Ktronics Imbulgoda",
-    "last_check": "2026-10-17T04:24:14.935364+00:00",
-    "last_state": 1,
-    "last_pac": 5.901,
-    "last_reason": "producing pac=5.901kW",
+    "last_check": "2026-10-17T10:42:57.173909+00:00",
+    "last_state": 2,
+    "last_pac": 4.062,
+    "last_reason": "outside core daylight window \u2014 heuristic skipped",
     "off": false
   }
 }
