@@ -1,0 +1,2 @@
+timestamp,battery_v,battery_a,battery_w,pinverter_w,pv_power_w_est,load_power_w_est,work_state,charge_state
+2026-10-18 01:11:05,52.6,7.2,378,0,0.0,338.0,PowerOn,discharging
