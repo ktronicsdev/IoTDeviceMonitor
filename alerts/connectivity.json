@@ -1,12 +1,23 @@
 {
   "stale_days": 3,
   "counts": {
-    "reporting": 15,
-    "link_down": 8,
+    "reporting": 16,
+    "link_down": 7,
     "excluded": 0,
     "monitored": 23
   },
   "reporting": [
+    {
+      "plant_key": "chamila-chamila-119h",
+      "kind": "reporting",
+      "meaning": "reporting normally",
+      "link_down": false,
+      "days_stale": 0,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-10-17",
+      "last_data_date": "2026-10-17",
+      "stale_days_threshold": 3
+    },
     {
       "plant_key": "chandika-plant",
       "kind": "reporting",
@@ -250,21 +261,10 @@
       "last_nonzero_date": "2026-07-14",
       "last_data_date": "2026-10-17",
       "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "chamila-chamila-119h",
-      "kind": "zeros_only",
-      "meaning": "rows still arriving but every reading is 0.0000 kWh",
-      "link_down": true,
-      "days_stale": 26,
-      "days_since_data": 0,
-      "last_nonzero_date": "2026-09-21",
-      "last_data_date": "2026-10-17",
-      "stale_days_threshold": 3
     }
   ],
   "excluded": [],
-  "generated_at": "2026-10-17T07:19:50.339499Z",
+  "generated_at": "2026-10-17T11:18:26.715677Z",
   "fleet_wide_outage": false,
   "alerting_now": []
 }

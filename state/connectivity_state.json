@@ -21,17 +21,6 @@
     "plant": "anuradha-gajanayaka-plant",
     "send_count": 3
   },
-  "chamila-chamila-119h": {
-    "customer": "Chamila",
-    "days_stale": 3,
-    "first_seen": "2026-09-24T00:47:35.299448",
-    "ignored": true,
-    "kind": "zeros_only",
-    "last_data": "2026-09-24",
-    "last_sent": "2026-09-24T12:16:22.413927",
-    "plant": "chamila-chamila-119h",
-    "send_count": 3
-  },
   "ganishka-ganishka-home-3kw": {
     "customer": "Ganishka",
     "days_stale": 115,
