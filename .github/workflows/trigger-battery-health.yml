@@ -1,0 +1,59 @@
+name: Solis Battery Health Report
+
+# Monthly: read battery state of health (SOH) for every battery on the
+# SolisCloud account and email the admin one table. Flags any battery fading
+# faster than 3 %/yr or below 85 % SOH. Read-only; keeps no state.
+#
+# Uses the SolisCloud key in the `solis` block of SHINEMONITOR_CREDENTIALS_JSON
+# (same key as the switch watchdog). Email channel: emails.battery_health_admin.
+on:
+  schedule:
+    - cron: "23 6 1 * *"          # 1st of each month, 06:23 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "print the report only, send no email"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: battery-health
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Create credentials.json from secret
+        shell: bash
+        run: |
+          set -e
+          mkdir -p src/main/java/org/ktronics/config
+          cat <<'EOF' > src/main/java/org/ktronics/config/credentials.json
+          ${{ secrets.SHINEMONITOR_CREDENTIALS_JSON }}
+          EOF
+          chmod 600 src/main/java/org/ktronics/config/credentials.json
+
+      - name: Battery health report
+        shell: bash
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+        run: |
+          DRY=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then DRY="--dry-run"; fi
+          python3 src/main/java/org/ktronics/scripts/check_battery_health.py $DRY

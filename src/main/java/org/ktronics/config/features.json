@@ -25,6 +25,7 @@
     "test_regression": true,
 
     "solis_switch_admin": true,
+    "battery_health_admin": true,
     "bms_alerts_admin": true
   },
 
