@@ -1,10 +1,10 @@
 {
   "1308675217949897483": {
     "label": "Ktronics Imbulgoda",
-    "last_check": "2026-10-18T04:31:30.271358+00:00",
-    "last_state": 2,
-    "last_pac": 4.062,
-    "last_reason": "on/off register (cid 52) = ",
+    "last_check": "2026-10-18T11:03:32.988740+00:00",
+    "last_state": 1,
+    "last_pac": 0.397,
+    "last_reason": "on/off register (cid 52) = 190",
     "off": false
   }
 }
