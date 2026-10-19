@@ -7,7 +7,7 @@
 ║                          Status: NO ALERTS DETECTED                          ║
 ║                                                                              ║
 ║               Date: 2026-10-19  |  Total Plants Monitored: 25                ║
-║                Reporting: 18  |  Dead link: 7  |  Excluded: 0                ║
+║               Reporting: 14  |  Dead link: 11  |  Excluded: 0                ║
 ║                                                                              ║
 ================================================================================
 
@@ -39,6 +39,18 @@
 │   • lahiru-ryan-lahiru-plant
 │     Last reading: 2026-07-14 (97 days ago)
 │     Symptom: rows still arriving but every reading is 0.0000 kWh
+│   • kasun-kasun
+│     Last reading: 2026-09-30 (19 days ago)
+│     Symptom: no data rows at all — the portal has nothing for this plant
+│   • matho-plant
+│     Last reading: 2026-09-30 (19 days ago)
+│     Symptom: no data rows at all — the portal has nothing for this plant
+│   • muadh-muadh-solar
+│     Last reading: 2026-09-30 (19 days ago)
+│     Symptom: no data rows at all — the portal has nothing for this plant
+│   • ravindra-ravindra-3kw
+│     Last reading: 2026-09-30 (19 days ago)
+│     Symptom: no data rows at all — the portal has nothing for this plant
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
@@ -54,9 +66,6 @@
 │   • ganishka-ganishka-home-3kw
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │     Link: DATA LINK DOWN for 110 days — connectivity, not a production fault
-│   • lahiru-ryan-lahiru-plant
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│     Link: DATA LINK DOWN for 97 days — connectivity, not a production fault
 │   • mifanza-mifanza-solar-system
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │     Link: DATA LINK DOWN for 110 days — connectivity, not a production fault
