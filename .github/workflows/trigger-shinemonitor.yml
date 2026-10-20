@@ -455,17 +455,50 @@ jobs:
           # Fixing that race is issue #18; this just stops the all-clear being
           # the thing that reports it.
           #
-          # So: no alerts -> send only on the Monday 06:30 UTC run, once a week.
-          # Push and manual runs still send, because there it is build
-          # verification rather than a status report.
-          if [ "$send_email" = "true" ] \
-             && [ "${{ steps.anomaly.outputs.exit_code }}" != "2" ] \
-             && [ "${{ github.event_name }}" = "schedule" ]; then
-            if [ "$(date -u +%u)" != "1" ] || [ "${{ github.event.schedule }}" != "30 6 * * *" ]; then
-              echo "⏭️ Skipping all-clear: not the Monday 06:30 run (alerts would still send)"
-              send_email="false"
+          # So: no alerts -> one all-clear per ISO week, sent by the FIRST
+          # eligible scheduled run of that week. Push and manual runs still
+          # send, because there it is build verification, not a status report.
+          #
+          # It deliberately does NOT name a cron. The first version required
+          # `30 6 * * *` on a Monday, and that run did not happen on Mon
+          # 2026-10-19: GitHub delivered 11 of the ~30 scheduled runs the crons
+          # ask for, as it does every day. So no all-clear went out at all, and
+          # silence stopped meaning anything - a healthy fleet and a dead
+          # pipeline looked identical. Pinning a weekly duty to one droppable
+          # run is the bug; an elapsed-week test is immune to it, because
+          # whichever run happens to be first will do the job.
+          # This gate works BOTH ways, which the first version did not. It could
+          # only ever set send_email=false, and the hash logic above already
+          # says false whenever the fleet is unchanged - so a fleet that simply
+          # stayed quiet produced no status email at all, for as long as it
+          # stayed quiet. The weekly all-clear was never weekly; it only ever
+          # rode along on the run where alerts happened to clear.
+          all_clear_week=""
+          if [ "${{ github.event_name }}" = "schedule" ] \
+             && [ "${{ steps.anomaly.outputs.exit_code }}" != "2" ]; then
+            current_week="$(date -u +%G-W%V)"   # ISO year + week, e.g. 2026-W43
+            last_week=""
+            if [ -f state/admin_all_clear_state.txt ]; then
+              last_week="$(tr -d '[:space:]' < state/admin_all_clear_state.txt)"
+            fi
+
+            if [ "$send_email" = "true" ]; then
+              # The hash moved and there is nothing wrong: alerts have cleared.
+              # That is news, so it goes out now and counts as the week's
+              # confirmation rather than being held back to a fixed day.
+              all_clear_week="$current_week"
+            elif [ "$current_week" != "$last_week" ]; then
+              # Nothing changed, but this week has had no confirmation yet.
+              # Send one. This is the proof of life: without it, silence means
+              # either a healthy fleet or a stopped pipeline and the admin
+              # cannot tell which. A first run and an unreadable marker land
+              # here too, which is the right way to be wrong - a spare
+              # all-clear costs one email.
+              echo "✓ Sending the weekly all-clear for ${current_week} (previous: ${last_week:-none})"
+              send_email="true"
+              all_clear_week="$current_week"
             else
-              echo "✓ Sending the weekly all-clear (Monday 06:30)"
+              echo "⏭️ Skipping all-clear: ${current_week} already confirmed (alerts would still send)"
             fi
           fi
 
@@ -484,6 +517,12 @@ jobs:
             fi
 
             EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 src/main/java/org/ktronics/scripts/send_email.py 2>&1
+
+            # Only after the send: a failed send must not consume the week.
+            if [ -n "$all_clear_week" ]; then
+              mkdir -p state
+              echo "$all_clear_week" > state/admin_all_clear_state.txt
+            fi
           fi
 
           # Save current hash for next run

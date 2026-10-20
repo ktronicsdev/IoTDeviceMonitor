@@ -418,13 +418,38 @@ Two causes, both now fixed:
   views and every alternation read as "the state changed". The hourly run no
   longer analyses CSVs at all (see Bug Fixes → *The October 2026 mail
   flood*).
-- Nothing said how often an all-clear was wanted. Now, when there is nothing
-  at all to report — no alerts, no suppressions, no ignores — a scheduled run
-  sends only on **Monday 06:30 UTC**. A run that *has* something to report is
-  never gated this way: a real alert still sends on any run where the content
-  changes.
+- Nothing said how often an all-clear was wanted.
 
-**State File:** `state/admin_email_state.txt`
+**The weekly all-clear, second attempt (2026-10-20).** The first version asked
+for `github.event.schedule == '30 6 * * *'` on a Monday. It never fired. Two
+reasons, and both are worth keeping in mind for anything else scheduled here:
+
+- **GitHub delivers about 40% of the scheduled runs these crons ask for** —
+  11 to 13 a day against ~30, every day from 14 to 19 October. The Monday
+  06:30 run simply did not exist on 2026-10-19, so every Monday run logged
+  "Skipping all-clear" and nothing was sent. Pinning a weekly duty to one
+  nameable run makes that run's delivery a single point of failure.
+- **The gate could only subtract.** It only ever set `send_email=false`, and
+  the hash check above it already says false whenever the fleet is unchanged.
+  So a fleet that merely stayed healthy produced *no* status email at all, for
+  as long as it stayed healthy. The "weekly" all-clear was never weekly; it
+  only rode along on the run where alerts happened to clear.
+
+Together those made silence meaningless: a healthy fleet and a stopped
+pipeline looked identical from the inbox, which is worse than the daily noise
+the gate replaced — the noise at least proved the pipeline was alive.
+
+The rule now is **one all-clear per ISO week, sent by the first eligible
+scheduled run of that week**, whichever run that turns out to be. No cron is
+named. The gate works both ways: it can force a send for a week that has had
+no confirmation, and suppress a second one in the same week. Alerts
+(`exit_code == 2`) never enter the gate at all, and a run where alerts have
+just cleared still reports immediately and counts as that week's confirmation.
+The week is recorded only *after* the mail goes out, so one SMTP failure
+cannot silently consume the week.
+
+**State Files:** `state/admin_email_state.txt` (the UC9 hash),
+`state/admin_all_clear_state.txt` (the ISO week last confirmed)
 
 **Email Reduction:** the workflow has 30 scheduled runs a day (hourly, plus six
 data-collection runs), and each would otherwise send a status email. With the
@@ -448,8 +473,8 @@ Step 5 also applies the Monday all-clear gate described above.
 **Implementation Status:** ✅ **IMPLEMENTED** (Session 13); all-clear gate
 added 2026-10-16
 
-**Test Coverage:** 21/21 PASSED — `test_uc9_admin_email.py` (9),
-`test_all_clear_cadence.py` (12)
+**Test Coverage:** 24/24 PASSED — `test_uc9_admin_email.py` (9),
+`test_all_clear_cadence.py` (15)
 
 ---
 
@@ -645,7 +670,7 @@ py check_solis_switch.py --list     # list inverters on the account
 py check_solis_switch.py --discover <INVERTER_ID>   # find the on/off cid
 ```
 
-**Test Coverage:** 40/40 PASSED (100%) — `test_solis_switch.py`
+**Test Coverage:** 44/44 PASSED — `test_solis_switch.py`
 
 ---
 
@@ -887,6 +912,35 @@ alert clears. So the all-clear is now gated to the **Monday 06:30 UTC** run,
 once a week; anything with an actual alert in it is never gated. Pinned by
 `test_all_clear_cadence.py`, which lifts the gate out of the workflow YAML
 and runs it against a faked weekday rather than asserting on the text.
+
+### The weekly all-clear that never arrived (2026-10-20)
+
+The 2026-10-16 gate asked for `github.event.schedule == '30 6 * * *'` on a
+Monday. On Monday 2026-10-19 that run did not happen, so no all-clear was sent
+and the admin had no weekly confirmation at all.
+
+**GitHub delivers ~40% of the scheduled runs this repository asks for** — 11 to
+13 a day against ~30, measured across 14-19 October. Any design that depends on
+one *named* scheduled run existing is therefore unreliable, and that applies
+beyond this gate: the hourly alarm poll #10 added, which is what makes the
+six-hour gate's "six hours" literal, is mostly not running either.
+
+The gate had a second fault that the first made invisible: it could only set
+`send_email=false`, and the hash check above it already says false for an
+unchanged fleet. A fleet that merely stayed healthy therefore produced no
+status email for as long as it stayed healthy. The "weekly" all-clear only ever
+rode along on the run where alerts happened to clear.
+
+Between them, silence carried no information — a healthy fleet and a stopped
+pipeline looked the same from the inbox, which is worse than the daily noise
+the gate was added to remove.
+
+Now: one all-clear per **ISO week**, sent by the first eligible scheduled run of
+that week, no cron named; the gate both forces and suppresses; the week is
+recorded only after the mail is actually sent, so a failed send cannot consume
+it. `test_all_clear_cadence.py` runs the real step out of the YAML with `date`
+and `python3` stubbed, and each of the three failure modes above fails a test
+named after it.
 
 ### #4: customer data in world-readable workflow logs
 
@@ -1253,7 +1307,7 @@ Default thresholds in `check_anomaly.py`:
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 644 tests — 588 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 661 tests — 605 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 **Live inverters + BMS (150 tests):**
 
@@ -1268,11 +1322,12 @@ The project includes comprehensive integration tests covering all business logic
 | UC12 + UC15 (live loop budget) | 16 | `test_live_loop_budget.py` |
 | UC16 (ESP32 BMS ingest) | 16 | `test_bms_ingest.py` |
 
-**SolisCloud Watchdog (40 tests):**
+**SolisCloud (54 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| UC13 (Solis ON/OFF Watchdog) | 40 | `test_solis_switch.py` |
+| UC13 (Solis ON/OFF Watchdog) | 44 | `test_solis_switch.py` |
+| Battery health report (no UC yet) | 10 | `test_battery_health.py` |
 
 **Connectivity, exclusions and flags (127 tests):**
 
@@ -1290,13 +1345,13 @@ The project includes comprehensive integration tests covering all business logic
 | Gate rules (R1-R6, classes) | 14 | `test_alarm_triage.py` |
 | Gate wiring + feature mode | 8 | `test_alarm_gate_wiring.py` |
 
-**Alerting discipline (21 tests):**
+**Alerting discipline (24 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
 | UC1 (send cap + interval) | 4 | `test_admin_alert_send_cap.py` |
 | Hourly poll scope | 5 | `test_hourly_poll_scope.py` |
-| UC9 (weekly all-clear cadence) | 12 | `test_all_clear_cadence.py` |
+| UC9 (weekly all-clear cadence) | 15 | `test_all_clear_cadence.py` |
 
 **Public-log hygiene (6 tests):**
 
