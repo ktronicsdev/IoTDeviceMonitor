@@ -1361,8 +1361,8 @@
     "message": "battery voltage is too high"
   },
   "1112198:D70000210229600161:6ad6bb6c93320501681feb35": {
-    "send_count": 1,
-    "last_sent": "2026-10-20T07:08:33.967229",
+    "send_count": 2,
+    "last_sent": "2026-10-20T12:11:59.234578",
     "first_seen": "2026-10-20T00:52:54+00:00",
     "ignored": false,
     "class": "HARDWARE",
@@ -1371,5 +1371,14 @@
     "customer": "Chandika",
     "plant": "PLANT",
     "message": "Bus soft start failed"
+  },
+  "1110855:D70000210188843601:6ad73cb89332050168cd875a": {
+    "send_count": 0,
+    "last_sent": null,
+    "first_seen": "2026-10-20T10:04:36+00:00",
+    "ignored": false,
+    "class": "LOAD",
+    "started_at_utc": "2026-10-20T10:04:36+00:00",
+    "suppressed_reason": "dwell time is less than 6 hours"
   }
 }
