@@ -43,17 +43,6 @@
     "plant": "ganishka-ganishka-home-3kw",
     "send_count": 3
   },
-  "jeremy-jeremy-plant": {
-    "customer": "Jeremy",
-    "days_stale": 20,
-    "first_seen": "2026-10-20T09:11:48.236638",
-    "ignored": false,
-    "kind": "no_rows",
-    "last_data": "2026-09-30",
-    "last_sent": "2026-10-20T09:11:48.236638",
-    "plant": "jeremy-jeremy-plant",
-    "send_count": 1
-  },
   "lahiru-ryan-lahiru-plant": {
     "customer": "Lahiru Ryan",
     "days_stale": 72,
@@ -86,28 +75,6 @@
     "last_sent": "2026-09-24T00:47:35.299448",
     "plant": "samurdi-kohuwala",
     "send_count": 3
-  },
-  "sandamalsilva-my-home": {
-    "customer": "SandamalSilva",
-    "days_stale": 20,
-    "first_seen": "2026-10-20T09:11:48.236638",
-    "ignored": false,
-    "kind": "no_rows",
-    "last_data": "2026-09-30",
-    "last_sent": "2026-10-20T09:11:48.236638",
-    "plant": "sandamalsilva-my-home",
-    "send_count": 1
-  },
-  "thusharasameera-mendis-house": {
-    "customer": "Thusharasameera",
-    "days_stale": 20,
-    "first_seen": "2026-10-20T09:11:48.236638",
-    "ignored": false,
-    "kind": "no_rows",
-    "last_data": "2026-09-30",
-    "last_sent": "2026-10-20T09:11:48.236638",
-    "plant": "thusharasameera-mendis-house",
-    "send_count": 1
   },
   "upulatheja-3kw-pro-kadawath": {
     "customer": "Upulatheja",

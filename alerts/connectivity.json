@@ -1,8 +1,8 @@
 {
   "stale_days": 3,
   "counts": {
-    "reporting": 12,
-    "link_down": 11,
+    "reporting": 15,
+    "link_down": 8,
     "excluded": 0,
     "monitored": 23
   },
@@ -23,9 +23,9 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
+      "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-19",
+      "last_nonzero_date": "2026-10-20",
       "last_data_date": "2026-10-20",
       "stale_days_threshold": 3
     },
@@ -34,9 +34,9 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
+      "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-19",
+      "last_nonzero_date": "2026-10-20",
       "last_data_date": "2026-10-20",
       "stale_days_threshold": 3
     },
@@ -45,9 +45,20 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
+      "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-19",
+      "last_nonzero_date": "2026-10-20",
+      "last_data_date": "2026-10-20",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "jeremy-jeremy-plant",
+      "kind": "reporting",
+      "meaning": "reporting normally",
+      "link_down": false,
+      "days_stale": 0,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-10-20",
       "last_data_date": "2026-10-20",
       "stale_days_threshold": 3
     },
@@ -67,9 +78,9 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
+      "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-19",
+      "last_nonzero_date": "2026-10-20",
       "last_data_date": "2026-10-20",
       "stale_days_threshold": 3
     },
@@ -78,9 +89,9 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
+      "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-19",
+      "last_nonzero_date": "2026-10-20",
       "last_data_date": "2026-10-20",
       "stale_days_threshold": 3
     },
@@ -100,9 +111,9 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
+      "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-19",
+      "last_nonzero_date": "2026-10-20",
       "last_data_date": "2026-10-20",
       "stale_days_threshold": 3
     },
@@ -129,13 +140,35 @@
       "stale_days_threshold": 3
     },
     {
-      "plant_key": "troy-troy-hybrid-3kw",
+      "plant_key": "sandamalsilva-my-home",
+      "kind": "reporting",
+      "meaning": "reporting normally",
+      "link_down": false,
+      "days_stale": 0,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-10-20",
+      "last_data_date": "2026-10-20",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "thusharasameera-mendis-house",
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
       "days_stale": 1,
       "days_since_data": 0,
       "last_nonzero_date": "2026-10-19",
+      "last_data_date": "2026-10-20",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "troy-troy-hybrid-3kw",
+      "kind": "reporting",
+      "meaning": "reporting normally",
+      "link_down": false,
+      "days_stale": 0,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-10-20",
       "last_data_date": "2026-10-20",
       "stale_days_threshold": 3
     }
@@ -180,9 +213,9 @@
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
       "days_stale": 111,
-      "days_since_data": 20,
+      "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-09-30",
+      "last_data_date": "2026-10-20",
       "stale_days_threshold": 3
     },
     {
@@ -191,9 +224,9 @@
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
       "days_stale": 111,
-      "days_since_data": 50,
+      "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-08-31",
+      "last_data_date": "2026-10-20",
       "stale_days_threshold": 3
     },
     {
@@ -219,39 +252,6 @@
       "stale_days_threshold": 3
     },
     {
-      "plant_key": "jeremy-jeremy-plant",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 20,
-      "days_since_data": 20,
-      "last_nonzero_date": "2026-09-30",
-      "last_data_date": "2026-09-30",
-      "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "sandamalsilva-my-home",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 20,
-      "days_since_data": 20,
-      "last_nonzero_date": "2026-09-30",
-      "last_data_date": "2026-09-30",
-      "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "thusharasameera-mendis-house",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 20,
-      "days_since_data": 20,
-      "last_nonzero_date": "2026-09-30",
-      "last_data_date": "2026-09-30",
-      "stale_days_threshold": 3
-    },
-    {
       "plant_key": "chamila-chamila-119h",
       "kind": "zeros_only",
       "meaning": "rows still arriving but every reading is 0.0000 kWh",
@@ -264,12 +264,7 @@
     }
   ],
   "excluded": [],
-  "generated_at": "2026-10-20T09:11:48.236327Z",
+  "generated_at": "2026-10-20T09:46:12.538241Z",
   "fleet_wide_outage": false,
-  "alerting_now": [
-    "jeremy-jeremy-plant",
-    "sandamalsilva-my-home",
-    "thusharasameera-mendis-house",
-    "chamila-chamila-119h"
-  ]
+  "alerting_now": []
 }

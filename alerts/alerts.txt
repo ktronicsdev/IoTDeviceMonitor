@@ -7,7 +7,7 @@
 ║                          Status: NO ALERTS DETECTED                          ║
 ║                                                                              ║
 ║               Date: 2026-10-20  |  Total Plants Monitored: 25                ║
-║               Reporting: 14  |  Dead link: 11  |  Excluded: 0                ║
+║                Reporting: 17  |  Dead link: 8  |  Excluded: 0                ║
 ║                                                                              ║
 ================================================================================
 
@@ -39,15 +39,6 @@
 │   • lahiru-ryan-lahiru-plant
 │     Last reading: 2026-07-14 (98 days ago)
 │     Symptom: rows still arriving but every reading is 0.0000 kWh
-│   • jeremy-jeremy-plant
-│     Last reading: 2026-09-30 (20 days ago)
-│     Symptom: no data rows at all — the portal has nothing for this plant
-│   • sandamalsilva-my-home
-│     Last reading: 2026-09-30 (20 days ago)
-│     Symptom: no data rows at all — the portal has nothing for this plant
-│   • thusharasameera-mendis-house
-│     Last reading: 2026-09-30 (20 days ago)
-│     Symptom: no data rows at all — the portal has nothing for this plant
 │   • chamila-chamila-119h
 │     Last reading: 2026-10-17 (3 days ago)
 │     Symptom: rows still arriving but every reading is 0.0000 kWh
