@@ -7,7 +7,7 @@
 ║                          Status: NO ALERTS DETECTED                          ║
 ║                                                                              ║
 ║               Date: 2026-10-20  |  Total Plants Monitored: 25                ║
-║               Reporting: 12  |  Dead link: 13  |  Excluded: 0                ║
+║               Reporting: 11  |  Dead link: 14  |  Excluded: 0                ║
 ║                                                                              ║
 ================================================================================
 
@@ -38,25 +38,28 @@
 │     Symptom: no non-zero reading has ever been recorded
 │   • lahiru-ryan-lahiru-plant
 │     Last reading: 2026-07-14 (98 days ago)
-│     Symptom: no data rows at all — the portal has nothing for this plant
-│   • sandamalsilva-my-home
+│     Symptom: rows still arriving but every reading is 0.0000 kWh
+│   • matho-plant
 │     Last reading: 2026-08-31 (50 days ago)
 │     Symptom: no data rows at all — the portal has nothing for this plant
+│   • chamila-chamila-119h
+│     Last reading: 2026-09-21 (29 days ago)
+│     Symptom: no data rows at all — the portal has nothing for this plant
 │   • faizalismail-faizal
+│     Last reading: 2026-09-30 (20 days ago)
+│     Symptom: no data rows at all — the portal has nothing for this plant
+│   • gayan-imh-imbulgoda-3kw
 │     Last reading: 2026-09-30 (20 days ago)
 │     Symptom: no data rows at all — the portal has nothing for this plant
 │   • kosala-koshala-plant
 │     Last reading: 2026-09-30 (20 days ago)
 │     Symptom: no data rows at all — the portal has nothing for this plant
-│   • matho-plant
+│   • sandamalsilva-my-home
 │     Last reading: 2026-09-30 (20 days ago)
 │     Symptom: no data rows at all — the portal has nothing for this plant
-│   • muadh-muadh-solar
+│   • troy-troy-hybrid-3kw
 │     Last reading: 2026-09-30 (20 days ago)
 │     Symptom: no data rows at all — the portal has nothing for this plant
-│   • chamila-chamila-119h
-│     Last reading: 2026-10-17 (3 days ago)
-│     Symptom: rows still arriving but every reading is 0.0000 kWh
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
@@ -66,13 +69,13 @@
 │   • abeetha-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │     Link: DATA LINK DOWN for 111 days — connectivity, not a production fault
-│   • ganishka-ganishka-home-3kw
+│   • anuradha-gajanayaka-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │     Link: DATA LINK DOWN for 111 days — connectivity, not a production fault
 │   • lahiru-ryan-lahiru-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │     Link: DATA LINK DOWN for 98 days — connectivity, not a production fault
-│   • samurdi-kohuwala
+│   • mifanza-mifanza-solar-system
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │     Link: DATA LINK DOWN for 111 days — connectivity, not a production fault
 │   • upulatheja-3kw-pro-kadawath
@@ -80,8 +83,8 @@
 │     Link: DATA LINK DOWN for 111 days — connectivity, not a production fault
 │
 │ SUPPRESSED ALERTS (Already notified, zero production continues):
-│   • chamila-chamila-119h
-│     Reason: reclassified as CONNECTIVITY: no data for 3 days (rows still arriving but every reading is 0.0000 kWh) — data link down, NOT a production fault
+│   • ganishka-ganishka-home-3kw
+│     Reason: suppressed: 0 kWh for 3 days and red already sent
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 

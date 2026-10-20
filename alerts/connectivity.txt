@@ -6,12 +6,12 @@
 ║                                                                              ║
 ================================================================================
 
-Report Time: 2026-10-20 19:45:05 UTC
+Report Time: 2026-10-20 23:05:28 UTC
 
 ┌─ FLEET STATUS ───────────────────────────────────────────────────────────────┐
 │
-│ Plants reporting:         10
-│ Plants with a dead link:  13   (no data for 3+ days — connectivity, not a fault)
+│ Plants reporting:          9
+│ Plants with a dead link:  14   (no data for 3+ days — connectivity, not a fault)
 │ Plants excluded:           0   (deliberately off the platform)
 │ Plants monitored:         23   (reporting + dead link)
 │
@@ -33,29 +33,23 @@ Report Time: 2026-10-20 19:45:05 UTC
 
 ┌─ PLANTS WITH A DEAD LINK ────────────────────────────────────────────────────┐
 │
-│ 📡 faizalismail-faizal
-│    Customer:    FaizalIsmail
+│ 📡 gayan-imh-imbulgoda-3kw
+│    Customer:    Gayan-IMH
+│    Contact:     pcgayan@gmail.com
 │    Last data:   2026-09-30  (20 days ago)
 │    Symptom:     no data rows at all — the portal has nothing for this plant
 │    Diagnosis:   DATA LINK DOWN — not a production fault
 │    Status:      Send #1/3
 │
-│ 📡 kosala-koshala-plant
-│    Customer:    Kosala
+│ 📡 sandamalsilva-my-home
+│    Customer:    SandamalSilva
 │    Last data:   2026-09-30  (20 days ago)
 │    Symptom:     no data rows at all — the portal has nothing for this plant
 │    Diagnosis:   DATA LINK DOWN — not a production fault
-│    Status:      Send #1/3
+│    Status:      Send #2/3
 │
-│ 📡 matho-plant
-│    Customer:    Matho
-│    Last data:   2026-09-30  (20 days ago)
-│    Symptom:     no data rows at all — the portal has nothing for this plant
-│    Diagnosis:   DATA LINK DOWN — not a production fault
-│    Status:      Send #1/3
-│
-│ 📡 muadh-muadh-solar
-│    Customer:    Muadh
+│ 📡 troy-troy-hybrid-3kw
+│    Customer:    Troy
 │    Last data:   2026-09-30  (20 days ago)
 │    Symptom:     no data rows at all — the portal has nothing for this plant
 │    Diagnosis:   DATA LINK DOWN — not a production fault

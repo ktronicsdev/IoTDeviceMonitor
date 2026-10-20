@@ -1,8 +1,8 @@
 {
   "stale_days": 3,
   "counts": {
-    "reporting": 10,
-    "link_down": 13,
+    "reporting": 9,
+    "link_down": 14,
     "excluded": 0,
     "monitored": 23
   },
@@ -30,17 +30,6 @@
       "stale_days_threshold": 3
     },
     {
-      "plant_key": "gayan-imh-imbulgoda-3kw",
-      "kind": "reporting",
-      "meaning": "reporting normally",
-      "link_down": false,
-      "days_stale": 0,
-      "days_since_data": 0,
-      "last_nonzero_date": "2026-10-20",
-      "last_data_date": "2026-10-20",
-      "stale_days_threshold": 3
-    },
-    {
       "plant_key": "jeremy-jeremy-plant",
       "kind": "reporting",
       "meaning": "reporting normally",
@@ -53,6 +42,17 @@
     },
     {
       "plant_key": "kasun-kasun",
+      "kind": "reporting",
+      "meaning": "reporting normally",
+      "link_down": false,
+      "days_stale": 0,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-10-20",
+      "last_data_date": "2026-10-20",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "muadh-muadh-solar",
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
@@ -105,17 +105,6 @@
       "last_nonzero_date": "2026-10-20",
       "last_data_date": "2026-10-20",
       "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "troy-troy-hybrid-3kw",
-      "kind": "reporting",
-      "meaning": "reporting normally",
-      "link_down": false,
-      "days_stale": 0,
-      "days_since_data": 0,
-      "last_nonzero_date": "2026-10-20",
-      "last_data_date": "2026-10-20",
-      "stale_days_threshold": 3
     }
   ],
   "link_down": [
@@ -136,9 +125,9 @@
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
       "days_stale": 111,
-      "days_since_data": 0,
+      "days_since_data": 50,
       "last_nonzero_date": null,
-      "last_data_date": "2026-10-20",
+      "last_data_date": "2026-08-31",
       "stale_days_threshold": 3
     },
     {
@@ -158,9 +147,9 @@
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
       "days_stale": 111,
-      "days_since_data": 0,
+      "days_since_data": 50,
       "last_nonzero_date": null,
-      "last_data_date": "2026-10-20",
+      "last_data_date": "2026-08-31",
       "stale_days_threshold": 3
     },
     {
@@ -180,24 +169,24 @@
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
       "days_stale": 111,
-      "days_since_data": 0,
-      "last_nonzero_date": null,
-      "last_data_date": "2026-10-20",
-      "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "lahiru-ryan-lahiru-plant",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 98,
       "days_since_data": 20,
-      "last_nonzero_date": "2026-07-14",
+      "last_nonzero_date": null,
       "last_data_date": "2026-09-30",
       "stale_days_threshold": 3
     },
     {
-      "plant_key": "sandamalsilva-my-home",
+      "plant_key": "lahiru-ryan-lahiru-plant",
+      "kind": "zeros_only",
+      "meaning": "rows still arriving but every reading is 0.0000 kWh",
+      "link_down": true,
+      "days_stale": 98,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-07-14",
+      "last_data_date": "2026-10-20",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "matho-plant",
       "kind": "no_rows",
       "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
       "link_down": true,
@@ -208,7 +197,29 @@
       "stale_days_threshold": 3
     },
     {
+      "plant_key": "chamila-chamila-119h",
+      "kind": "no_rows",
+      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
+      "link_down": true,
+      "days_stale": 29,
+      "days_since_data": 20,
+      "last_nonzero_date": "2026-09-21",
+      "last_data_date": "2026-09-30",
+      "stale_days_threshold": 3
+    },
+    {
       "plant_key": "faizalismail-faizal",
+      "kind": "no_rows",
+      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
+      "link_down": true,
+      "days_stale": 20,
+      "days_since_data": 20,
+      "last_nonzero_date": "2026-09-30",
+      "last_data_date": "2026-09-30",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "gayan-imh-imbulgoda-3kw",
       "kind": "no_rows",
       "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
       "link_down": true,
@@ -230,7 +241,7 @@
       "stale_days_threshold": 3
     },
     {
-      "plant_key": "matho-plant",
+      "plant_key": "sandamalsilva-my-home",
       "kind": "no_rows",
       "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
       "link_down": true,
@@ -241,7 +252,7 @@
       "stale_days_threshold": 3
     },
     {
-      "plant_key": "muadh-muadh-solar",
+      "plant_key": "troy-troy-hybrid-3kw",
       "kind": "no_rows",
       "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
       "link_down": true,
@@ -249,27 +260,15 @@
       "days_since_data": 20,
       "last_nonzero_date": "2026-09-30",
       "last_data_date": "2026-09-30",
-      "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "chamila-chamila-119h",
-      "kind": "zeros_only",
-      "meaning": "rows still arriving but every reading is 0.0000 kWh",
-      "link_down": true,
-      "days_stale": 3,
-      "days_since_data": 0,
-      "last_nonzero_date": "2026-10-17",
-      "last_data_date": "2026-10-20",
       "stale_days_threshold": 3
     }
   ],
   "excluded": [],
-  "generated_at": "2026-10-20T19:45:05.798122Z",
+  "generated_at": "2026-10-20T23:05:28.810659Z",
   "fleet_wide_outage": false,
   "alerting_now": [
-    "faizalismail-faizal",
-    "kosala-koshala-plant",
-    "matho-plant",
-    "muadh-muadh-solar"
+    "gayan-imh-imbulgoda-3kw",
+    "sandamalsilva-my-home",
+    "troy-troy-hybrid-3kw"
   ]
 }
