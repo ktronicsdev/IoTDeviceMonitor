@@ -25,12 +25,12 @@
     "customer": "Chamila",
     "days_stale": 3,
     "first_seen": "2026-10-20T01:16:45.329242",
-    "ignored": false,
+    "ignored": true,
     "kind": "zeros_only",
     "last_data": "2026-10-20",
-    "last_sent": "2026-10-20T09:11:48.236638",
+    "last_sent": "2026-10-20T16:33:42.539295",
     "plant": "chamila-chamila-119h",
-    "send_count": 2
+    "send_count": 3
   },
   "ganishka-ganishka-home-3kw": {
     "customer": "Ganishka",
@@ -42,6 +42,17 @@
     "last_sent": "2026-09-24T00:47:35.299448",
     "plant": "ganishka-ganishka-home-3kw",
     "send_count": 3
+  },
+  "gayan-imh-imbulgoda-3kw": {
+    "customer": "Gayan-IMH",
+    "days_stale": 20,
+    "first_seen": "2026-10-20T16:33:42.539295",
+    "ignored": false,
+    "kind": "no_rows",
+    "last_data": "2026-09-30",
+    "last_sent": "2026-10-20T16:33:42.539295",
+    "plant": "gayan-imh-imbulgoda-3kw",
+    "send_count": 1
   },
   "lahiru-ryan-lahiru-plant": {
     "customer": "Lahiru Ryan",
@@ -75,6 +86,17 @@
     "last_sent": "2026-09-24T00:47:35.299448",
     "plant": "samurdi-kohuwala",
     "send_count": 3
+  },
+  "sandamalsilva-my-home": {
+    "customer": "SandamalSilva",
+    "days_stale": 50,
+    "first_seen": "2026-10-20T16:33:42.539295",
+    "ignored": false,
+    "kind": "no_rows",
+    "last_data": "2026-08-31",
+    "last_sent": "2026-10-20T16:33:42.539295",
+    "plant": "sandamalsilva-my-home",
+    "send_count": 1
   },
   "upulatheja-3kw-pro-kadawath": {
     "customer": "Upulatheja",

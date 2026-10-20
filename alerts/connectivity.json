@@ -1,8 +1,8 @@
 {
   "stale_days": 3,
   "counts": {
-    "reporting": 15,
-    "link_down": 8,
+    "reporting": 13,
+    "link_down": 10,
     "excluded": 0,
     "monitored": 23
   },
@@ -31,17 +31,6 @@
     },
     {
       "plant_key": "faizalismail-faizal",
-      "kind": "reporting",
-      "meaning": "reporting normally",
-      "link_down": false,
-      "days_stale": 0,
-      "days_since_data": 0,
-      "last_nonzero_date": "2026-10-20",
-      "last_data_date": "2026-10-20",
-      "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "gayan-imh-imbulgoda-3kw",
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
@@ -140,17 +129,6 @@
       "stale_days_threshold": 3
     },
     {
-      "plant_key": "sandamalsilva-my-home",
-      "kind": "reporting",
-      "meaning": "reporting normally",
-      "link_down": false,
-      "days_stale": 0,
-      "days_since_data": 0,
-      "last_nonzero_date": "2026-10-20",
-      "last_data_date": "2026-10-20",
-      "stale_days_threshold": 3
-    },
-    {
       "plant_key": "thusharasameera-mendis-house",
       "kind": "reporting",
       "meaning": "reporting normally",
@@ -235,20 +213,42 @@
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
       "days_stale": 111,
-      "days_since_data": 0,
+      "days_since_data": 20,
       "last_nonzero_date": null,
-      "last_data_date": "2026-10-20",
+      "last_data_date": "2026-09-30",
       "stale_days_threshold": 3
     },
     {
       "plant_key": "lahiru-ryan-lahiru-plant",
-      "kind": "zeros_only",
-      "meaning": "rows still arriving but every reading is 0.0000 kWh",
+      "kind": "no_rows",
+      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
       "link_down": true,
       "days_stale": 98,
-      "days_since_data": 0,
+      "days_since_data": 20,
       "last_nonzero_date": "2026-07-14",
-      "last_data_date": "2026-10-20",
+      "last_data_date": "2026-09-30",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "sandamalsilva-my-home",
+      "kind": "no_rows",
+      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
+      "link_down": true,
+      "days_stale": 50,
+      "days_since_data": 50,
+      "last_nonzero_date": "2026-08-31",
+      "last_data_date": "2026-08-31",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "gayan-imh-imbulgoda-3kw",
+      "kind": "no_rows",
+      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
+      "link_down": true,
+      "days_stale": 20,
+      "days_since_data": 20,
+      "last_nonzero_date": "2026-09-30",
+      "last_data_date": "2026-09-30",
       "stale_days_threshold": 3
     },
     {
@@ -264,7 +264,11 @@
     }
   ],
   "excluded": [],
-  "generated_at": "2026-10-20T12:59:22.889894Z",
+  "generated_at": "2026-10-20T16:33:42.538868Z",
   "fleet_wide_outage": false,
-  "alerting_now": []
+  "alerting_now": [
+    "sandamalsilva-my-home",
+    "gayan-imh-imbulgoda-3kw",
+    "chamila-chamila-119h"
+  ]
 }
