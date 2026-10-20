@@ -7,7 +7,7 @@
 ║                          Status: NO ALERTS DETECTED                          ║
 ║                                                                              ║
 ║               Date: 2026-10-20  |  Total Plants Monitored: 25                ║
-║               Reporting: 15  |  Dead link: 10  |  Excluded: 0                ║
+║               Reporting: 12  |  Dead link: 13  |  Excluded: 0                ║
 ║                                                                              ║
 ================================================================================
 
@@ -42,7 +42,16 @@
 │   • sandamalsilva-my-home
 │     Last reading: 2026-08-31 (50 days ago)
 │     Symptom: no data rows at all — the portal has nothing for this plant
-│   • gayan-imh-imbulgoda-3kw
+│   • faizalismail-faizal
+│     Last reading: 2026-09-30 (20 days ago)
+│     Symptom: no data rows at all — the portal has nothing for this plant
+│   • kosala-koshala-plant
+│     Last reading: 2026-09-30 (20 days ago)
+│     Symptom: no data rows at all — the portal has nothing for this plant
+│   • matho-plant
+│     Last reading: 2026-09-30 (20 days ago)
+│     Symptom: no data rows at all — the portal has nothing for this plant
+│   • muadh-muadh-solar
 │     Last reading: 2026-09-30 (20 days ago)
 │     Symptom: no data rows at all — the portal has nothing for this plant
 │   • chamila-chamila-119h
@@ -57,18 +66,12 @@
 │   • abeetha-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │     Link: DATA LINK DOWN for 111 days — connectivity, not a production fault
-│   • anuradha-gajanayaka-plant
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│     Link: DATA LINK DOWN for 111 days — connectivity, not a production fault
 │   • ganishka-ganishka-home-3kw
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │     Link: DATA LINK DOWN for 111 days — connectivity, not a production fault
 │   • lahiru-ryan-lahiru-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │     Link: DATA LINK DOWN for 98 days — connectivity, not a production fault
-│   • mifanza-mifanza-solar-system
-│     Reason: ignored: month total == 0 for 1 consecutive month(s)
-│     Link: DATA LINK DOWN for 111 days — connectivity, not a production fault
 │   • samurdi-kohuwala
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │     Link: DATA LINK DOWN for 111 days — connectivity, not a production fault
