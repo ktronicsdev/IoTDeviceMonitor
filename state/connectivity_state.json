@@ -21,6 +21,17 @@
     "plant": "anuradha-gajanayaka-plant",
     "send_count": 3
   },
+  "chamila-chamila-119h": {
+    "customer": "Chamila",
+    "days_stale": 3,
+    "first_seen": "2026-10-20T01:16:45.329242",
+    "ignored": false,
+    "kind": "zeros_only",
+    "last_data": "2026-10-20",
+    "last_sent": "2026-10-20T01:16:45.329242",
+    "plant": "chamila-chamila-119h",
+    "send_count": 1
+  },
   "ganishka-ganishka-home-3kw": {
     "customer": "Ganishka",
     "days_stale": 115,
@@ -31,17 +42,6 @@
     "last_sent": "2026-09-24T00:47:35.299448",
     "plant": "ganishka-ganishka-home-3kw",
     "send_count": 3
-  },
-  "kasun-kasun": {
-    "customer": "Kasun",
-    "days_stale": 19,
-    "first_seen": "2026-10-19T23:38:01.356717",
-    "ignored": false,
-    "kind": "no_rows",
-    "last_data": "2026-09-30",
-    "last_sent": "2026-10-19T23:38:01.356717",
-    "plant": "kasun-kasun",
-    "send_count": 1
   },
   "lahiru-ryan-lahiru-plant": {
     "customer": "Lahiru Ryan",
@@ -54,17 +54,6 @@
     "plant": "lahiru-ryan-lahiru-plant",
     "send_count": 3
   },
-  "matho-plant": {
-    "customer": "Matho",
-    "days_stale": 19,
-    "first_seen": "2026-10-19T23:38:01.356717",
-    "ignored": false,
-    "kind": "no_rows",
-    "last_data": "2026-09-30",
-    "last_sent": "2026-10-19T23:38:01.356717",
-    "plant": "matho-plant",
-    "send_count": 1
-  },
   "mifanza-mifanza-solar-system": {
     "customer": "Mifanza",
     "days_stale": 115,
@@ -75,28 +64,6 @@
     "last_sent": "2026-09-24T00:47:35.299448",
     "plant": "mifanza-mifanza-solar-system",
     "send_count": 3
-  },
-  "muadh-muadh-solar": {
-    "customer": "Muadh",
-    "days_stale": 19,
-    "first_seen": "2026-10-19T23:38:01.356717",
-    "ignored": false,
-    "kind": "no_rows",
-    "last_data": "2026-09-30",
-    "last_sent": "2026-10-19T23:38:01.356717",
-    "plant": "muadh-muadh-solar",
-    "send_count": 1
-  },
-  "ravindra-ravindra-3kw": {
-    "customer": "Ravindra",
-    "days_stale": 19,
-    "first_seen": "2026-10-19T23:38:01.356717",
-    "ignored": false,
-    "kind": "no_rows",
-    "last_data": "2026-09-30",
-    "last_sent": "2026-10-19T23:38:01.356717",
-    "plant": "ravindra-ravindra-3kw",
-    "send_count": 1
   },
   "samurdi-kohuwala": {
     "customer": "Samurdi",

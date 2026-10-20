@@ -1,7 +1,14 @@
 {
-  "generated_at": "2026-10-19T23:38:01.243748Z",
+  "generated_at": "2026-10-20T01:16:45.234588Z",
   "alerts": [],
-  "suppressed": [],
+  "suppressed": [
+    {
+      "plant_key": "chamila-chamila-119h",
+      "reason": "reclassified as CONNECTIVITY: no data for 3 days (rows still arriving but every reading is 0.0000 kWh) \u2014 data link down, NOT a production fault",
+      "days_stale": 3,
+      "link_down": true
+    }
+  ],
   "ignored": [
     {
       "plant_key": "abeetha-plant",
@@ -10,7 +17,7 @@
         "2026-09"
       ],
       "link_down": true,
-      "days_stale": 110
+      "days_stale": 111
     },
     {
       "plant_key": "anuradha-gajanayaka-plant",
@@ -19,7 +26,7 @@
         "2026-09"
       ],
       "link_down": true,
-      "days_stale": 110
+      "days_stale": 111
     },
     {
       "plant_key": "ganishka-ganishka-home-3kw",
@@ -28,7 +35,16 @@
         "2026-09"
       ],
       "link_down": true,
-      "days_stale": 110
+      "days_stale": 111
+    },
+    {
+      "plant_key": "lahiru-ryan-lahiru-plant",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-09"
+      ],
+      "link_down": true,
+      "days_stale": 98
     },
     {
       "plant_key": "mifanza-mifanza-solar-system",
@@ -37,7 +53,7 @@
         "2026-09"
       ],
       "link_down": true,
-      "days_stale": 110
+      "days_stale": 111
     },
     {
       "plant_key": "samurdi-kohuwala",
@@ -46,7 +62,7 @@
         "2026-09"
       ],
       "link_down": true,
-      "days_stale": 110
+      "days_stale": 111
     },
     {
       "plant_key": "upulatheja-3kw-pro-kadawath",
@@ -55,7 +71,7 @@
         "2026-09"
       ],
       "link_down": true,
-      "days_stale": 110
+      "days_stale": 111
     }
   ],
   "link_down": [
@@ -64,10 +80,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 110,
-      "days_since_data": 19,
+      "days_stale": 111,
+      "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-09-30",
+      "last_data_date": "2026-10-20",
       "stale_days_threshold": 3
     },
     {
@@ -75,10 +91,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 110,
+      "days_stale": 111,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-10-19",
+      "last_data_date": "2026-10-20",
       "stale_days_threshold": 3
     },
     {
@@ -86,10 +102,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 110,
+      "days_stale": 111,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-10-19",
+      "last_data_date": "2026-10-20",
       "stale_days_threshold": 3
     },
     {
@@ -97,10 +113,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 110,
+      "days_stale": 111,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-10-19",
+      "last_data_date": "2026-10-20",
       "stale_days_threshold": 3
     },
     {
@@ -108,10 +124,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 110,
+      "days_stale": 111,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-10-19",
+      "last_data_date": "2026-10-20",
       "stale_days_threshold": 3
     },
     {
@@ -119,10 +135,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 110,
+      "days_stale": 111,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-10-19",
+      "last_data_date": "2026-10-20",
       "stale_days_threshold": 3
     },
     {
@@ -130,61 +146,28 @@
       "kind": "zeros_only",
       "meaning": "rows still arriving but every reading is 0.0000 kWh",
       "link_down": true,
-      "days_stale": 97,
+      "days_stale": 98,
       "days_since_data": 0,
       "last_nonzero_date": "2026-07-14",
-      "last_data_date": "2026-10-19",
+      "last_data_date": "2026-10-20",
       "stale_days_threshold": 3
     },
     {
-      "plant_key": "kasun-kasun",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
+      "plant_key": "chamila-chamila-119h",
+      "kind": "zeros_only",
+      "meaning": "rows still arriving but every reading is 0.0000 kWh",
       "link_down": true,
-      "days_stale": 19,
-      "days_since_data": 19,
-      "last_nonzero_date": "2026-09-30",
-      "last_data_date": "2026-09-30",
-      "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "matho-plant",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 19,
-      "days_since_data": 19,
-      "last_nonzero_date": "2026-09-30",
-      "last_data_date": "2026-09-30",
-      "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "muadh-muadh-solar",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 19,
-      "days_since_data": 19,
-      "last_nonzero_date": "2026-09-30",
-      "last_data_date": "2026-09-30",
-      "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "ravindra-ravindra-3kw",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 19,
-      "days_since_data": 19,
-      "last_nonzero_date": "2026-09-30",
-      "last_data_date": "2026-09-30",
+      "days_stale": 3,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-10-17",
+      "last_data_date": "2026-10-20",
       "stale_days_threshold": 3
     }
   ],
   "excluded": [],
   "counts": {
-    "reporting": 14,
-    "link_down": 11,
+    "reporting": 17,
+    "link_down": 8,
     "excluded": 0,
     "monitored": 25
   }
