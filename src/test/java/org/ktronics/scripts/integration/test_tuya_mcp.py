@@ -115,6 +115,50 @@ class TestDecoding:
         assert tm.fmt_time(None) is None
 
 
+class TestCalibration:
+    PT = {"code": "power_total", "type": "Integer", "values": '{"unit":"kW","scale":3}'}
+
+    def test_gain_scales_current_and_power_not_voltage(self):
+        d = tm.decode_value("phase_b", '{"electricCurrent":2.0,"power":0.5,"voltage":230.0}',
+                            {}, gain=1.5)
+        assert d == {"voltage_v": 230.0, "current_a": 3.0, "power_kw": 0.75}
+
+    def test_gain_scales_power_and_energy_codes_only(self):
+        spec = {"power_total": self.PT}
+        assert tm.decode_value("power_total", 1000, spec, gain=1.48) == 1.48
+        assert tm.apply_gain("forward_energy_total", 100.0, 1.48) == 148.0
+        assert tm.apply_gain("temp_current", 21.5, 1.48) == 21.5
+        assert tm.apply_gain("switch_1", True, 1.48) is True
+
+    def test_device_status_reports_calibration(self, monkeypatch):
+        monkeypatch.setattr(tm, "_call", lambda *a, **k: {
+            "id": "x", "name": "Power Clamp", "online": True,
+            "status": [{"code": "power_total", "value": 1000}]})
+        monkeypatch.setattr(tm, "_spec", lambda _id: {"power_total": self.PT})
+        monkeypatch.setattr(tm, "_load_cfg", lambda: {"power_gain": {"x": 1.48}})
+        out = tm.device_status("x")
+        assert out["status"][0]["value"] == 1.48 and "x1.48" in out["calibration"]
+        raw = tm.device_status("x", raw=True)
+        assert raw["status"][0]["value"] == 1000 and "calibration" not in raw
+
+    def test_no_gain_configured_leaves_values(self, monkeypatch):
+        monkeypatch.setattr(tm, "_load_cfg", lambda: {})
+        assert tm._power_gain("x") == 1.0
+
+
+class TestLogs:
+    def test_truncation_keeps_the_newest_rows(self, monkeypatch):
+        # Pages arrive newest first; a cut must drop the oldest rows.
+        page = {"logs": [{"code": "switch_1", "value": "true", "event_time": 1_760_000_000_000 - i * 1000}
+                         for i in range(100)], "has_next": False}
+        monkeypatch.setattr(tm, "_spec", lambda _id: {})
+        monkeypatch.setattr(tm, "_load_cfg", lambda: {})
+        monkeypatch.setattr(tm, "_logs_page", lambda *a, **k: page)
+        out = tm.device_logs("x", start="2025-01-01", end="2026-01-01", max_rows=30)
+        assert out["truncated"] and len(out["rows"]) == 30
+        assert out["rows"][-1]["time"] == tm.fmt_time(1_760_000_000_000)
+
+
 class TestEnergyBuckets:
     T = __import__("datetime").datetime
 

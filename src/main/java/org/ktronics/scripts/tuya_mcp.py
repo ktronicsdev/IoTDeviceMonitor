@@ -209,20 +209,38 @@ def decode_phase(value: str) -> dict | None:
     }
 
 
-def decode_value(code: str, value, spec: dict):
+# Codes a CT gain applies to: current, power and the energy integrated from them.
+GAIN_CODES = {"power_total", "forward_energy_total", "reverse_energy_total",
+              "cur_power", "cur_current", "add_ele"}
+
+
+def apply_gain(code: str, value, gain: float):
+    """Correct CTs that read low or high by a fixed factor, fitted against the grid
+    meter. Voltage is left alone; current, power and energy scale with the CT."""
+    if gain == 1:
+        return value
+    if isinstance(value, dict) and "power_kw" in value:
+        return {**value, "current_a": round(value["current_a"] * gain, 3),
+                "power_kw": round(value["power_kw"] * gain, 3)}
+    if code in GAIN_CODES and isinstance(value, (int, float)) and not isinstance(value, bool):
+        return round(value * gain, 3)
+    return value
+
+
+def decode_value(code: str, value, spec: dict, gain: float = 1.0):
     if code and code.startswith("phase_"):
         decoded = decode_phase(value)
         if decoded:
-            return decoded
-    return scale_value(value, spec.get(code))
+            return apply_gain(code, decoded, gain)
+    return apply_gain(code, scale_value(value, spec.get(code)), gain)
 
 
-def decode_status(status: list, spec: dict) -> list:
+def decode_status(status: list, spec: dict, gain: float = 1.0) -> list:
     rows = []
     for s in status or []:
         code, value = s.get("code"), s.get("value")
         entry = spec.get(code)
-        row = {"code": code, "value": decode_value(code, value, spec)}
+        row = {"code": code, "value": decode_value(code, value, spec, gain)}
         unit = parse_values(entry).get("unit") if entry else None
         if unit:
             row["unit"] = unit
@@ -304,6 +322,14 @@ def _call(method: str, path: str, query: dict | None = None, body=None):
     return data.get("result")
 
 
+def _power_gain(device_id: str) -> float:
+    """Per-device CT correction: tuya.power_gain {device_id: factor} in credentials.json."""
+    try:
+        return float((_load_cfg().get("power_gain") or {}).get(device_id, 1))
+    except (TypeError, ValueError):
+        return 1.0
+
+
 def _spec(device_id: str) -> dict:
     """code -> spec entry (status first, functions fill the gaps), cached per device."""
     if device_id not in _specs:
@@ -327,10 +353,13 @@ mcp = MCPServer(
     instructions=(
         "Tuya Cloud for the user's own home devices in Sweden (Tuya Smart app, project "
         "'Vall home'): plugs, TRVs, thermostats, smoke detectors, RCBO breakers and a "
-        "3-phase PC321 Power Clamp. Times are the laptop's local time. Status values are "
-        "scaled to their units. The clamp's phase_a/b/c power is signed - negative means "
-        "reverse flow on that phase - and power_total is their sum. An offline device's "
-        "status is its last report, not live. Start with list_devices to get ids."),
+        "3-phase PC321 Power Clamp at the grid connection. Times are the laptop's local "
+        "time. Status values are scaled to their units, and corrected by a device's CT gain "
+        "when credentials.json sets one (the result then says 'calibration'). The clamp's "
+        "phase_a/b/c power is signed - negative means reverse flow on that phase - and "
+        "power_total is their sum; its forward_energy_total adds |P| of every phase, so it "
+        "counts export as use. An offline device's status is its last report, not live. "
+        "Start with list_devices to get ids."),
 )
 
 
@@ -367,7 +396,11 @@ def device_status(device_id: str, raw: bool = False) -> dict:
         spec = _spec(device_id)
     except ToolError as e:
         spec, out["note"] = {}, f"values unscaled - specification unavailable: {e}"
-    out["status"] = decode_status(status, spec)
+    gain = _power_gain(device_id)
+    out["status"] = decode_status(status, spec, gain)
+    if gain != 1:
+        out["calibration"] = (f"current, power and energy x{gain:g} (tuya.power_gain in "
+                              "credentials.json); raw=True gives the device's own values")
     return out
 
 
@@ -396,6 +429,7 @@ def device_logs(device_id: str, codes: str = "", start: str = "", end: str = "",
     start_dt = parse_local(start) if start else end_dt - timedelta(hours=hours)
     wanted = {c.strip() for c in codes.split(",") if c.strip()}
     spec = _spec(device_id)
+    gain = _power_gain(device_id)
     rows, row_key = [], ""
     while len(rows) < max_rows:
         result = _logs_page(device_id, {
@@ -410,13 +444,13 @@ def device_logs(device_id: str, codes: str = "", start: str = "", end: str = "",
                 continue
             rows.append({"time": fmt_time(log.get("event_time")), "code": code,
                          "value": decode_value(code, _typed(log.get("value"), spec.get(code)),
-                                               spec)})
+                                               spec, gain)})
         row_key = result.get("next_row_key") or ""
         if not result.get("has_next") or not row_key:
             break
     rows.sort(key=lambda r: r["time"] or "")
     return {"from": start_dt.strftime("%Y-%m-%d %H:%M"), "to": end_dt.strftime("%Y-%m-%d %H:%M"),
-            "rows": rows[:max_rows], "truncated": len(rows) > max_rows}
+            "rows": rows[-max_rows:], "truncated": len(rows) > max_rows}
 
 
 LOG_TOO_FREQUENT = 40000309
@@ -501,8 +535,15 @@ def _energy_from_logs(device_id: str, granularity: str, s: datetime, e: datetime
     readings = [(datetime.strptime(r["time"], "%Y-%m-%d %H:%M:%S"), r["value"])
                 for r in rows if isinstance(r["value"], (int, float))]
     buckets = bucket_energy(readings, granularity, code not in INCREMENT_ENERGY_CODES)
-    return {"code": code, "granularity": granularity, "unit": "kWh",
-            "source": "device logs (statistics API not subscribed; logs keep ~7 days)",
+    result = {"code": code, "granularity": granularity, "unit": "kWh",
+              "source": "device logs (statistics API not subscribed; logs keep ~7 days)"}
+    if code == "forward_energy_total":
+        result["note"] = ("forward_energy_total adds |P| of each phase, so it counts reverse "
+                          "flow (export) as use - it is not the grid meter's import")
+    gain = _power_gain(device_id)
+    if gain != 1:
+        result["calibration"] = f"x{gain:g} (tuya.power_gain in credentials.json)"
+    return {**result,
             "readings": len(readings),
             "first": rows[0]["time"] if rows else None,
             "last": rows[-1]["time"] if rows else None,
