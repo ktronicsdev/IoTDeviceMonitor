@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-21T16:41:31.261787Z",
+  "generated_at": "2026-10-21T18:09:48.836731Z",
   "alerts": [],
   "suppressed": [
     {
@@ -10,15 +10,6 @@
     }
   ],
   "ignored": [
-    {
-      "plant_key": "abeetha-plant",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-09"
-      ],
-      "link_down": true,
-      "days_stale": 112
-    },
     {
       "plant_key": "anuradha-gajanayaka-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
@@ -48,15 +39,6 @@
     },
     {
       "plant_key": "mifanza-mifanza-solar-system",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-09"
-      ],
-      "link_down": true,
-      "days_stale": 112
-    },
-    {
-      "plant_key": "samurdi-kohuwala",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
         "2026-09"
@@ -153,6 +135,61 @@
       "stale_days_threshold": 3
     },
     {
+      "plant_key": "crdesilva-home",
+      "kind": "no_rows",
+      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
+      "link_down": true,
+      "days_stale": 51,
+      "days_since_data": 51,
+      "last_nonzero_date": "2026-08-31",
+      "last_data_date": "2026-08-31",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "muadh-muadh-solar",
+      "kind": "no_rows",
+      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
+      "link_down": true,
+      "days_stale": 51,
+      "days_since_data": 51,
+      "last_nonzero_date": "2026-08-31",
+      "last_data_date": "2026-08-31",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "namila-waragoda-namila-plant",
+      "kind": "no_rows",
+      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
+      "link_down": true,
+      "days_stale": 51,
+      "days_since_data": 51,
+      "last_nonzero_date": "2026-08-31",
+      "last_data_date": "2026-08-31",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "ravindra-ravindra-3kw",
+      "kind": "no_rows",
+      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
+      "link_down": true,
+      "days_stale": 51,
+      "days_since_data": 51,
+      "last_nonzero_date": "2026-08-31",
+      "last_data_date": "2026-08-31",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "sandamalsilva-my-home",
+      "kind": "no_rows",
+      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
+      "link_down": true,
+      "days_stale": 51,
+      "days_since_data": 51,
+      "last_nonzero_date": "2026-08-31",
+      "last_data_date": "2026-08-31",
+      "stale_days_threshold": 3
+    },
+    {
       "plant_key": "chandika-plant",
       "kind": "no_rows",
       "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
@@ -164,40 +201,7 @@
       "stale_days_threshold": 3
     },
     {
-      "plant_key": "crdesilva-home",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 21,
-      "days_since_data": 21,
-      "last_nonzero_date": "2026-09-30",
-      "last_data_date": "2026-09-30",
-      "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "faizalismail-faizal",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 21,
-      "days_since_data": 21,
-      "last_nonzero_date": "2026-09-30",
-      "last_data_date": "2026-09-30",
-      "stale_days_threshold": 3
-    },
-    {
       "plant_key": "matho-plant",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 21,
-      "days_since_data": 21,
-      "last_nonzero_date": "2026-09-30",
-      "last_data_date": "2026-09-30",
-      "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "namila-waragoda-namila-plant",
       "kind": "no_rows",
       "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
       "link_down": true,
@@ -221,8 +225,8 @@
   ],
   "excluded": [],
   "counts": {
-    "reporting": 12,
-    "link_down": 13,
+    "reporting": 10,
+    "link_down": 15,
     "excluded": 0,
     "monitored": 25
   }

@@ -6,12 +6,12 @@
 ║                                                                              ║
 ================================================================================
 
-Report Time: 2026-10-21 16:41:31 UTC
+Report Time: 2026-10-21 18:09:48 UTC
 
 ┌─ FLEET STATUS ───────────────────────────────────────────────────────────────┐
 │
-│ Plants reporting:         10
-│ Plants with a dead link:  13   (no data for 3+ days — connectivity, not a fault)
+│ Plants reporting:          8
+│ Plants with a dead link:  15   (no data for 3+ days — connectivity, not a fault)
 │ Plants excluded:           0   (deliberately off the platform)
 │ Plants monitored:         23   (reporting + dead link)
 │
@@ -33,40 +33,23 @@ Report Time: 2026-10-21 16:41:31 UTC
 
 ┌─ PLANTS WITH A DEAD LINK ────────────────────────────────────────────────────┐
 │
-│ 📡 chandika-plant
-│    Customer:    Chandika
-│    Contact:     pcgayan@gmail.com
-│    Last data:   2026-09-30  (21 days ago)
+│ 📡 muadh-muadh-solar
+│    Customer:    Muadh
+│    Last data:   2026-08-31  (51 days ago)
 │    Symptom:     no data rows at all — the portal has nothing for this plant
 │    Diagnosis:   DATA LINK DOWN — not a production fault
 │    Status:      Send #1/3
 │
-│ 📡 crdesilva-home
-│    Customer:    CRDesilva
-│    Contact:     crdesilva@yahoo.com
-│    Last data:   2026-09-30  (21 days ago)
+│ 📡 ravindra-ravindra-3kw
+│    Customer:    Ravindra
+│    Last data:   2026-08-31  (51 days ago)
 │    Symptom:     no data rows at all — the portal has nothing for this plant
 │    Diagnosis:   DATA LINK DOWN — not a production fault
 │    Status:      Send #1/3
 │
-│ 📡 faizalismail-faizal
-│    Customer:    FaizalIsmail
-│    Last data:   2026-09-30  (21 days ago)
-│    Symptom:     no data rows at all — the portal has nothing for this plant
-│    Diagnosis:   DATA LINK DOWN — not a production fault
-│    Status:      Send #1/3
-│
-│ 📡 matho-plant
-│    Customer:    Matho
-│    Last data:   2026-09-30  (21 days ago)
-│    Symptom:     no data rows at all — the portal has nothing for this plant
-│    Diagnosis:   DATA LINK DOWN — not a production fault
-│    Status:      Send #1/3
-│
-│ 📡 namila-waragoda-namila-plant
-│    Customer:    Namila-Waragoda
-│    Contact:     dilan.namila@gmail.com
-│    Last data:   2026-09-30  (21 days ago)
+│ 📡 sandamalsilva-my-home
+│    Customer:    SandamalSilva
+│    Last data:   2026-08-31  (51 days ago)
 │    Symptom:     no data rows at all — the portal has nothing for this plant
 │    Diagnosis:   DATA LINK DOWN — not a production fault
 │    Status:      Send #1/3
