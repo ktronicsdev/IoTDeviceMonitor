@@ -7,7 +7,7 @@
 ║                          Status: NO ALERTS DETECTED                          ║
 ║                                                                              ║
 ║               Date: 2026-10-21  |  Total Plants Monitored: 25                ║
-║               Reporting: 10  |  Dead link: 15  |  Excluded: 0                ║
+║               Reporting: 11  |  Dead link: 14  |  Excluded: 0                ║
 ║                                                                              ║
 ================================================================================
 
@@ -36,19 +36,19 @@
 │   • upulatheja-3kw-pro-kadawath
 │     Last reading: never (112 days ago)
 │     Symptom: no non-zero reading has ever been recorded
+│   • chamila-chamila-119h
+│     Last reading: 2026-07-06 (107 days ago)
+│     Symptom: no data rows at all — the portal has nothing for this plant
 │   • lahiru-ryan-lahiru-plant
 │     Last reading: 2026-07-14 (99 days ago)
-│     Symptom: rows still arriving but every reading is 0.0000 kWh
+│     Symptom: no data rows at all — the portal has nothing for this plant
+│   • muadh-muadh-solar
+│     Last reading: 2026-08-31 (51 days ago)
+│     Symptom: no data rows at all — the portal has nothing for this plant
+│   • crdesilva-home
+│     Last reading: 2026-09-30 (21 days ago)
+│     Symptom: no data rows at all — the portal has nothing for this plant
 │   • faizalismail-faizal
-│     Last reading: 2026-08-31 (51 days ago)
-│     Symptom: no data rows at all — the portal has nothing for this plant
-│   • matho-plant
-│     Last reading: 2026-08-31 (51 days ago)
-│     Symptom: no data rows at all — the portal has nothing for this plant
-│   • chamila-chamila-119h
-│     Last reading: 2026-09-21 (30 days ago)
-│     Symptom: no data rows at all — the portal has nothing for this plant
-│   • chandika-plant
 │     Last reading: 2026-09-30 (21 days ago)
 │     Symptom: no data rows at all — the portal has nothing for this plant
 │   • gayan-imh-imbulgoda-3kw
@@ -60,22 +60,28 @@
 │   • thusharasameera-mendis-house
 │     Last reading: 2026-09-30 (21 days ago)
 │     Symptom: no data rows at all — the portal has nothing for this plant
-│   • troy-troy-hybrid-3kw
-│     Last reading: 2026-09-30 (21 days ago)
-│     Symptom: no data rows at all — the portal has nothing for this plant
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
 ┌─ ADDITIONAL INFORMATION ────────────────────────────────────────────────────┐
 │
 │ IGNORED PLANTS (No production for extended period):
+│   • abeetha-plant
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│     Link: DATA LINK DOWN for 112 days — connectivity, not a production fault
 │   • anuradha-gajanayaka-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │     Link: DATA LINK DOWN for 112 days — connectivity, not a production fault
+│   • chamila-chamila-119h
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│     Link: DATA LINK DOWN for 107 days — connectivity, not a production fault
 │   • lahiru-ryan-lahiru-plant
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │     Link: DATA LINK DOWN for 99 days — connectivity, not a production fault
 │   • mifanza-mifanza-solar-system
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│     Link: DATA LINK DOWN for 112 days — connectivity, not a production fault
+│   • samurdi-kohuwala
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │     Link: DATA LINK DOWN for 112 days — connectivity, not a production fault
 │   • upulatheja-3kw-pro-kadawath

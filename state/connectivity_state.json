@@ -32,27 +32,27 @@
     "plant": "chamila-chamila-119h",
     "send_count": 3
   },
-  "chandika-plant": {
-    "customer": "Chandika",
+  "crdesilva-home": {
+    "customer": "CRDesilva",
     "days_stale": 21,
-    "first_seen": "2026-10-21T02:12:51.550964",
+    "first_seen": "2026-10-21T09:21:10.373166",
     "ignored": false,
     "kind": "no_rows",
     "last_data": "2026-09-30",
-    "last_sent": "2026-10-21T02:12:51.550964",
-    "plant": "chandika-plant",
+    "last_sent": "2026-10-21T09:21:10.373166",
+    "plant": "crdesilva-home",
     "send_count": 1
   },
   "faizalismail-faizal": {
     "customer": "FaizalIsmail",
-    "days_stale": 51,
+    "days_stale": 21,
     "first_seen": "2026-10-20T19:45:05.798424",
-    "ignored": false,
+    "ignored": true,
     "kind": "no_rows",
-    "last_data": "2026-08-31",
-    "last_sent": "2026-10-21T02:12:51.550964",
+    "last_data": "2026-09-30",
+    "last_sent": "2026-10-21T09:21:10.373166",
     "plant": "faizalismail-faizal",
-    "send_count": 2
+    "send_count": 3
   },
   "ganishka-ganishka-home-3kw": {
     "customer": "Ganishka",
@@ -67,25 +67,25 @@
   },
   "gayan-imh-imbulgoda-3kw": {
     "customer": "Gayan-IMH",
-    "days_stale": 20,
+    "days_stale": 21,
     "first_seen": "2026-10-20T23:05:28.811026",
     "ignored": false,
     "kind": "no_rows",
     "last_data": "2026-09-30",
-    "last_sent": "2026-10-20T23:05:28.811026",
+    "last_sent": "2026-10-21T09:21:10.373166",
     "plant": "gayan-imh-imbulgoda-3kw",
-    "send_count": 1
+    "send_count": 2
   },
   "kosala-koshala-plant": {
     "customer": "Kosala",
     "days_stale": 21,
     "first_seen": "2026-10-20T19:45:05.798424",
-    "ignored": false,
+    "ignored": true,
     "kind": "no_rows",
     "last_data": "2026-09-30",
-    "last_sent": "2026-10-21T02:12:51.550964",
+    "last_sent": "2026-10-21T09:21:10.373166",
     "plant": "kosala-koshala-plant",
-    "send_count": 2
+    "send_count": 3
   },
   "lahiru-ryan-lahiru-plant": {
     "customer": "Lahiru Ryan",
@@ -98,17 +98,6 @@
     "plant": "lahiru-ryan-lahiru-plant",
     "send_count": 3
   },
-  "matho-plant": {
-    "customer": "Matho",
-    "days_stale": 51,
-    "first_seen": "2026-10-20T19:45:05.798424",
-    "ignored": false,
-    "kind": "no_rows",
-    "last_data": "2026-08-31",
-    "last_sent": "2026-10-21T02:12:51.550964",
-    "plant": "matho-plant",
-    "send_count": 2
-  },
   "mifanza-mifanza-solar-system": {
     "customer": "Mifanza",
     "days_stale": 115,
@@ -119,6 +108,17 @@
     "last_sent": "2026-09-24T00:47:35.299448",
     "plant": "mifanza-mifanza-solar-system",
     "send_count": 3
+  },
+  "muadh-muadh-solar": {
+    "customer": "Muadh",
+    "days_stale": 51,
+    "first_seen": "2026-10-21T09:21:10.373166",
+    "ignored": false,
+    "kind": "no_rows",
+    "last_data": "2026-08-31",
+    "last_sent": "2026-10-21T09:21:10.373166",
+    "plant": "muadh-muadh-solar",
+    "send_count": 1
   },
   "samurdi-kohuwala": {
     "customer": "Samurdi",
@@ -138,20 +138,9 @@
     "ignored": false,
     "kind": "no_rows",
     "last_data": "2026-09-30",
-    "last_sent": "2026-10-21T02:12:51.550964",
+    "last_sent": "2026-10-21T09:21:10.373166",
     "plant": "thusharasameera-mendis-house",
-    "send_count": 1
-  },
-  "troy-troy-hybrid-3kw": {
-    "customer": "Troy",
-    "days_stale": 20,
-    "first_seen": "2026-10-20T23:05:28.811026",
-    "ignored": false,
-    "kind": "no_rows",
-    "last_data": "2026-09-30",
-    "last_sent": "2026-10-20T23:05:28.811026",
-    "plant": "troy-troy-hybrid-3kw",
-    "send_count": 1
+    "send_count": 2
   },
   "upulatheja-3kw-pro-kadawath": {
     "customer": "Upulatheja",
