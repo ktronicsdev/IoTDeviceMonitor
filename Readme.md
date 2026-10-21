@@ -1337,7 +1337,7 @@ Default thresholds in `check_anomaly.py`:
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 727 tests — 671 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 732 tests — 676 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 In CI the Tuya module skips as a unit (it needs `requests`, which CI does not
 install), so CI reports 704 and one extra skip. See *A collection error that
@@ -1399,11 +1399,16 @@ hid the whole suite* in Bug Fixes.
 | ----- | ----- | ---- |
 | One bad import must not hide the suite | 43 | `test_suite_visibility.py` |
 
-**Tuya (23 tests, workstation-only):**
+That suite parametrizes over every `test_*.py`, so its count rises by one
+with each new test file — including an untracked one sitting in the
+directory. If the total here looks one or two short, check
+`git status` before assuming the table is stale.
+
+**Tuya (28 tests, workstation-only):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| Tuya Cloud MCP (no UC yet) | 23 | `test_tuya_mcp.py` |
+| Tuya Cloud MCP (no UC yet) | 28 | `test_tuya_mcp.py` |
 
 **Data-commit push (45 tests):**
 
