@@ -32,6 +32,39 @@
     "plant": "chamila-chamila-119h",
     "send_count": 3
   },
+  "chandika-plant": {
+    "customer": "Chandika",
+    "days_stale": 21,
+    "first_seen": "2026-10-21T16:41:31.353102",
+    "ignored": false,
+    "kind": "no_rows",
+    "last_data": "2026-09-30",
+    "last_sent": "2026-10-21T16:41:31.353102",
+    "plant": "chandika-plant",
+    "send_count": 1
+  },
+  "crdesilva-home": {
+    "customer": "CRDesilva",
+    "days_stale": 21,
+    "first_seen": "2026-10-21T16:41:31.353102",
+    "ignored": false,
+    "kind": "no_rows",
+    "last_data": "2026-09-30",
+    "last_sent": "2026-10-21T16:41:31.353102",
+    "plant": "crdesilva-home",
+    "send_count": 1
+  },
+  "faizalismail-faizal": {
+    "customer": "FaizalIsmail",
+    "days_stale": 21,
+    "first_seen": "2026-10-21T16:41:31.353102",
+    "ignored": false,
+    "kind": "no_rows",
+    "last_data": "2026-09-30",
+    "last_sent": "2026-10-21T16:41:31.353102",
+    "plant": "faizalismail-faizal",
+    "send_count": 1
+  },
   "ganishka-ganishka-home-3kw": {
     "customer": "Ganishka",
     "days_stale": 115,
@@ -54,6 +87,17 @@
     "plant": "lahiru-ryan-lahiru-plant",
     "send_count": 3
   },
+  "matho-plant": {
+    "customer": "Matho",
+    "days_stale": 21,
+    "first_seen": "2026-10-21T16:41:31.353102",
+    "ignored": false,
+    "kind": "no_rows",
+    "last_data": "2026-09-30",
+    "last_sent": "2026-10-21T16:41:31.353102",
+    "plant": "matho-plant",
+    "send_count": 1
+  },
   "mifanza-mifanza-solar-system": {
     "customer": "Mifanza",
     "days_stale": 115,
@@ -64,6 +108,17 @@
     "last_sent": "2026-09-24T00:47:35.299448",
     "plant": "mifanza-mifanza-solar-system",
     "send_count": 3
+  },
+  "namila-waragoda-namila-plant": {
+    "customer": "Namila-Waragoda",
+    "days_stale": 21,
+    "first_seen": "2026-10-21T16:41:31.353102",
+    "ignored": false,
+    "kind": "no_rows",
+    "last_data": "2026-09-30",
+    "last_sent": "2026-10-21T16:41:31.353102",
+    "plant": "namila-waragoda-namila-plant",
+    "send_count": 1
   },
   "samurdi-kohuwala": {
     "customer": "Samurdi",
