@@ -6,12 +6,12 @@
 ║                                                                              ║
 ================================================================================
 
-Report Time: 2026-10-20 23:05:28 UTC
+Report Time: 2026-10-21 02:12:51 UTC
 
 ┌─ FLEET STATUS ───────────────────────────────────────────────────────────────┐
 │
-│ Plants reporting:          9
-│ Plants with a dead link:  14   (no data for 3+ days — connectivity, not a fault)
+│ Plants reporting:          8
+│ Plants with a dead link:  15   (no data for 3+ days — connectivity, not a fault)
 │ Plants excluded:           0   (deliberately off the platform)
 │ Plants monitored:         23   (reporting + dead link)
 │
@@ -33,24 +33,38 @@ Report Time: 2026-10-20 23:05:28 UTC
 
 ┌─ PLANTS WITH A DEAD LINK ────────────────────────────────────────────────────┐
 │
-│ 📡 gayan-imh-imbulgoda-3kw
-│    Customer:    Gayan-IMH
-│    Contact:     pcgayan@gmail.com
-│    Last data:   2026-09-30  (20 days ago)
-│    Symptom:     no data rows at all — the portal has nothing for this plant
-│    Diagnosis:   DATA LINK DOWN — not a production fault
-│    Status:      Send #1/3
-│
-│ 📡 sandamalsilva-my-home
-│    Customer:    SandamalSilva
-│    Last data:   2026-09-30  (20 days ago)
+│ 📡 faizalismail-faizal
+│    Customer:    FaizalIsmail
+│    Last data:   2026-08-31  (51 days ago)
 │    Symptom:     no data rows at all — the portal has nothing for this plant
 │    Diagnosis:   DATA LINK DOWN — not a production fault
 │    Status:      Send #2/3
 │
-│ 📡 troy-troy-hybrid-3kw
-│    Customer:    Troy
-│    Last data:   2026-09-30  (20 days ago)
+│ 📡 matho-plant
+│    Customer:    Matho
+│    Last data:   2026-08-31  (51 days ago)
+│    Symptom:     no data rows at all — the portal has nothing for this plant
+│    Diagnosis:   DATA LINK DOWN — not a production fault
+│    Status:      Send #2/3
+│
+│ 📡 chandika-plant
+│    Customer:    Chandika
+│    Contact:     pcgayan@gmail.com
+│    Last data:   2026-09-30  (21 days ago)
+│    Symptom:     no data rows at all — the portal has nothing for this plant
+│    Diagnosis:   DATA LINK DOWN — not a production fault
+│    Status:      Send #1/3
+│
+│ 📡 kosala-koshala-plant
+│    Customer:    Kosala
+│    Last data:   2026-09-30  (21 days ago)
+│    Symptom:     no data rows at all — the portal has nothing for this plant
+│    Diagnosis:   DATA LINK DOWN — not a production fault
+│    Status:      Send #2/3
+│
+│ 📡 thusharasameera-mendis-house
+│    Customer:    Thusharasameera
+│    Last data:   2026-09-30  (21 days ago)
 │    Symptom:     no data rows at all — the portal has nothing for this plant
 │    Diagnosis:   DATA LINK DOWN — not a production fault
 │    Status:      Send #1/3
