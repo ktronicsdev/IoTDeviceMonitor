@@ -65,4 +65,7 @@ jobs:
           # parses the workflow YAML, and without it pytest aborts at COLLECTION,
           # taking down the whole run rather than one file.
           pip install pytest pyyaml
-          pytest src/test/java/org/ktronics/scripts/integration/ -q --tb=short
+          # See trigger-shinemonitor.yml for why --continue-on-collection-errors:
+          # one bad module-level import otherwise hides every other test.
+          pytest src/test/java/org/ktronics/scripts/integration/ -q --tb=short \
+            --continue-on-collection-errors

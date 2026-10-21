@@ -74,9 +74,17 @@ jobs:
           pip install pytest pyyaml
 
           # Run ALL integration tests (no filters)
+          # --continue-on-collection-errors: without it, ONE module-level
+          # ImportError aborts collection for the whole suite and nothing runs
+          # at all. That happened on 2026-10-21 - test_tuya_mcp.py imported
+          # `requests`, which CI does not install, and all 661 tests went dark
+          # behind a single "Interrupted: 1 error during collection". The run
+          # still fails, as it should, but the rest of the suite reports, so
+          # you can see whether the production code is actually broken.
           pytest src/test/java/org/ktronics/scripts/integration/ \
             -v \
             --tb=short \
+            --continue-on-collection-errors \
             || { echo "❌ Tests failed"; exit 1; }
 
           echo "✅ All tests passed"

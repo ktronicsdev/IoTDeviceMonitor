@@ -17,6 +17,20 @@ SRC = Path(__file__).resolve().parents[6]
 SCRIPTS = SRC / "main" / "java" / "org" / "ktronics" / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
+# tuya_mcp imports `requests` and the `mcp` server package. CI installs only
+# `pytest pyyaml`, because this is a workstation tool - it talks to the user's
+# own home devices and nothing in the pipeline runs it.
+#
+# importorskip rather than a bare import: a module-level ImportError in ANY
+# test file aborts collection for the WHOLE suite, not just that file. On
+# 2026-10-21 this one took all 661 tests down ("Interrupted: 1 error during
+# collection") and every scheduled ShineMonitor run went red with nothing
+# actually run. A missing optional dependency must skip, never interrupt.
+pytest.importorskip("requests", reason="workstation-only dependency",
+                    exc_type=ImportError)
+pytest.importorskip("mcp.server.mcpserver", reason="workstation-only dependency",
+                    exc_type=ImportError)
+
 import tuya_mcp as tm  # noqa: E402
 
 # Worked example from developer.tuya.com/en/docs/iot/new-singnature

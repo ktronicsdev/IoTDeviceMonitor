@@ -913,6 +913,36 @@ once a week; anything with an actual alert in it is never gated. Pinned by
 `test_all_clear_cadence.py`, which lifts the gate out of the workflow YAML
 and runs it against a faked weekday rather than asserting on the text.
 
+### A collection error that hid the whole suite (2026-10-21)
+
+`test_tuya_mcp.py` imported `tuya_mcp`, which imports `requests`. CI installs
+`pytest pyyaml` and nothing else, because tuya_mcp is a workstation tool that
+talks to the author's own home devices and nothing in the pipeline runs it.
+pytest answered:
+
+```
+collected 661 items / 1 error
+!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!
+```
+
+Not one failing test — **no** tests. Every scheduled ShineMonitor run went red
+with nothing run, so the red meant only "something is broken somewhere", which
+is the least useful thing a suite can say. Data collection was unaffected: the
+`tests` and `run` jobs have no `needs:` between them, which is why that
+separation exists.
+
+Two defences, because a suite that one typo can silence deserves both:
+
+- The import is guarded with `pytest.importorskip(..., exc_type=ImportError)`,
+  so the module skips as a unit on a machine without it.
+- Both suite runners (`trigger-shinemonitor.yml`, `tests.yml`) now pass
+  `--continue-on-collection-errors`. A bad file then costs that file; the rest
+  still report, and the run still fails as it should.
+
+`test_suite_visibility.py` pins both: a test module may not import a package
+CI does not install unless it guards it, and a workflow may not run the suite
+without that flag. Each was mutation-checked by reintroducing the exact bug.
+
 ### The weekly all-clear that never arrived (2026-10-20)
 
 The 2026-10-16 gate asked for `github.event.schedule == '30 6 * * *'` on a
@@ -1307,7 +1337,11 @@ Default thresholds in `check_anomaly.py`:
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 661 tests — 605 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 727 tests — 671 passed, 56 skipped on Windows (bash and API tests run in CI)
+
+In CI the Tuya module skips as a unit (it needs `requests`, which CI does not
+install), so CI reports 704 and one extra skip. See *A collection error that
+hid the whole suite* in Bug Fixes.
 
 **Live inverters + BMS (150 tests):**
 
@@ -1358,6 +1392,18 @@ The project includes comprehensive integration tests covering all business logic
 | Suite | Tests | File |
 | ----- | ----- | ---- |
 | No payloads in public logs | 6 | `test_no_payloads_in_public_logs.py` |
+
+**Suite visibility (43 tests):**
+
+| Suite | Tests | File |
+| ----- | ----- | ---- |
+| One bad import must not hide the suite | 43 | `test_suite_visibility.py` |
+
+**Tuya (23 tests, workstation-only):**
+
+| Suite | Tests | File |
+| ----- | ----- | ---- |
+| Tuya Cloud MCP (no UC yet) | 23 | `test_tuya_mcp.py` |
 
 **Data-commit push (45 tests):**
 
