@@ -1373,10 +1373,10 @@
     "message": "Bus soft start failed"
   },
   "1110855:D70000210188843601:6ad73cb89332050168cd875a": {
-    "send_count": 2,
-    "last_sent": "2026-10-20T23:18:33.013516",
+    "send_count": 3,
+    "last_sent": "2026-10-21T07:01:34.285314",
     "first_seen": "2026-10-20T10:04:36+00:00",
-    "ignored": false,
+    "ignored": true,
     "class": "LOAD",
     "started_at_utc": "2026-10-20T10:04:36+00:00",
     "suppressed_reason": "dwell time is less than 6 hours",
