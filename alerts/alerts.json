@@ -1,7 +1,14 @@
 {
-  "generated_at": "2026-10-21T11:04:07.480362Z",
+  "generated_at": "2026-10-21T12:26:23.562302Z",
   "alerts": [],
-  "suppressed": [],
+  "suppressed": [
+    {
+      "plant_key": "chamila-chamila-119h",
+      "reason": "reclassified as CONNECTIVITY: no data for 4 days (rows still arriving but every reading is 0.0000 kWh) \u2014 data link down, NOT a production fault",
+      "days_stale": 4,
+      "link_down": true
+    }
+  ],
   "ignored": [
     {
       "plant_key": "abeetha-plant",
@@ -41,6 +48,24 @@
     },
     {
       "plant_key": "mifanza-mifanza-solar-system",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-09"
+      ],
+      "link_down": true,
+      "days_stale": 112
+    },
+    {
+      "plant_key": "samurdi-kohuwala",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-09"
+      ],
+      "link_down": true,
+      "days_stale": 112
+    },
+    {
+      "plant_key": "upulatheja-3kw-pro-kadawath",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
         "2026-09"
@@ -89,9 +114,9 @@
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
       "days_stale": 112,
-      "days_since_data": 21,
+      "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-09-30",
+      "last_data_date": "2026-10-21",
       "stale_days_threshold": 3
     },
     {
@@ -118,75 +143,42 @@
     },
     {
       "plant_key": "lahiru-ryan-lahiru-plant",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
+      "kind": "zeros_only",
+      "meaning": "rows still arriving but every reading is 0.0000 kWh",
       "link_down": true,
       "days_stale": 99,
-      "days_since_data": 21,
+      "days_since_data": 0,
       "last_nonzero_date": "2026-07-14",
-      "last_data_date": "2026-09-30",
+      "last_data_date": "2026-10-21",
       "stale_days_threshold": 3
     },
     {
-      "plant_key": "thusharasameera-mendis-house",
+      "plant_key": "dessmonitor-mifrazmarsoon-plant",
       "kind": "no_rows",
       "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
       "link_down": true,
-      "days_stale": 63,
-      "days_since_data": 51,
-      "last_nonzero_date": "2026-08-19",
-      "last_data_date": "2026-08-31",
+      "days_stale": 21,
+      "days_since_data": 21,
+      "last_nonzero_date": "2026-09-30",
+      "last_data_date": "2026-09-30",
       "stale_days_threshold": 3
     },
     {
       "plant_key": "chamila-chamila-119h",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
+      "kind": "zeros_only",
+      "meaning": "rows still arriving but every reading is 0.0000 kWh",
       "link_down": true,
-      "days_stale": 30,
-      "days_since_data": 21,
-      "last_nonzero_date": "2026-09-21",
-      "last_data_date": "2026-09-30",
-      "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "crdesilva-home",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 21,
-      "days_since_data": 21,
-      "last_nonzero_date": "2026-09-30",
-      "last_data_date": "2026-09-30",
-      "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "kosala-koshala-plant",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 21,
-      "days_since_data": 21,
-      "last_nonzero_date": "2026-09-30",
-      "last_data_date": "2026-09-30",
-      "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "sandamalsilva-my-home",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 21,
-      "days_since_data": 21,
-      "last_nonzero_date": "2026-09-30",
-      "last_data_date": "2026-09-30",
+      "days_stale": 4,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-10-17",
+      "last_data_date": "2026-10-21",
       "stale_days_threshold": 3
     }
   ],
   "excluded": [],
   "counts": {
-    "reporting": 13,
-    "link_down": 12,
+    "reporting": 16,
+    "link_down": 9,
     "excluded": 0,
     "monitored": 25
   }

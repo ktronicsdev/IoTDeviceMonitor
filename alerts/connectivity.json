@@ -1,14 +1,25 @@
 {
   "stale_days": 3,
   "counts": {
-    "reporting": 11,
-    "link_down": 12,
+    "reporting": 15,
+    "link_down": 8,
     "excluded": 0,
     "monitored": 23
   },
   "reporting": [
     {
       "plant_key": "chandika-plant",
+      "kind": "reporting",
+      "meaning": "reporting normally",
+      "link_down": false,
+      "days_stale": 0,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-10-21",
+      "last_data_date": "2026-10-21",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "crdesilva-home",
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
@@ -56,9 +67,20 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
+      "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-20",
+      "last_nonzero_date": "2026-10-21",
+      "last_data_date": "2026-10-21",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "kosala-koshala-plant",
+      "kind": "reporting",
+      "meaning": "reporting normally",
+      "link_down": false,
+      "days_stale": 0,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-10-21",
       "last_data_date": "2026-10-21",
       "stale_days_threshold": 3
     },
@@ -108,6 +130,28 @@
     },
     {
       "plant_key": "ravindra-ravindra-3kw",
+      "kind": "reporting",
+      "meaning": "reporting normally",
+      "link_down": false,
+      "days_stale": 0,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-10-21",
+      "last_data_date": "2026-10-21",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "sandamalsilva-my-home",
+      "kind": "reporting",
+      "meaning": "reporting normally",
+      "link_down": false,
+      "days_stale": 0,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-10-21",
+      "last_data_date": "2026-10-21",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "thusharasameera-mendis-house",
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
@@ -169,9 +213,9 @@
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
       "days_stale": 112,
-      "days_since_data": 21,
+      "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-09-30",
+      "last_data_date": "2026-10-21",
       "stale_days_threshold": 3
     },
     {
@@ -198,75 +242,29 @@
     },
     {
       "plant_key": "lahiru-ryan-lahiru-plant",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
+      "kind": "zeros_only",
+      "meaning": "rows still arriving but every reading is 0.0000 kWh",
       "link_down": true,
       "days_stale": 99,
-      "days_since_data": 21,
+      "days_since_data": 0,
       "last_nonzero_date": "2026-07-14",
-      "last_data_date": "2026-09-30",
-      "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "thusharasameera-mendis-house",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 63,
-      "days_since_data": 51,
-      "last_nonzero_date": "2026-08-19",
-      "last_data_date": "2026-08-31",
+      "last_data_date": "2026-10-21",
       "stale_days_threshold": 3
     },
     {
       "plant_key": "chamila-chamila-119h",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
+      "kind": "zeros_only",
+      "meaning": "rows still arriving but every reading is 0.0000 kWh",
       "link_down": true,
-      "days_stale": 30,
-      "days_since_data": 21,
-      "last_nonzero_date": "2026-09-21",
-      "last_data_date": "2026-09-30",
-      "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "crdesilva-home",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 21,
-      "days_since_data": 21,
-      "last_nonzero_date": "2026-09-30",
-      "last_data_date": "2026-09-30",
-      "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "kosala-koshala-plant",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 21,
-      "days_since_data": 21,
-      "last_nonzero_date": "2026-09-30",
-      "last_data_date": "2026-09-30",
-      "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "sandamalsilva-my-home",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 21,
-      "days_since_data": 21,
-      "last_nonzero_date": "2026-09-30",
-      "last_data_date": "2026-09-30",
+      "days_stale": 4,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-10-17",
+      "last_data_date": "2026-10-21",
       "stale_days_threshold": 3
     }
   ],
   "excluded": [],
-  "generated_at": "2026-10-21T11:04:07.572242Z",
+  "generated_at": "2026-10-21T12:26:23.703918Z",
   "fleet_wide_outage": false,
-  "alerting_now": [
-    "sandamalsilva-my-home"
-  ]
+  "alerting_now": []
 }

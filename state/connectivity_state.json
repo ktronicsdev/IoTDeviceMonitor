@@ -32,17 +32,6 @@
     "plant": "chamila-chamila-119h",
     "send_count": 3
   },
-  "crdesilva-home": {
-    "customer": "CRDesilva",
-    "days_stale": 21,
-    "first_seen": "2026-10-21T09:21:10.373166",
-    "ignored": false,
-    "kind": "no_rows",
-    "last_data": "2026-09-30",
-    "last_sent": "2026-10-21T09:21:10.373166",
-    "plant": "crdesilva-home",
-    "send_count": 1
-  },
   "ganishka-ganishka-home-3kw": {
     "customer": "Ganishka",
     "days_stale": 115,
@@ -52,17 +41,6 @@
     "last_data": "2026-09-24",
     "last_sent": "2026-09-24T00:47:35.299448",
     "plant": "ganishka-ganishka-home-3kw",
-    "send_count": 3
-  },
-  "kosala-koshala-plant": {
-    "customer": "Kosala",
-    "days_stale": 21,
-    "first_seen": "2026-10-20T19:45:05.798424",
-    "ignored": true,
-    "kind": "no_rows",
-    "last_data": "2026-09-30",
-    "last_sent": "2026-10-21T09:21:10.373166",
-    "plant": "kosala-koshala-plant",
     "send_count": 3
   },
   "lahiru-ryan-lahiru-plant": {
@@ -97,28 +75,6 @@
     "last_sent": "2026-09-24T00:47:35.299448",
     "plant": "samurdi-kohuwala",
     "send_count": 3
-  },
-  "sandamalsilva-my-home": {
-    "customer": "SandamalSilva",
-    "days_stale": 21,
-    "first_seen": "2026-10-21T11:04:07.572631",
-    "ignored": false,
-    "kind": "no_rows",
-    "last_data": "2026-09-30",
-    "last_sent": "2026-10-21T11:04:07.572631",
-    "plant": "sandamalsilva-my-home",
-    "send_count": 1
-  },
-  "thusharasameera-mendis-house": {
-    "customer": "Thusharasameera",
-    "days_stale": 21,
-    "first_seen": "2026-10-21T02:12:51.550964",
-    "ignored": false,
-    "kind": "no_rows",
-    "last_data": "2026-09-30",
-    "last_sent": "2026-10-21T09:21:10.373166",
-    "plant": "thusharasameera-mendis-house",
-    "send_count": 2
   },
   "upulatheja-3kw-pro-kadawath": {
     "customer": "Upulatheja",
