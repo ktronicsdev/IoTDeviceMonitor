@@ -32,28 +32,6 @@
     "plant": "chamila-chamila-119h",
     "send_count": 3
   },
-  "chandika-plant": {
-    "customer": "Chandika",
-    "days_stale": 21,
-    "first_seen": "2026-10-21T16:41:31.353102",
-    "ignored": false,
-    "kind": "no_rows",
-    "last_data": "2026-09-30",
-    "last_sent": "2026-10-21T16:41:31.353102",
-    "plant": "chandika-plant",
-    "send_count": 1
-  },
-  "crdesilva-home": {
-    "customer": "CRDesilva",
-    "days_stale": 21,
-    "first_seen": "2026-10-21T16:41:31.353102",
-    "ignored": false,
-    "kind": "no_rows",
-    "last_data": "2026-09-30",
-    "last_sent": "2026-10-21T16:41:31.353102",
-    "plant": "crdesilva-home",
-    "send_count": 1
-  },
   "ganishka-ganishka-home-3kw": {
     "customer": "Ganishka",
     "days_stale": 115,
@@ -76,17 +54,6 @@
     "plant": "lahiru-ryan-lahiru-plant",
     "send_count": 3
   },
-  "matho-plant": {
-    "customer": "Matho",
-    "days_stale": 21,
-    "first_seen": "2026-10-21T16:41:31.353102",
-    "ignored": false,
-    "kind": "no_rows",
-    "last_data": "2026-09-30",
-    "last_sent": "2026-10-21T16:41:31.353102",
-    "plant": "matho-plant",
-    "send_count": 1
-  },
   "mifanza-mifanza-solar-system": {
     "customer": "Mifanza",
     "days_stale": 115,
@@ -98,39 +65,6 @@
     "plant": "mifanza-mifanza-solar-system",
     "send_count": 3
   },
-  "muadh-muadh-solar": {
-    "customer": "Muadh",
-    "days_stale": 51,
-    "first_seen": "2026-10-21T18:09:48.918467",
-    "ignored": false,
-    "kind": "no_rows",
-    "last_data": "2026-08-31",
-    "last_sent": "2026-10-21T18:09:48.918467",
-    "plant": "muadh-muadh-solar",
-    "send_count": 1
-  },
-  "namila-waragoda-namila-plant": {
-    "customer": "Namila-Waragoda",
-    "days_stale": 21,
-    "first_seen": "2026-10-21T16:41:31.353102",
-    "ignored": false,
-    "kind": "no_rows",
-    "last_data": "2026-09-30",
-    "last_sent": "2026-10-21T16:41:31.353102",
-    "plant": "namila-waragoda-namila-plant",
-    "send_count": 1
-  },
-  "ravindra-ravindra-3kw": {
-    "customer": "Ravindra",
-    "days_stale": 51,
-    "first_seen": "2026-10-21T18:09:48.918467",
-    "ignored": false,
-    "kind": "no_rows",
-    "last_data": "2026-08-31",
-    "last_sent": "2026-10-21T18:09:48.918467",
-    "plant": "ravindra-ravindra-3kw",
-    "send_count": 1
-  },
   "samurdi-kohuwala": {
     "customer": "Samurdi",
     "days_stale": 115,
@@ -141,17 +75,6 @@
     "last_sent": "2026-09-24T00:47:35.299448",
     "plant": "samurdi-kohuwala",
     "send_count": 3
-  },
-  "sandamalsilva-my-home": {
-    "customer": "SandamalSilva",
-    "days_stale": 51,
-    "first_seen": "2026-10-21T18:09:48.918467",
-    "ignored": false,
-    "kind": "no_rows",
-    "last_data": "2026-08-31",
-    "last_sent": "2026-10-21T18:09:48.918467",
-    "plant": "sandamalsilva-my-home",
-    "send_count": 1
   },
   "upulatheja-3kw-pro-kadawath": {
     "customer": "Upulatheja",
