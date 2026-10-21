@@ -1,25 +1,13 @@
 {
-  "generated_at": "2026-10-21T09:56:00.575238Z",
+  "generated_at": "2026-10-21T12:36:28.343188Z",
   "alerts": [],
   "suppressed": [],
   "ignored": [],
-  "link_down": [
-    {
-      "plant_key": "dessmonitor-mifrazmarsoon-plant",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 21,
-      "days_since_data": 21,
-      "last_nonzero_date": "2026-09-30",
-      "last_data_date": "2026-09-30",
-      "stale_days_threshold": 3
-    }
-  ],
+  "link_down": [],
   "excluded": [],
   "counts": {
-    "reporting": 1,
-    "link_down": 1,
+    "reporting": 2,
+    "link_down": 0,
     "excluded": 0,
     "monitored": 2
   }
