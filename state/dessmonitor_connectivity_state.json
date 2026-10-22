@@ -1,1 +1,13 @@
-{}
+{
+  "dessmonitor-dushanthatiqri-plant": {
+    "customer": "Unknown",
+    "days_stale": 22,
+    "first_seen": "2026-10-22T10:54:13.360433",
+    "ignored": false,
+    "kind": "no_rows",
+    "last_data": "2026-09-30",
+    "last_sent": "2026-10-22T10:54:13.360433",
+    "plant": "dessmonitor-dushanthatiqri-plant",
+    "send_count": 1
+  }
+}
