@@ -1385,12 +1385,15 @@
     "message": "Overload time out"
   },
   "1053849:D70000210151320902:6ad9ae68933205016887364f": {
-    "send_count": 0,
-    "last_sent": null,
+    "send_count": 1,
+    "last_sent": "2026-10-22T12:39:46.197226",
     "first_seen": "2026-10-22T06:34:10+00:00",
     "ignored": false,
     "class": "SOC",
     "started_at_utc": "2026-10-22T06:34:10+00:00",
-    "suppressed_reason": "dwell time is less than 6 hours"
+    "suppressed_reason": "dwell time is less than 6 hours",
+    "customer": "Namila-Waragoda",
+    "plant": "Namila Plant",
+    "message": "battery voltage is too low"
   }
 }
