@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-22T10:58:18.283034Z",
+  "generated_at": "2026-10-22T12:26:02.501342Z",
   "alerts": [],
   "suppressed": [
     {
@@ -153,6 +153,17 @@
       "stale_days_threshold": 3
     },
     {
+      "plant_key": "dessmonitor-dushanthatiqri-plant",
+      "kind": "no_rows",
+      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
+      "link_down": true,
+      "days_stale": 22,
+      "days_since_data": 22,
+      "last_nonzero_date": "2026-09-30",
+      "last_data_date": "2026-09-30",
+      "stale_days_threshold": 3
+    },
+    {
       "plant_key": "chamila-chamila-119h",
       "kind": "zeros_only",
       "meaning": "rows still arriving but every reading is 0.0000 kWh",
@@ -166,8 +177,8 @@
   ],
   "excluded": [],
   "counts": {
-    "reporting": 17,
-    "link_down": 8,
+    "reporting": 16,
+    "link_down": 9,
     "excluded": 0,
     "monitored": 25
   }
