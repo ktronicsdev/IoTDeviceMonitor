@@ -1,12 +1,23 @@
 {
   "stale_days": 3,
   "counts": {
-    "reporting": 1,
-    "link_down": 1,
+    "reporting": 2,
+    "link_down": 0,
     "excluded": 0,
     "monitored": 2
   },
   "reporting": [
+    {
+      "plant_key": "dessmonitor-dushanthatiqri-plant",
+      "kind": "reporting",
+      "meaning": "reporting normally",
+      "link_down": false,
+      "days_stale": 0,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-10-22",
+      "last_data_date": "2026-10-22",
+      "stale_days_threshold": 3
+    },
     {
       "plant_key": "dessmonitor-mifrazmarsoon-plant",
       "kind": "reporting",
@@ -19,23 +30,9 @@
       "stale_days_threshold": 3
     }
   ],
-  "link_down": [
-    {
-      "plant_key": "dessmonitor-dushanthatiqri-plant",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 22,
-      "days_since_data": 22,
-      "last_nonzero_date": "2026-09-30",
-      "last_data_date": "2026-09-30",
-      "stale_days_threshold": 3
-    }
-  ],
+  "link_down": [],
   "excluded": [],
-  "generated_at": "2026-10-22T15:49:46.888778Z",
+  "generated_at": "2026-10-22T15:55:17.293141Z",
   "fleet_wide_outage": false,
-  "alerting_now": [
-    "dessmonitor-dushanthatiqri-plant"
-  ]
+  "alerting_now": []
 }

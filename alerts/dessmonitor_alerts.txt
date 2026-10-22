@@ -7,20 +7,7 @@
 ║                          Status: NO ALERTS DETECTED                          ║
 ║                                                                              ║
 ║                Date: 2026-10-22  |  Total Plants Monitored: 2                ║
-║                Reporting: 1  |  Dead link: 1  |  Excluded: 0                 ║
+║                Reporting: 2  |  Dead link: 0  |  Excluded: 0                 ║
 ║                                                                              ║
 ================================================================================
-
-┌─ 📡 DATA LINK DOWN (CONNECTIVITY — NOT A PRODUCTION FAULT) ──────────────────┐
-│
-│ These plants have sent no data for 3+ days. The usual cause is the
-│ customer's WiFi or monitoring dongle being offline. The solar system is
-│ very probably running normally — do NOT record these as dead systems.
-│ Production cannot be judged either way until the link is restored.
-│
-│   • dessmonitor-dushanthatiqri-plant
-│     Last reading: 2026-09-30 (22 days ago)
-│     Symptom: no data rows at all — the portal has nothing for this plant
-│
-└──────────────────────────────────────────────────────────────────────────────┘
 

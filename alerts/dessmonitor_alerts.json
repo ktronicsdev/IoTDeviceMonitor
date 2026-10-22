@@ -1,25 +1,13 @@
 {
-  "generated_at": "2026-10-22T15:49:46.784283Z",
+  "generated_at": "2026-10-22T15:55:17.135285Z",
   "alerts": [],
   "suppressed": [],
   "ignored": [],
-  "link_down": [
-    {
-      "plant_key": "dessmonitor-dushanthatiqri-plant",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 22,
-      "days_since_data": 22,
-      "last_nonzero_date": "2026-09-30",
-      "last_data_date": "2026-09-30",
-      "stale_days_threshold": 3
-    }
-  ],
+  "link_down": [],
   "excluded": [],
   "counts": {
-    "reporting": 1,
-    "link_down": 1,
+    "reporting": 2,
+    "link_down": 0,
     "excluded": 0,
     "monitored": 2
   }
