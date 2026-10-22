@@ -33,9 +33,7 @@
     }
   ],
   "excluded": [],
-  "generated_at": "2026-10-22T10:54:13.360196Z",
+  "generated_at": "2026-10-22T12:31:13.234310Z",
   "fleet_wide_outage": false,
-  "alerting_now": [
-    "dessmonitor-dushanthatiqri-plant"
-  ]
+  "alerting_now": []
 }
