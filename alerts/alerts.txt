@@ -69,6 +69,8 @@
 │   • samurdi-kohuwala
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │     Link: DATA LINK DOWN for 113 days — connectivity, not a production fault
+│   • troy-troy-hybrid-3kw
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │   • upulatheja-3kw-pro-kadawath
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │     Link: DATA LINK DOWN for 113 days — connectivity, not a production fault
