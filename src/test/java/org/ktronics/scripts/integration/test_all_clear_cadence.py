@@ -77,7 +77,7 @@ def _render(body, exit_code, event_name, schedule):
 
 def _run_step(tmp_path, *, week, exit_code="0", event_name="schedule",
               schedule="0 * * * *", last_week=None, alerts=None, send_ok=True,
-              last_hash_matches=False):
+              last_hash_matches=False, last_hash_differs=False):
     """
     Run the real step in `tmp_path` and report what it decided.
 
@@ -102,6 +102,12 @@ def _run_step(tmp_path, *, week, exit_code="0", event_name="schedule",
             check=True).stdout.strip()
         (tmp_path / "state/admin_email_state.txt").write_text(
             digest + "\n", encoding="utf-8")
+    if last_hash_differs:
+        # A stored hash that cannot match: the fleet's suppressed/ignored
+        # lists have churned since the last run, which is the ordinary case
+        # in production and the one the old gate mistook for "alerts cleared".
+        (tmp_path / "state/admin_email_state.txt").write_text(
+            "0" * 64 + "\n", encoding="utf-8")
 
     sent_marker = tmp_path / "sent.marker"
     # One test runs the step twice in the same directory; a stale marker from
@@ -230,14 +236,54 @@ def test_an_actual_alert_is_never_gated(tmp_path):
 
 
 @pytest.mark.parametrize("event", ["push", "workflow_dispatch"])
-def test_a_push_or_manual_run_still_sends(tmp_path, event):
-    """There the email is build verification, not a weekly status report."""
-    sent, recorded, _, out = _run_step(tmp_path, week="2026-W43",
-                                       last_week="2026-W43",
-                                       event_name=event, schedule="")
-    assert sent, f"a {event} run was gated" + out
-    assert recorded == "2026-W43", (
-        "a build-verification send must not rewrite the weekly marker" + out)
+def test_a_push_or_manual_run_says_nothing_when_nothing_is_wrong(tmp_path, event):
+    """
+    Build verification used to send unconditionally, so every developer push
+    mailed an "ALL SYSTEMS OPERATIONAL" reporting that nothing had happened.
+    That is noise in UC1, whose content is empty, and in UC9, whose cadence it
+    ignores. The run status and the test email already report the build.
+    """
+    sent, _, _, out = _run_step(tmp_path, week="2026-W43",
+                                last_week="2026-W43",
+                                event_name=event, schedule="")
+    assert not sent, (
+        f"a {event} run mailed an all-clear as build verification" + out)
+
+
+@pytest.mark.parametrize("event", ["push", "workflow_dispatch"])
+def test_a_push_or_manual_run_still_reports_alerts(tmp_path, event):
+    """The counterpart: a developer pushing wants to hear about a live fault."""
+    sent, _, _, out = _run_step(tmp_path, week="2026-W43",
+                                last_week="2026-W43",
+                                event_name=event, schedule="", exit_code="2",
+                                alerts='[{"plant": "p", "severity": "RED"}]')
+    assert sent, f"a {event} run suppressed a RED alert" + out
+
+
+def test_a_changed_hash_does_not_bypass_the_week(tmp_path):
+    """
+    The case that broke it in production, twice over.
+
+    The gate had an exception: if the hash moved and nothing was RED, treat it
+    as "alerts cleared" and send. But the hash covers alerts + suppressed +
+    ignored, and those churn constantly - with alerts=0, suppressed=1,
+    ignored=6, a plant moving in or out of the ignored list moves the hash.
+    So nearly every scheduled run took the exception and mailed another
+    all-clear: five of them on 21-22 October inside one ISO week whose marker
+    was already written.
+
+    Here the week is already confirmed and the hash has moved. Nothing may go
+    out. No previous test covered this: they all left the hash unchanged, so
+    the exception was never exercised and the suite stayed green while the
+    inbox filled.
+    """
+    sent, _, _, out = _run_step(tmp_path, week="2026-W43",
+                                last_week="2026-W43",
+                                alerts='[]', last_hash_differs=True)
+
+    assert not sent, (
+        "a changed hash bypassed the weekly rule - this is the 21 Oct bug, "
+        "where churn in the ignored list mailed an all-clear every run" + out)
 
 
 def test_an_unreadable_marker_errs_towards_sending(tmp_path):

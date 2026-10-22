@@ -166,7 +166,13 @@ the next outage starts a fresh cycle.
 **Not part of the pipeline**, though they live beside it:
 `refresh_bms_creds.py` re-bootstraps the BMS credentials from the running
 PACEEX app and needs BlueStacks plus frida on a workstation; `solis_mcp.py` is
-a stdio MCP server that exposes SolisCloud to Claude; and
+a stdio MCP server that exposes SolisCloud to Claude; `ccv_heatpump_mcp.py` is
+a **read-only** stdio MCP server for the Valla house's ground-source heat pump
+(JEFF CCV Pro controller) — it reads temperatures, relays, alarms and counters
+over Modbus TCP from the heat pump's touch display on the home LAN, finds the
+display itself when DHCP moves it (cached address, then the MAC in the ARP
+table, then a port-502 search of the /24 with a clock/version fingerprint), and
+can send no write function code; and
 `check_shinemonitor_query-plants.sh` is referenced by no workflow and no test —
 a manual query helper, which is worth knowing before anyone relies on it.
 
@@ -183,9 +189,10 @@ carry the same hourly-skip guard as the fetch steps, and
 two alternating fleet views that overwrote each other's state and mailed the
 admin several times a day.
 
-"ALL SYSTEMS OPERATIONAL" goes out on the **Monday 06:30 UTC** run only. Alerts
-still send whenever the content changes; a clean bill of health is a weekly
-thing, not an hourly one.
+"ALL SYSTEMS OPERATIONAL" goes out **once per ISO week**, on the first
+scheduled run of that week. No cron is named, and a push or manual run with
+nothing wrong says nothing at all. Alerts still send whenever the content
+changes, on any trigger; a clean bill of health is a weekly thing.
 
 ### Rules that may not be broken
 
@@ -439,12 +446,25 @@ Together those made silence meaningless: a healthy fleet and a stopped
 pipeline looked identical from the inbox, which is worse than the daily noise
 the gate replaced — the noise at least proved the pipeline was alive.
 
-The rule now is **one all-clear per ISO week, sent by the first eligible
-scheduled run of that week**, whichever run that turns out to be. No cron is
-named. The gate works both ways: it can force a send for a week that has had
-no confirmation, and suppress a second one in the same week. Alerts
-(`exit_code == 2`) never enter the gate at all, and a run where alerts have
-just cleared still reports immediately and counts as that week's confirmation.
+**The weekly all-clear, third attempt (2026-10-22).** The second version had
+an exception: if the hash moved and nothing was RED, treat it as "alerts
+cleared" and send at once. That exception swallowed the rule. The hash covers
+`alerts + suppressed + ignored`, and with `alerts=0, suppressed=1, ignored=6`
+every plant moving in or out of the ignored list moves it — which is what the
+DATA LINK DOWN traffic is. So nearly every scheduled run took the exception:
+five "ALL SYSTEMS OPERATIONAL" emails on 21–22 October, inside one ISO week
+whose marker was already written and never consulted.
+
+There is no honest signal to rebuild that exception on, either:
+`current_hash = "empty"` means the `alerts.json` **file is missing**, not that
+the fleet is clear, so the `ALERTS CLEARED` label has never meant what it says.
+
+The rule is now **one all-clear per ISO week, sent by the first scheduled run
+of that week**, with no exceptions. A push or manual run reports only when
+something is wrong: build verification used to send unconditionally, which put
+an empty status email in the inbox on every developer push — noise in UC1,
+whose content reports no event, and in UC9, whose cadence it ignored. Alerts
+(`exit_code == 2`) never enter the gate on any trigger.
 The week is recorded only *after* the mail goes out, so one SMTP failure
 cannot silently consume the week.
 
@@ -468,7 +488,7 @@ send cap holds that to three per alert.
 5. Send email only if changed or push/manual trigger
 6. Save current hash for next run
 
-Step 5 also applies the Monday all-clear gate described above.
+Step 5 also applies the weekly all-clear gate described above.
 
 **Implementation Status:** ✅ **IMPLEMENTED** (Session 13); all-clear gate
 added 2026-10-16
@@ -913,6 +933,46 @@ once a week; anything with an actual alert in it is never gated. Pinned by
 `test_all_clear_cadence.py`, which lifts the gate out of the workflow YAML
 and runs it against a faked weekday rather than asserting on the text.
 
+### The vendor's third mood (2026-10-22)
+
+The 21 October fix made a refused `authEmail` and a timeout skip instead of
+fail. It was not enough: the scheduled runs at 18:47 and 22:04 that evening
+still went red with one failure each.
+
+```
+test_check_monthly_script     SKIPPED   <- the fix caught this
+test_query_plants_api         FAILED    <- it did not
+    json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+```
+
+ShineMonitor has a third mood: it exits **0** and hands back an empty or
+non-JSON body. The previous fix only looked for a non-zero exit with
+`"empty response"` on stderr, so this sailed past it and the tests parsed the
+empty string themselves. Two shapes:
+
+- `json.loads(result.stdout.strip())` on an empty body — `JSONDecodeError`.
+- the pid pipeline, `queryPlants | grep -o '"pid":[0-9]*'`, under
+  `set -o pipefail`: an empty body means grep matches nothing, exits 1, and
+  takes the pipeline down with **nothing on stderr** to explain it.
+
+Both now route through `parse_api_response()` and `plant_id_or_skip()`, which
+skip. What keeps that safe is the opposite case: stderr carrying `command not
+found`, `No such file`, `unbound variable`, `syntax error`, `Permission
+denied` or `cannot open` means **our** script is broken, and those still fail.
+Skipping them would hide a real regression behind a green build.
+
+`TestVendorConditionHandling` tests that decision directly — no bash, no
+network, no credentials, so it runs on every machine instead of only when the
+vendor misbehaves. It deliberately does not use `pytest.raises`: `Skipped` and
+`Failed` both derive from `BaseException`, so a test expecting a `Failed` that
+receives a `Skipped` does not go red — the skip propagates and the test
+quietly joins the skip count. The outcome is captured as a string and asserted
+on instead. That exact flaw was caught by mutation testing, not by reading.
+
+Two further tests check the **call sites** rather than the helper, because a
+single reverted site reintroduces the whole failure while the helper stays
+correct and still passes its own tests.
+
 ### A collection error that hid the whole suite (2026-10-21)
 
 `test_tuya_mcp.py` imported `tuya_mcp`, which imports `requests`. CI installs
@@ -1337,11 +1397,12 @@ Default thresholds in `check_anomaly.py`:
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 732 tests — 676 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 752 tests — 696 passed, 56 skipped on Windows (bash and API tests run in CI)
 
-In CI the Tuya module skips as a unit (it needs `requests`, which CI does not
-install), so CI reports 704 and one extra skip. See *A collection error that
-hid the whole suite* in Bug Fixes.
+In CI the two workstation-only MCP modules (Tuya, CCV heat pump) each skip as
+a unit — they need `requests` / the `mcp` server package, which CI does not
+install — so CI reports fewer passes and one extra skip per module. See *A
+collection error that hid the whole suite* in Bug Fixes.
 
 **Live inverters + BMS (150 tests):**
 
@@ -1379,25 +1440,25 @@ hid the whole suite* in Bug Fixes.
 | Gate rules (R1-R6, classes) | 14 | `test_alarm_triage.py` |
 | Gate wiring + feature mode | 8 | `test_alarm_gate_wiring.py` |
 
-**Alerting discipline (24 tests):**
+**Alerting discipline (27 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
 | UC1 (send cap + interval) | 4 | `test_admin_alert_send_cap.py` |
 | Hourly poll scope | 5 | `test_hourly_poll_scope.py` |
-| UC9 (weekly all-clear cadence) | 15 | `test_all_clear_cadence.py` |
+| UC9 (weekly all-clear cadence) | 18 | `test_all_clear_cadence.py` |
 
-**Public-log hygiene (6 tests):**
-
-| Suite | Tests | File |
-| ----- | ----- | ---- |
-| No payloads in public logs | 6 | `test_no_payloads_in_public_logs.py` |
-
-**Suite visibility (43 tests):**
+**Public-log hygiene (7 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| One bad import must not hide the suite | 43 | `test_suite_visibility.py` |
+| No payloads in public logs | 7 | `test_no_payloads_in_public_logs.py` |
+
+**Suite visibility (42 tests):**
+
+| Suite | Tests | File |
+| ----- | ----- | ---- |
+| One bad import must not hide the suite | 42 | `test_suite_visibility.py` |
 
 That suite parametrizes over every `test_*.py`, so its count rises by one
 with each new test file — including an untracked one sitting in the
@@ -1410,6 +1471,16 @@ directory. If the total here looks one or two short, check
 | ----- | ----- | ---- |
 | Tuya Cloud MCP (no UC yet) | 28 | `test_tuya_mcp.py` |
 
+**Heat pump (11 tests, workstation-only — NOT YET ON MAIN, so excluded from the total above):**
+
+| Suite | Tests | File |
+| ----- | ----- | ---- |
+| CCV heat pump MCP (no UC yet) | 11 | `test_ccv_heatpump_mcp.py` |
+
+No network: register decoding against a real snapshot from the display, the
+compressor-relay running flag, the DHCP discovery path (fingerprint, ARP
+parsing, subnet fallback, cache) and that only read function codes can be sent.
+
 **Data-commit push (45 tests):**
 
 | Suite | Tests | File |
@@ -1418,7 +1489,7 @@ directory. If the total here looks one or two short, check
 | Cumulative state merge | 8 | `test_merge_alarm_state.py` |
 | No bare push to main | 10 | `test_no_bare_push_to_main.py` |
 
-**ShineMonitor (121 tests):**
+**ShineMonitor (138 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
@@ -1428,7 +1499,7 @@ directory. If the total here looks one or two short, check
 | UC9 (Email Optimization) | 9 | `test_uc9_admin_email.py` |
 | UC11 (Plant ROI) | 19 | `test_uc11_plant_roi.py` |
 | BVT (Centralized Config) | 14 | `test_centralized_config.py` |
-| API Tests | 8 | PASSED in CI |
+| API Tests + vendor-condition handling | 25 | `test_shinemonitor_api.py` |
 
 **DessMonitor (112 tests):**
 

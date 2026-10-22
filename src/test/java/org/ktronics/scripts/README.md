@@ -11,7 +11,7 @@ py -m pytest integration/ -v
 
 ## Test Summary
 
-**Total: 732 tests** (676 passed on Windows, 56 skipped - bash and API tests run in CI). CI reports 709: the Tuya module needs `requests`, which CI does not install, so it skips as a unit.
+**Total: 752 tests** (696 passed on Windows, 56 skipped - bash and API tests run in CI). CI reports 729: the Tuya module needs `requests`, which CI does not install, so it skips as a unit.
 
 The count is what `py -m pytest integration/ -q` prints. If a change moves it,
 update this file and the root `Readme.md` in the same commit.

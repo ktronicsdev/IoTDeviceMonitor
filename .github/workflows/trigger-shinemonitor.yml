@@ -427,9 +427,17 @@ jobs:
           # Determine if email should be sent
           send_email="false"
 
-          # Logic 1: Always send on push/manual triggers (build verification)
-          if [ "${{ github.event_name }}" = "push" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "✓ Sending email: Push/Manual trigger (build verification)"
+          # Logic 1: a push or manual run reports only if something is WRONG.
+          #
+          # It used to send unconditionally as "build verification", so every
+          # developer push produced an "ALL SYSTEMS OPERATIONAL" email saying
+          # nothing happened. That is noise in UC1 (the content reports no
+          # event) and in UC9 (the cadence belongs to nobody). A build already
+          # reports itself through the run status and the test email; the fleet
+          # does not need an opinion about it.
+          if { [ "${{ github.event_name }}" = "push" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; } \
+             && [ "${{ steps.anomaly.outputs.exit_code }}" = "2" ]; then
+            echo "✓ Sending email: alerts on a push/manual run"
             send_email="true"
 
           # Logic 2: Send when alert content changed (any change detected)
@@ -490,12 +498,22 @@ jobs:
               last_week="$(tr -d '[:space:]' < state/admin_all_clear_state.txt)"
             fi
 
-            if [ "$send_email" = "true" ]; then
-              # The hash moved and there is nothing wrong: alerts have cleared.
-              # That is news, so it goes out now and counts as the week's
-              # confirmation rather than being held back to a fixed day.
-              all_clear_week="$current_week"
-            elif [ "$current_week" != "$last_week" ]; then
+            # NO exception for a changed hash. The previous version had one -
+            # "the hash moved and nothing is RED, so alerts must have cleared,
+            # send it" - and it swallowed the whole rule, because the hash
+            # covers alerts + suppressed + ignored and those churn constantly.
+            # With alerts=0, suppressed=1, ignored=6, every plant moving in or
+            # out of the ignored list changed the hash, so nearly every
+            # scheduled run took that branch and mailed another all-clear.
+            # Observed 21-22 Oct: five "ALL SYSTEMS OPERATIONAL" emails inside
+            # one ISO week whose marker was already written.
+            #
+            # There is also no honest signal for "alerts just cleared" to build
+            # such an exception on: `current_hash = "empty"` means the
+            # alerts.json FILE is missing, not that the fleet is clear, so the
+            # "ALERTS CLEARED" label above has never meant what it says.
+            # ALL SYSTEMS OPERATIONAL is weekly. Full stop.
+            if [ "$current_week" != "$last_week" ]; then
               # Nothing changed, but this week has had no confirmation yet.
               # Send one. This is the proof of life: without it, silence means
               # either a healthy fleet or a stopped pipeline and the admin
@@ -506,8 +524,26 @@ jobs:
               send_email="true"
               all_clear_week="$current_week"
             else
+              # Suppress, whatever the hash says. Logic 2 above sets
+              # send_email=true on any content change, and the churn in
+              # suppressed/ignored means that is most runs - so without this
+              # line the week's marker is written and then ignored, which is
+              # exactly what filled the inbox on 21-22 October.
               echo "⏭️ Skipping all-clear: ${current_week} already confirmed (alerts would still send)"
+              send_email="false"
             fi
+          fi
+
+          # A push or manual run that has nothing wrong says nothing at all.
+          # Logic 2 fires on any content change regardless of trigger, so
+          # without this a developer push still mails an all-clear whenever
+          # the ignored list has moved since the last run.
+          if [ "${{ github.event_name }}" != "schedule" ] \
+             && [ "${{ steps.anomaly.outputs.exit_code }}" != "2" ]; then
+            if [ "$send_email" = "true" ]; then
+              echo "⏭️ Skipping all-clear: ${{ github.event_name }} run with nothing to report"
+            fi
+            send_email="false"
           fi
 
           # Send email if needed

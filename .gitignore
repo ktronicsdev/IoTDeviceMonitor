@@ -98,3 +98,9 @@ bms-module/dist/
 # (Personal Data Protection Act No. 9 of 2022; Cl. 8.3 of the intern agreement.)
 review-outreach.csv
 DSE710/sl-automation-panel-companies.csv
+
+# CCV heat pump MCP — in flight, kept out of the repo for now (2026-10-22).
+# The README documents its 11 tests under "Heat pump"; that group is marked
+# NOT YET ON MAIN and excluded from the test total until these land.
+src/main/java/org/ktronics/scripts/ccv_heatpump_mcp.py
+src/test/java/org/ktronics/scripts/integration/test_ccv_heatpump_mcp.py
