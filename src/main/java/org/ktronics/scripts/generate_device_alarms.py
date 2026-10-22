@@ -574,10 +574,10 @@ def main():
         if test_customer_alarms:
             most_recent = get_most_recent_alarm(test_customer_alarms)
             print(
-                f"  [TEST MODE] Found {len(test_customer_alarms)} alarms for test customer (Gayan-IMH)")
+                f"  [TEST MODE] Found {len(test_customer_alarms)} alarms for test customer")
         else:
             # Fallback: If test customer has no alarms, log and skip
-            print("  [TEST MODE] No alarms found for test customer (Gayan-IMH)")
+            print("  [TEST MODE] No alarms found for test customer")
             most_recent = None
         if most_recent:
             alarm_key = create_alarm_key(most_recent)

@@ -106,3 +106,53 @@ def test_no_workflow_prints_part_of_a_credentials_file():
         + "\n  ".join(offenders)
         + "\n\nReport its size and the parser's position, never its contents."
     )
+
+
+def test_log_lines_do_not_hardcode_the_test_customer():
+    """
+    The test-customer label belongs in the filter that selects it, and nowhere
+    else. Two [TEST MODE] lines repeated it into the log as a literal, which
+    PR #30 removed.
+
+    The disclosure argument for this one is weak on its own - 'gayan-imh' is
+    already in the filter two lines above, in `send_customer_emails.py`, in the
+    directory name `site/ph1800/Gayan-IMH/` and across `data/*.csv`. The real
+    defect is duplication: the label is decided in exactly one place, and a
+    copy inside a user-visible message silently lies the day that place
+    changes. Removing it is right for that reason, and this test is what stops
+    it coming back.
+
+    Comments are deliberately not checked. They carry the same literal and are
+    not log output, so they are out of scope rather than overlooked.
+    """
+    text = (ROOT / SCRIPTS / "generate_device_alarms.py").read_text(encoding="utf-8")
+
+    # Read the label out of the filter rather than hardcoding it here, so this
+    # test keeps working when the test customer changes - which is the whole
+    # failure mode it guards.
+    match = re.search(r"customer_label'[^=]*==\s*'([^']+)'", text)
+    assert match, (
+        "could not find the test-customer filter in generate_device_alarms.py; "
+        "if UC5 moved, point this test at its new home")
+    label = match.group(1)
+
+    def norm(s):
+        """'Gayan-IMH', 'gayan imh' and 'gayanimh' are the same thing here."""
+        return re.sub(r"[^a-z0-9]", "", s.lower())
+
+    offenders = []
+    for n, line in enumerate(text.splitlines(), 1):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if norm(label) not in norm(stripped):
+            continue
+        if "customer_label" in stripped:
+            continue        # the filter itself: the one place it belongs
+        offenders.append(f"{n}: {stripped}")
+
+    assert not offenders, (
+        f"the test-customer label {label!r} is repeated outside the filter "
+        f"that defines it:\n  " + "\n  ".join(offenders)
+        + "\n\nLog the count, or the label read from the data, not a literal."
+    )
