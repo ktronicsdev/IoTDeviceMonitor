@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-22T16:57:05.818134Z",
+  "generated_at": "2026-10-22T19:56:30.339535Z",
   "alerts": [],
   "suppressed": [
     {
@@ -63,6 +63,15 @@
       ],
       "link_down": true,
       "days_stale": 113
+    },
+    {
+      "plant_key": "troy-troy-hybrid-3kw",
+      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
+      "months": [
+        "2026-09"
+      ],
+      "link_down": true,
+      "days_stale": 52
     },
     {
       "plant_key": "upulatheja-3kw-pro-kadawath",
@@ -153,6 +162,17 @@
       "stale_days_threshold": 3
     },
     {
+      "plant_key": "troy-troy-hybrid-3kw",
+      "kind": "zeros_only",
+      "meaning": "rows still arriving but every reading is 0.0000 kWh",
+      "link_down": true,
+      "days_stale": 52,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-08-31",
+      "last_data_date": "2026-10-22",
+      "stale_days_threshold": 3
+    },
+    {
       "plant_key": "chamila-chamila-119h",
       "kind": "zeros_only",
       "meaning": "rows still arriving but every reading is 0.0000 kWh",
@@ -166,8 +186,8 @@
   ],
   "excluded": [],
   "counts": {
-    "reporting": 17,
-    "link_down": 8,
+    "reporting": 16,
+    "link_down": 9,
     "excluded": 0,
     "monitored": 25
   }

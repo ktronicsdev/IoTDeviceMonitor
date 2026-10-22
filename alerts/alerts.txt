@@ -7,7 +7,7 @@
 ║                          Status: NO ALERTS DETECTED                          ║
 ║                                                                              ║
 ║               Date: 2026-10-22  |  Total Plants Monitored: 25                ║
-║                Reporting: 17  |  Dead link: 8  |  Excluded: 0                ║
+║                Reporting: 16  |  Dead link: 9  |  Excluded: 0                ║
 ║                                                                              ║
 ================================================================================
 
@@ -39,6 +39,9 @@
 │   • lahiru-ryan-lahiru-plant
 │     Last reading: 2026-07-14 (100 days ago)
 │     Symptom: rows still arriving but every reading is 0.0000 kWh
+│   • troy-troy-hybrid-3kw
+│     Last reading: 2026-08-31 (52 days ago)
+│     Symptom: rows still arriving but every reading is 0.0000 kWh
 │   • chamila-chamila-119h
 │     Last reading: 2026-10-17 (5 days ago)
 │     Symptom: rows still arriving but every reading is 0.0000 kWh
@@ -66,6 +69,9 @@
 │   • samurdi-kohuwala
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │     Link: DATA LINK DOWN for 113 days — connectivity, not a production fault
+│   • troy-troy-hybrid-3kw
+│     Reason: ignored: month total == 0 for 1 consecutive month(s)
+│     Link: DATA LINK DOWN for 52 days — connectivity, not a production fault
 │   • upulatheja-3kw-pro-kadawath
 │     Reason: ignored: month total == 0 for 1 consecutive month(s)
 │     Link: DATA LINK DOWN for 113 days — connectivity, not a production fault
