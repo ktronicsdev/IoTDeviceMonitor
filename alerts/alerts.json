@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-22T00:56:38.238426Z",
+  "generated_at": "2026-10-22T08:59:37.743427Z",
   "alerts": [],
   "suppressed": [
     {
@@ -23,7 +23,7 @@
       "plant_key": "anuradha-gajanayaka-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-09"
+        "2026-08"
       ],
       "link_down": true,
       "days_stale": 113
@@ -41,7 +41,7 @@
       "plant_key": "lahiru-ryan-lahiru-plant",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
-        "2026-09"
+        "2026-08"
       ],
       "link_down": true,
       "days_stale": 100
@@ -57,15 +57,6 @@
     },
     {
       "plant_key": "samurdi-kohuwala",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-09"
-      ],
-      "link_down": true,
-      "days_stale": 113
-    },
-    {
-      "plant_key": "upulatheja-3kw-pro-kadawath",
       "reason": "ignored: month total == 0 for 1 consecutive month(s)",
       "months": [
         "2026-09"
@@ -92,9 +83,9 @@
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
       "days_stale": 113,
-      "days_since_data": 0,
+      "days_since_data": 52,
       "last_nonzero_date": null,
-      "last_data_date": "2026-10-22",
+      "last_data_date": "2026-08-31",
       "stale_days_threshold": 3
     },
     {
@@ -143,13 +134,46 @@
     },
     {
       "plant_key": "lahiru-ryan-lahiru-plant",
-      "kind": "zeros_only",
-      "meaning": "rows still arriving but every reading is 0.0000 kWh",
+      "kind": "no_rows",
+      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
       "link_down": true,
       "days_stale": 100,
-      "days_since_data": 0,
+      "days_since_data": 52,
       "last_nonzero_date": "2026-07-14",
-      "last_data_date": "2026-10-22",
+      "last_data_date": "2026-08-31",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "crdesilva-home",
+      "kind": "no_rows",
+      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
+      "link_down": true,
+      "days_stale": 52,
+      "days_since_data": 52,
+      "last_nonzero_date": "2026-08-31",
+      "last_data_date": "2026-08-31",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "kosala-koshala-plant",
+      "kind": "no_rows",
+      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
+      "link_down": true,
+      "days_stale": 22,
+      "days_since_data": 22,
+      "last_nonzero_date": "2026-09-30",
+      "last_data_date": "2026-09-30",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "thusharasameera-mendis-house",
+      "kind": "no_rows",
+      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
+      "link_down": true,
+      "days_stale": 22,
+      "days_since_data": 22,
+      "last_nonzero_date": "2026-09-30",
+      "last_data_date": "2026-09-30",
       "stale_days_threshold": 3
     },
     {
@@ -166,8 +190,8 @@
   ],
   "excluded": [],
   "counts": {
-    "reporting": 17,
-    "link_down": 8,
+    "reporting": 14,
+    "link_down": 11,
     "excluded": 0,
     "monitored": 25
   }
