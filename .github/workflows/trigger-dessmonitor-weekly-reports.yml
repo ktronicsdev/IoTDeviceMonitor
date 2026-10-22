@@ -3,7 +3,7 @@ name: DessMonitor — weekly customer reports (Sun)
 on:
   # Weekly on Sunday at 04:00 UTC
   schedule:
-    - cron: "0 04 * * 0"
+    - cron: "29 4 * * 0"
 
   # build verification email on every push
   push:

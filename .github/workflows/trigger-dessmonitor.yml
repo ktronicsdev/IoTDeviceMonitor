@@ -8,13 +8,13 @@ name: DessMonitor — collect, alert (hourly + 4-hourly)
 on:
   # Hourly alarm polling plus the existing 4-hour CSV schedules.
   schedule:
-    - cron: "0 * * * *"
-    - cron: "0 3 * * *"
-    - cron: "0 7 * * *"
-    - cron: "0 11 * * *"
-    - cron: "0 15 * * *"
-    - cron: "0 19 * * *"
-    - cron: "0 23 * * *"
+    - cron: "41 * * * *"
+    - cron: "51 3 * * *"
+    - cron: "51 7 * * *"
+    - cron: "51 11 * * *"
+    - cron: "51 15 * * *"
+    - cron: "51 19 * * *"
+    - cron: "51 23 * * *"
 
   # Manual trigger for testing
   workflow_dispatch: {}
@@ -80,7 +80,7 @@ jobs:
           sudo apt-get update && sudo apt-get install -y jq
 
       - name: Run DessMonitor monthly fetch
-        if: github.event_name != 'schedule' || github.event.schedule != '0 * * * *'
+        if: github.event_name != 'schedule' || github.event.schedule != '41 * * * *'
         shell: bash
         run: |
           set -euo pipefail
@@ -127,7 +127,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Run DessMonitor yearly fetch
-        if: github.event_name != 'schedule' || github.event.schedule != '0 * * * *'
+        if: github.event_name != 'schedule' || github.event.schedule != '41 * * * *'
         shell: bash
         run: |
           set -euo pipefail
@@ -164,7 +164,7 @@ jobs:
         # Reads data/, so it belongs to the data cycle: on the hourly alarm
         # poll nothing is fetched, and analysing stale CSVs made the admin mail
         # flap between two answers (see test_hourly_poll_scope.py).
-        if: github.event_name != 'schedule' || github.event.schedule != '0 * * * *'
+        if: github.event_name != 'schedule' || github.event.schedule != '41 * * * *'
         shell: bash
         run: |
           set -euo pipefail
@@ -212,7 +212,7 @@ jobs:
         # Reads data/, so it belongs to the data cycle: on the hourly alarm
         # poll nothing is fetched, and analysing stale CSVs made the admin mail
         # flap between two answers (see test_hourly_poll_scope.py).
-        if: github.event_name != 'schedule' || github.event.schedule != '0 * * * *'
+        if: github.event_name != 'schedule' || github.event.schedule != '41 * * * *'
         shell: bash
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

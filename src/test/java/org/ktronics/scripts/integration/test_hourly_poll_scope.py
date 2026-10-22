@@ -42,7 +42,21 @@ def _workflows_dir():
 
 WORKFLOWS = _workflows_dir()
 
-HOURLY_CRON = "0 * * * *"
+# Derived per workflow, never hardcoded. The hourly poll moved from
+# `0 * * * *` to `13`/`41` on 2026-10-22 because GitHub names the start of the
+# hour as its peak load window and was dropping most of our runs; a constant
+# here would have passed happily while every guard it is meant to check had
+# been left pointing at a cron that no longer exists.
+def _hourly_cron(doc):
+    """The workflow's every-hour cron, whatever minute it fires on."""
+    triggers = doc.get("on", doc.get(True)) or {}
+    for s in triggers.get("schedule") or []:
+        cron = s.get("cron", "")
+        fields = cron.split()
+        # minute hour dom mon dow -> hourly means every hour, every day
+        if len(fields) == 5 and fields[1:] == ["*", "*", "*", "*"]:
+            return cron
+    return None
 
 # Reads data/ — only meaningful after a fetch, so it must skip the hourly run.
 DATA_CYCLE = ("check_anomaly.py", "check_connectivity.py")
@@ -58,7 +72,7 @@ def _workflows_with_an_hourly_cron():
         # PyYAML parses a bare `on:` key as the boolean True.
         triggers = doc.get("on", doc.get(True)) or {}
         schedules = triggers.get("schedule") or []
-        if any(s.get("cron") == HOURLY_CRON for s in schedules):
+        if _hourly_cron(doc):
             found.append((path.name, doc))
     return found
 
@@ -71,10 +85,10 @@ def _steps_running(doc, needles):
                 yield step
 
 
-def _skips_the_hourly_run(step):
-    """True if this step's `if:` excludes the hourly schedule."""
+def _skips_the_hourly_run(step, hourly_cron):
+    """True if this step's `if:` excludes THIS workflow's hourly schedule."""
     cond = str(step.get("if", ""))
-    return HOURLY_CRON in cond and "github.event.schedule" in cond
+    return hourly_cron in cond and "github.event.schedule" in cond
 
 
 def test_there_is_a_workflow_to_check():
@@ -92,10 +106,11 @@ def test_csv_analysis_skips_the_hourly_run(name, doc):
     stale CSVs — and writing state from them, which is what made the admin
     mail flap between two answers.
     """
+    hourly = _hourly_cron(doc)
     unguarded = [
         step.get("name", "?")
         for step in _steps_running(doc, DATA_CYCLE)
-        if not _skips_the_hourly_run(step)
+        if not _skips_the_hourly_run(step, hourly)
     ]
 
     assert not unguarded, (
@@ -103,7 +118,7 @@ def test_csv_analysis_skips_the_hourly_run(name, doc):
         f"does no fetch:\n  - " + "\n  - ".join(unguarded) +
         f"\n\nAdd the same guard the fetch steps use:\n"
         f"  if: github.event_name != 'schedule' "
-        f"|| github.event.schedule != '{HOURLY_CRON}'"
+        f"|| github.event.schedule != '{hourly}'"
     )
 
 
@@ -114,10 +129,11 @@ def test_the_alarm_poll_still_runs_hourly(name, doc):
     Polling alarms hourly is the entire purpose of #10: it is what makes the
     gate's six-hour dwell literal rather than six-to-ten.
     """
+    hourly = _hourly_cron(doc)
     wrongly_guarded = [
         step.get("name", "?")
         for step in _steps_running(doc, ALARM_CYCLE)
-        if _skips_the_hourly_run(step)
+        if _skips_the_hourly_run(step, hourly)
     ]
 
     assert not wrongly_guarded, (

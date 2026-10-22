@@ -151,6 +151,27 @@ the next outage starts a fresh cycle.
 
 ### Schedule
 
+**No cron fires on :00 or :30 (2026-10-22).** GitHub's own docs name the start
+of the hour as its peak load window — "Scheduled events can be delayed during
+periods of high loads... High load times include the start of every hour. If
+the load is sufficiently high enough, some queued jobs may be dropped" — and
+ten of our twenty-two crons were sitting exactly there, including **both**
+hourly polls on the same minute. Delivery was running at roughly 40% (#31).
+Every cron has been moved off :00 and :30; the two weekly reports, which used
+to collide at 04:00 precisely, are now ten minutes apart.
+
+This is an experiment with a measurable answer: if delivery does not improve
+over a day or two, the cause is not load placement and #31 needs a different
+remedy — a self-hosted runner, an external scheduler calling
+`workflow_dispatch`, or a self-chaining loop like PH1800 already uses. Moving
+to another repository would not help: the scheduler is shared, and this
+repository is already public, so there is no minutes quota to escape.
+
+Changing an hourly cron means changing every `github.event.schedule !=` guard
+with it. `test_hourly_poll_scope.py` now derives each workflow's hourly cron
+rather than hardcoding one, so a half-done change fails a test instead of
+silently disabling the guards.
+
 Display names follow one scheme — `<platform> — <what it does> (<cadence>)` —
 because the old ones had drifted from the work. "ShineMonitor Daily Monitor"
 ran hourly plus six times a day and also ran the test suite; "Weekly Customer
@@ -160,10 +181,10 @@ that GitHub Pages serves.
 
 | Workflow | Display name | Runs | Does |
 |---|---|---|---|
-| `trigger-shinemonitor.yml` | ShineMonitor — collect, alert, test | Hourly, **plus** 6x daily at 02:30 UTC and every 4 h after | Hourly: device alarms only. 4-hourly: collect, connectivity, anomalies, admin email |
-| `trigger-dessmonitor.yml` | DessMonitor — collect, alert | Hourly, **plus** 6x daily from 03:00 UTC | The same for DessMonitor (UC10) |
-| `trigger-customer-reports.yml` | ShineMonitor — weekly customer reports | Sunday, 04:00 UTC | UC2 weekly reports and the admin summary |
-| `trigger-dessmonitor-weekly-reports.yml` | DessMonitor — weekly customer reports | Sunday, 04:00 UTC | UC2 for DessMonitor |
+| `trigger-shinemonitor.yml` | ShineMonitor — collect, alert, test | Hourly at **:13**, **plus** 6x daily at **:37** past 02/06/10/14/18/22 UTC | Hourly: device alarms only. 4-hourly: collect, connectivity, anomalies, admin email |
+| `trigger-dessmonitor.yml` | DessMonitor — collect, alert | Hourly at **:41**, **plus** 6x daily at **:51** past 03/07/11/15/19/23 UTC | The same for DessMonitor (UC10) |
+| `trigger-customer-reports.yml` | ShineMonitor — weekly customer reports | Sunday, **04:19** UTC | UC2 weekly reports and the admin summary |
+| `trigger-dessmonitor-weekly-reports.yml` | DessMonitor — weekly customer reports | Sunday, **04:29** UTC | UC2 for DessMonitor |
 | `trigger-ph1000.yml` | PH1000 — publish live data | Every 2 h, restarting a self-chaining loop | UC12 live data to the `ph1000-live` branch |
 | `trigger-ph1800.yml` | PH1800 — publish live data, any inverter | Every 2 h, restarting a self-chaining loop | UC15 live data to the `ph1800-live` branch |
 | `trigger-ph1000-hist.yml` | PH1000 — publish 30-day history | Hourly | UC12 30-day window on `ph1000-hist`, decoupled from the live cycle |

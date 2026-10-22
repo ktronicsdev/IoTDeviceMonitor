@@ -3,13 +3,13 @@ name: ShineMonitor — collect, alert, test (hourly + 4-hourly)
 on:
   # Hourly alarm polling plus the existing 4-hour CSV schedules.
   schedule:
-    - cron: "0 * * * *"
-    - cron: "30 2 * * *"
-    - cron: "30 6 * * *"
-    - cron: "30 10 * * *"
-    - cron: "30 14 * * *"
-    - cron: "30 18 * * *"
-    - cron: "30 22 * * *"
+    - cron: "13 * * * *"
+    - cron: "37 2 * * *"
+    - cron: "37 6 * * *"
+    - cron: "37 10 * * *"
+    - cron: "37 14 * * *"
+    - cron: "37 18 * * *"
+    - cron: "37 22 * * *"
 
   # build verification email on every push
   push:
@@ -149,7 +149,7 @@ jobs:
           chmod 600 src/main/java/org/ktronics/config/credentials.json
 
       - name: Run monthly fetch (last month + current month)
-        if: github.event_name != 'schedule' || github.event.schedule != '0 * * * *'
+        if: github.event_name != 'schedule' || github.event.schedule != '13 * * * *'
         shell: bash
         run: |
           set -euo pipefail
@@ -171,7 +171,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Run yearly fetch (last year + current year)
-        if: github.event_name != 'schedule' || github.event.schedule != '0 * * * *'
+        if: github.event_name != 'schedule' || github.event.schedule != '13 * * * *'
         shell: bash
         run: |
           set -euo pipefail
@@ -193,7 +193,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Keep only last 4 months + 2 years of data
-        if: github.event_name != 'schedule' || github.event.schedule != '0 * * * *'
+        if: github.event_name != 'schedule' || github.event.schedule != '13 * * * *'
         shell: bash
         run: |
           set -e
@@ -222,7 +222,7 @@ jobs:
         # Reads data/, so it belongs to the data cycle: on the hourly alarm
         # poll nothing is fetched, and analysing stale CSVs made the admin mail
         # flap between two answers (see test_hourly_poll_scope.py).
-        if: github.event_name != 'schedule' || github.event.schedule != '0 * * * *'
+        if: github.event_name != 'schedule' || github.event.schedule != '13 * * * *'
         shell: bash
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -247,7 +247,7 @@ jobs:
         # Reads data/, so it belongs to the data cycle: on the hourly alarm
         # poll nothing is fetched, and analysing stale CSVs made the admin mail
         # flap between two answers (see test_hourly_poll_scope.py).
-        if: github.event_name != 'schedule' || github.event.schedule != '0 * * * *'
+        if: github.event_name != 'schedule' || github.event.schedule != '13 * * * *'
         shell: bash
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
