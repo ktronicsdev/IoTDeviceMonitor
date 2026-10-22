@@ -163,10 +163,10 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
           src/main/java/org/ktronics/scripts/check_shinemonitor_monthly.sh \
-            src/main/java/org/ktronics/config/credentials.json "$LAST_MONTH" 2>&1 | grep -E "(Account:|Plant:|Month total|Daily CSV|DONE)"
+            src/main/java/org/ktronics/config/credentials.json "$LAST_MONTH" 2>&1 | grep -E "(Account:|Plant:|Month total|Daily CSV|DONE|WARNING|AUTH FAIL)"
 
           src/main/java/org/ktronics/scripts/check_shinemonitor_monthly.sh \
-            src/main/java/org/ktronics/config/credentials.json "$CURRENT_MONTH" 2>&1 | grep -E "(Account:|Plant:|Month total|Daily CSV|DONE)"
+            src/main/java/org/ktronics/config/credentials.json "$CURRENT_MONTH" 2>&1 | grep -E "(Account:|Plant:|Month total|Daily CSV|DONE|WARNING|AUTH FAIL)"
 
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
@@ -185,10 +185,10 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
           src/main/java/org/ktronics/scripts/check_shinemonitor_yearly.sh \
-            src/main/java/org/ktronics/config/credentials.json "$LAST_YEAR" 2>&1 | grep -E "(Account:|Plant:|Year total|Yearly CSV|DONE)"
+            src/main/java/org/ktronics/config/credentials.json "$LAST_YEAR" 2>&1 | grep -E "(Account:|Plant:|Year total|Yearly CSV|DONE|WARNING|AUTH FAIL)"
 
           src/main/java/org/ktronics/scripts/check_shinemonitor_yearly.sh \
-            src/main/java/org/ktronics/config/credentials.json "$CURRENT_YEAR" 2>&1 | grep -E "(Account:|Plant:|Year total|Yearly CSV|DONE)"
+            src/main/java/org/ktronics/config/credentials.json "$CURRENT_YEAR" 2>&1 | grep -E "(Account:|Plant:|Year total|Yearly CSV|DONE|WARNING|AUTH FAIL)"
 
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 

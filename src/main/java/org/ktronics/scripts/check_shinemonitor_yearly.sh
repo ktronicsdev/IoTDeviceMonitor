@@ -150,7 +150,13 @@ for acc in "${ACCOUNTS[@]}"; do
 
     echo "    Plant: ${pname:-?} (pid=$pid)"
 
-    out="data/${safe_label}-${safe_name}-${YEAR}.csv"
+    # Staged, then swapped in only if it carries real figures - see the guard
+    # after the month loop. Unlike the monthly script this one always writes
+    # 12 rows, because a failed call writes kwh=0 "to keep shape". That is the
+    # same destruction wearing a different hat: a year of real production
+    # replaced by twelve zeros, and committed. Sibling bug to #33.
+    final_out="data/${safe_label}-${safe_name}-${YEAR}.csv"
+    out="$(mktemp)"
     : > "$out"
     echo "month,kwh" >> "$out"
 
@@ -171,7 +177,18 @@ for acc in "${ACCOUNTS[@]}"; do
       echo "${ym},${kwh}" >> "$out"
     done
 
-    echo "      Yearly CSV written: $out"
+    # Swap in only if the year has at least one non-zero month, or there is
+    # nothing to lose. A brand-new plant legitimately reads all zeros, so the
+    # existence check matters: without it a genuinely empty year could never
+    # be written at all.
+    if awk -F, 'NR>1 && $2+0 != 0 {found=1} END{exit !found}' "$out" \
+       || [ ! -s "$final_out" ]; then
+      mv "$out" "$final_out"
+      echo "      Yearly CSV written: $final_out"
+    else
+      echo "      WARNING: every month came back zero - keeping existing ${final_out}"
+      rm -f "$out"
+    fi
   done
 done
 

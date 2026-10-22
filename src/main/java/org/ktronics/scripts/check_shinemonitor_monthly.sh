@@ -178,8 +178,18 @@ for acc in "${ACCOUNTS[@]}"; do
     | sed 's/^-//;s/-$//')"
      
 
-    # Always overwrite monthly file: <pname>-<YYYY-MM>.csv
-    out="data/${safe_label}-${safe_name}-${MONTH}.csv"
+    # Build the month in a temporary file and swap it in only if the API
+    # actually gave us rows (see the guard at the end of this block).
+    #
+    # This used to truncate the real file here, before the response had been
+    # parsed. When ShineMonitor answered with an empty body - which it does
+    # to GitHub runners, see #32 - the plant's CSV was left holding nothing
+    # but its header AND COMMITTED in that state. Proof on main: this file
+    # for crdesilva-home alternated 31 rows / 0 rows / 31 rows across
+    # 20-22 Oct. connectivity.py then read "no data rows at all" and mailed
+    # DATA LINK DOWN for a plant that had reported that same day.
+    final_out="data/${safe_label}-${safe_name}-${MONTH}.csv"
+    out="$(mktemp)"
     : > "$out"
     echo "date,kwh" >> "$out"
 
@@ -215,12 +225,18 @@ for acc in "${ACCOUNTS[@]}"; do
     )
 
     if [[ "${#ROWS[@]}" -eq 0 ]]; then
-      echo "      (No daily rows returned)"
+      # Keep whatever is already committed. An empty answer is the vendor
+      # having a moment, not the plant having no history, and overwriting
+      # real data with a header is not a thing a fetch should ever do.
+      # Loud on purpose: the workflow greps this step's output, so a quiet
+      # message would be filtered out exactly like AUTH FAIL is (#32).
+      echo "      WARNING: no daily rows returned - keeping existing ${final_out}"
+      rm -f "$out"
     else
       printf "%s\n" "${ROWS[@]}" >> "$out"
+      mv "$out" "$final_out"
+      echo "      Daily CSV written: $final_out"
     fi
-
-    echo "      Daily CSV written: $out"
   done
 done
 

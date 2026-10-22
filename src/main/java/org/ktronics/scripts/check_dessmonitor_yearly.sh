@@ -153,7 +153,12 @@ echo "$ACCOUNTS_JSON" | while read -r acc; do
       | sed 's/^-//;s/-$//')"
 
     # Initialize CSV file for this plant's yearly data
-    out="data/dessmonitor-${safe_label}-${safe_name}-${YEAR}.csv"
+    # Staged, swapped in only if rows were parsed - see the guard below.
+    # Truncating the committed file before the API has answered is #33: an
+    # empty response leaves the plant holding a bare header, and that state
+    # gets committed.
+    final_out="data/dessmonitor-${safe_label}-${safe_name}-${YEAR}.csv"
+    out="$(mktemp)"
     : > "$out"
     echo "month,kwh" >> "$out"
 
@@ -238,9 +243,14 @@ echo "$ACCOUNTS_JSON" | while read -r acc; do
     # Count rows written (excluding header)
     row_count=$(($(wc -l < "$out") - 1))
     if [[ "$row_count" -gt 0 ]]; then
-      echo "      Yearly CSV written: $out ($row_count months)"
+      mv "$out" "$final_out"
+      echo "      Yearly CSV written: $final_out ($row_count months)"
     else
-      echo "      (No data written to CSV)"
+      # Keep what is already committed: an empty answer is the vendor having
+      # a moment, not the plant having no history. WARNING so the workflow's
+      # grep cannot swallow it.
+      echo "      WARNING: no rows parsed - keeping existing ${final_out}"
+      rm -f "$out"
     fi
   done  # plants
 done  # accounts

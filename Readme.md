@@ -724,6 +724,24 @@ Separates **"the data link died"** from **"the system died"**, and makes the fle
 
 Only a plant **positively seen reporting** is cleared. Until 2026-10-16 any plant merely absent from the run's fleet was cleared too, so when the hourly run looked at a smaller fleet than the 4-hourly one it wiped the send counts of everything it could not see, and the next run alerted those plants as new — three sends per plant, indefinitely.
 
+**A true link-down is only as good as the data under it (2026-10-22).** The
+3-send rule held for the eight genuinely dead plants, yet three healthy ones —
+`crdesilva-home`, `kosala-koshala-plant`, `thusharasameera-mendis-house` —
+were mailed LINK DOWN repeatedly while each had a reading dated that same day.
+
+The fault was upstream, in the fetch (#33). A fetch truncated a plant's CSV
+before it knew the API had answered, so an empty response left a bare header,
+which `connectivity.py` reads as `no_rows` — "the portal has nothing for this
+plant". The plant then flips: dead on the bad run, reporting on the next, so
+`clear_recovered()` wipes its state each time it reappears and the counter
+restarts at send #1 for ever. 11 dead links at 08:59, 8 at 09:51, same morning.
+
+Two things follow, and both are worth remembering before trusting a count
+here. A link-down verdict is a statement about **our data**, not about the
+plant — a gap in the CSV and a dead dongle look identical from here. And a
+3-send rule cannot hold against an input that keeps resetting it; the rule was
+never broken, the data under it was.
+
 **Feature flags:** `emails.connectivity_admin`, `alerts.connectivity_link_down`.
 
 **State File:** `state/connectivity_state.json`
@@ -932,6 +950,49 @@ alert clears. So the all-clear is now gated to the **Monday 06:30 UTC** run,
 once a week; anything with an actual alert in it is never gated. Pinned by
 `test_all_clear_cadence.py`, which lifts the gate out of the workflow YAML
 and runs it against a faked weekday rather than asserting on the text.
+
+### A fetch that destroyed the data it was fetching (2026-10-22)
+
+Every fetch script emptied a plant's CSV **before** it knew the API had
+returned anything:
+
+```bash
+out="data/<plant>-<YYYY-MM>.csv"
+: > "$out"                      # truncate first, unconditionally
+echo "date,kwh" >> "$out"
+... parse the response ...
+if no rows: echo "(No daily rows returned)"   # the file stays empty
+```
+
+The empty file was then committed. Read off `main` for `crdesilva-home`:
+**31 rows → 0 → 31 → 0 → 0 → 31** across 20–22 October.
+
+One line, three symptoms that had looked unrelated — which is why the mail
+took three attempts to stop:
+
+- **False DATA LINK DOWN.** `connectivity.py` reads a header-only file as
+  `no_rows`, "the portal has nothing for this plant", so a plant that reported
+  that morning is mailed as a dead link.
+- **The 3-send rule never bit.** Those plants flip between dead and reporting
+  run to run, `clear_recovered()` correctly wipes their state each time they
+  reappear, and the counter restarts at #1 — for ever.
+- **The all-clear flood.** Plants entering and leaving the dead-link set move
+  the UC9 content hash, which is what kept defeating the weekly gate.
+
+The yearly scripts had the same fault in a different costume: a failed call
+writes `kwh=0` "to keep shape", so a year of real production becomes twelve
+zeros.
+
+All four fetches now stage to a temporary file and `mv` it into place **only**
+when rows were parsed; otherwise they keep what is committed and say
+`WARNING: ... keeping existing`. The workflow's `grep` allow-list was widened
+to let `WARNING` and `AUTH FAIL` through — it had been stripping both, which
+is how this ran unseen.
+
+`test_fetch_never_destroys_data.py` pins it, including a test that runs the
+**old** idiom to prove it really does destroy the file. If that ever stops
+being true the premise has changed and the guard can be revisited; until then
+it is what makes the other test meaningful.
 
 ### The vendor's third mood (2026-10-22)
 
@@ -1397,7 +1458,7 @@ Default thresholds in `check_anomaly.py`:
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 752 tests — 696 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 767 tests — 711 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 In CI the two workstation-only MCP modules (Tuya, CCV heat pump) each skip as
 a unit — they need `requests` / the `mcp` server package, which CI does not
@@ -1447,6 +1508,12 @@ collection error that hid the whole suite* in Bug Fixes.
 | UC1 (send cap + interval) | 4 | `test_admin_alert_send_cap.py` |
 | Hourly poll scope | 5 | `test_hourly_poll_scope.py` |
 | UC9 (weekly all-clear cadence) | 18 | `test_all_clear_cadence.py` |
+
+**Fetch safety (15 tests):**
+
+| Suite | Tests | File |
+| ----- | ----- | ---- |
+| A fetch never destroys committed data | 15 | `test_fetch_never_destroys_data.py` |
 
 **Public-log hygiene (7 tests):**
 
