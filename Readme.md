@@ -151,17 +151,32 @@ the next outage starts a fresh cycle.
 
 ### Schedule
 
-| Workflow | Runs | Does |
-|---|---|---|
-| `trigger-shinemonitor.yml` | Hourly, **plus** 6x daily at 02:30 UTC and every 4 h after | Hourly: device alarms only. 4-hourly: collect, connectivity, anomalies, admin email |
-| `trigger-dessmonitor.yml` | Hourly, **plus** 6x daily from 03:00 UTC | The same for DessMonitor (UC10) |
-| `trigger-customer-reports.yml` | Sunday, 04:00 UTC | UC2 weekly reports and the admin summary |
-| `trigger-dessmonitor-weekly-reports.yml` | Sunday, 04:00 UTC | UC2 for DessMonitor |
-| `trigger-ph1000.yml`, `trigger-ph1800.yml` | Every 2 h, restarting a self-chaining loop | UC12 / UC15 live dashboards |
-| `trigger-ph1000-hist.yml`, `trigger-ph1800-hist.yml` | Hourly | UC12 / UC15 30-day history, on its own branch |
-| `trigger-solis-switch.yml` | **Schedule commented out** — manual only until the Solis Control API key is added | UC13 watchdog |
-| `trigger-bms-ingest.yml` | On a device push (`repository_dispatch`), ~every 15 min | UC16 ESP32 BMS reading |
-| `tests.yml` | On every pull request to `main` | The full integration suite. **Nothing else tests a PR** |
+Display names follow one scheme — `<platform> — <what it does> (<cadence>)` —
+because the old ones had drifted from the work. "ShineMonitor Daily Monitor"
+ran hourly plus six times a day and also ran the test suite; "Weekly Customer
+Reports" was the only one without a platform in its name and was ShineMonitor
+only; the "Live Dashboard" pair do not serve a dashboard, they publish data
+that GitHub Pages serves.
+
+| Workflow | Display name | Runs | Does |
+|---|---|---|---|
+| `trigger-shinemonitor.yml` | ShineMonitor — collect, alert, test | Hourly, **plus** 6x daily at 02:30 UTC and every 4 h after | Hourly: device alarms only. 4-hourly: collect, connectivity, anomalies, admin email |
+| `trigger-dessmonitor.yml` | DessMonitor — collect, alert | Hourly, **plus** 6x daily from 03:00 UTC | The same for DessMonitor (UC10) |
+| `trigger-customer-reports.yml` | ShineMonitor — weekly customer reports | Sunday, 04:00 UTC | UC2 weekly reports and the admin summary |
+| `trigger-dessmonitor-weekly-reports.yml` | DessMonitor — weekly customer reports | Sunday, 04:00 UTC | UC2 for DessMonitor |
+| `trigger-ph1000.yml` | PH1000 — publish live data | Every 2 h, restarting a self-chaining loop | UC12 live data to the `ph1000-live` branch |
+| `trigger-ph1800.yml` | PH1800 — publish live data, any inverter | Every 2 h, restarting a self-chaining loop | UC15 live data to the `ph1800-live` branch |
+| `trigger-ph1000-hist.yml` | PH1000 — publish 30-day history | Hourly | UC12 30-day window on `ph1000-hist`, decoupled from the live cycle |
+| `trigger-ph1800-hist.yml` | PH1800 — publish 30-day history | Hourly | UC15 30-day window on `ph1800-hist`, decoupled from the live cycle |
+| `trigger-solis-switch.yml` | Solis — re-enable a switched-off inverter | **Schedule commented out** — manual only until the Solis Control API key is added | UC13 watchdog |
+| `trigger-bms-ingest.yml` | ESP32 BMS — ingest a pushed reading | On a device push (`repository_dispatch`), ~every 15 min | UC16 ESP32 BMS reading |
+| `trigger-battery-health.yml` | Solis — battery health report | 1st of the month, 06:23 UTC | Battery state of health and yearly fade rate per inverter; no state kept |
+| `tests.yml` | Tests — pull requests only (no email) | On every pull request to `main` | The full suite, silent by design. **Not** the push test: a push to `main` is tested by the `tests` job inside `trigger-shinemonitor.yml`, which is what sends every "TESTS FAILED" email |
+
+`pages-build-deployment` also appears in the Actions list. It is **GitHub's
+own** workflow, not a file in this repository, and it republishes GitHub Pages
+whenever `main` moves — which is what serves `site/ph1000/` and
+`site/ph1800/<label>/`. It cannot be renamed or edited.
 
 **Not part of the pipeline**, though they live beside it:
 `refresh_bms_creds.py` re-bootstraps the BMS credentials from the running

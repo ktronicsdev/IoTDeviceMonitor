@@ -1,4 +1,4 @@
-name: ShineMonitor Daily Monitor
+name: ShineMonitor — collect, alert, test (hourly + 4-hourly)
 
 on:
   # Hourly alarm polling plus the existing 4-hour CSV schedules.

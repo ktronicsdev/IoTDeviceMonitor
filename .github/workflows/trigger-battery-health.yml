@@ -1,4 +1,4 @@
-name: Solis Battery Health Report
+name: Solis — battery health report (monthly)
 
 # Monthly: read battery state of health (SOH) for every battery on the
 # SolisCloud account and email the admin one table. Flags any battery fading

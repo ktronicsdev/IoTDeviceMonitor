@@ -1,4 +1,4 @@
-name: PH1000 Monthly History (30-day, hourly, decoupled)
+name: PH1000 — publish 30-day history (hourly, own branch)
 
 # Runs HOURLY, independent of the fast 7-day live feed (trigger-ph1000.yml). Does the slow 30-day
 # fetch and publishes ONLY ph1000_hist.json to the separate ph1000-hist branch, which the dashboard

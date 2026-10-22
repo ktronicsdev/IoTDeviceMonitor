@@ -1,4 +1,4 @@
-name: PH1000 Live Dashboard
+name: PH1000 — publish live data (2-hourly loop)
 
 # CLOUD-ONLY refresh — does NOT depend on the laptop. One run loops: fetch -> publish every
 # ~10 min for ~4.6h, then re-launches itself (via GH_PAT) so the chain runs forever on GitHub

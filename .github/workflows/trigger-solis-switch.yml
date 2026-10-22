@@ -1,4 +1,4 @@
-name: Solis Inverter Switch Watchdog
+name: Solis — re-enable a switched-off inverter (2-hourly, cron paused)
 
 # Every 2 hours: check each configured Solis inverter; if it's switched OFF,
 # auto re-enable it (when Control API is configured) and email the admin.

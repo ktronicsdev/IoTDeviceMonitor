@@ -1,4 +1,4 @@
-name: DessMonitor Daily Monitor
+name: DessMonitor — collect, alert (hourly + 4-hourly)
 
 # UC10: Multi-Cloud Platform Support - DessMonitor Integration
 # This workflow runs in parallel with ShineMonitor workflow

@@ -1,4 +1,4 @@
-name: Tests (pull requests)
+name: Tests — pull requests only (no email)
 
 # Nothing else tests a pull request.
 #

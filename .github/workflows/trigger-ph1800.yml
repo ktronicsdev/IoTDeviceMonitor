@@ -1,4 +1,4 @@
-name: PH1800 Live Dashboard (generic, all inverters)
+name: PH1800 — publish live data, any inverter (2-hourly loop)
 
 # CLOUD-ONLY refresh (no laptop). One run loops fetch -> publish every ~10 min for ~4.6h, then
 # re-launches itself (GH_PAT) so the chain runs forever; a 2h cron restarts it if it ever dies.

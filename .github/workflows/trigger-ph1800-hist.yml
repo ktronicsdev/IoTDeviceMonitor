@@ -1,4 +1,4 @@
-name: PH1800 Monthly History (30-day, hourly, decoupled)
+name: PH1800 — publish 30-day history (hourly, own branch)
 
 # Runs HOURLY, independent of the fast 7-day live feed (trigger-ph1800.yml). Does the slow 30-day
 # fetch and publishes ONLY the <hash>.hist.json files to the separate ph1800-hist branch, which the

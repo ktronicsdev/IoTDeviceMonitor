@@ -1,4 +1,4 @@
-name: BMS Reading Ingest
+name: ESP32 BMS — ingest a pushed reading (on device push)
 
 # Fired by an ESP32 BMS monitor via the GitHub API (repository_dispatch).
 # The device POSTs its latest reading; this workflow appends it to a CSV,
