@@ -1519,12 +1519,18 @@ Default thresholds in `check_anomaly.py`:
 ```text
 .
 ├── .github/workflows/
-│   ├── trigger-shinemonitor.yml       # ShineMonitor monitoring (6x daily)
-│   ├── trigger-dessmonitor.yml        # DessMonitor monitoring (6x daily) - UC10
-│   ├── trigger-ph1000.yml             # PH1000 live dashboard + BMS (~10 min) - UC12
+│   ├── trigger-shinemonitor.yml       # ShineMonitor monitoring (hourly + 6x daily) - UC1, UC3-UC9, UC14
+│   ├── trigger-dessmonitor.yml        # DessMonitor monitoring (hourly + 6x daily) - UC10
+│   ├── trigger-customer-reports.yml   # ShineMonitor weekly customer reports (Sunday) - UC2, UC8
+│   ├── trigger-dessmonitor-weekly-reports.yml  # DessMonitor weekly customer reports (Sunday) - UC2 + UC10
+│   ├── trigger-ph1000.yml             # PH1000 live dashboard + BMS (~10 min loop) - UC12
+│   ├── trigger-ph1000-hist.yml        # PH1000 30-day history (hourly) - UC12
+│   ├── trigger-ph1800.yml             # PH1800 live dashboard, all inverters (~10 min loop) - UC15
+│   ├── trigger-ph1800-hist.yml        # PH1800 30-day history (hourly) - UC15
 │   ├── trigger-solis-switch.yml       # SolisCloud ON/OFF watchdog (2h) - UC13
 │   ├── trigger-battery-health.yml     # SolisCloud battery health (monthly) - UC17
-│   └── trigger-customer-reports.yml   # Weekly reports (Sunday)
+│   ├── trigger-bms-ingest.yml         # ESP32 BMS reading ingest (on device push) - UC16
+│   └── tests.yml                      # Full test suite, pull requests only - no UC
 ├── src/main/java/org/ktronics/
 │   ├── config/
 │   │   ├── credentials.json           # ShineMonitor credentials (gitignored)
@@ -1536,10 +1542,14 @@ Default thresholds in `check_anomaly.py`:
 │       ├── common_config.sh           # Centralized Bash config
 │       ├── shinemonitor_common.sh     # ShineMonitor API utilities
 │       ├── dessmonitor_common.sh      # DessMonitor API utilities (UC10)
+│       ├── push_data_commit.sh        # Commit + push with retry/merge; used by 7 workflows (#28, #29)
+│       ├── merge_alarm_state.py       # Merges cumulative state files on a push conflict
 │       ├── check_shinemonitor_monthly.sh  # ShineMonitor monthly data
 │       ├── check_shinemonitor_yearly.sh   # ShineMonitor yearly data
 │       ├── check_dessmonitor_monthly.sh   # DessMonitor monthly data (UC10)
+│       ├── check_dessmonitor_yearly.sh    # DessMonitor yearly data (UC10)
 │       ├── check_device_alarms.sh     # Fetch device alarms
+│       ├── check_dessmonitor_device_alarms.sh  # DessMonitor device alarms (UC10)
 │       ├── features.py                # Feature flags (fails open)
 │       ├── exclusions.py              # Plant exclusions (fails closed) (UC14)
 │       ├── connectivity.py            # Link-down classification + counts (UC14)
@@ -1551,10 +1561,24 @@ Default thresholds in `check_anomaly.py`:
 │       ├── generate_admin_summary.py  # Admin summary generation
 │       ├── send_customer_emails.py    # Customer email sending
 │       ├── send_email.py              # System-wide email notifications
-│       ├── solis_common.py            # SolisCloud signed-request client (UC13)
+│       ├── email_utils.py             # Shared email formatting and sending
+│       ├── check_ph1000.py            # PH1000 inverter telemetry (UC12)
+│       ├── check_ph1000_bms.py        # PH1000 battery BMS, PACEEX packs (UC12)
+│       ├── check_ph1000_weather.py    # Weather + solar-harvest impact, Open-Meteo (UC12)
+│       ├── check_ph1800.py            # Inverter telemetry, all inverters (UC15)
+│       ├── solis_common.py            # SolisCloud signed-request client (UC13, UC17)
 │       ├── check_solis_switch.py      # SolisCloud ON/OFF watchdog (UC13)
 │       ├── check_battery_health.py    # SolisCloud battery health report (UC17)
-│       └── solis/README_SOLIS.md      # SolisCloud setup + Control API guide (UC13)
+│       ├── solis/README_SOLIS.md      # SolisCloud setup + Control API guide (UC13)
+│       │
+│       │   # Run by hand or on a workstation - no workflow calls these:
+│       ├── check_plant_roi.py         # ROI verification (UC11)
+│       ├── analyze_plant_roi.py       # ROI report generator (UC11)
+│       ├── check_shinemonitor_daily.sh    # Today's energy per plant, printed
+│       ├── check_shinemonitor_query-plants.sh  # Auth + raw plant list, for debugging
+│       ├── refresh_bms_creds.py       # Re-bootstrap BMS credentials (BlueStacks + frida)
+│       ├── solis_mcp.py               # SolisCloud MCP server
+│       └── tuya_mcp.py                # Tuya Cloud MCP server
 ├── data/                              # CSV time-series data
 │   ├── {plant}-YYYY-MM.csv            # ShineMonitor data files
 │   └── dessmonitor-{plant}-YYYY-MM.csv # DessMonitor data files (UC10)
@@ -1574,13 +1598,17 @@ Default thresholds in `check_anomaly.py`:
     └── solis_switch_state.json        # SolisCloud watchdog state (UC13)
 ```
 
+`test_readme_tree.py` keeps this tree complete: a workflow or script that
+reaches `main` without its line here fails the suite, and so does a line for
+a file that is gone (#35).
+
 ## Testing
 
 ### Integration Test Suite
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 767 tests — 711 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 778 tests — 722 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 In CI the two workstation-only MCP modules (Tuya, CCV heat pump) each skip as
 a unit — they need `requests` / the `mcp` server package, which CI does not
@@ -1623,12 +1651,12 @@ collection error that hid the whole suite* in Bug Fixes.
 | Gate rules (R1-R6, classes) | 14 | `test_alarm_triage.py` |
 | Gate wiring + feature mode | 8 | `test_alarm_gate_wiring.py` |
 
-**Alerting discipline (27 tests):**
+**Alerting discipline (31 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
 | UC1 (send cap + interval) | 4 | `test_admin_alert_send_cap.py` |
-| Hourly poll scope | 5 | `test_hourly_poll_scope.py` |
+| Hourly poll scope | 9 | `test_hourly_poll_scope.py` |
 | UC9 (weekly all-clear cadence) | 18 | `test_all_clear_cadence.py` |
 
 **Fetch safety (15 tests):**
@@ -1643,16 +1671,25 @@ collection error that hid the whole suite* in Bug Fixes.
 | ----- | ----- | ---- |
 | No payloads in public logs | 7 | `test_no_payloads_in_public_logs.py` |
 
-**Suite visibility (42 tests):**
+**Suite visibility (44 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| One bad import must not hide the suite | 42 | `test_suite_visibility.py` |
+| One bad import must not hide the suite | 44 | `test_suite_visibility.py` |
 
 That suite parametrizes over every `test_*.py`, so its count rises by one
 with each new test file — including an untracked one sitting in the
 directory. If the total here looks one or two short, check
 `git status` before assuming the table is stale.
+
+**README accuracy (5 tests):**
+
+| Suite | Tests | File |
+| ----- | ----- | ---- |
+| Project Structure tree matches the repo (#35) | 5 | `test_readme_tree.py` |
+
+The first test that reads this README: every workflow and script on `main`
+must have its line in the tree, and every line must name a file that exists.
 
 **Tuya (28 tests, workstation-only):**
 
