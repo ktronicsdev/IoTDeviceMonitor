@@ -63,7 +63,10 @@ def _open_flag(raw: Mapping[str, Any], vendor: str) -> bool:
         return value in (1, "1", True, "true", "True", "open", "OPEN")
     value = _first(raw, "status", "state", default=False)
     if _is_solis_vendor(vendor):
-        return value in (1, "1", True, "true", "TRUE", "open", "OPEN")
+        # alarmList state: "0" open, "1" processed by someone, "2" restored.
+        # Read off live data on 23 Oct 2026 (58 cleared alarms "2", 2 open "0").
+        # Before that this tested for 1, which reads every open alarm as resolved.
+        return value is not False and str(value) == "0"
     return value in (False, 0, "0", "false", "False", "closed", "resolved")
 
 
@@ -129,23 +132,24 @@ def normalize(
                         "devname", "devName", "serial", "sn")
         customer = _first(raw, "customer", "customerName", "owner", "username")
 
+    vendor_codes = config.get("vendor_codes", {})
+    code_map = vendor_codes.get(
+        "solis", {}) if _is_solis_vendor(vendor_name) else vendor_codes.get(
+            vendor_name, {})
+    # The code first: classifying the text of an alarm the code already places
+    # would log it as unclassified, and that log is how the class map grows.
+    code_class = code_map.get(vendor_code)
+
     record: Record = {
         "plant": str(plant),
         "device": str(device),
         "vendor_code": vendor_code,
         "message": message,
-        "class": classify(message, config),
+        "class": code_class or classify(message, config),
         "started_at_utc": started_at,
         "open": _open_flag(raw, vendor_name),
         "customer": str(customer),
     }
-    vendor_codes = config.get("vendor_codes", {})
-    code_map = vendor_codes.get(
-        "solis", {}) if _is_solis_vendor(vendor_name) else vendor_codes.get(
-            vendor_name, {})
-    code_class = code_map.get(vendor_code)
-    if code_class:
-        record["class"] = code_class
     return record
 
 

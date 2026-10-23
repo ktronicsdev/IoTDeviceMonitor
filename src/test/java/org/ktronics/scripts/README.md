@@ -39,15 +39,16 @@ update this file and the root `Readme.md` in the same commit.
 | UC15 | PH1800 Live Dashboard      | 41      | `test_ph1800.py`                 |
 | UC15 | PH1800 battery tab         | 8       | `test_ph1800_battery_tab.py`      |
 | UC16 | ESP32 BMS module (DIY)     | 16      | `test_bms_ingest.py`             |
+| UC18 | Solis alarms, six-hour gate | 31     | `test_solis_alarms.py`           |
 | BVT  | Dashboard Clocks (SL time) | 16      | `test_dashboard_clock.py`        |
 | BVT  | Centralized Config         | 14      | `test_centralized_config.py`     |
 | API  | ShineMonitor API           | 8       | `test_shinemonitor_api.py`       |
 | API  | DessMonitor API            | 18      | `test_dessmonitor_api.py`        |
 
 Not in the table above, because they pin workflow and push behaviour rather than
-a single use case: `test_alarm_triage.py` (14) and `test_alarm_gate_wiring.py` (8)
+a single use case: `test_alarm_triage.py` (18) and `test_alarm_gate_wiring.py` (8)
 for the six-hour gate, `test_admin_alert_send_cap.py` (4) and
-`test_hourly_poll_scope.py` (5) for alerting cadence,
+`test_hourly_poll_scope.py` (11) for alerting cadence,
 `test_data_commit_push.py` (27), `test_merge_alarm_state.py` (8) and
 `test_no_bare_push_to_main.py` (10) for the data-commit push,
 `test_no_payloads_in_public_logs.py` (6) for public-log hygiene, `test_feature_flags.py` (34), `test_fleet_benchmark.py` (28)

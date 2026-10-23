@@ -145,7 +145,8 @@ def parse_alarm_files(alarms_dir, platform=None):
 
 def triage_alarms(alarms, state, platform=None, utc_now=None):
     """Apply the six-hour gate and record held alarms without changing send rules."""
-    vendor = 'DessMonitor' if platform == 'dessmonitor' else 'ShineMonitor'
+    vendor = {'dessmonitor': 'DessMonitor', 'solis': 'Solis'}.get(
+        platform, 'ShineMonitor')
     utc_now = utc_now or datetime.now(timezone.utc)
     actionable = []
 

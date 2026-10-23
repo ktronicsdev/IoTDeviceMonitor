@@ -156,7 +156,7 @@ def test_normalize_solis_epoch_and_open_state() -> None:
             "alarmCode": "1015",
             "alarmMessage": "NO-Grid",
             "alarmBeginTime": 1790575200000,
-            "state": 1,
+            "state": "0",
         },
         "SolisCloud",
         CONFIG,
@@ -166,6 +166,55 @@ def test_normalize_solis_epoch_and_open_state() -> None:
     assert normalized["class"] == "GRID"
     assert normalized["open"] is True
     assert normalized["started_at_utc"].tzinfo is not None
+
+
+def test_solis_open_is_state_zero_only() -> None:
+    """R3 for Solis, read off the live alarmList on 23 Oct 2026: the 2 open
+    alarms said state "0" and the 58 cleared ones "2". The gate was written
+    before there was an API key and tested for 1, which reads every open Solis
+    alarm as resolved, so nothing would ever have been mailed. "1" is
+    'processed' (someone handled it), and a handled alarm never escalates."""
+    def is_open(state: Any) -> bool:
+        return alarm_triage.normalize(
+            {"stationName": "P", "alarmMsg": "NO-Grid", "alarmBeginTime": 1790575200000,
+             "state": state}, "Solis", CONFIG)["open"]
+
+    assert is_open("0") and is_open(0)
+    assert not is_open("1") and not is_open("2") and not is_open(2)
+
+
+def test_solis_comms_alarm_is_never_mailed() -> None:
+    """SolisCloud words a dead logger 'Loss of internet connection' (code 1D4C2),
+    which no COMMS pattern matched: it fell to UNKNOWN and took the 6 h clock."""
+    normalized = alarm_triage.normalize(
+        {"stationName": "P", "alarmCode": "1D4C2", "alarmMsg": "Loss of internet connection",
+         "alarmBeginTime": 1790575200000, "state": "0"}, "Solis", CONFIG)
+
+    assert normalized["class"] == "COMMS"
+    assert alarm_triage.classify("Loss of internet connection", CONFIG) == "COMMS"
+    assert alarm_triage.is_actionable(
+        normalized, normalized["started_at_utc"] + timedelta(days=3), CONFIG)[0] is False
+
+
+def test_an_alarm_its_code_places_is_not_logged_unclassified(caplog: Any) -> None:
+    """The UNKNOWN log is how the class map grows from real traffic. Before
+    23 Oct 2026 normalize() classified the text first and applied the code after,
+    so every 'UV-G-V' (code 1011, GRID) was logged as unclassified."""
+    with caplog.at_level("WARNING"):
+        normalized = alarm_triage.normalize(
+            {"stationName": "P", "alarmCode": "1011", "alarmMsg": "UV-G-V",
+             "alarmBeginTime": 1790575200000, "state": "0"}, "Solis", CONFIG)
+    assert normalized["class"] == "GRID"
+    assert "UV-G-V" not in caplog.text
+
+
+def test_solis_grid_fault_codes_are_grid() -> None:
+    for code, message in [("1010", "OV-G-V01"), ("1011", "UV-G-V"), ("1012", "OV-G-F01"),
+                          ("1013", "UN-G-F01"), ("1015", "NO-Grid"), ("1019", "Uac-Unstable")]:
+        normalized = alarm_triage.normalize(
+            {"stationName": "P", "alarmCode": code, "alarmMsg": message,
+             "alarmBeginTime": 1790575200000, "state": "0"}, "Solis", CONFIG)
+        assert normalized["class"] == "GRID", code
 
 
 def test_unknown_alarm_is_logged(caplog: Any) -> None:

@@ -20,6 +20,9 @@ Built after **Ktronics Imbulgoda** latched OFF for **4 days** following repeated
 | `state/solis_switch_state.json` | Per-inverter state (last check, throttle timers) |
 | `.github/workflows/trigger-solis-switch.yml` | 2-hourly schedule |
 | `src/test/.../integration/test_solis_switch.py` | 31 tests (no network) |
+| `check_solis_alarms.py` | UC18: SolisCloud alarms on hybrids through the six-hour gate → admin email |
+| `state/solis_alarms_state.json` | UC18 open alarms: held by the gate, or sent n/3 |
+| `.github/workflows/trigger-solis-alarms.yml` | UC18 hourly schedule |
 
 ## Setup
 

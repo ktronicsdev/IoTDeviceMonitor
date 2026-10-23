@@ -1,0 +1,74 @@
+name: Solis — alarms open 6h+ (hourly)
+
+# Every hour: pull the SolisCloud alarm list and put every open alarm on a
+# hybrid inverter through the six-hour gate (UC18). The admin is mailed only
+# when an alarm is still open 6 hours after it started, then at most 3 times,
+# 4 hours apart. Hourly so the six hours are literal, as on ShineMonitor.
+#
+# The SolisCloud API key lives in the `solis` block of the
+# SHINEMONITOR_CREDENTIALS_JSON secret (same key as UC13 and UC17).
+on:
+  schedule:
+    - cron: "33 * * * *"          # hourly, clear of the other hourly jobs
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "print what would be mailed; send nothing, save no state"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write                # to commit updated state/solis_alarms_state.json
+
+concurrency:
+  group: solis-alarms
+  cancel-in-progress: false
+
+jobs:
+  alarms:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Create credentials.json from secret
+        shell: bash
+        run: |
+          set -e
+          mkdir -p src/main/java/org/ktronics/config
+          cat <<'EOF' > src/main/java/org/ktronics/config/credentials.json
+          ${{ secrets.SHINEMONITOR_CREDENTIALS_JSON }}
+          EOF
+          chmod 600 src/main/java/org/ktronics/config/credentials.json
+
+      - name: Run Solis alarm gate
+        shell: bash
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+        run: |
+          DRY=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then DRY="--dry-run"; fi
+          python3 src/main/java/org/ktronics/scripts/check_solis_alarms.py $DRY
+
+      - name: Commit updated state
+        shell: bash
+        run: |
+          if [ -n "$(git status --porcelain state/solis_alarms_state.json)" ]; then
+            git config user.name  "solis-alarms-bot"
+            git config user.email "actions@users.noreply.github.com"
+            git add state/solis_alarms_state.json
+            git commit -m "Update Solis alarm gate state"
+            chmod +x src/main/java/org/ktronics/scripts/push_data_commit.sh
+            src/main/java/org/ktronics/scripts/push_data_commit.sh --resolve-conflicts
+          else
+            echo "No state change to commit."
+          fi

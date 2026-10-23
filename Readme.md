@@ -16,7 +16,7 @@ Automated monitoring system for **multi-cloud solar panel installations** with i
 |--------------|-------------------------|------------------|
 | ShineMonitor | `web.shinemonitor.com`  | Production       |
 | DessMonitor  | `web.dessmonitor.com`   | Production (UC10)|
-| SolisCloud   | `soliscloud.com:13333`  | Production (UC13)|
+| SolisCloud   | `soliscloud.com:13333`  | Production (UC13, UC17, UC18)|
 
 **Features:**
 
@@ -109,6 +109,7 @@ So:
 | `merge_alarm_state.py` | Merges a conflicting cumulative `state/*.json` instead of picking a side |
 | `fleet_benchmark.py` | Weather-adjusted benchmark for production disputes |
 | `check_solis_switch.py`, `solis_common.py` | UC13 SolisCloud watchdog |
+| `check_solis_alarms.py` | UC18 SolisCloud alarms through the six-hour gate |
 | `check_ph1000*.py` | UC12 PH1000 dashboard and its PACEEX BMS decode |
 | `check_ph1800.py` | UC15 generic pass-through dashboard, any inverter |
 | `bms-module/scripts/ingest_bms_reading.py` | UC16 ESP32 reading: CSV, thresholds, alert |
@@ -135,6 +136,7 @@ normalised key — lower-cased with every non-alphanumeric character stripped �
 | `state/device_alarms_state.json` | Device alarms: `send_count`, `last_sent`, `ignored`, plus `customer`, `plant`, `message` |
 | `state/connectivity_state.json` | Link-down alerts per plant, and the fleet alert |
 | `state/solis_switch_state.json` | SolisCloud watchdog |
+| `state/solis_alarms_state.json` | SolisCloud alarms (UC18): the same fields as device alarms, open alarms only |
 | `state/admin_email_state.txt` | UC9 content hash, so an unchanged admin email is not resent |
 
 Every repeating alert channel obeys the same rule: **at most 3 sends, at least 4
@@ -192,6 +194,7 @@ that GitHub Pages serves.
 | `trigger-ph1000-hist.yml` | PH1000 — publish 30-day history | Hourly | UC12 30-day window on `ph1000-hist`, decoupled from the live cycle |
 | `trigger-ph1800-hist.yml` | PH1800 — publish 30-day history | Hourly | UC15 30-day window on `ph1800-hist`, decoupled from the live cycle |
 | `trigger-solis-switch.yml` | Solis — re-enable a switched-off inverter | Every 2 h at **:15** | UC13 watchdog. The Control API key went live on 16 Oct 2026, so it can now re-enable, not just report |
+| `trigger-solis-alarms.yml` | Solis — alarms open 6h+ (hourly) | Hourly at **:33** | **UC18** SolisCloud alarms on hybrid inverters through the six-hour gate; admin only |
 | `trigger-bms-ingest.yml` | ESP32 BMS — ingest a pushed reading | On a device push (`repository_dispatch`), ~every 15 min | UC16 ESP32 BMS reading |
 | `trigger-battery-health.yml` | Solis — battery health report | 1st of the month, **06:23** UTC | **UC17** battery state of health and yearly fade rate per battery; read-only, no state kept |
 | `tests.yml` | Tests — pull requests only (no email) | On every pull request to `main` | The full suite, silent by design. **Not** the push test: a push to `main` is tested by the `tests` job inside `trigger-shinemonitor.yml`, which is what sends every "TESTS FAILED" email |
@@ -216,6 +219,7 @@ Derived from the scripts each workflow actually runs, not from its name.
 | `trigger-ph1800.yml` | **UC15** live data |
 | `trigger-ph1800-hist.yml` | **UC15** 30-day history |
 | `trigger-solis-switch.yml` | **UC13** |
+| `trigger-solis-alarms.yml` | **UC18** |
 | `trigger-bms-ingest.yml` | **UC16** |
 | `trigger-battery-health.yml` | **UC17** |
 | `tests.yml` | cross-cutting; owns no use case |
@@ -1018,6 +1022,105 @@ py check_battery_health.py --max-fade 2 --min-soh 90   # stricter thresholds
 
 ---
 
+### UC18: SolisCloud Alarms Through the Six-Hour Gate
+
+Brings the SolisCloud fleet under the [six-hour gate](six-hour-gate/README.md)
+that ShineMonitor and DessMonitor device alarms already pass through: the admin
+is mailed about an alarm on a **hybrid** inverter only when it is **still open
+6 hours after it started**: no grid, a battery alarm, an overload. A CEB cut
+that lasts two hours never reaches the inbox.
+
+**Implementation Status:** ✅ **IMPLEMENTED** (23 Oct 2026). This is step 5 of
+the gate's order of work, the Solis adapter, parked until the SolisCloud API key
+arrived (16 Oct 2026).
+
+**Why hybrids matter here:** a hybrid with no grid is running the house off its
+battery. Six hours of that, and the battery is heading for its discharge floor,
+where the BMS can lock the pack out and it will not restart on its own.
+
+**How it works:**
+
+1. Runs **hourly at :33** ([trigger-solis-alarms.yml](.github/workflows/trigger-solis-alarms.yml)), so the six hours are literal, as on the ShineMonitor alarm poll.
+2. One call, `POST /v1/api/alarmList`, for every alarm that began in the last 7 days, across all plants on the account.
+3. Keeps alarms that are **open** (`state == "0"`), on a **hybrid** (`machine` reads `S6-EH…`, `RHI…` or `RAI…`), on a plant not in `excluded_plants.json`.
+4. Hands them to the gate exactly as UC3 does: `triage_alarms()` (six-hour dwell, COMMS never mailed, the `alerts.six_hour_gate` off / dry_run / on mode), then `filter_alarms_to_send()` (3 sends, 4 h apart).
+5. Emails the admin one list: plant, inverter, alarm, open since (plant-local time), hours open, send n/3, and the gate's first thing to check.
+
+**Hybrids only, by decision (23 Oct 2026).** A grid-tie inverter shuts down at
+dusk, so its alarm cannot clear until it wakes the next morning. Ruwani's data runs
+06:33–18:13 and nothing at night. On 17 Oct Nadun, Tiqri and Malith read
+NO-Grid for 16–18 h for a CEB cut that ended that evening. On a grid-tie plant
+the six hours would be mostly darkness. A hybrid runs around the clock, so its
+alarm times are real.
+
+**What it would have sent, replayed over 16–23 Oct 2026:** nine alarms on six
+plants. They were the 17 Oct CEB outage (NO-Grid 6.6–9.2 h at Hiran's three floors,
+Hewune, Vajira and Harith), Gihan Home's overload (10.9 h), Harith's NO-Grid on
+18 Oct (11.2 h) and Surath's overnight NO-Grid on 22 Oct (6.3 h). The dozens of
+shorter cuts stayed silent.
+
+**Found while wiring it — three gate faults that would have shipped:**
+
+- **Every open Solis alarm read as resolved.** The gate tested `state == 1` for
+  "open", written before there was an API key. The live alarm list says `"0"`
+  (2 open alarms) and `"2"` (58 cleared). `"1"` is *processed*: someone handled it,
+  and per R3 a handled alarm never escalates. Uncaught, the adapter would have run
+  every hour and mailed nothing, ever.
+- **A dead logger would have been mailed.** SolisCloud words it "Loss of
+  internet connection" (code `1D4C2`), which no COMMS pattern matched. It fell
+  to UNKNOWN, took the six-hour clock, and Kamal Kadawath's 3-day-old one would
+  have gone out on the first run. Now mapped to COMMS by code and by text.
+- **Alarms the code already placed were logged as unclassified.** `normalize()`
+  classified the text first and applied the vendor code after. Every `UV-G-V`
+  (code 1011, GRID) was logged as unknown, and that log is how the class map
+  grows. Now the code is checked first.
+
+The Solis vendor codes seen in the fleet are now in the class map: 1010–1013
+and 1019 (grid voltage and frequency faults) and 1015 (NO-Grid) map to GRID,
+1057 (Overload) to LOAD and `1D4C2` to COMMS. **No Solis battery alarm has been
+seen yet**, so its exact wording is not in the map. When one comes it lands in
+UNKNOWN, which takes the same six-hour clock and is logged, and its code goes
+into the map then.
+
+**State:** `state/solis_alarms_state.json` holds the device-alarm fields
+(`send_count`, `last_sent`, `ignored`, `plant`, `message`, and the gate's
+`class` and `suppressed_reason` for alarms it is holding). It is keyed
+`stationId:inverterSN:code@startTime`, so one occurrence keeps one key however
+SolisCloud numbers its records. An alarm that is no longer open is forgotten:
+the same key never reopens, so nothing is lost, and the file does not grow with
+every blip.
+
+**Public logs:** the run prints counts and alarm keys only, never plant names
+(#4). `--dry-run` prints the email body, and is meant for a workstation.
+
+**Not covered: a dead Solis logger.** COMMS is never mailed by the gate, because
+elsewhere a dark logger writes `0.0000` CSV rows and trips the 3-day
+production-loss alert (R4). **Solis plants are not in that CSV pipeline**, so a
+Solis logger that stays dark is not alerted by anything yet.
+
+**Feature flags:** `emails.solis_alarms_admin` (the email), and
+`alerts.six_hour_gate` (the gate itself, shared with UC3).
+
+**Scripts:**
+
+| Script | Purpose |
+|--------|---------|
+| `check_solis_alarms.py` | Fetch the alarm list → hybrids, open → six-hour gate → 3x/4h → email |
+| `generate_device_alarms.py` | The gate and send rules it reuses (`triage_alarms`, `filter_alarms_to_send`) |
+| `six-hour-gate/alarm_triage.py` | `normalize()` / `is_actionable()`, which already had a Solis path |
+
+**CLI:**
+
+```bash
+py check_solis_alarms.py              # gate + email the admin + save state (cron entrypoint)
+py check_solis_alarms.py --dry-run    # print what would be mailed; no email, no state
+```
+
+**Test Coverage:** 31/31 PASSED — `test_solis_alarms.py`; the gate fixes are
+4 more in `test_alarm_triage.py`
+
+---
+
 ## Bug Fixes
 
 ### The October 2026 mail flood — four bugs, one inbox
@@ -1528,6 +1631,7 @@ Default thresholds in `check_anomaly.py`:
 │   ├── trigger-ph1800.yml             # PH1800 live dashboard, all inverters (~10 min loop) - UC15
 │   ├── trigger-ph1800-hist.yml        # PH1800 30-day history (hourly) - UC15
 │   ├── trigger-solis-switch.yml       # SolisCloud ON/OFF watchdog (2h) - UC13
+│   ├── trigger-solis-alarms.yml       # SolisCloud alarms through the six-hour gate (hourly) - UC18
 │   ├── trigger-battery-health.yml     # SolisCloud battery health (monthly) - UC17
 │   ├── trigger-bms-ingest.yml         # ESP32 BMS reading ingest (on device push) - UC16
 │   └── tests.yml                      # Full test suite, pull requests only - no UC
@@ -1566,8 +1670,9 @@ Default thresholds in `check_anomaly.py`:
 │       ├── check_ph1000_bms.py        # PH1000 battery BMS, PACEEX packs (UC12)
 │       ├── check_ph1000_weather.py    # Weather + solar-harvest impact, Open-Meteo (UC12)
 │       ├── check_ph1800.py            # Inverter telemetry, all inverters (UC15)
-│       ├── solis_common.py            # SolisCloud signed-request client (UC13, UC17)
+│       ├── solis_common.py            # SolisCloud signed-request client (UC13, UC17, UC18)
 │       ├── check_solis_switch.py      # SolisCloud ON/OFF watchdog (UC13)
+│       ├── check_solis_alarms.py      # SolisCloud alarms through the six-hour gate (UC18)
 │       ├── check_battery_health.py    # SolisCloud battery health report (UC17)
 │       ├── solis/README_SOLIS.md      # SolisCloud setup + Control API guide (UC13)
 │       │
@@ -1595,6 +1700,7 @@ Default thresholds in `check_anomaly.py`:
     ├── admin_email_state.txt          # UC9 hash state
     ├── device_alarms_state.json       # Device alarm state
     ├── connectivity_state.json        # Link-down alert state (UC14)
+    ├── solis_alarms_state.json        # SolisCloud alarms held by / sent through the gate (UC18)
     └── solis_switch_state.json        # SolisCloud watchdog state (UC13)
 ```
 
@@ -1608,7 +1714,7 @@ a file that is gone (#35).
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 778 tests — 722 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 816 tests — 760 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 In CI the two workstation-only MCP modules (Tuya, CCV heat pump) each skip as
 a unit — they need `requests` / the `mcp` server package, which CI does not
@@ -1628,12 +1734,13 @@ collection error that hid the whole suite* in Bug Fixes.
 | UC12 + UC15 (live loop budget) | 16 | `test_live_loop_budget.py` |
 | UC16 (ESP32 BMS ingest) | 16 | `test_bms_ingest.py` |
 
-**SolisCloud (54 tests):**
+**SolisCloud (85 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
 | UC13 (Solis ON/OFF Watchdog) | 44 | `test_solis_switch.py` |
 | UC17 (Solis battery health) | 10 | `test_battery_health.py` |
+| UC18 (Solis alarms, six-hour gate) | 31 | `test_solis_alarms.py` |
 
 **Connectivity, exclusions and flags (127 tests):**
 
@@ -1644,19 +1751,19 @@ collection error that hid the whole suite* in Bug Fixes.
 | Fleet benchmark | 28 | `test_fleet_benchmark.py` |
 | UC14 (state retention) | 3 | `test_connectivity_state_retention.py` |
 
-**Six-hour gate (22 tests):**
+**Six-hour gate (26 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| Gate rules (R1-R6, classes) | 14 | `test_alarm_triage.py` |
+| Gate rules (R1-R6, classes) | 18 | `test_alarm_triage.py` |
 | Gate wiring + feature mode | 8 | `test_alarm_gate_wiring.py` |
 
-**Alerting discipline (31 tests):**
+**Alerting discipline (33 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
 | UC1 (send cap + interval) | 4 | `test_admin_alert_send_cap.py` |
-| Hourly poll scope | 9 | `test_hourly_poll_scope.py` |
+| Hourly poll scope | 11 | `test_hourly_poll_scope.py` |
 | UC9 (weekly all-clear cadence) | 18 | `test_all_clear_cadence.py` |
 
 **Fetch safety (15 tests):**
@@ -1671,11 +1778,11 @@ collection error that hid the whole suite* in Bug Fixes.
 | ----- | ----- | ---- |
 | No payloads in public logs | 7 | `test_no_payloads_in_public_logs.py` |
 
-**Suite visibility (44 tests):**
+**Suite visibility (45 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| One bad import must not hide the suite | 44 | `test_suite_visibility.py` |
+| One bad import must not hide the suite | 45 | `test_suite_visibility.py` |
 
 That suite parametrizes over every `test_*.py`, so its count rises by one
 with each new test file — including an untracked one sitting in the
