@@ -167,7 +167,14 @@ def triage_alarms(alarms, state, platform=None, utc_now=None):
                 reason = f'could not triage alarm; passing through: {error}'
                 print(f'Warning: {reason}', file=sys.stderr)
                 allowed = True
-                record = {'class': 'UNKNOWN', 'started_at_utc': utc_now}
+                record = {
+                    'class': 'UNKNOWN',
+                    'started_at_utc': utc_now,
+                    'customer': alarm.get('customer_label', ''),
+                    'plant': alarm.get('plant', alarm.get('pName', '')),
+                    'message': alarm.get(
+                        'message', alarm.get('desc', alarm.get('warnMsg', ''))),
+                }
 
             would_hold = not allowed
             if mode == 'dry_run':
@@ -180,11 +187,9 @@ def triage_alarms(alarms, state, platform=None, utc_now=None):
             allowed = True
             reason = 'six_hour_gate disabled'
 
-        if allowed and not would_hold:
+        if mode == 'off':
             actionable.append(alarm)
             continue
-        if allowed:
-            actionable.append(alarm)
 
         alarm_state = state.setdefault(alarm_key, {
             'send_count': 0,
@@ -195,8 +200,23 @@ def triage_alarms(alarms, state, platform=None, utc_now=None):
         alarm_state.update({
             'class': record['class'],
             'started_at_utc': record['started_at_utc'].isoformat(),
-            'suppressed_reason': reason,
+            'customer': alarm.get(
+                'customer_label', record.get('customer', '')),
+            'plant': alarm.get(
+                'plant', alarm.get('pName', record.get('plant', ''))),
+            'message': record.get('message', ''),
+            'send_count': alarm_state.get('send_count', 0),
+            'ignored': alarm_state.get('ignored', False),
         })
+        if would_hold:
+            alarm_state['suppressed_reason'] = reason
+        else:
+            # A previously held alarm has now passed the gate or is being
+            # mailed; its old suppression reason is no longer true.
+            alarm_state.pop('suppressed_reason', None)
+
+        if allowed:
+            actionable.append(alarm)
 
     return actionable
 
@@ -238,7 +258,8 @@ def filter_alarms_to_send(alarms, state, max_sends=3):
             continue
 
         # Skip if already sent max times
-        if alarm_state['send_count'] >= max_sends:
+        send_count = alarm_state.get('send_count', 0)
+        if send_count >= max_sends:
             alarm_state['ignored'] = True
             state[alarm_key] = alarm_state
             continue
@@ -256,7 +277,7 @@ def filter_alarms_to_send(alarms, state, max_sends=3):
         alarms_to_send.append({
             'alarm': alarm,
             'alarm_key': alarm_key,
-            'send_count': alarm_state['send_count']
+            'send_count': send_count
         })
 
     return alarms_to_send
@@ -385,6 +406,7 @@ def update_alarm_state(state, alarms_to_send):
         state[alarm_key]['plant'] = alarm.get('plant', 'Unknown')
         state[alarm_key]['message'] = alarm.get(
             'desc', alarm.get('warnMsg', 'Unknown'))
+        state[alarm_key].pop('suppressed_reason', None)
 
         # Auto-ignore after 3 sends
         if state[alarm_key]['send_count'] >= 3:
