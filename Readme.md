@@ -193,7 +193,7 @@ that GitHub Pages serves.
 | `trigger-ph1800-hist.yml` | PH1800 — publish 30-day history | Hourly | UC15 30-day window on `ph1800-hist`, decoupled from the live cycle |
 | `trigger-solis-switch.yml` | Solis — re-enable a switched-off inverter | Every 2 h at **:15** | UC13 watchdog. The Control API key went live on 16 Oct 2026, so it can now re-enable, not just report |
 | `trigger-bms-ingest.yml` | ESP32 BMS — ingest a pushed reading | On a device push (`repository_dispatch`), ~every 15 min | UC16 ESP32 BMS reading |
-| `trigger-battery-health.yml` | Solis — battery health report | 1st of the month, 06:23 UTC | Battery state of health and yearly fade rate per inverter; no state kept |
+| `trigger-battery-health.yml` | Solis — battery health report | 1st of the month, **06:23** UTC | **UC17** battery state of health and yearly fade rate per battery; read-only, no state kept |
 | `tests.yml` | Tests — pull requests only (no email) | On every pull request to `main` | The full suite, silent by design. **Not** the push test: a push to `main` is tested by the `tests` job inside `trigger-shinemonitor.yml`, which is what sends every "TESTS FAILED" email |
 
 `pages-build-deployment` also appears in the Actions list. It is **GitHub's
@@ -217,7 +217,7 @@ Derived from the scripts each workflow actually runs, not from its name.
 | `trigger-ph1800-hist.yml` | **UC15** 30-day history |
 | `trigger-solis-switch.yml` | **UC13** |
 | `trigger-bms-ingest.yml` | **UC16** |
-| `trigger-battery-health.yml` | *none yet* — landed 17 Oct, undocumented as a UC |
+| `trigger-battery-health.yml` | **UC17** |
 | `tests.yml` | cross-cutting; owns no use case |
 
 Four things this makes visible that the lists above do not:
@@ -728,7 +728,7 @@ in the test tables.
 
 Watchdog for **SolisCloud** inverters that detects when an inverter has been switched **OFF** and (when the Control API is configured) automatically switches it back **ON**, emailing the admin.
 
-**Implementation Status:** ✅ **IMPLEMENTED** (Session 17) — detection live; auto switch-on activates once the Solis API key is added.
+**Implementation Status:** ✅ **IMPLEMENTED** (Session 17). Detection has been live since then, and the SolisCloud key gained **Control** permission on **16 Oct 2026** — so auto switch-on is armed now, not pending.
 
 **Motivation:** The **Ktronics Imbulgoda** plant latched **OFF for 4 days** after repeated `Uac-Unstable` (code 1019) grid faults, recovering only when manually powered on in the SolisCloud app. This watchdog catches that within ~2 hours instead of days.
 
@@ -741,7 +741,7 @@ Watchdog for **SolisCloud** inverters that detects when an inverter has been swi
    - **Heuristic (default, no Control permission needed):** during the core daylight window (09:00–15:00 local), fresh telemetry showing `pac == 0` ⇒ not producing. Skips at night / on stale data to avoid false triggers.
 4. If OFF: auto-enable via `/v2/api/control` and email *"auto re-enabled"*; otherwise email *"switch on manually"* (throttled to once / 12 h).
 
-**Platform note:** SolisCloud uses an **API Key ID + Secret** (SolisCloud → Service → API Management), **not** the web login. Remote on/off needs the **Control API** permission (Ktronics AB is the Solis distributor, so it can self-enable this).
+**Platform note:** SolisCloud uses an **API Key ID + Secret** (SolisCloud → Service → API Management), **not** the web login. Remote on/off needs the **Control API** permission, which Solis grants on request through a support ticket — being their distributor does not let you switch it on yourself.
 
 **Scripts:**
 
@@ -969,6 +969,52 @@ token in an artifact.
 **Test Coverage:** 16/16 PASSED — `test_bms_ingest.py`. Despite the name it is
 not UC12: this is the ESP32 `repository_dispatch` path, not the PH1000/PACEEX
 BMS that UC12 decodes.
+
+---
+
+### UC17: SolisCloud Battery Health Report
+
+A monthly report on how fast each SolisCloud battery is wearing out, so a pack
+that is fading abnormally is found while it is still under warranty rather than
+when it stops holding charge.
+
+**Implementation Status:** ✅ **IMPLEMENTED** (landed 17 Oct 2026) — run once
+by hand that day and it sent its report. The **first scheduled run is 1 Nov
+2026**, so the cron path itself is not yet proven in production.
+
+**How it works:**
+
+1. Runs on the **1st of each month at 06:23 UTC** ([trigger-battery-health.yml](.github/workflows/trigger-battery-health.yml)).
+2. For every inverter on the account that reports a battery, reads **state of health (SOH)** and lifetime throughput over the same signed SolisCloud API that UC13 uses, pausing 1 s between calls to stay under the per-key rate limit.
+3. Works out the yearly fade rate as `(100 - SOH) / years in service`. **No state file is needed:** SOH is already cumulative, so nothing has to be remembered between runs.
+4. Flags a battery fading faster than **3 %/yr** (`--max-fade`) or already below **85 % SOH** (`--min-soh`). LFP packs (BYD, Pylontech) normally fade about 1-2 %/yr.
+5. A battery under **3 months** in service is listed but **not judged** — over so short a window the computed rate is noise, not wear.
+6. Emails the admin one table, warnings first.
+
+**Read-only by design.** It sends no control command and keeps no state, so
+unlike UC13 it cannot act on a plant by mistake.
+
+**Scripts:**
+
+| Script | Purpose |
+|--------|---------|
+| `solis_common.py` | SolisCloud signed-request client (`SolisClient`) — shared with UC13 |
+| `check_battery_health.py` | Read SOH per battery → classify against the thresholds → email |
+
+**Config:** the same `solis` block in `credentials.json` as UC13 — one key
+serves both. Email channel: `emails.battery_health_admin`.
+
+**State File:** none, by design.
+
+**CLI:**
+
+```bash
+py check_battery_health.py                             # report + email the admin (cron entrypoint)
+py check_battery_health.py --dry-run                   # print the report, send no email
+py check_battery_health.py --max-fade 2 --min-soh 90   # stricter thresholds
+```
+
+**Test Coverage:** 10/10 PASSED — `test_battery_health.py`
 
 ---
 
@@ -1477,6 +1523,7 @@ Default thresholds in `check_anomaly.py`:
 │   ├── trigger-dessmonitor.yml        # DessMonitor monitoring (6x daily) - UC10
 │   ├── trigger-ph1000.yml             # PH1000 live dashboard + BMS (~10 min) - UC12
 │   ├── trigger-solis-switch.yml       # SolisCloud ON/OFF watchdog (2h) - UC13
+│   ├── trigger-battery-health.yml     # SolisCloud battery health (monthly) - UC17
 │   └── trigger-customer-reports.yml   # Weekly reports (Sunday)
 ├── src/main/java/org/ktronics/
 │   ├── config/
@@ -1506,6 +1553,7 @@ Default thresholds in `check_anomaly.py`:
 │       ├── send_email.py              # System-wide email notifications
 │       ├── solis_common.py            # SolisCloud signed-request client (UC13)
 │       ├── check_solis_switch.py      # SolisCloud ON/OFF watchdog (UC13)
+│       ├── check_battery_health.py    # SolisCloud battery health report (UC17)
 │       └── solis/README_SOLIS.md      # SolisCloud setup + Control API guide (UC13)
 ├── data/                              # CSV time-series data
 │   ├── {plant}-YYYY-MM.csv            # ShineMonitor data files
@@ -1557,7 +1605,7 @@ collection error that hid the whole suite* in Bug Fixes.
 | Suite | Tests | File |
 | ----- | ----- | ---- |
 | UC13 (Solis ON/OFF Watchdog) | 44 | `test_solis_switch.py` |
-| Battery health report (no UC yet) | 10 | `test_battery_health.py` |
+| UC17 (Solis battery health) | 10 | `test_battery_health.py` |
 
 **Connectivity, exclusions and flags (127 tests):**
 
