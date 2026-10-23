@@ -1,5 +1,7 @@
 # Multi-Cloud IoT Device Monitoring System
 
+This platform watches the solar plants of KTronics customers on ShineMonitor, DessMonitor and SolisCloud, checks their production against what each plant should make, and sends alerts, device alarms and weekly reports by email. It is built and run by [KTronics (Pvt) Ltd](https://ktronics.lk/), a solar and electrical engineering company in Kelaniya, Sri Lanka. The monitoring service as offered to customers is described at <https://ktronics.lk/iot-solutions/>.
+
 [![ShineMonitor](https://github.com/ktronicsdev/IoTDeviceMonitor/workflows/ShineMonitor%20Daily%20Monitor/badge.svg)](https://github.com/ktronicsdev/IoTDeviceMonitor/actions)
 [![DessMonitor](https://github.com/ktronicsdev/IoTDeviceMonitor/workflows/DessMonitor%20Daily%20Monitor/badge.svg)](https://github.com/ktronicsdev/IoTDeviceMonitor/actions)
 [![Dashboard](https://img.shields.io/badge/UC%20Dashboard-Live-blue)](https://ktronicsdev.github.io/IoTDeviceMonitor/dashboard.html)
@@ -189,7 +191,7 @@ that GitHub Pages serves.
 | `trigger-ph1800.yml` | PH1800 — publish live data, any inverter | Every 2 h, restarting a self-chaining loop | UC15 live data to the `ph1800-live` branch |
 | `trigger-ph1000-hist.yml` | PH1000 — publish 30-day history | Hourly | UC12 30-day window on `ph1000-hist`, decoupled from the live cycle |
 | `trigger-ph1800-hist.yml` | PH1800 — publish 30-day history | Hourly | UC15 30-day window on `ph1800-hist`, decoupled from the live cycle |
-| `trigger-solis-switch.yml` | Solis — re-enable a switched-off inverter | **Schedule commented out** — manual only until the Solis Control API key is added | UC13 watchdog |
+| `trigger-solis-switch.yml` | Solis — re-enable a switched-off inverter | Every 2 h at **:15** | UC13 watchdog. The Control API key went live on 16 Oct 2026, so it can now re-enable, not just report |
 | `trigger-bms-ingest.yml` | ESP32 BMS — ingest a pushed reading | On a device push (`repository_dispatch`), ~every 15 min | UC16 ESP32 BMS reading |
 | `trigger-battery-health.yml` | Solis — battery health report | 1st of the month, 06:23 UTC | Battery state of health and yearly fade rate per inverter; no state kept |
 | `tests.yml` | Tests — pull requests only (no email) | On every pull request to `main` | The full suite, silent by design. **Not** the push test: a push to `main` is tested by the `tests` job inside `trigger-shinemonitor.yml`, which is what sends every "TESTS FAILED" email |
@@ -198,6 +200,42 @@ that GitHub Pages serves.
 own** workflow, not a file in this repository, and it republishes GitHub Pages
 whenever `main` moves — which is what serves `site/ph1000/` and
 `site/ph1800/<label>/`. It cannot be renamed or edited.
+
+### Which workflow serves which use case
+
+Derived from the scripts each workflow actually runs, not from its name.
+
+| Workflow | Use cases |
+|---|---|
+| `trigger-shinemonitor.yml` | **UC1** production alerts, **UC3–UC8** device alarms, **UC9** admin email cadence, **UC14** connectivity |
+| `trigger-dessmonitor.yml` | **UC10**, which re-implements UC1, UC3 and UC14 for DessMonitor |
+| `trigger-customer-reports.yml` | **UC2** weekly reports, **UC8** schedule filter |
+| `trigger-dessmonitor-weekly-reports.yml` | **UC2 + UC10** |
+| `trigger-ph1000.yml` | **UC12** live data |
+| `trigger-ph1000-hist.yml` | **UC12** 30-day history |
+| `trigger-ph1800.yml` | **UC15** live data |
+| `trigger-ph1800-hist.yml` | **UC15** 30-day history |
+| `trigger-solis-switch.yml` | **UC13** |
+| `trigger-bms-ingest.yml` | **UC16** |
+| `trigger-battery-health.yml` | *none yet* — landed 17 Oct, undocumented as a UC |
+| `tests.yml` | cross-cutting; owns no use case |
+
+Four things this makes visible that the lists above do not:
+
+- **UC11 (Plant ROI) has no workflow.** `check_plant_roi.py` has a UC section
+  and 19 tests, and nothing schedules it. It is manual-only, and nothing says
+  whether that is deliberate.
+- **UC4–UC8 have no workflow of their own.** They are behaviours inside UC3's
+  scripts, which is why their tests live in `test_device_alarms.py` rather
+  than in files of their own.
+- **UC12 and UC15 each span two workflows** — live and history, on separate
+  branches and separate schedules. That split is the point, not an accident:
+  fetching the 30-day window on the live cycle is what made the dashboards go
+  stale in August 2026.
+- **`trigger-shinemonitor.yml` carries eight use cases end to end.** That is
+  why it runs for 80–90 minutes and why a push waits behind it. If the Actions
+  feedback loop needs to get shorter, splitting this workflow buys far more
+  than moving crons does.
 
 **Not part of the pipeline**, though they live beside it:
 `refresh_bms_creds.py` re-bootstraps the BMS credentials from the running
