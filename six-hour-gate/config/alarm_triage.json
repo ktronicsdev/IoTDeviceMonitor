@@ -65,6 +65,7 @@
     ],
     "THERMAL": [
       "inverter radiator over temperature",
+      "over temperature",
       "fan is locked"
     ],
     "GRID": [
