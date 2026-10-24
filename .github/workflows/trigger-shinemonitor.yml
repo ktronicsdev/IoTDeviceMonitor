@@ -11,7 +11,8 @@ on:
     - cron: "37 18 * * *"
     - cron: "37 22 * * *"
 
-  # build verification email on every push
+  # A push runs the `tests` job ONLY (since 2026-10-23) and gets its "Build OK" /
+  # "TESTS FAILED" email from there. See the `if:` on `run` for why.
   push:
     branches:
       - main
@@ -109,8 +110,41 @@ jobs:
           "
           EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 src/main/java/org/ktronics/scripts/send_email.py
 
+      # ✅ The push build email. Since 2026-10-23 a push runs ONLY this job (see the
+      # `if:` on `run` below), so this is where "Build OK" has to come from. A push
+      # used to run the full 80-90 min collection too, and waited behind the
+      # scheduled run for the same concurrency slot first: 28 min + 89 min on
+      # 2026-10-21, about two hours from push to any result. The collection a push
+      # run did was never different from the next scheduled run's anyway.
+      - name: Send build verification email (push + tests passed)
+        if: github.event_name == 'push' && success() && steps.flags.outputs.emails_build_verification == 'true'
+        shell: bash
+        run: |
+          set -e
+          subject="✅ Build OK - ${{ github.repository }} @ ${{ github.sha }}"
+          body="Workflow: ${{ github.workflow }} (tests job)
+          Status: TESTS PASSED
+          Repo: ${{ github.repository }}
+          Branch: ${{ github.ref_name }}
+          Commit: ${{ github.sha }}
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          A push runs the test suite only. Data collection, alarms and alerts run on
+          their schedule; for a full end-to-end run use 'Run workflow' (workflow_dispatch).
+          "
+          EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 src/main/java/org/ktronics/scripts/send_email.py
+
   # Data collection. No `needs: tests` on purpose - see the comment on `tests` above.
+  #
+  # NOT on push (2026-10-23). This job takes 80-90 minutes (21 plants, fetched one
+  # after another) and a push run first waited for the scheduled run holding the
+  # `shinemonitor-commit` slot: measured 2026-10-21, 28 min queued + 89 min running,
+  # two hours from push to "Build OK". What a push run collected was identical to
+  # what the next scheduled run collects, so a push now runs `tests` only. A manual
+  # run (workflow_dispatch) still does everything, for end-to-end verification on
+  # demand. test_push_is_tests_only.py fails if this `if:` goes away.
   run:
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     concurrency:
       group: shinemonitor-commit
@@ -318,7 +352,8 @@ jobs:
           set +e
           mkdir -p state alarms
 
-          # UC5: On push/manual runs, use test mode to bypass 3-send limit
+          # UC5: On manual runs, use test mode to bypass the 3-send limit.
+          # (A push never reaches this job since 2026-10-23: it runs `tests` only.)
           if [ "${{ github.event_name }}" = "schedule" ]; then
             echo "📅 Scheduled run: Normal alarm filtering"
             python3 src/main/java/org/ktronics/scripts/generate_device_alarms.py \
@@ -327,7 +362,7 @@ jobs:
               --output-file alarms/device_alarms.txt \
               --platform shinemonitor 2>&1
           else
-            echo "🔧 Push/Manual run: Test mode (bypass 3-send limit for most recent alarm)"
+            echo "🔧 Manual run: Test mode (bypass 3-send limit for most recent alarm)"
             python3 src/main/java/org/ktronics/scripts/generate_device_alarms.py \
               --alarms-dir alarms \
               --state-file state/device_alarms_state.json \
@@ -368,11 +403,12 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
           # On scheduled runs: Send to ALL customers
-          # On push/manual runs: Send ONLY to test customer (Gayan-IMH)
+          # On manual runs: Send ONLY to test customer (Gayan-IMH). A push never reaches
+          # this job (2026-10-23: a push runs `tests` only).
           if [ "${{ github.event_name }}" = "schedule" ]; then
             echo "📧 SENDING CUSTOMER-SPECIFIC DEVICE ALARMS TO ALL CUSTOMERS (Scheduled Run)"
           else
-            echo "📧 SENDING CUSTOMER-SPECIFIC DEVICE ALARMS TO TEST CUSTOMER ONLY: Gayan-IMH (Push/Manual Run)"
+            echo "📧 SENDING CUSTOMER-SPECIFIC DEVICE ALARMS TO TEST CUSTOMER ONLY: Gayan-IMH (Manual Run)"
           fi
 
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -385,7 +421,7 @@ jobs:
               python3 src/main/java/org/ktronics/scripts/send_customer_emails.py \
                 --customer-device-alarms alarms/customer_device_alarms.json 2>&1
             else
-              # Push/manual run: Send only to test customer
+              # Manual run: Send only to test customer
               python3 src/main/java/org/ktronics/scripts/send_customer_emails.py \
                 --customer-device-alarms alarms/customer_device_alarms.json \
                 --test-customer-only 2>&1
@@ -427,7 +463,9 @@ jobs:
           # Determine if email should be sent
           send_email="false"
 
-          # Logic 1: a push or manual run reports only if something is WRONG.
+          # Logic 1: a manual run reports only if something is WRONG. (A push no
+          # longer reaches this job at all - since 2026-10-23 it runs `tests`
+          # only - but the push branch is kept so a revert of that stays safe.)
           #
           # It used to send unconditionally as "build verification", so every
           # developer push produced an "ALL SYSTEMS OPERATIONAL" email saying
@@ -472,8 +510,8 @@ jobs:
           # the thing that reports it.
           #
           # So: no alerts -> one all-clear per ISO week, sent by the FIRST
-          # eligible scheduled run of that week. Push and manual runs still
-          # send, because there it is build verification, not a status report.
+          # eligible scheduled run of that week. A manual run still sends when
+          # something is wrong (Logic 1); a push never reaches this job.
           #
           # It deliberately does NOT name a cron. The first version required
           # `30 6 * * *` on a Monday, and that run did not happen on Mon
@@ -615,25 +653,13 @@ jobs:
           chmod +x src/main/java/org/ktronics/scripts/push_data_commit.sh
           src/main/java/org/ktronics/scripts/push_data_commit.sh --resolve-conflicts
 
-      # ✅ Build verification email on every push (success)
-      - name: Send build verification email (push + success)
-        if: github.event_name == 'push' && success() && steps.flags.outputs.emails_build_verification == 'true'
-        shell: bash
-        run: |
-          set -e
-          subject="✅ Build OK - ${{ github.repository }} @ ${{ github.sha }}"
-          body="Workflow: ${{ github.workflow }}
-          Status: SUCCESS
-          Repo: ${{ github.repository }}
-          Branch: ${{ github.ref_name }}
-          Commit: ${{ github.sha }}
-          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          "
-          EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 src/main/java/org/ktronics/scripts/send_email.py
+      # The "Build OK" push email lives in the `tests` job: a push never runs this job
+      # (2026-10-23), so a push-success step here would be dead code.
 
-      # ❌ Failure email on EVERY trigger, not just push. Scheduled runs are the ones that
-      # actually keep the data fresh, so a silent scheduled failure means the fetch stops
-      # and nobody hears about it — that hid a month-long outage starting 2026-08-01.
+      # ❌ Failure email on EVERY trigger that runs this job (schedule, manual). Scheduled
+      # runs are the ones that actually keep the data fresh, so a silent scheduled failure
+      # means the fetch stops and nobody hears about it — that hid a month-long outage
+      # starting 2026-08-01.
       - name: Send build verification email (failure)
         if: failure() && steps.flags.outputs.emails_build_verification != 'false'
         shell: bash

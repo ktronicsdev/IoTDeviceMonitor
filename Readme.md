@@ -164,12 +164,32 @@ hourly polls on the same minute. Delivery was running at roughly 40% (#31).
 Every cron has been moved off :00 and :30; the two weekly reports, which used
 to collide at 04:00 precisely, are now ten minutes apart.
 
-This is an experiment with a measurable answer: if delivery does not improve
-over a day or two, the cause is not load placement and #31 needs a different
-remedy — a self-hosted runner, an external scheduler calling
-`workflow_dispatch`, or a self-chaining loop like PH1800 already uses. Moving
-to another repository would not help: the scheduler is shared, and this
-repository is already public, so there is no minutes quota to escape.
+This was an experiment with a measurable answer, and the answer came back on
+2026-10-23: **it did not help.** In the 20 hours after the move (12:00 UTC on
+the 22nd to 08:00 on the 23rd) GitHub created 9 of the ~25 scheduled
+ShineMonitor runs asked for, 8 of ~25 DessMonitor, 4 of 10 Solis, and 5 of
+~20 for each history job — the same third as before. The minutes moved off
+the top of the hour (:41, :47, :51) delivered no better than the ones still in
+its first twenty minutes (:13, :15, :17), so where in the hour a cron sits is
+not what decides whether it fires, and moving crons again is not worth a
+commit. The remedy for #31 is one of the other three — a self-chaining loop
+like PH1800 already uses, an external scheduler calling `workflow_dispatch`,
+or a self-hosted runner. Moving to another repository would not help: the
+scheduler is shared, and this repository is already public, so there is no
+minutes quota to escape.
+
+**A push runs the test suite only (2026-10-23).** Until then a push to `main`
+also ran the full ShineMonitor collection, the DessMonitor collection and both
+weekly report workflows, as "build verification". The ShineMonitor collection
+takes 80–90 minutes and a push run first queued behind the scheduled run
+holding its concurrency slot: on 2026-10-21 that was 28 minutes waiting and 89
+running, about two hours from push to "Build OK". Nothing in those runs
+differed from what the next scheduled run does anyway, and the weekly
+workflows mailed two admin summaries per push. Now only
+`trigger-shinemonitor.yml` listens to `push`, only its `tests` job runs on
+one, and that job sends the "Build OK" or "TESTS FAILED" email in about five
+minutes. A manual run (`workflow_dispatch`) still does everything, for
+end-to-end verification on demand. `test_push_is_tests_only.py` keeps it so.
 
 Changing an hourly cron means changing every `github.event.schedule !=` guard
 with it. `test_hourly_poll_scope.py` now derives each workflow's hourly cron
@@ -185,7 +205,7 @@ that GitHub Pages serves.
 
 | Workflow | Display name | Runs | Does |
 |---|---|---|---|
-| `trigger-shinemonitor.yml` | ShineMonitor — collect, alert, test | Hourly at **:13**, **plus** 6x daily at **:37** past 02/06/10/14/18/22 UTC | Hourly: device alarms only. 4-hourly: collect, connectivity, anomalies, admin email |
+| `trigger-shinemonitor.yml` | ShineMonitor — collect, alert, test | Hourly at **:13**, **plus** 6x daily at **:37** past 02/06/10/14/18/22 UTC. On a push to `main`: the `tests` job only | Hourly: device alarms only. 4-hourly: collect, connectivity, anomalies, admin email. Push: tests and the "Build OK" / "TESTS FAILED" email |
 | `trigger-dessmonitor.yml` | DessMonitor — collect, alert | Hourly at **:41**, **plus** 6x daily at **:51** past 03/07/11/15/19/23 UTC | The same for DessMonitor (UC10) |
 | `trigger-customer-reports.yml` | ShineMonitor — weekly customer reports | Sunday, **04:19** UTC | UC2 weekly reports and the admin summary |
 | `trigger-dessmonitor-weekly-reports.yml` | DessMonitor — weekly customer reports | Sunday, **04:29** UTC | UC2 for DessMonitor |
@@ -237,9 +257,10 @@ Four things this makes visible that the lists above do not:
   fetching the 30-day window on the live cycle is what made the dashboards go
   stale in August 2026.
 - **`trigger-shinemonitor.yml` carries eight use cases end to end.** That is
-  why it runs for 80–90 minutes and why a push waits behind it. If the Actions
-  feedback loop needs to get shorter, splitting this workflow buys far more
-  than moving crons does.
+  why it runs for 80–90 minutes. A push no longer waits behind it — since
+  2026-10-23 a push runs the `tests` job only — but a manual run still does,
+  and if that loop needs to get shorter too, splitting this workflow buys far
+  more than moving crons does.
 
 **Not part of the pipeline**, though they live beside it:
 `refresh_bms_creds.py` re-bootstraps the BMS credentials from the running
@@ -255,9 +276,11 @@ can send no write function code; and
 a manual query helper, which is worth knowing before anyone relies on it.
 
 Customer-facing email goes out **only on scheduled runs**; admin email goes out
-on every trigger, including a developer's push (UC8). The test customer
-Gayan-IMH is the exception and receives on all triggers (UC4), which is how a
-change is proven end to end without mailing the customer base.
+on scheduled and manual runs (UC8). A push sends only "Build OK" or "TESTS
+FAILED": since 2026-10-23 a push runs the test suite and nothing else. The test
+customer Gayan-IMH is the exception and also receives on manual runs (UC4),
+which is how a change is proven end to end without mailing the customer base:
+press *Run workflow*.
 
 The hourly run exists so the six-hour gate's dwell is literal rather than
 six-to-ten. It polls alarms and **nothing else**: it does not fetch CSVs, so it
@@ -268,8 +291,8 @@ two alternating fleet views that overwrote each other's state and mailed the
 admin several times a day.
 
 "ALL SYSTEMS OPERATIONAL" goes out **once per ISO week**, on the first
-scheduled run of that week. No cron is named, and a push or manual run with
-nothing wrong says nothing at all. Alerts still send whenever the content
+scheduled run of that week. No cron is named, and a manual run with nothing
+wrong says nothing at all (a push never reaches this step). Alerts still send whenever the content
 changes, on any trigger; a clean bill of health is a weekly thing.
 
 ### Rules that may not be broken
@@ -346,13 +369,13 @@ Sends personalized weekly production reports to customers every Sunday.
 
 **Admin Summary:**
 - Aggregates all customers per platform
-- Sent to admin on ALL triggers (push, manual, schedule)
+- Sent to admin on scheduled and manual runs (a push no longer runs this workflow, since 2026-10-23)
 - Platform-specific summaries (ShineMonitor vs DessMonitor)
 
 **UC8 Schedule Filter:**
-- **Admin emails:** ALWAYS sent (all triggers)
+- **Admin emails:** sent on every run (scheduled and manual)
 - **Customer emails:** ONLY on scheduled runs (Sunday)
-- **Push/manual triggers:** Admin-only mode (build verification)
+- **Manual triggers:** Admin-only mode. A push does not run this workflow at all (a push runs the test suite only, since 2026-10-23)
 
 **Test Coverage:** 16/16 PASSED (100%)
 - Core UC2: 12 tests
@@ -379,7 +402,16 @@ carries the UC4, UC5, UC6, UC7 and UC8 tests
 
 ### UC4: Test Customer Email Control
 
-Enables continuous testing of device alarm workflow using Gayan-IMH as test customer, bypassing normal 3-send limits on push/manual triggers.
+Enables continuous testing of device alarm workflow using Gayan-IMH as test customer, bypassing normal 3-send limits on manual triggers. (Until 2026-10-23 a push did this too; a push now runs the test suite only.)
+
+**Gayan-IMH is KTronics (Pvt) Ltd's own plant** (Imbulgoda 3 kW), so testing on
+it mails nobody but us. Test mode bypasses its ignored flag and the 3-send cap,
+so the `send_count` of its newest alarm in `state/device_alarms_state.json`
+rises by one on every manual run and reads far above 3. That is this use case
+working, not a stuck alarm: don't "fix" it, and anything that reads the state
+file, the #19 daily report included, should expect it. Test mode finds an alarm
+to send only because closed alarms still look open (#40); a fix there must keep
+this test firing.
 
 **Workflow Behavior:**
 
@@ -387,7 +419,7 @@ Enables continuous testing of device alarm workflow using Gayan-IMH as test cust
 - All customers: Normal alarm processing with 3-send limit
 - Gayan-IMH: Treated same as other customers (receives alarms normally)
 
-**Push/Manual Runs:**
+**Manual Runs (`workflow_dispatch`):**
 - All customers: Alarm processing skipped for emails
 - Gayan-IMH ONLY: Receives device alarm emails with test mode enabled
   - Bypasses ignored flag
@@ -396,13 +428,13 @@ Enables continuous testing of device alarm workflow using Gayan-IMH as test cust
 
 **Implementation:**
 
-**Device Alarm Processing** ([generate_device_alarms.py:413-420](src/main/java/org/ktronics/scripts/generate_device_alarms.py#L413-L420)):
+**Device Alarm Processing** (the `--test-mode` branch of `main()` in [generate_device_alarms.py](src/main/java/org/ktronics/scripts/generate_device_alarms.py)):
 - `--test-mode` flag bypasses 3-send limit and ignored flag
-- Used on push/manual triggers only ([workflow:192-206](/.github/workflows/trigger-shinemonitor.yml#L192-L206))
+- Used on manual triggers only (the device-alarm step of [trigger-shinemonitor.yml](.github/workflows/trigger-shinemonitor.yml))
 
-**Customer Email Filtering** ([workflow:252-260](/.github/workflows/trigger-shinemonitor.yml#L252-L260)):
+**Customer Email Filtering** (`--test-customer-only` in [trigger-shinemonitor.yml](.github/workflows/trigger-shinemonitor.yml)):
 - Scheduled runs: Send to ALL customers
-- Push/manual runs: `--test-customer-only` filters to Gayan-IMH only
+- Manual runs: `--test-customer-only` filters to Gayan-IMH only
 
 **Related Use Cases:**
 - UC5 (Test Mode Filter) - Filters alarms to Gayan-IMH in test mode
@@ -465,8 +497,12 @@ Controls when customer emails are sent based on workflow trigger type.
 | Trigger | Admin Email | Customer Emails |
 | ------- | ----------- | --------------- |
 | Schedule (Sunday) | Yes | Yes |
-| Push | Yes | No |
 | Manual | Yes | No |
+| Push | Does not run | Does not run |
+
+A push stopped running the weekly workflows on 2026-10-23 (a push runs the
+test suite only). The `schedule` / `!= schedule` conditions stay, because
+manual runs still need them.
 
 **Test Coverage:** 1 test
 
@@ -488,7 +524,7 @@ Hash-based state detection in the `Send system-wide status email to admin` step 
   - Alert content changed (hash mismatch)
   - Alerts appeared (empty → hash)
   - Alerts cleared (hash → different hash)
-  - Push/manual trigger (build verification)
+  - Manual trigger with alerts (a push never runs this job, since 2026-10-23)
 - **Skip email when:**
   - Scheduled run AND hash unchanged (same state)
 
@@ -538,11 +574,12 @@ There is no honest signal to rebuild that exception on, either:
 the fleet is clear, so the `ALERTS CLEARED` label has never meant what it says.
 
 The rule is now **one all-clear per ISO week, sent by the first scheduled run
-of that week**, with no exceptions. A push or manual run reports only when
-something is wrong: build verification used to send unconditionally, which put
-an empty status email in the inbox on every developer push — noise in UC1,
-whose content reports no event, and in UC9, whose cadence it ignored. Alerts
-(`exit_code == 2`) never enter the gate on any trigger.
+of that week**, with no exceptions. A manual run reports only when something
+is wrong: build verification used to send unconditionally, which put an empty
+status email in the inbox on every developer push — noise in UC1, whose
+content reports no event, and in UC9, whose cadence it ignored. Since
+2026-10-23 a push does not reach this step at all (a push runs the test suite
+only). Alerts (`exit_code == 2`) never enter the gate on any trigger.
 The week is recorded only *after* the mail goes out, so one SMTP failure
 cannot silently consume the week.
 
@@ -563,7 +600,7 @@ send cap holds that to three per alert.
 2. Calculate the SHA256 hash of the alert content (`jq -cS '{alerts, suppressed, ignored}'`), not of the whole file
 3. Load previous hash from state file
 4. Compare hashes to detect changes
-5. Send email only if changed or push/manual trigger
+5. Send email only if the content changed, or a manual run found alerts (a push never runs this step)
 6. Save current hash for next run
 
 Step 5 also applies the weekly all-clear gate described above.
@@ -1123,6 +1160,40 @@ py check_solis_alarms.py --dry-run    # print what would be mailed; no email, no
 
 ## Bug Fixes
 
+### The two-hour push (2026-10-23)
+
+**What it cost.** Every push to `main` triggered four workflows as "build
+verification": the ShineMonitor collection, the DessMonitor collection and both
+weekly report workflows. The ShineMonitor one takes 80–90 minutes (21 plants,
+fetched one after another) and its `run` job shares the `shinemonitor-commit`
+concurrency slot with the scheduled runs, so a push first waited for whichever
+scheduled run was in flight. Measured on 2026-10-21: the 16:19 push queued for
+28 minutes, then ran for 89 — the "Build OK" email arrived at 18:17, two hours
+after the push. Each push also produced a DessMonitor collection, two admin
+weekly summaries and, through UC4's test mode, a device-alarm email to
+Gayan-IMH. None of it told the developer anything the `tests` job had not said
+in the first five minutes, and none of it did anything the next scheduled run
+would not do.
+
+**How it was found.** While working out whether the Valla home dashboard
+should live in a repository of its own "to avoid the slowness", the run
+history showed the slowness was not the number of workflows at all: the Solis
+and DessMonitor jobs take seconds. It was one job, on one trigger.
+
+**The fix.** Only `trigger-shinemonitor.yml` listens to `push` now, and its
+`run` job carries `if: github.event_name != 'push'`. The "Build OK" email
+moved into the `tests` job, which is the only thing a push runs. The three
+other workflows lost their `push:` trigger. A manual run (`workflow_dispatch`)
+behaves exactly as a push used to, so end-to-end verification is still one
+click away — it is just no longer forced on every commit. UC2, UC4, UC8 and
+UC9 above say "manual" where they used to say "push/manual".
+`test_push_is_tests_only.py` fails if any of this is reverted.
+
+**What it did not fix.** Scheduled delivery. The same history showed GitHub
+creating about a third of the scheduled runs asked for, before and after the
+2026-10-22 cron move — see *Schedule* above. A push being fast does not make
+the crons fire.
+
 ### The October 2026 mail flood — four bugs, one inbox
 
 Between 11 and 16 October the admin inbox filled with repeats: "ALL SYSTEMS
@@ -1579,9 +1650,9 @@ The system runs automatically via GitHub Actions:
   - Tracks customer-specific alerts (3-day auto-ignore)
   - Sends customer-specific alert emails to individual customers
 
-- **Weekly Reports**: Every Sunday at 04:00 UTC
+- **Weekly Reports**: Every Sunday at 04:19 UTC (DessMonitor 04:29)
   - Sends personalized reports to customers with email addresses
-  - Admin receives summary on all triggers (push/manual/schedule)
+  - Admin receives summary on scheduled and manual runs (a push does not run it)
   - Customers receive reports only on scheduled runs
 
 ### Required Secrets
@@ -1714,7 +1785,7 @@ a file that is gone (#35).
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 816 tests — 760 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 823 tests — 767 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 In CI the two workstation-only MCP modules (Tuya, CCV heat pump) each skip as
 a unit — they need `requests` / the `mcp` server package, which CI does not
@@ -1778,11 +1849,11 @@ collection error that hid the whole suite* in Bug Fixes.
 | ----- | ----- | ---- |
 | No payloads in public logs | 7 | `test_no_payloads_in_public_logs.py` |
 
-**Suite visibility (45 tests):**
+**Suite visibility (46 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| One bad import must not hide the suite | 45 | `test_suite_visibility.py` |
+| One bad import must not hide the suite | 46 | `test_suite_visibility.py` |
 
 That suite parametrizes over every `test_*.py`, so its count rises by one
 with each new test file — including an untracked one sitting in the
@@ -1821,6 +1892,12 @@ parsing, subnet fallback, cache) and that only read function codes can be sent.
 | Retry, abort and conflict policy | 27 | `test_data_commit_push.py` |
 | Cumulative state merge | 8 | `test_merge_alarm_state.py` |
 | No bare push to main | 10 | `test_no_bare_push_to_main.py` |
+
+**What a push runs (6 tests):**
+
+| Suite | Tests | File |
+| ----- | ----- | ---- |
+| A push runs the test suite only | 6 | `test_push_is_tests_only.py` |
 
 **ShineMonitor (138 tests):**
 

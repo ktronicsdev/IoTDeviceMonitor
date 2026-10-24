@@ -19,10 +19,8 @@ on:
   # Manual trigger for testing
   workflow_dispatch: {}
 
-  # Build verification on every push (matches ShineMonitor pattern)
-  push:
-    branches:
-      - main
+  # No `push:` trigger (2026-10-23). A push to main runs the test suite only, in
+  # `trigger-shinemonitor.yml`; collection here is scheduled or manual.
 
 permissions:
   contents: write
@@ -354,7 +352,7 @@ jobs:
             echo "Mode: PRODUCTION (scheduled run - normal filtering)"
           else
             TEST_MODE="--test-mode"
-            echo "Mode: TEST (push/manual - includes most recent Mifrazmarso alarm for testing)"
+            echo "Mode: TEST (manual run - includes most recent Mifrazmarso alarm for testing)"
           fi
 
           python3 src/main/java/org/ktronics/scripts/generate_device_alarms.py \
