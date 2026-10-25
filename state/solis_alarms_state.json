@@ -1,34 +1,4 @@
 {
-  "1298491919450077715:1033063258230319:1D4C2@1792756299939": {
-    "send_count": 0,
-    "last_sent": null,
-    "first_seen": "2026-10-23T11:51:39.939000+00:00",
-    "ignored": false,
-    "class": "COMMS",
-    "started_at_utc": "2026-10-23T11:51:39.939000+00:00",
-    "suppressed_reason": "COMMS alarms are not mailed"
-  },
-  "1298491919449743319:1801150247230211:1D4C2@1792759087982": {
-    "send_count": 0,
-    "last_sent": null,
-    "first_seen": "2026-10-23T12:38:07.982000+00:00",
-    "ignored": false,
-    "class": "COMMS",
-    "started_at_utc": "2026-10-23T12:38:07.982000+00:00",
-    "suppressed_reason": "COMMS alarms are not mailed"
-  },
-  "1298491919450541722:1033330256140031:2012@1792852021000": {
-    "send_count": 2,
-    "last_sent": "2026-10-25T05:07:05.924371",
-    "first_seen": "2026-10-24T14:27:01+00:00",
-    "ignored": false,
-    "class": "SOC",
-    "started_at_utc": "2026-10-24T14:27:01+00:00",
-    "suppressed_reason": "dwell time is less than 6 hours",
-    "customer": "Unknown",
-    "plant": "Charitha ktronics Solar",
-    "message": "Batt_Comm_FAIL"
-  },
   "1298491919450854508:1031720256130297:1D4C2@1792858606335": {
     "send_count": 0,
     "last_sent": null,
@@ -54,6 +24,24 @@
     "ignored": false,
     "class": "COMMS",
     "started_at_utc": "2026-10-24T16:17:42.918000+00:00",
+    "suppressed_reason": "COMMS alarms are not mailed"
+  },
+  "1298491919450541722:1033330256140031:2012@1792915942000": {
+    "send_count": 0,
+    "last_sent": null,
+    "first_seen": "2026-10-25T08:12:22+00:00",
+    "ignored": false,
+    "class": "SOC",
+    "started_at_utc": "2026-10-25T08:12:22+00:00",
+    "suppressed_reason": "dwell time is less than 6 hours"
+  },
+  "1298491919450077715:1033063258230319:1D4C2@1792914712590": {
+    "send_count": 0,
+    "last_sent": null,
+    "first_seen": "2026-10-25T07:51:52.590000+00:00",
+    "ignored": false,
+    "class": "COMMS",
+    "started_at_utc": "2026-10-25T07:51:52.590000+00:00",
     "suppressed_reason": "COMMS alarms are not mailed"
   }
 }
