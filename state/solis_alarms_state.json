@@ -27,13 +27,16 @@
     "suppressed_reason": "COMMS alarms are not mailed"
   },
   "1298491919450541722:1033330256140031:2012@1792915942000": {
-    "send_count": 0,
-    "last_sent": null,
+    "send_count": 1,
+    "last_sent": "2026-10-25T14:30:29.307009",
     "first_seen": "2026-10-25T08:12:22+00:00",
     "ignored": false,
     "class": "SOC",
     "started_at_utc": "2026-10-25T08:12:22+00:00",
-    "suppressed_reason": "dwell time is less than 6 hours"
+    "suppressed_reason": "dwell time is less than 6 hours",
+    "customer": "Unknown",
+    "plant": "Charitha ktronics Solar",
+    "message": "Batt_Comm_FAIL"
   },
   "1298491919450077715:1033063258230319:1D4C2@1792914712590": {
     "send_count": 0,
