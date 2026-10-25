@@ -18,8 +18,8 @@
     "suppressed_reason": "COMMS alarms are not mailed"
   },
   "1298491919450541722:1033330256140031:2012@1792852021000": {
-    "send_count": 1,
-    "last_sent": "2026-10-24T21:05:25.553491",
+    "send_count": 2,
+    "last_sent": "2026-10-25T05:07:05.924371",
     "first_seen": "2026-10-24T14:27:01+00:00",
     "ignored": false,
     "class": "SOC",
@@ -28,15 +28,6 @@
     "customer": "Unknown",
     "plant": "Charitha ktronics Solar",
     "message": "Batt_Comm_FAIL"
-  },
-  "1298491919450494631:1801050245260039:1D4C2@1792828078773": {
-    "send_count": 0,
-    "last_sent": null,
-    "first_seen": "2026-10-24T07:47:58.773000+00:00",
-    "ignored": false,
-    "class": "COMMS",
-    "started_at_utc": "2026-10-24T07:47:58.773000+00:00",
-    "suppressed_reason": "COMMS alarms are not mailed"
   },
   "1298491919450854508:1031720256130297:1D4C2@1792858606335": {
     "send_count": 0,
