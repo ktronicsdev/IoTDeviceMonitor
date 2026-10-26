@@ -35,6 +35,7 @@ def _features_json():
             return candidate
     raise AssertionError(f"could not find {_FEATURES_REL} above {__file__}")
 
+
 import generate_device_alarms as gda  # noqa: E402
 
 # Plant-local time is UTC+5:30; `gts` is written in it.
@@ -114,7 +115,8 @@ def test_a_vendor_code_outranks_the_message_text(monkeypatch):
     utc_now = datetime(2026, 10, 8, 6, 0, tzinfo=timezone.utc)
 
     config = copy.deepcopy(gda.ALARM_TRIAGE_CONFIG)
-    config.setdefault("vendor_codes", {})["shinemonitor"] = {"9001": "HARDWARE"}
+    config.setdefault("vendor_codes", {})[
+        "shinemonitor"] = {"9001": "HARDWARE"}
     monkeypatch.setattr(gda, "ALARM_TRIAGE_CONFIG", config)
 
     # One hour old in plant-local terms, so it is held by either gate and the
@@ -286,3 +288,57 @@ def test_a_legacy_boolean_still_means_what_it_used_to(monkeypatch):
     passed = gda.triage_alarms([alarm], passed_state,
                                platform="shinemonitor", utc_now=utc_now)
     assert alarm in passed, "a legacy `false` must still mean the gate is off"
+
+
+def test_stale_suppressed_reason_is_cleared_after_escalation(monkeypatch):
+    monkeypatch.setenv("KT_FEATURE_ALERTS_SIX_HOUR_GATE", "on")
+    alarm = _alarm(gts="2026-10-08 05:30:00")
+    key = gda.create_alarm_key(alarm)
+    state = {
+        key: {
+            "send_count": 0,
+            "last_sent": None,
+            "first_seen": "2026-10-08T00:30:00+00:00",
+            "ignored": False,
+            "suppressed_reason": "dwell time is less than 6 hours",
+        }
+    }
+
+    gda.triage_alarms(
+        [alarm],
+        state,
+        platform="dessmonitor",
+        utc_now=datetime(2026, 10, 8, 12, 0, tzinfo=timezone.utc),
+    )
+
+    to_send = gda.filter_alarms_to_send([alarm], state)
+    gda.update_alarm_state(state, to_send)
+
+    assert "suppressed_reason" not in state[key]
+    assert state[key]["send_count"] == 1
+
+
+def test_triage_and_update_write_consistent_alarm_metadata(monkeypatch):
+    monkeypatch.setenv("KT_FEATURE_ALERTS_SIX_HOUR_GATE", "on")
+    alarm = _alarm()
+    state = {}
+
+    gda.triage_alarms(
+        [alarm],
+        state,
+        platform="dessmonitor",
+        utc_now=datetime(2026, 10, 8, 12, 0, tzinfo=timezone.utc),
+    )
+    key = gda.create_alarm_key(alarm)
+    fields = gda.alarm_fields(alarm)
+    expected = dict(zip(("customer", "plant", "message"), fields))
+
+    assert {field: state[key][field] for field in expected} == expected
+
+    gda.update_alarm_state(state, [{
+        "alarm": alarm,
+        "alarm_key": key,
+        "send_count": 0,
+    }])
+
+    assert {field: state[key][field] for field in expected} == expected

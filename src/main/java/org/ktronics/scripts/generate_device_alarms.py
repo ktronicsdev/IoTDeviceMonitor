@@ -41,6 +41,14 @@ def is_open_alarm(alarm):
     return alarm.get('status') in (False, 0, '0', 'false', 'False')
 
 
+def alarm_fields(alarm):
+    customer = alarm.get('customer_label', 'Unknown')
+    plant = alarm.get('plant', alarm.get('pName', 'Unknown Plant'))
+    message = alarm.get('message', alarm.get(
+        'desc', alarm.get('warnMsg', 'No message')))
+    return customer, plant, message
+
+
 def drop_excluded_alarms(alarms):
     """
     Remove alarms belonging to plants that are off the platform.
@@ -145,7 +153,8 @@ def parse_alarm_files(alarms_dir, platform=None):
 
 def triage_alarms(alarms, state, platform=None, utc_now=None):
     """Apply the six-hour gate and persist complete state for each gated alarm."""
-    vendor = 'DessMonitor' if platform == 'dessmonitor' else 'ShineMonitor'
+    vendor = {'dessmonitor': 'DessMonitor', 'solis': 'Solis'}.get(
+        platform, 'ShineMonitor')
     utc_now = utc_now or datetime.now(timezone.utc)
     actionable = []
 
@@ -156,8 +165,7 @@ def triage_alarms(alarms, state, platform=None, utc_now=None):
         if mode != 'off':
             try:
                 triage_input = dict(alarm)
-                triage_input.setdefault('message', alarm.get(
-                    'desc', alarm.get('warnMsg', '')))
+                triage_input.setdefault('message', alarm_fields(alarm)[2])
                 record = alarm_triage.normalize(
                     triage_input, vendor, ALARM_TRIAGE_CONFIG)
                 allowed, reason = alarm_triage.is_actionable(
@@ -169,10 +177,9 @@ def triage_alarms(alarms, state, platform=None, utc_now=None):
                 record = {
                     'class': 'UNKNOWN',
                     'started_at_utc': utc_now,
-                    'customer': alarm.get('customer_label', ''),
-                    'plant': alarm.get('plant', alarm.get('pName', '')),
-                    'message': alarm.get(
-                        'message', alarm.get('desc', alarm.get('warnMsg', ''))),
+                    'customer': alarm_fields(alarm)[0],
+                    'plant': alarm_fields(alarm)[1],
+                    'message': alarm_fields(alarm)[2],
                 }
 
             would_hold = not allowed
@@ -199,11 +206,9 @@ def triage_alarms(alarms, state, platform=None, utc_now=None):
         alarm_state.update({
             'class': record['class'],
             'started_at_utc': record['started_at_utc'].isoformat(),
-            'customer': alarm.get(
-                'customer_label', record.get('customer', '')),
-            'plant': alarm.get(
-                'plant', alarm.get('pName', record.get('plant', ''))),
-            'message': record.get('message', ''),
+            'customer': alarm_fields(alarm)[0],
+            'plant': alarm_fields(alarm)[1],
+            'message': alarm_fields(alarm)[2],
             'send_count': alarm_state.get('send_count', 0),
             'ignored': alarm_state.get('ignored', False),
         })
@@ -400,11 +405,10 @@ def update_alarm_state(state, alarms_to_send):
         state[alarm_key]['send_count'] += 1
         state[alarm_key]['last_sent'] = now.isoformat()
 
-        # UC7: Add human-readable customer, plant, and message
-        state[alarm_key]['customer'] = alarm.get('customer_label', 'Unknown')
-        state[alarm_key]['plant'] = alarm.get('plant', 'Unknown')
-        state[alarm_key]['message'] = alarm.get(
-            'desc', alarm.get('warnMsg', 'Unknown'))
+        customer, plant, message = alarm_fields(alarm)
+        state[alarm_key]['customer'] = customer
+        state[alarm_key]['plant'] = plant
+        state[alarm_key]['message'] = message
         state[alarm_key].pop('suppressed_reason', None)
 
         # Auto-ignore after 3 sends
