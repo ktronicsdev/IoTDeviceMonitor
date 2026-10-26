@@ -1,16 +1,4 @@
 {
-  "1298491919450541722:1033330256140031:2012@1792915942000": {
-    "send_count": 3,
-    "last_sent": "2026-10-26T01:30:51.895397",
-    "first_seen": "2026-10-25T08:12:22+00:00",
-    "ignored": true,
-    "class": "SOC",
-    "started_at_utc": "2026-10-25T08:12:22+00:00",
-    "suppressed_reason": "dwell time is less than 6 hours",
-    "customer": "Unknown",
-    "plant": "Charitha ktronics Solar",
-    "message": "Batt_Comm_FAIL"
-  },
   "1298491919449897728:18050B0248180326:1D4C2@1792932049935": {
     "send_count": 0,
     "last_sent": null,
@@ -28,15 +16,6 @@
     "class": "COMMS",
     "started_at_utc": "2026-10-25T12:37:57.318000+00:00",
     "suppressed_reason": "COMMS alarms are not mailed"
-  },
-  "1298491919450843797:1031721264210311:1015@1793019006000": {
-    "send_count": 0,
-    "last_sent": null,
-    "first_seen": "2026-10-26T12:50:06+00:00",
-    "ignored": false,
-    "class": "GRID",
-    "started_at_utc": "2026-10-26T12:50:06+00:00",
-    "suppressed_reason": "dwell time is less than 6 hours"
   },
   "1298491919450494631:1801050245260039:1D4C2@1792984768880": {
     "send_count": 0,
