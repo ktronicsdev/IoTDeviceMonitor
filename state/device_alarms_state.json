@@ -1395,5 +1395,14 @@
     "customer": "Namila-Waragoda",
     "plant": "Namila Plant",
     "message": "battery voltage is too low"
+  },
+  "1187499:D70000210184361276:6adf45fd93320501681e1075": {
+    "send_count": 0,
+    "last_sent": null,
+    "first_seen": "2026-10-26T12:22:15+00:00",
+    "ignored": false,
+    "class": "SOC",
+    "started_at_utc": "2026-10-26T12:22:15+00:00",
+    "suppressed_reason": "dwell time is less than 6 hours"
   }
 }
