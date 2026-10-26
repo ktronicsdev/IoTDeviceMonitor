@@ -148,6 +148,12 @@ def test_longest_configured_pattern_wins() -> None:
     assert alarm_triage.classify("overload", CONFIG) == "LOAD"
 
 
+def test_thermal_matcher_classifies_dessmonitor_message() -> None:
+    assert alarm_triage.classify(
+        "Over temperature happen at PV circult", CONFIG
+    ) == "THERMAL"
+
+
 def test_normalize_solis_epoch_and_open_state() -> None:
     normalized = alarm_triage.normalize(
         {
