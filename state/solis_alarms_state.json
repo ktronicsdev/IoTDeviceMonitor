@@ -1,31 +1,4 @@
 {
-  "1298491919449897728:18050B0248180326:1D4C2@1792932049935": {
-    "send_count": 0,
-    "last_sent": null,
-    "first_seen": "2026-10-25T12:40:49.935000+00:00",
-    "ignored": false,
-    "class": "COMMS",
-    "started_at_utc": "2026-10-25T12:40:49.935000+00:00",
-    "suppressed_reason": "COMMS alarms are not mailed"
-  },
-  "1298491919449884234:1811040248060078:1D4C2@1792931877318": {
-    "send_count": 0,
-    "last_sent": null,
-    "first_seen": "2026-10-25T12:37:57.318000+00:00",
-    "ignored": false,
-    "class": "COMMS",
-    "started_at_utc": "2026-10-25T12:37:57.318000+00:00",
-    "suppressed_reason": "COMMS alarms are not mailed"
-  },
-  "1298491919450494631:1801050245260039:1D4C2@1792984768880": {
-    "send_count": 0,
-    "last_sent": null,
-    "first_seen": "2026-10-26T03:19:28.880000+00:00",
-    "ignored": false,
-    "class": "COMMS",
-    "started_at_utc": "2026-10-26T03:19:28.880000+00:00",
-    "suppressed_reason": "COMMS alarms are not mailed"
-  },
   "1298491919449844065:1805060245220017:1D4C2@1792984556161": {
     "send_count": 0,
     "last_sent": null,
