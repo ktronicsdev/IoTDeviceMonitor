@@ -42,7 +42,8 @@
       "device disconnected",
       "datalogger lost",
       "no communication",
-      "lost connection"
+      "lost connection",
+      "loss of internet connection"
     ],
     "SOC": [
       "battery voltage is too low",
@@ -82,7 +83,15 @@
   "vendor_codes": {
     "_comment": "Where a portal gives a numeric code, match on it first — it is stabler than the message string. Incomplete; grow it from real UNKNOWN traffic.",
     "solis": {
+      "_comment": "101x are grid faults as Solis words them: 1010 OV-G-V, 1011 UV-G-V/UN-G-V, 1012 OV-G-F, 1013 UN-G-F, 1015 NO-Grid, 1019 Uac-Unstable. 1D4C2 is SolisCloud's own 'Loss of internet connection'. Seen in the fleet's alarmList, Oct 2026.",
+      "1010": "GRID",
+      "1011": "GRID",
+      "1012": "GRID",
+      "1013": "GRID",
       "1015": "GRID",
+      "1019": "GRID",
+      "1057": "LOAD",
+      "1D4C2": "COMMS",
       "2012": "SOC"
     }
   }
