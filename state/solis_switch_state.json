@@ -1,10 +1,10 @@
 {
   "1308675217949897483": {
     "label": "Ktronics Imbulgoda",
-    "last_check": "2026-10-26T21:01:01.361363+00:00",
+    "last_check": "2026-10-27T01:28:37.023565+00:00",
     "last_state": 1,
-    "last_pac": 0.0,
-    "last_reason": "on/off register (cid 52) = 190",
+    "last_pac": 0.395,
+    "last_reason": "outside core daylight window \u2014 heuristic skipped",
     "off": false
   }
 }
