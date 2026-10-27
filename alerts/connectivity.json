@@ -264,9 +264,7 @@
     }
   ],
   "excluded": [],
-  "generated_at": "2026-10-27T14:05:18.123462Z",
+  "generated_at": "2026-10-27T17:16:46.951800Z",
   "fleet_wide_outage": false,
-  "alerting_now": [
-    "troy-troy-hybrid-3kw"
-  ]
+  "alerting_now": []
 }
