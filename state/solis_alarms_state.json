@@ -1,20 +1,11 @@
 {
-  "1298491919449844065:1805060245220017:1D4C2@1792984556161": {
+  "1298491919450765633:1031720256130024:1015@1793171065000": {
     "send_count": 0,
     "last_sent": null,
-    "first_seen": "2026-10-26T03:15:56.161000+00:00",
+    "first_seen": "2026-10-28T07:04:25+00:00",
     "ignored": false,
-    "class": "COMMS",
-    "started_at_utc": "2026-10-26T03:15:56.161000+00:00",
-    "suppressed_reason": "COMMS alarms are not mailed"
-  },
-  "1298491919449854332:1805060245220043:1D4C2@1792984416536": {
-    "send_count": 0,
-    "last_sent": null,
-    "first_seen": "2026-10-26T03:13:36.536000+00:00",
-    "ignored": false,
-    "class": "COMMS",
-    "started_at_utc": "2026-10-26T03:13:36.536000+00:00",
-    "suppressed_reason": "COMMS alarms are not mailed"
+    "class": "GRID",
+    "started_at_utc": "2026-10-28T07:04:25+00:00",
+    "suppressed_reason": "dwell time is less than 6 hours"
   }
 }
