@@ -41,6 +41,14 @@ def is_open_alarm(alarm):
     return alarm.get('status') in (False, 0, '0', 'false', 'False')
 
 
+def alarm_fields(alarm):
+    customer = alarm.get('customer_label', 'Unknown')
+    plant = alarm.get('plant', alarm.get('pName', 'Unknown Plant'))
+    message = alarm.get('message', alarm.get(
+        'desc', alarm.get('warnMsg', 'No message')))
+    return customer, plant, message
+
+
 def drop_excluded_alarms(alarms):
     """
     Remove alarms belonging to plants that are off the platform.
@@ -144,7 +152,7 @@ def parse_alarm_files(alarms_dir, platform=None):
 
 
 def triage_alarms(alarms, state, platform=None, utc_now=None):
-    """Apply the six-hour gate and record held alarms without changing send rules."""
+    """Apply the six-hour gate and persist complete state for each gated alarm."""
     vendor = {'dessmonitor': 'DessMonitor', 'solis': 'Solis'}.get(
         platform, 'ShineMonitor')
     utc_now = utc_now or datetime.now(timezone.utc)
@@ -157,8 +165,7 @@ def triage_alarms(alarms, state, platform=None, utc_now=None):
         if mode != 'off':
             try:
                 triage_input = dict(alarm)
-                triage_input.setdefault('message', alarm.get(
-                    'desc', alarm.get('warnMsg', '')))
+                triage_input.setdefault('message', alarm_fields(alarm)[2])
                 record = alarm_triage.normalize(
                     triage_input, vendor, ALARM_TRIAGE_CONFIG)
                 allowed, reason = alarm_triage.is_actionable(
@@ -167,7 +174,13 @@ def triage_alarms(alarms, state, platform=None, utc_now=None):
                 reason = f'could not triage alarm; passing through: {error}'
                 print(f'Warning: {reason}', file=sys.stderr)
                 allowed = True
-                record = {'class': 'UNKNOWN', 'started_at_utc': utc_now}
+                record = {
+                    'class': 'UNKNOWN',
+                    'started_at_utc': utc_now,
+                    'customer': alarm_fields(alarm)[0],
+                    'plant': alarm_fields(alarm)[1],
+                    'message': alarm_fields(alarm)[2],
+                }
 
             would_hold = not allowed
             if mode == 'dry_run':
@@ -180,11 +193,9 @@ def triage_alarms(alarms, state, platform=None, utc_now=None):
             allowed = True
             reason = 'six_hour_gate disabled'
 
-        if allowed and not would_hold:
+        if mode == 'off':
             actionable.append(alarm)
             continue
-        if allowed:
-            actionable.append(alarm)
 
         alarm_state = state.setdefault(alarm_key, {
             'send_count': 0,
@@ -195,8 +206,21 @@ def triage_alarms(alarms, state, platform=None, utc_now=None):
         alarm_state.update({
             'class': record['class'],
             'started_at_utc': record['started_at_utc'].isoformat(),
-            'suppressed_reason': reason,
+            'customer': alarm_fields(alarm)[0],
+            'plant': alarm_fields(alarm)[1],
+            'message': alarm_fields(alarm)[2],
+            'send_count': alarm_state.get('send_count', 0),
+            'ignored': alarm_state.get('ignored', False),
         })
+        if would_hold:
+            alarm_state['suppressed_reason'] = reason
+        else:
+            # A previously held alarm has now passed the gate or is being
+            # mailed; its old suppression reason is no longer true.
+            alarm_state.pop('suppressed_reason', None)
+
+        if allowed:
+            actionable.append(alarm)
 
     return actionable
 
@@ -238,7 +262,8 @@ def filter_alarms_to_send(alarms, state, max_sends=3):
             continue
 
         # Skip if already sent max times
-        if alarm_state['send_count'] >= max_sends:
+        send_count = alarm_state.get('send_count', 0)
+        if send_count >= max_sends:
             alarm_state['ignored'] = True
             state[alarm_key] = alarm_state
             continue
@@ -256,7 +281,7 @@ def filter_alarms_to_send(alarms, state, max_sends=3):
         alarms_to_send.append({
             'alarm': alarm,
             'alarm_key': alarm_key,
-            'send_count': alarm_state['send_count']
+            'send_count': send_count
         })
 
     return alarms_to_send
@@ -380,11 +405,11 @@ def update_alarm_state(state, alarms_to_send):
         state[alarm_key]['send_count'] += 1
         state[alarm_key]['last_sent'] = now.isoformat()
 
-        # UC7: Add human-readable customer, plant, and message
-        state[alarm_key]['customer'] = alarm.get('customer_label', 'Unknown')
-        state[alarm_key]['plant'] = alarm.get('plant', 'Unknown')
-        state[alarm_key]['message'] = alarm.get(
-            'desc', alarm.get('warnMsg', 'Unknown'))
+        customer, plant, message = alarm_fields(alarm)
+        state[alarm_key]['customer'] = customer
+        state[alarm_key]['plant'] = plant
+        state[alarm_key]['message'] = message
+        state[alarm_key].pop('suppressed_reason', None)
 
         # Auto-ignore after 3 sends
         if state[alarm_key]['send_count'] >= 3:

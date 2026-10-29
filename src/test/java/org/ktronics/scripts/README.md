@@ -11,7 +11,7 @@ py -m pytest integration/ -v
 
 ## Test Summary
 
-**Total: 767 tests** (711 passed on Windows, 56 skipped - bash and API tests run in CI). CI reports 744: the Tuya module needs `requests`, which CI does not install, so it skips as a unit.
+**Total: 747 tests** (711 passed on Windows, 56 skipped - bash and API tests run in CI). CI reports 744: the Tuya module needs `requests`, which CI does not install, so it skips as a unit.
 
 The count is what `py -m pytest integration/ -q` prints. If a change moves it,
 update this file and the root `Readme.md` in the same commit.
@@ -178,7 +178,7 @@ arithmetically rather than via the browser's IANA zone database.
 - Rendered (needs node): runs each page's real JS in a vm under a frozen clock and reads
   the header back - from five viewer timezones, and against a browser that ignores IANA
   zones (which is what showed 11:27:53 UTC beside a 16:53 SL device stamp on 2026-09-07)
-- Staleness: a fresh device stamp must read a small *positive* age, so a stale plant can
+- Staleness: a fresh device stamp must read a small _positive_ age, so a stale plant can
   never keep a green "Online" dot when the page is opened outside Colombo
 - Includes a guard-on-the-guard: the pre-fix page is rebuilt and the harness must fail on it
 
