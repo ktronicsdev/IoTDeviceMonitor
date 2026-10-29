@@ -83,9 +83,9 @@
     "ignored": false,
     "kind": "zeros_only",
     "last_data": "2026-10-29",
-    "last_sent": "2026-10-29T00:11:50.390091",
+    "last_sent": "2026-10-29T10:12:25.560000",
     "plant": "troy-troy-hybrid-3kw",
-    "send_count": 1
+    "send_count": 2
   },
   "upulatheja-3kw-pro-kadawath": {
     "customer": "Upulatheja",
