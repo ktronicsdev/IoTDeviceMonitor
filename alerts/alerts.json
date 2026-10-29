@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-29T18:16:23.431294Z",
+  "generated_at": "2026-10-29T21:07:11.007026Z",
   "alerts": [],
   "suppressed": [
     {
@@ -63,15 +63,6 @@
       ],
       "link_down": true,
       "days_stale": 120
-    },
-    {
-      "plant_key": "troy-troy-hybrid-3kw",
-      "reason": "ignored: month total == 0 for 1 consecutive month(s)",
-      "months": [
-        "2026-09"
-      ],
-      "link_down": false,
-      "days_stale": null
     },
     {
       "plant_key": "upulatheja-3kw-pro-kadawath",
