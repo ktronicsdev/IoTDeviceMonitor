@@ -8,13 +8,13 @@
     "started_at_utc": "2026-10-28T03:14:27.665000+00:00",
     "suppressed_reason": "COMMS alarms are not mailed"
   },
-  "1298491919450843797:1031721264210311:1015@1793279846000": {
+  "1298491919450077715:1033063258230319:1D4C2@1793277897610": {
     "send_count": 0,
     "last_sent": null,
-    "first_seen": "2026-10-29T13:17:26+00:00",
+    "first_seen": "2026-10-29T12:44:57.610000+00:00",
     "ignored": false,
-    "class": "GRID",
-    "started_at_utc": "2026-10-29T13:17:26+00:00",
-    "suppressed_reason": "dwell time is less than 6 hours"
+    "class": "COMMS",
+    "started_at_utc": "2026-10-29T12:44:57.610000+00:00",
+    "suppressed_reason": "COMMS alarms are not mailed"
   }
 }
