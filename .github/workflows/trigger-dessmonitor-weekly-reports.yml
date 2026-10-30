@@ -72,6 +72,7 @@ jobs:
           ${{ secrets.DESSMONITOR_CREDENTIALS_JSON }}
           EOF
           chmod 600 src/main/java/org/ktronics/config/dessmonitor_credentials.json
+          bash src/main/java/org/ktronics/scripts/mask_credentials.sh src/main/java/org/ktronics/config/dessmonitor_credentials.json
 
       - name: Fetch DessMonitor yearly data (for admin summary)
         shell: bash

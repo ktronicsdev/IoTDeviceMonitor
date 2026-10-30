@@ -5,6 +5,7 @@ Tests authentication and API calls using shinemonitor_common.sh
 """
 
 import pytest
+import os
 import shutil
 import subprocess
 import json
@@ -46,7 +47,7 @@ class TestShineMonitorAPI:
         """Get test credentials"""
         return load_test_credentials()
 
-    def run_bash_script(self, script_content, timeout=30):
+    def run_bash_script(self, script_content, timeout=30, creds=None):
         """
         Execute bash script and return output.
 
@@ -66,17 +67,32 @@ class TestShineMonitorAPI:
 
         Both skip. A wrong password does not look like either: it comes back
         with an error code in a body, so a real credential problem still fails.
+
+        Credentials go in as the environment variables TEST_USERNAME,
+        TEST_PASSWORD and TEST_COMPANY_KEY, never as text in the script. When
+        an assertion on the result fails, pytest prints the whole
+        CompletedProcess, and that includes the script. A password written
+        into the script went with it, into a public log, 12 times between 19
+        and 29 Oct 2026.
         """
         # Skip on Windows - these tests require Unix environment
         if platform.system() == 'Windows':
             pytest.skip("Bash script tests require Unix environment (Linux/macOS). Run in GitHub Actions.")
+
+        env = None
+        if creds:
+            env = {**os.environ,
+                   "TEST_USERNAME": creds["username"],
+                   "TEST_PASSWORD": creds["password"],
+                   "TEST_COMPANY_KEY": creds["company_key"]}
 
         try:
             result = subprocess.run(
                 ['bash', '-c', script_content],
                 capture_output=True,
                 text=True,
-                timeout=timeout
+                timeout=timeout,
+                env=env
             )
         except subprocess.TimeoutExpired:
             pytest.skip(
@@ -140,6 +156,43 @@ class TestShineMonitorAPI:
             self._vendor_gave_nothing(result, "plant id")
         return pid
 
+    def alarms_fetched_or_skip(self, result):
+        """
+        Skip when check_device_alarms.sh got nothing back from the alarm fetch.
+
+        Auth succeeded, then webQueryPlantsWarning sent no body inside curl's
+        budget, and the script exits 1 printing `err: )` with no code and
+        nothing on stderr. That broke the build 4 times on 28-29 Oct 2026
+        while test_query_plants_warning_api, making the same call, skipped. A
+        body that carries an error code (`err: 8`) is not the vendor being
+        silent; it is left to fail.
+        """
+        if result.returncode != 0 and "Failed to fetch alarms (err: )" in (result.stdout or ""):
+            self._vendor_gave_nothing(result, "alarm list")
+
+    def progress_or_skip(self, result, what):
+        """
+        Pass on `AUTH OK` or `DONE` in a fetch script's first lines, skip when
+        the vendor refused every account in them, fail on anything else.
+
+        The scripts merge stderr into stdout, so a broken script is recognised
+        there. Before this the tests piped the lines through `grep`, and a
+        vendor refusing the first accounts made grep exit 1 with nothing to
+        show - indistinguishable from a broken script. That broke the build
+        once, on 29 Oct 2026 14:13.
+        """
+        out = result.stdout or ""
+        if "AUTH OK" in out or "DONE" in out:
+            return
+        broken = [s for s in self._SCRIPT_BROKEN if s in out]
+        if broken:
+            pytest.fail(f"this is our script, not the vendor ({broken[0]}): {out}")
+        if "AUTH FAIL" in out:
+            pytest.skip(
+                f"ShineMonitor refused every account the {what} reached; "
+                f"that is the vendor's answer, not this repository's code")
+        pytest.fail(f"{what} printed neither AUTH OK, DONE nor AUTH FAIL: {out!r}")
+
     def test_auth_email_function(self, test_creds):
         """Test shinemonitor_auth_email authentication function"""
         script = f"""
@@ -147,7 +200,7 @@ class TestShineMonitorAPI:
         SCRIPT_DIR="{SCRIPTS_DIR}"
         source "${{SCRIPT_DIR}}/shinemonitor_common.sh"
 
-        if shinemonitor_auth_email "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}"; then
+        if shinemonitor_auth_email "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY"; then
             echo "AUTH_SUCCESS"
             echo "TOKEN:${{SM_TOKEN:0:16}}"
             echo "SECRET:${{SM_SECRET:0:16}}"
@@ -158,7 +211,7 @@ class TestShineMonitorAPI:
         fi
         """
 
-        result = self.run_bash_script(script)
+        result = self.run_bash_script(script, creds=test_creds)
 
         assert result.returncode == 0, f"Authentication failed: {result.stderr}"
         assert "AUTH_SUCCESS" in result.stdout
@@ -176,15 +229,15 @@ class TestShineMonitorAPI:
         # accounts need authSource, and authEmail is the method ShineMonitor
         # refuses from CI runners. Testing authEmail alone here asserted a
         # path the system deliberately does not rely on alone.
-        if ! shinemonitor_auth_email "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}" >&2; then
-            shinemonitor_auth_source "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}" >&2
+        if ! shinemonitor_auth_email "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY" >&2; then
+            shinemonitor_auth_source "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY" >&2
         fi
 
         response=$(shinemonitor_api_call "queryPlants" "")
         echo "$response"
         """
 
-        result = self.run_bash_script(script)
+        result = self.run_bash_script(script, creds=test_creds)
 
         assert result.returncode == 0, f"API call failed: {result.stderr}"
 
@@ -206,15 +259,15 @@ class TestShineMonitorAPI:
         # accounts need authSource, and authEmail is the method ShineMonitor
         # refuses from CI runners. Testing authEmail alone here asserted a
         # path the system deliberately does not rely on alone.
-        if ! shinemonitor_auth_email "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}" >&2; then
-            shinemonitor_auth_source "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}" >&2
+        if ! shinemonitor_auth_email "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY" >&2; then
+            shinemonitor_auth_source "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY" >&2
         fi
 
         plants=$(shinemonitor_api_call "queryPlants" "")
         echo "$plants" | grep -o '"pid":[0-9]*' | head -1 | grep -o '[0-9]*'
         """
 
-        result = self.run_bash_script(get_plant_script)
+        result = self.run_bash_script(get_plant_script, creds=test_creds)
         plant_id = self.plant_id_or_skip(result)
 
         # Now test monthly energy API
@@ -227,15 +280,15 @@ class TestShineMonitorAPI:
         # accounts need authSource, and authEmail is the method ShineMonitor
         # refuses from CI runners. Testing authEmail alone here asserted a
         # path the system deliberately does not rely on alone.
-        if ! shinemonitor_auth_email "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}" >&2; then
-            shinemonitor_auth_source "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}" >&2
+        if ! shinemonitor_auth_email "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY" >&2; then
+            shinemonitor_auth_source "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY" >&2
         fi
 
         response=$(shinemonitor_api_call "queryPlantEnergyMonth" "plantid={plant_id}&date=2026-01")
         echo "$response"
         """
 
-        result = self.run_bash_script(script)
+        result = self.run_bash_script(script, creds=test_creds)
 
         assert result.returncode == 0, f"API call failed: {result.stderr}"
 
@@ -254,15 +307,15 @@ class TestShineMonitorAPI:
         # accounts need authSource, and authEmail is the method ShineMonitor
         # refuses from CI runners. Testing authEmail alone here asserted a
         # path the system deliberately does not rely on alone.
-        if ! shinemonitor_auth_email "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}" >&2; then
-            shinemonitor_auth_source "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}" >&2
+        if ! shinemonitor_auth_email "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY" >&2; then
+            shinemonitor_auth_source "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY" >&2
         fi
 
         plants=$(shinemonitor_api_call "queryPlants" "")
         echo "$plants" | grep -o '"pid":[0-9]*' | head -1 | grep -o '[0-9]*'
         """
 
-        result = self.run_bash_script(get_plant_script)
+        result = self.run_bash_script(get_plant_script, creds=test_creds)
         plant_id = self.plant_id_or_skip(result)
 
         # Now test yearly energy API
@@ -275,15 +328,15 @@ class TestShineMonitorAPI:
         # accounts need authSource, and authEmail is the method ShineMonitor
         # refuses from CI runners. Testing authEmail alone here asserted a
         # path the system deliberately does not rely on alone.
-        if ! shinemonitor_auth_email "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}" >&2; then
-            shinemonitor_auth_source "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}" >&2
+        if ! shinemonitor_auth_email "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY" >&2; then
+            shinemonitor_auth_source "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY" >&2
         fi
 
         response=$(shinemonitor_api_call "queryPlantEnergyYear" "plantid={plant_id}&year=2026")
         echo "$response"
         """
 
-        result = self.run_bash_script(script)
+        result = self.run_bash_script(script, creds=test_creds)
 
         assert result.returncode == 0, f"API call failed: {result.stderr}"
 
@@ -301,15 +354,15 @@ class TestShineMonitorAPI:
         # accounts need authSource, and authEmail is the method ShineMonitor
         # refuses from CI runners. Testing authEmail alone here asserted a
         # path the system deliberately does not rely on alone.
-        if ! shinemonitor_auth_email "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}" >&2; then
-            shinemonitor_auth_source "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}" >&2
+        if ! shinemonitor_auth_email "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY" >&2; then
+            shinemonitor_auth_source "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY" >&2
         fi
 
         response=$(shinemonitor_api_call "webQueryPlantsWarning" "date=")
         echo "$response"
         """
 
-        result = self.run_bash_script(script)
+        result = self.run_bash_script(script, creds=test_creds)
 
         assert result.returncode == 0, f"API call failed: {result.stderr}"
 
@@ -326,10 +379,11 @@ class TestShineMonitorAPI:
             script = f"""
             set -euo pipefail
             cd "{SCRIPTS_DIR}"
-            bash check_device_alarms.sh "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}" "{output_file}"
+            bash check_device_alarms.sh "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY" "{output_file}"
             """
 
-            result = self.run_bash_script(script)
+            result = self.run_bash_script(script, creds=test_creds)
+            self.alarms_fetched_or_skip(result)
 
             assert result.returncode == 0, f"Script failed: {result.stderr}"
             assert Path(output_file).exists(), "Output file not created"
@@ -345,33 +399,39 @@ class TestShineMonitorAPI:
             Path(output_file).unlink(missing_ok=True)
 
     def test_check_monthly_script(self):
-        """Test check_shinemonitor_monthly.sh"""
+        """
+        Test check_shinemonitor_monthly.sh
+
+        Only the first 20 lines, like the yearly test: the whole fleet rarely
+        fits the 90 s budget, so the old full run skipped in 18 of the 21
+        runs to 30 Oct 2026 and seldom tested anything.
+        """
         script = f"""
-        set -euo pipefail
+        set -uo pipefail
         cd "{SCRIPTS_DIR}"
-        bash check_shinemonitor_monthly.sh "{CREDS_FILE}" "2026-01" 2>&1 | grep -E "(AUTH OK|DONE)"
+        timeout 60 bash check_shinemonitor_monthly.sh "{CREDS_FILE}" "2026-01" 2>&1 | head -20
         """
 
-        # Use 90-second timeout (processes 20+ accounts)
         result = self.run_bash_script(script, timeout=90)
 
-        assert result.returncode == 0, f"Monthly script failed: {result.stderr}"
-        assert "AUTH OK" in result.stdout or "DONE" in result.stdout
+        # The exit status says nothing here: 124 is `timeout`, 141 is SIGPIPE
+        # from head closing early. The lines are what count.
+        self.progress_or_skip(result, "monthly script")
 
     def test_check_yearly_script(self):
         """Test check_shinemonitor_yearly.sh"""
         script = f"""
-        set -euo pipefail
+        set -uo pipefail
         cd "{SCRIPTS_DIR}"
-        timeout 60 bash check_shinemonitor_yearly.sh "{CREDS_FILE}" "2026" 2>&1 | head -20 | grep -E "(AUTH OK|DONE)"
+        timeout 60 bash check_shinemonitor_yearly.sh "{CREDS_FILE}" "2026" 2>&1 | head -20
         """
 
         # Use 90-second timeout (processes 20+ accounts)
         result = self.run_bash_script(script, timeout=90)
 
-        # Allow timeout (124) and SIGPIPE (141 from head closing pipe early)
-        assert result.returncode in [0, 124, 141], f"Yearly script failed: {result.stderr}"
-        assert "AUTH OK" in result.stdout or "DONE" in result.stdout
+        # The exit status says nothing here: 124 is `timeout`, 141 is SIGPIPE
+        # from head closing early. The lines are what count.
+        self.progress_or_skip(result, "yearly script")
 
 
 if __name__ == '__main__':
@@ -468,6 +528,57 @@ class TestVendorConditionHandling:
         api = TestShineMonitorAPI()
         assert api.plant_id_or_skip(self._result(stdout="12345\n")) == "12345"
 
+    # --- the alarm script and the fetch scripts -------------------------
+
+    _ALARM_EMPTY = ("✓ Authenticated successfully (token: 1aa5dc74...)\n"
+                    "[2/3] Fetching open device alarms...\n"
+                    "❌ Failed to fetch alarms (err: )\n"
+                    "   response was 0 bytes; body withheld - see #4\n")
+
+    def test_an_empty_alarm_fetch_skips(self):
+        """The exact output of the 29 Oct 22:55 failure."""
+        api = TestShineMonitorAPI()
+        assert self._outcome(api.alarms_fetched_or_skip, self._result(
+            stdout=self._ALARM_EMPTY, returncode=1)) == "skip"
+
+    def test_an_alarm_fetch_with_an_error_code_is_not_skipped(self):
+        """A code in the body is an answer, not silence; the caller's assert fails it."""
+        api = TestShineMonitorAPI()
+        out = self._ALARM_EMPTY.replace("(err: )", "(err: 8)")
+        assert self._outcome(api.alarms_fetched_or_skip, self._result(
+            stdout=out, returncode=1)) == "returned"
+
+    def test_an_empty_alarm_fetch_from_a_broken_script_fails(self):
+        api = TestShineMonitorAPI()
+        assert self._outcome(api.alarms_fetched_or_skip, self._result(
+            stdout=self._ALARM_EMPTY, returncode=1,
+            stderr="shinemonitor_api_call: command not found")) == "fail"
+
+    def test_fetch_script_progress_passes(self):
+        api = TestShineMonitorAPI()
+        assert self._outcome(api.progress_or_skip, self._result(
+            stdout="Account: a\n  AUTH FAIL\nAccount: b\n  AUTH OK\n",
+            returncode=141), "yearly script") == "returned"
+
+    def test_fetch_script_refused_everywhere_skips(self):
+        """29 Oct 14:13: the vendor refused every account in the first lines."""
+        api = TestShineMonitorAPI()
+        assert self._outcome(api.progress_or_skip, self._result(
+            stdout="== ShineMonitor YEARLY CHECK ==\nAccount: a\n  AUTH FAIL\n",
+            returncode=124), "yearly script") == "skip"
+
+    def test_fetch_script_broken_fails(self):
+        """stderr is merged into stdout there, so that is where breakage shows."""
+        api = TestShineMonitorAPI()
+        assert self._outcome(api.progress_or_skip, self._result(
+            stdout="check_shinemonitor_yearly.sh: line 9: need: command not found\n",
+            returncode=127), "yearly script") == "fail"
+
+    def test_fetch_script_silent_fails(self):
+        api = TestShineMonitorAPI()
+        assert self._outcome(api.progress_or_skip, self._result(
+            stdout="", returncode=1), "yearly script") == "fail"
+
     # --- the call sites, not just the helper ----------------------------
 
     def _live_test_source(self):
@@ -503,6 +614,12 @@ class TestVendorConditionHandling:
         assert not offenders, (
             "a test asserts on the plant id directly instead of via "
             "plant_id_or_skip():\n  " + "\n  ".join(offenders))
+
+    def test_the_alarm_script_test_uses_its_helper(self):
+        """A reverted call site brings back the 28-29 Oct red builds."""
+        source = self._live_test_source()
+        body = source.split("def test_check_device_alarms_script")[1].split("\n    def ")[0]
+        assert "self.alarms_fetched_or_skip(result)" in body
 
 
 class TestVendorConditionReproduced:
@@ -622,3 +739,79 @@ class TestVendorConditionReproduced:
     def test_a_good_body_still_parses(self):
         result = self._run_plain_call('{"err":0,"dat":{"total":7}}')
         assert TestShineMonitorAPI().parse_api_response(result)["dat"]["total"] == 7
+
+
+class TestRetryOnSilence:
+    """
+    The one retry in shinemonitor_common.sh, against a stubbed curl.
+
+    From 27 Oct 2026 about four calls in ten from a GitHub runner got no
+    answer at all inside curl's 25 s, and every run missed alarms and data for
+    9-16 of the 23 accounts. The hangs interleave with successes, so the two
+    calls that can come back empty try once more. These pin that: one retry on
+    silence, none on an answer, never a third, and a shorter first budget.
+    """
+
+    BASH = shutil.which("bash")
+
+    pytestmark = pytest.mark.skipif(
+        BASH is None, reason="needs bash; present in CI and in Git Bash")
+
+    def _run(self, tmp_path, call, silent, body):
+        calls = tmp_path / "calls"
+        script = (
+            "set -euo pipefail\n"
+            f'source "{(SCRIPTS_DIR / "shinemonitor_common.sh").as_posix()}"\n'
+            "SM_RETRY_PAUSE_SECS=0\n"
+            f'calls="{calls.as_posix()}"\n'
+            # A function shadows the real curl: no network, and no PATH games
+            # that differ between Linux and Git Bash.
+            "curl() {\n"
+            '  local n; n=$(( $(cat "$calls" 2>/dev/null || echo 0) + 1 ))\n'
+            '  echo "$n" > "$calls"\n'
+            '  echo "$*" | grep -o -- "--max-time [0-9]*" >> "$calls.budgets"\n'
+            f'  if [ "$n" -le {silent} ]; then return 28; fi\n'
+            f"  printf '%s' '{body}'\n"
+            "}\n"
+            + call
+        )
+        result = subprocess.run([self.BASH, "--noprofile", "--norc", "-c", script],
+                                capture_output=True, text=True, timeout=60)
+        tries = int(calls.read_text().strip()) if calls.exists() else 0
+        budgets = (tmp_path / "calls.budgets").read_text().split("\n") \
+            if (tmp_path / "calls.budgets").exists() else []
+        budgets = [b.split()[-1] for b in budgets if b.strip()]
+        return result, tries, budgets
+
+    _API = 'SM_TOKEN=t; SM_SECRET=s\nshinemonitor_api_call "queryPlants" ""\n'
+    _BODY = '{"err":0,"dat":{"total":7}}'
+
+    def test_a_silent_first_try_is_retried(self, tmp_path):
+        result, tries, budgets = self._run(tmp_path, self._API, 1, self._BODY)
+        assert result.returncode == 0, result.stderr
+        assert result.stdout.strip() == self._BODY
+        assert tries == 2
+        assert budgets == ["15", "25"], (
+            f"budgets {budgets}: the first try is meant to be short so a hang "
+            f"that is retried costs little more than one 25 s hang did")
+
+    def test_an_answer_is_not_retried(self, tmp_path):
+        result, tries, _ = self._run(tmp_path, self._API, 0, self._BODY)
+        assert result.stdout.strip() == self._BODY
+        assert tries == 1
+
+    def test_it_gives_up_after_the_second_try(self, tmp_path):
+        """Two hangs: an empty answer, as before, for the callers' own checks."""
+        result, tries, _ = self._run(tmp_path, self._API, 9, self._BODY)
+        assert result.returncode == 0, result.stderr
+        assert result.stdout.strip() == ""
+        assert tries == 2
+
+    def test_auth_email_retries_too(self, tmp_path):
+        call = ('shinemonitor_auth_email "u" "p" "k"\n'
+                'echo "TOKEN=$SM_TOKEN SECRET=$SM_SECRET"\n')
+        body = '{"err":0,"dat":{"token":"tok1","secret":"sec1"}}'
+        result, tries, budgets = self._run(tmp_path, call, 1, body)
+        assert result.returncode == 0, result.stderr
+        assert "TOKEN=tok1 SECRET=sec1" in result.stdout
+        assert tries == 2 and budgets == ["15", "25"]

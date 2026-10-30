@@ -4,6 +4,16 @@
 # API Configuration
 API_URL="https://web.shinemonitor.com/public/"
 
+# ShineMonitor sometimes never answers a GitHub runner. From 2026-10-27 about
+# four calls in ten from a runner hung until curl gave up, while a good call
+# returns in under a second (the 2026-10-29 22:55 run: 14 hangs at exactly
+# 25.0 s, every success under 2 s). The hangs are spread across accounts and
+# interleave with successes, so the two calls below that can come back empty
+# try once more, signed afresh, a few seconds later. The first try gets 15 s
+# instead of 25, so a hang the retry recovers costs ~19 s and one it does not
+# costs 43 s, against 25 s and no data before.
+SM_RETRY_PAUSE_SECS="${SM_RETRY_PAUSE_SECS:-3}"
+
 # Common utility functions
 sha1hex() { printf "%s" "$1" | sha1sum | awk '{print $1}'; }
 salt_ms() { date +%s%3N; }
@@ -81,15 +91,19 @@ shinemonitor_auth_email() {
   local password="${2:?Missing password}"
   local company_key="${3:?Missing company_key}"
 
-  local salt pw_sha1 tail sign auth_url auth_resp token secret
+  local salt pw_sha1 tail sign auth_url auth_resp token secret try max_time=15
 
-  salt=$(salt_ms)
   pw_sha1=$(sha1hex "$password")
   tail="&action=authEmail&usr=$(urlencode "${username}")&company-key=${company_key}"
-  sign=$(sha1hex "${salt}${pw_sha1}${tail}")
 
-  auth_url="${API_URL}?sign=${sign}&salt=${salt}&action=authEmail&usr=$(urlencode "${username}")&company-key=${company_key}"
-  auth_resp=$(curl -sS --max-time 25 "$auth_url" 2>/dev/null || true)
+  for try in 1 2; do
+    salt=$(salt_ms)
+    sign=$(sha1hex "${salt}${pw_sha1}${tail}")
+    auth_url="${API_URL}?sign=${sign}&salt=${salt}&action=authEmail&usr=$(urlencode "${username}")&company-key=${company_key}"
+    auth_resp=$(curl -sS --max-time "$max_time" "$auth_url" 2>/dev/null || true)
+    if [ -n "$auth_resp" ]; then break; fi
+    if [ "$try" = 1 ]; then sleep "$SM_RETRY_PAUSE_SECS"; max_time=25; fi
+  done
 
   if [ -z "$auth_resp" ]; then
     echo "❌ Authentication failed (authEmail) for ${username}: empty response" >&2
@@ -133,9 +147,7 @@ shinemonitor_api_call() {
     return 1
   fi
 
-  local salt sign action_string api_response
-
-  salt=$(salt_ms)
+  local salt sign action_string api_response try max_time=15
 
   # Build the action string that will be included in the signature
   if [ -n "$extra_params" ]; then
@@ -144,10 +156,14 @@ shinemonitor_api_call() {
     action_string="&action=${action}"
   fi
 
-  # Signature order: salt, secret, token, action_string
-  sign=$(sha1hex "${salt}${SM_SECRET}${SM_TOKEN}${action_string}")
-
-  api_response=$(curl -sS --max-time 25 "${API_URL}?sign=${sign}&salt=${salt}&token=${SM_TOKEN}${action_string}" 2>/dev/null || true)
+  for try in 1 2; do
+    salt=$(salt_ms)
+    # Signature order: salt, secret, token, action_string
+    sign=$(sha1hex "${salt}${SM_SECRET}${SM_TOKEN}${action_string}")
+    api_response=$(curl -sS --max-time "$max_time" "${API_URL}?sign=${sign}&salt=${salt}&token=${SM_TOKEN}${action_string}" 2>/dev/null || true)
+    if [ -n "$api_response" ]; then break; fi
+    if [ "$try" = 1 ]; then sleep "$SM_RETRY_PAUSE_SECS"; max_time=25; fi
+  done
 
   echo "$api_response"
 }

@@ -9,6 +9,7 @@ These tests make real API calls and require:
 """
 
 import pytest
+import os
 import subprocess
 import json
 import platform
@@ -51,6 +52,34 @@ def load_dessmonitor_credentials():
     pytest.skip("No valid DessMonitor account found")
 
 
+def _run_bash(script_content, timeout, creds=None):
+    """
+    Run a test script in bash.
+
+    Credentials go in as TEST_USERNAME, TEST_PASSWORD and TEST_COMPANY_KEY in
+    the environment, never as text in the script: a failed assertion makes
+    pytest print the whole CompletedProcess, script included, into a public
+    log. The ShineMonitor tests leaked a password that way 12 times between
+    19 and 29 Oct 2026.
+
+    A vendor that does not answer inside the budget is a skip, not a red
+    build - test_invalid_credentials_handled hit its 30 s on 28 Oct 2026.
+    """
+    env = None
+    if creds:
+        env = {**os.environ,
+               "TEST_USERNAME": creds["username"],
+               "TEST_PASSWORD": creds["password"],
+               "TEST_COMPANY_KEY": creds["company_key"]}
+    try:
+        return subprocess.run(['bash', '-c', script_content],
+                              capture_output=True, text=True,
+                              timeout=timeout, env=env)
+    except subprocess.TimeoutExpired:
+        pytest.skip(f"DessMonitor did not answer within {timeout}s; that is "
+                    f"the vendor's latency, not this repository's code")
+
+
 class TestDessMonitorAPI:
     """Test DessMonitor API authentication and calls"""
 
@@ -59,19 +88,13 @@ class TestDessMonitorAPI:
         """Get test credentials"""
         return load_dessmonitor_credentials()
 
-    def run_bash_script(self, script_content, timeout=60):
+    def run_bash_script(self, script_content, timeout=60, creds=None):
         """Execute bash script and return output"""
         # Skip on Windows - these tests require Unix environment
         if platform.system() == 'Windows':
             pytest.skip("Bash script tests require Unix environment (Linux/macOS). Run in GitHub Actions.")
 
-        result = subprocess.run(
-            ['bash', '-c', script_content],
-            capture_output=True,
-            text=True,
-            timeout=timeout
-        )
-        return result
+        return _run_bash(script_content, timeout, creds)
 
     def test_auth_email_function(self, test_creds):
         """Test dessmonitor_auth_email authentication function"""
@@ -80,7 +103,7 @@ class TestDessMonitorAPI:
         SCRIPT_DIR="{SCRIPTS_DIR}"
         source "${{SCRIPT_DIR}}/dessmonitor_common.sh"
 
-        if dessmonitor_auth_email "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}"; then
+        if dessmonitor_auth_email "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY"; then
             echo "AUTH_SUCCESS"
             echo "TOKEN:${{DM_TOKEN:0:16}}"
             echo "SECRET:${{DM_SECRET:0:16}}"
@@ -91,7 +114,7 @@ class TestDessMonitorAPI:
         fi
         """
 
-        result = self.run_bash_script(script)
+        result = self.run_bash_script(script, creds=test_creds)
         assert "AUTH_SUCCESS" in result.stdout or "AUTH_FAILED" in result.stdout, \
             f"Auth test produced unexpected output: {result.stdout}\nStderr: {result.stderr}"
 
@@ -102,7 +125,7 @@ class TestDessMonitorAPI:
         SCRIPT_DIR="{SCRIPTS_DIR}"
         source "${{SCRIPT_DIR}}/dessmonitor_common.sh"
 
-        if dessmonitor_auth_source "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}"; then
+        if dessmonitor_auth_source "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY"; then
             echo "AUTH_SUCCESS"
             echo "TOKEN:${{DM_TOKEN:0:16}}"
             exit 0
@@ -112,7 +135,7 @@ class TestDessMonitorAPI:
         fi
         """
 
-        result = self.run_bash_script(script)
+        result = self.run_bash_script(script, creds=test_creds)
         assert "AUTH_SUCCESS" in result.stdout or "AUTH_FAILED" in result.stdout, \
             f"Auth test produced unexpected output: {result.stdout}\nStderr: {result.stderr}"
 
@@ -123,7 +146,7 @@ class TestDessMonitorAPI:
         SCRIPT_DIR="{SCRIPTS_DIR}"
         source "${{SCRIPT_DIR}}/dessmonitor_common.sh"
 
-        if dessmonitor_authenticate "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}"; then
+        if dessmonitor_authenticate "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY"; then
             echo "AUTH_SUCCESS"
             echo "TOKEN:${{DM_TOKEN:0:16}}"
             exit 0
@@ -133,7 +156,7 @@ class TestDessMonitorAPI:
         fi
         """
 
-        result = self.run_bash_script(script)
+        result = self.run_bash_script(script, creds=test_creds)
         assert "AUTH_SUCCESS" in result.stdout, \
             f"Dual auth should succeed for {test_creds['label']}: {result.stdout}\nStderr: {result.stderr}"
 
@@ -144,7 +167,7 @@ class TestDessMonitorAPI:
         SCRIPT_DIR="{SCRIPTS_DIR}"
         source "${{SCRIPT_DIR}}/dessmonitor_common.sh"
 
-        dessmonitor_authenticate "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}"
+        dessmonitor_authenticate "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY"
 
         resp=$(dessmonitor_api_call "queryPlants" "page=0&pagesize=50")
         echo "RESPONSE:$resp"
@@ -159,7 +182,7 @@ class TestDessMonitorAPI:
         fi
         """
 
-        result = self.run_bash_script(script)
+        result = self.run_bash_script(script, creds=test_creds)
         assert "PLANTS_SUCCESS" in result.stdout, \
             f"queryPlants failed: {result.stdout}\nStderr: {result.stderr}"
         assert "PID:" in result.stdout, "Should extract plant ID from response"
@@ -177,7 +200,7 @@ class TestDessMonitorAPI:
         SCRIPT_DIR="{SCRIPTS_DIR}"
         source "${{SCRIPT_DIR}}/dessmonitor_common.sh"
 
-        dessmonitor_authenticate "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}"
+        dessmonitor_authenticate "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY"
 
         # Get plant ID first
         plants_resp=$(dessmonitor_api_call "queryPlants" "page=0&pagesize=50")
@@ -200,7 +223,7 @@ class TestDessMonitorAPI:
         fi
         """
 
-        result = self.run_bash_script(script)
+        result = self.run_bash_script(script, creds=test_creds)
         assert "DEVICES_SUCCESS" in result.stdout, \
             f"webQueryDeviceEs with sn= failed: {result.stdout}\nStderr: {result.stderr}"
         assert "DEVICE_PN:" in result.stdout, "Should extract device pn from response"
@@ -218,7 +241,7 @@ class TestDessMonitorAPI:
         SCRIPT_DIR="{SCRIPTS_DIR}"
         source "${{SCRIPT_DIR}}/dessmonitor_common.sh"
 
-        dessmonitor_authenticate "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}" 2>/dev/null
+        dessmonitor_authenticate "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY" 2>/dev/null
 
         # Get plant ID
         plants_resp=$(dessmonitor_api_call "queryPlants" "page=0&pagesize=50" 2>/dev/null)
@@ -252,7 +275,7 @@ class TestDessMonitorAPI:
         fi
         """
 
-        result = self.run_bash_script(script, timeout=90)
+        result = self.run_bash_script(script, timeout=90, creds=test_creds)
         assert "ENERGY_SUCCESS" in result.stdout, \
             f"Energy query failed: {result.stdout}\nStderr: {result.stderr}"
         # Note: We don't assert HAS_NONZERO_VALUES because some days might legitimately be zero
@@ -270,7 +293,7 @@ class TestDessMonitorAPI:
         SCRIPT_DIR="{SCRIPTS_DIR}"
         source "${{SCRIPT_DIR}}/dessmonitor_common.sh"
 
-        dessmonitor_authenticate "{test_creds['username']}" "{test_creds['password']}" "{test_creds['company_key']}" 2>/dev/null
+        dessmonitor_authenticate "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY" 2>/dev/null
 
         # Get plant and device info
         plants_resp=$(dessmonitor_api_call "queryPlants" "page=0&pagesize=50" 2>/dev/null)
@@ -302,7 +325,7 @@ class TestDessMonitorAPI:
         echo "FULL_RESPONSE:$energy_resp"
         """
 
-        result = self.run_bash_script(script, timeout=90)
+        result = self.run_bash_script(script, timeout=90, creds=test_creds)
         assert "HAS_OPTION_ARRAY" in result.stdout, \
             f"Response should use 'option' array: {result.stdout}"
         assert "HAS_GTS_FIELD" in result.stdout, \
@@ -312,18 +335,12 @@ class TestDessMonitorAPI:
 class TestDessMonitorScripts:
     """Test DessMonitor shell scripts"""
 
-    def run_bash_script(self, script_content, timeout=60):
+    def run_bash_script(self, script_content, timeout=60, creds=None):
         """Execute bash script and return output"""
         if platform.system() == 'Windows':
             pytest.skip("Bash script tests require Unix environment")
 
-        result = subprocess.run(
-            ['bash', '-c', script_content],
-            capture_output=True,
-            text=True,
-            timeout=timeout
-        )
-        return result
+        return _run_bash(script_content, timeout, creds)
 
     def test_check_monthly_script(self):
         """Test check_dessmonitor_monthly.sh script"""
@@ -334,7 +351,7 @@ class TestDessMonitorScripts:
         bash check_dessmonitor_monthly.sh "{DESSMONITOR_CREDS_FILE}" "2026-01" 2>&1 | grep -E "(AUTH OK|DONE)"
         """
 
-        result = self.run_bash_script(script, timeout=90)
+        result = self.run_bash_script(script, timeout=90, creds=creds)
         assert result.returncode == 0, f"Monthly script failed: {result.stderr}"
         assert "AUTH OK" in result.stdout or "DONE" in result.stdout
 
@@ -347,7 +364,7 @@ class TestDessMonitorScripts:
         timeout 60 bash check_dessmonitor_yearly.sh "{DESSMONITOR_CREDS_FILE}" "2026" 2>&1 | head -20 | grep -E "(AUTH OK|DONE)"
         """
 
-        result = self.run_bash_script(script, timeout=90)
+        result = self.run_bash_script(script, timeout=90, creds=creds)
         # Allow timeout (124) and SIGPIPE (141 from head closing pipe early)
         assert result.returncode in [0, 124, 141], f"Yearly script failed: {result.stderr}"
         assert "AUTH OK" in result.stdout or "DONE" in result.stdout
@@ -380,18 +397,12 @@ class TestDessMonitorScripts:
 class TestDessMonitorAPIErrorHandling:
     """Test error handling for DessMonitor API"""
 
-    def run_bash_script(self, script_content, timeout=30):
+    def run_bash_script(self, script_content, timeout=30, creds=None):
         """Execute bash script and return output"""
         if platform.system() == 'Windows':
             pytest.skip("Bash script tests require Unix environment")
 
-        result = subprocess.run(
-            ['bash', '-c', script_content],
-            capture_output=True,
-            text=True,
-            timeout=timeout
-        )
-        return result
+        return _run_bash(script_content, timeout, creds)
 
     def test_invalid_credentials_handled(self):
         """Test that invalid credentials are handled gracefully"""
@@ -423,7 +434,7 @@ class TestDessMonitorAPIErrorHandling:
         SCRIPT_DIR="{SCRIPTS_DIR}"
         source "${{SCRIPT_DIR}}/dessmonitor_common.sh"
 
-        dessmonitor_authenticate "{creds['username']}" "{creds['password']}" "{creds['company_key']}" 2>/dev/null
+        dessmonitor_authenticate "$TEST_USERNAME" "$TEST_PASSWORD" "$TEST_COMPANY_KEY" 2>/dev/null
 
         # Get plant ID
         plants_resp=$(dessmonitor_api_call "queryPlants" "page=0&pagesize=50" 2>/dev/null)
@@ -442,7 +453,7 @@ class TestDessMonitorAPIErrorHandling:
         fi
         """
 
-        result = self.run_bash_script(script)
+        result = self.run_bash_script(script, creds=creds)
         # This test documents the bug - pn=${pid} fails with error 258
         assert "CORRECTLY_FAILS_WITH_258" in result.stdout or "OTHER_ERROR" in result.stdout, \
             f"pn=${'{pid}'} should fail: {result.stdout}"

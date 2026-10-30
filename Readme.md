@@ -95,6 +95,7 @@ So:
 | `check_dessmonitor_monthly.sh` / `_yearly.sh` | Collect DessMonitor production (UC10) |
 | `check_device_alarms.sh`, `check_dessmonitor_device_alarms.sh` | Fetch device alarms into `alarms/` |
 | `shinemonitor_common.sh`, `dessmonitor_common.sh`, `common_config.sh` | Signed API calls, shared paths |
+| `mask_credentials.sh` | Masks every secret in a credentials file in the job's logs; run wherever a workflow writes one |
 | `exclusions.py` | Who is still on the platform. Reads `excluded_plants.json` |
 | `connectivity.py` | Link alive or dead, and why. The fleet counts |
 | `check_connectivity.py` | UC14 entry point: CONNECTIVITY alert and its state |
@@ -304,7 +305,9 @@ changes, on any trigger; a clean bill of health is a weekly thing.
    purpose: in each case the failure that shows is preferred to the one that hides.
 4. **Three sends, four hours apart, then quiet** — for every repeating alert.
 5. **Platform data never mixes.** Filter on the `dessmonitor-` prefix.
-6. **Credentials never enter the repo.** They arrive from GitHub secrets.
+6. **Credentials never enter the repo, or a log.** They arrive from GitHub
+   secrets, every value is masked as the job writes the file, and tests pass
+   them through the environment, never in the text of a command.
 7. **Every skip is logged with its reason**, so nobody has to wonder where a
    plant went.
 
@@ -394,6 +397,7 @@ Monitors device-level warnings from ShineMonitor API and sends targeted notifica
 - Six-hour gate: an alarm is mailed only if it is still open 6 hours after it started; comms/offline alarms are never mailed ([design](six-hour-gate/README.md))
 - 3-send rule: once an alarm passes the gate it is sent 3 times, at least 4 hours apart, then auto-ignored
 - State persistence with human-readable fields (customer, plant, message)
+- Vendor silence: a ShineMonitor login or call that gets no answer is tried once more, 3 s later. The first try gets 15 s and the second 25 s. This shares `shinemonitor_common.sh` with data collection. Since 2026-10-27 about four calls in ten from a GitHub runner hang, and without the retry each run missed alarms for 9-16 of the 23 accounts (see Bug Fixes, 2026-10-30)
 
 **Test Coverage:** 40/40 PASSED — `test_device_alarms.py`, which also
 carries the UC4, UC5, UC6, UC7 and UC8 tests
@@ -1160,6 +1164,76 @@ py check_solis_alarms.py --dry-run    # print what would be mailed; no email, no
 
 ## Bug Fixes
 
+### A password in public logs, and a vendor that stopped answering (2026-10-30)
+
+**What it cost.** A customer account's ShineMonitor password sat in clear
+text in 12 public workflow logs, from 19 to 29 October. Anyone who opened
+one of those failed runs could read it. Separately, since 27 October about
+11:00 UTC every scheduled run had missed device alarms for 9 to 16 of the 23
+ShineMonitor accounts, and 30 of about 90 data-collection logins had failed,
+while the `run` job still showed green.
+
+**How it was found.** A "TESTS FAILED" email for the 29 Oct 22:55 run. The
+failing test was `test_check_device_alarms_script`. The assertion message
+under it printed the whole `bash -c` command the test had run, and the live
+tests wrote the account's username, password and company key straight into
+that command. GitHub did not mask it, because `SHINEMONITOR_CREDENTIALS_JSON`
+is one secret holding the whole file and GitHub masks a secret only as a
+whole. Scanning every failed run since August found the 12 logs. They were
+deleted on 2026-10-30.
+
+**Why the test failed.** Logging in worked, then `webQueryPlantsWarning` got
+no answer inside curl's 25 s, so the script printed `err: )` with no code and
+exited 1. Its sibling `test_query_plants_warning_api` made the same call 26 s
+earlier and skipped, because it went through the vendor-silence helpers in
+*The vendor's third mood* below. The end-to-end alarm test never did. That
+was 4 of the 6 red builds on 28 and 29 Oct. The yearly fetch test caused a
+fifth: the vendor refused the first accounts, the `grep` that filtered the
+output found nothing, and that looks the same as a broken script. A
+DessMonitor test hitting its 30 s budget caused the sixth.
+
+**What the production logs showed.** A "no answer" was always a hang to
+exactly 25.0 s. A good call took under 2 s. The hangs were spread over all
+23 accounts, each of which worked in 2 to 7 of 8 runs, and they interleaved
+with successes. Nothing in the repository changed on 27 October, so this
+looks like ShineMonitor throttling GitHub's runners. The `authSource`
+fallback did not rescue anything: it answers `err 8 ERR_FORBIDDEN` in under
+a second.
+
+**The fix.**
+
+- The live tests in `test_shinemonitor_api.py` and `test_dessmonitor_api.py`
+  pass credentials as `TEST_USERNAME`, `TEST_PASSWORD` and `TEST_COMPANY_KEY`
+  in the environment. A failed assertion can still print the script, but the
+  script no longer holds the secrets.
+- `mask_credentials.sh` registers every password, secret and key in a
+  credentials file with GitHub's log masker. All 14 places where a workflow
+  writes such a file call it straight after the write, because a mask lasts
+  only for the job that registered it.
+- `alarms_fetched_or_skip()` skips the alarm test on `err: )`. A body with an
+  error code (`err: 8`) still fails. `progress_or_skip()` reads the first 20
+  lines of the monthly and yearly scripts instead of piping them through
+  `grep`. `AUTH OK` or `DONE` passes, only `AUTH FAIL` skips, and anything
+  else fails. The monthly test used to run the whole fleet, ran out of time
+  and skipped in 18 of the 21 runs checked. It now reads 20 lines like the
+  yearly one, so it actually tests something.
+- `shinemonitor_auth_email` and `shinemonitor_api_call` try once more,
+  signed afresh, 3 s after an empty answer. The first try gets 15 s instead
+  of 25, so a hang the retry recovers costs about 19 s and one it does not
+  costs 43 s, against 25 s and no data before. UC3 says this too.
+
+`test_no_payloads_in_public_logs.py` fails if a test interpolates a password
+into text, if a workflow writes a credentials file without masking it, or if
+`mask_credentials.sh` misses a secret or masks a non-secret.
+`TestRetryOnSilence` runs the real helpers against a stubbed `curl`, and it
+fails against the old file. Each new guard was checked the same way, by
+showing it fails on the code before the fix.
+
+**Not fixed here.** The leaked password has not been changed yet; that needs
+the customer. Whether the retry brings coverage back is for the next runs to
+show: count `Failed to fetch alarms` and `Both authentication methods failed`
+in the `run` job.
+
 ### The two-hour push (2026-10-23)
 
 **What it cost.** Every push to `main` triggered four workflows as "build
@@ -1420,6 +1494,11 @@ alternative is a position (`account 7/23`) and worse logs.
 `test_no_payloads_in_public_logs.py` is the guard. Each of the four has its own
 named test, and one test asserts the failure path still reports the error code
 so nobody satisfies the others by printing nothing.
+
+A fifth leak, the credentials themselves, was found on 2026-10-30. A failing
+live test printed the command it ran, and the command held a password. See
+*A password in public logs, and a vendor that stopped answering* above. The
+same file guards that one too.
 
 ### #29: four workflows still pushed to main bare
 
@@ -1717,6 +1796,7 @@ Default thresholds in `check_anomaly.py`:
 │       ├── common_config.sh           # Centralized Bash config
 │       ├── shinemonitor_common.sh     # ShineMonitor API utilities
 │       ├── dessmonitor_common.sh      # DessMonitor API utilities (UC10)
+│       ├── mask_credentials.sh        # Mask every credential value in a job's logs; 12 workflows
 │       ├── push_data_commit.sh        # Commit + push with retry/merge; used by 7 workflows (#28, #29)
 │       ├── merge_alarm_state.py       # Merges cumulative state files on a push conflict
 │       ├── check_shinemonitor_monthly.sh  # ShineMonitor monthly data
@@ -1785,7 +1865,7 @@ a file that is gone (#35).
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 823 tests — 767 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 838 tests — 782 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 In CI the two workstation-only MCP modules (Tuya, CCV heat pump) each skip as
 a unit — they need `requests` / the `mcp` server package, which CI does not
@@ -1843,11 +1923,11 @@ collection error that hid the whole suite* in Bug Fixes.
 | ----- | ----- | ---- |
 | A fetch never destroys committed data | 15 | `test_fetch_never_destroys_data.py` |
 
-**Public-log hygiene (7 tests):**
+**Public-log hygiene (10 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| No payloads in public logs | 7 | `test_no_payloads_in_public_logs.py` |
+| No payloads or credentials in public logs | 10 | `test_no_payloads_in_public_logs.py` |
 
 **Suite visibility (46 tests):**
 
@@ -1899,7 +1979,7 @@ parsing, subnet fallback, cache) and that only read function codes can be sent.
 | ----- | ----- | ---- |
 | A push runs the test suite only | 6 | `test_push_is_tests_only.py` |
 
-**ShineMonitor (138 tests):**
+**ShineMonitor (150 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
@@ -1909,7 +1989,7 @@ parsing, subnet fallback, cache) and that only read function codes can be sent.
 | UC9 (Email Optimization) | 9 | `test_uc9_admin_email.py` |
 | UC11 (Plant ROI) | 19 | `test_uc11_plant_roi.py` |
 | BVT (Centralized Config) | 14 | `test_centralized_config.py` |
-| API Tests + vendor-condition handling | 25 | `test_shinemonitor_api.py` |
+| API Tests + vendor-condition handling + retry | 37 | `test_shinemonitor_api.py` |
 
 **DessMonitor (112 tests):**
 

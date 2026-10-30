@@ -60,6 +60,7 @@ jobs:
           ${{ secrets.SHINEMONITOR_CREDENTIALS_JSON }}
           EOF
           chmod 600 src/main/java/org/ktronics/config/credentials.json
+          bash src/main/java/org/ktronics/scripts/mask_credentials.sh src/main/java/org/ktronics/config/credentials.json
 
       - name: Run integration tests
         shell: bash
@@ -181,6 +182,7 @@ jobs:
           ${{ secrets.SHINEMONITOR_CREDENTIALS_JSON }}
           EOF
           chmod 600 src/main/java/org/ktronics/config/credentials.json
+          bash src/main/java/org/ktronics/scripts/mask_credentials.sh src/main/java/org/ktronics/config/credentials.json
 
       - name: Run monthly fetch (last month + current month)
         if: github.event_name != 'schedule' || github.event.schedule != '13 * * * *'

@@ -38,6 +38,7 @@ jobs:
           ${{ secrets.SHINEMONITOR_CREDENTIALS_JSON }}
           EOF
           chmod 600 src/main/java/org/ktronics/config/credentials.json
+          bash src/main/java/org/ktronics/scripts/mask_credentials.sh src/main/java/org/ktronics/config/credentials.json
 
       - name: Fetch 30-day history + publish *.hist.json to ph1800-hist
         shell: bash

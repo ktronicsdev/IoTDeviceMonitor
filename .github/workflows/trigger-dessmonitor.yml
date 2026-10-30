@@ -65,12 +65,14 @@ jobs:
           ${{ secrets.DESSMONITOR_CREDENTIALS_JSON }}
           EOF
           chmod 600 src/main/java/org/ktronics/config/dessmonitor_credentials.json
+          bash src/main/java/org/ktronics/scripts/mask_credentials.sh src/main/java/org/ktronics/config/dessmonitor_credentials.json
 
           # Also create main credentials for shared scripts
           cat <<'EOF' > src/main/java/org/ktronics/config/credentials.json
           ${{ secrets.SHINEMONITOR_CREDENTIALS_JSON }}
           EOF
           chmod 600 src/main/java/org/ktronics/config/credentials.json
+          bash src/main/java/org/ktronics/scripts/mask_credentials.sh src/main/java/org/ktronics/config/credentials.json
 
       - name: Install dependencies
         run: |

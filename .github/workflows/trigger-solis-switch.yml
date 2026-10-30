@@ -44,6 +44,7 @@ jobs:
           ${{ secrets.SHINEMONITOR_CREDENTIALS_JSON }}
           EOF
           chmod 600 src/main/java/org/ktronics/config/credentials.json
+          bash src/main/java/org/ktronics/scripts/mask_credentials.sh src/main/java/org/ktronics/config/credentials.json
 
       - name: Run Solis switch watchdog
         shell: bash
