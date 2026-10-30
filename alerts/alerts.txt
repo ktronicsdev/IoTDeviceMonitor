@@ -7,7 +7,7 @@
 ║                          Status: NO ALERTS DETECTED                          ║
 ║                                                                              ║
 ║               Date: 2026-10-30  |  Total Plants Monitored: 25                ║
-║                Reporting: 17  |  Dead link: 8  |  Excluded: 0                ║
+║                Reporting: 16  |  Dead link: 9  |  Excluded: 0                ║
 ║                                                                              ║
 ================================================================================
 
@@ -38,6 +38,9 @@
 │     Symptom: no non-zero reading has ever been recorded
 │   • lahiru-ryan-lahiru-plant
 │     Last reading: 2026-07-14 (108 days ago)
+│     Symptom: rows still arriving but every reading is 0.0000 kWh
+│   • troy-troy-hybrid-3kw
+│     Last reading: 2026-09-30 (30 days ago)
 │     Symptom: rows still arriving but every reading is 0.0000 kWh
 │   • chamila-chamila-119h
 │     Last reading: 2026-10-17 (13 days ago)
