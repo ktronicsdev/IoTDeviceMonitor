@@ -12,9 +12,9 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
+      "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-29",
+      "last_nonzero_date": "2026-10-30",
       "last_data_date": "2026-10-30",
       "stale_days_threshold": 3
     },
@@ -144,9 +144,9 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
+      "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-29",
+      "last_nonzero_date": "2026-10-30",
       "last_data_date": "2026-10-30",
       "stale_days_threshold": 3
     },
@@ -264,7 +264,9 @@
     }
   ],
   "excluded": [],
-  "generated_at": "2026-10-30T18:04:39.447648Z",
+  "generated_at": "2026-10-30T20:54:32.019733Z",
   "fleet_wide_outage": false,
-  "alerting_now": []
+  "alerting_now": [
+    "troy-troy-hybrid-3kw"
+  ]
 }
