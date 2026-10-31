@@ -1,9 +1,9 @@
 {
   "1308675217949897483": {
     "label": "Ktronics Imbulgoda",
-    "last_check": "2026-10-31T05:39:17.684171+00:00",
+    "last_check": "2026-10-31T12:26:38.335942+00:00",
     "last_state": 1,
-    "last_pac": 5.861,
+    "last_pac": 0.016,
     "last_reason": "on/off register (cid 52) = 190",
     "off": false
   }
