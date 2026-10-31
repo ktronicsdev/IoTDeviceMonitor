@@ -76,17 +76,6 @@
     "plant": "samurdi-kohuwala",
     "send_count": 3
   },
-  "troy-troy-hybrid-3kw": {
-    "customer": "Troy",
-    "days_stale": 30,
-    "first_seen": "2026-10-30T14:45:13.172438",
-    "ignored": false,
-    "kind": "zeros_only",
-    "last_data": "2026-10-30",
-    "last_sent": "2026-10-30T20:54:32.020055",
-    "plant": "troy-troy-hybrid-3kw",
-    "send_count": 2
-  },
   "upulatheja-3kw-pro-kadawath": {
     "customer": "Upulatheja",
     "days_stale": 115,
