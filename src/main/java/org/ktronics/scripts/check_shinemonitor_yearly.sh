@@ -152,13 +152,12 @@ for acc in "${ACCOUNTS[@]}"; do
 
     # Staged, then swapped in only if it carries real figures - see the guard
     # after the month loop. Unlike the monthly script this one always writes
-    # 12 rows, because a failed call writes kwh=0 "to keep shape". That is the
-    # same destruction wearing a different hat: a year of real production
-    # replaced by twelve zeros, and committed. Sibling bug to #33.
+    # 12 rows, so a month with no answer needs a figure from somewhere.
     final_out="data/${safe_label}-${safe_name}-${YEAR}.csv"
     out="$(mktemp)"
     : > "$out"
     echo "month,kwh" >> "$out"
+    kept_months=""
 
     # Loop months 01..12
     for m in $(seq -w 1 12); do
@@ -166,23 +165,38 @@ for acc in "${ACCOUNTS[@]}"; do
 
       m_resp="$(shinemonitor_api_call "queryPlantEnergyMonth" "plantid=${pid}&date=${ym}" || true)"
 
+      kwh=""
       if printf "%s" "$m_resp" | grep -q '"err"[[:space:]]*:[[:space:]]*0'; then
         kwh="$(printf "%s" "$m_resp" | tr -d '\n' | json_blob_get_first energy || true)"
-        [[ -z "$kwh" ]] && kwh="0"
-      else
-        # If API returns err=12 (no data) or other, write 0 to keep shape
-        kwh="0"
+      fi
+
+      # No figure: a failed call, or err=12 (no data). Only a real answer may
+      # change a month, so keep what is committed and fall back to 0 only when
+      # nothing is. This used to write 0 outright, and the all-zero guard below
+      # only catches all twelve at once, so each failed call zeroed one month.
+      # On 2026-11-01 that was 54 months across 17 plants, in the yearly totals
+      # customers are sent every Sunday.
+      if [[ -z "$kwh" ]]; then
+        kwh="$(csv_figure_for "$final_out" "$ym")"
+        if [[ -z "$kwh" ]]; then
+          kwh="0"
+        elif [[ "$kwh" =~ [1-9] ]]; then
+          kept_months+=" ${ym}"
+        fi
       fi
 
       echo "${ym},${kwh}" >> "$out"
     done
 
+    if [[ -n "$kept_months" ]]; then
+      echo "      WARNING: no figure from the vendor for${kept_months} - kept what is committed"
+    fi
+
     # Swap in only if the year has at least one non-zero month, or there is
     # nothing to lose. A brand-new plant legitimately reads all zeros, so the
     # existence check matters: without it a genuinely empty year could never
     # be written at all.
-    if awk -F, 'NR>1 && $2+0 != 0 {found=1} END{exit !found}' "$out" \
-       || [ ! -s "$final_out" ]; then
+    if csv_has_production "$out" || [ ! -s "$final_out" ]; then
       mv "$out" "$final_out"
       echo "      Yearly CSV written: $final_out"
     else

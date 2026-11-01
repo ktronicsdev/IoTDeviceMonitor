@@ -349,7 +349,7 @@ report listed alerts the exit code had already filtered out.
 
 Sends personalized weekly production reports to customers every Sunday.
 
-**Schedule:** Every Sunday at 04:00 UTC
+**Schedule:** Every Sunday at 04:19 UTC (GitHub often starts it hours late)
 
 **Platforms Supported:**
 - **ShineMonitor:** [trigger-customer-reports.yml](.github/workflows/trigger-customer-reports.yml)
@@ -362,6 +362,13 @@ Sends personalized weekly production reports to customers every Sunday.
 - Yearly totals (year-to-date)
 - Plant count and combined statistics
 - Active production alerts (if any)
+
+**Where the yearly totals come from:** the report fetches nothing. It sums the
+rows of the committed `{plant}-YYYY.csv` files, so a wrong row there is a wrong
+number in a customer's inbox. A month's row changes only when the vendor answers
+with a figure. A failed call or a "no data" answer keeps what is committed and
+logs a `WARNING` naming the month (see *A failed call zeroed one month at a time*
+in Bug Fixes).
 
 **Email Recipients:** Customers with email in credentials.json (platform-specific)
 
@@ -861,6 +868,14 @@ plant — a gap in the CSV and a dead dongle look identical from here. And a
 3-send rule cannot hold against an input that keeps resetting it; the rule was
 never broken, the data under it was.
 
+**A month of zeros is not proof of silence either (2026-11-01).** A fetch no
+longer lets a wholly zero month replace real readings, because a dead plant
+sharing a filename with a live one produced exactly that (see *Two plants, one
+file* in Bug Fixes). Before believing a LINK DOWN alert for `troy-troy-hybrid-3kw`,
+remember that its account holds two plants. `test_committed_data_integrity.py`
+now fails, and emails the admin, if a month's daily rows read zero while its
+yearly row shows it produced.
+
 **Feature flags:** `emails.connectivity_admin`, `alerts.connectivity_link_down`.
 
 **State File:** `state/connectivity_state.json`
@@ -1349,7 +1364,8 @@ took three attempts to stop:
 
 The yearly scripts had the same fault in a different costume: a failed call
 writes `kwh=0` "to keep shape", so a year of real production becomes twelve
-zeros.
+zeros. The guard added here only caught all twelve at once, which is the next-but-one
+entry below (*A failed call zeroed one month at a time*).
 
 All four fetches now stage to a temporary file and `mv` it into place **only**
 when rows were parsed; otherwise they keep what is committed and say
@@ -1361,6 +1377,58 @@ is how this ran unseen.
 **old** idiom to prove it really does destroy the file. If that ever stops
 being true the premise has changed and the guard can be revisited; until then
 it is what makes the other test meaningful.
+
+### Two plants, one file (2026-11-01)
+
+A healthy plant was mailed DATA LINK DOWN **9 times between 20 and 31 October**.
+The alert for `troy-troy-hybrid-3kw` said the last data was a month or two old
+while the plant was producing every day. Its CSV on `main` looked fine by the time
+anyone read it. Its git history did not: the month flipped between 31 real rows
+and 31 rows of `0.0000`, run after run.
+
+Troy's account holds two plants whose names sanitise to one filename:
+`Troy Hybrid 3kw` (pid 1240025, last produced 2024-11) and `TROY HYBRID 3kw`
+(pid 1282286, the live one). The dead plant is listed first and answers with a
+full month of zeros. The live plant normally overwrites them. When the live
+plant's daily call failed, the #33 guard "kept the existing file", which by then
+held the dead plant's zeros. In the 2026-10-31 15:51 run the same plant's monthly
+total came back as 341.1 kWh while its daily rows were being lost. Each restored
+run clears the plant's state, so the 3-send rule never bit and no alert ever got
+past `Send #2/3`.
+
+A wholly zero month can no longer replace a file that holds real readings. The
+dead plant stays on ShineMonitor, because it holds about 985 kWh of 2024 history
+and removing it is not needed for the fix. No other account has a collision.
+
+### A failed call zeroed one month at a time (2026-11-01)
+
+Found while chasing the alert above: Troy's yearly row for September read 349.5,
+then 0, then 349.5. `check_shinemonitor_yearly.sh` wrote `kwh=0` for any month
+whose call failed, and the guard from *A fetch that destroyed the data it was
+fetching* only catches all twelve months being zero. Since ShineMonitor began
+hanging on GitHub runners, one hung call in a full run was enough.
+
+On 2026-11-01 **54 months across 17 plants read 0 against a fresh vendor read:
+9,132 kWh** (23 rows in 2026, 31 in 2025). All 6 customers with an email were
+affected. The worst single totals were Chandika's 2025, short by 851 kWh, and
+Namila-Waragoda's 2026, short by 706 kWh. The weekly report sums these rows, so
+the "This Year" and "Last Year" totals customers receive depended on which calls
+happened to hang.
+
+A month's row now changes only when the vendor answers with a figure. A failed
+call or an `err=12` keeps what is committed, 0 is written only when nothing is
+held, and the log names any kept month in a `WARNING`. The damaged rows were
+repaired from that vendor read in the same push.
+
+**How the next one gets noticed.** Everything `test_fetch_never_destroys_data.py`
+held at the time checked the shape of the code or a copy of its idiom, and all of
+it stayed green throughout. It now also runs the **real** scripts against a stub
+`curl` that answers from files, including the exact Troy run.
+`test_committed_data_integrity.py` reads the real CSVs: each month is recorded by
+two vendor calls, and it fails if one says the month produced and the other says
+it did not. Months older than the daily files (before 2025-12) fail instead on a
+zero between two producing months. The `tests` job runs on the schedule as well as on a push, so the
+`🧪 TESTS FAILED` email arrives within hours, and it now names the failing tests.
 
 ### The vendor's third mood (2026-10-22)
 
@@ -1865,7 +1933,7 @@ a file that is gone (#35).
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 838 tests — 782 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 862 tests — 806 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 In CI the two workstation-only MCP modules (Tuya, CCV heat pump) each skip as
 a unit — they need `requests` / the `mcp` server package, which CI does not
@@ -1917,11 +1985,17 @@ collection error that hid the whole suite* in Bug Fixes.
 | Hourly poll scope | 11 | `test_hourly_poll_scope.py` |
 | UC9 (weekly all-clear cadence) | 18 | `test_all_clear_cadence.py` |
 
-**Fetch safety (15 tests):**
+**Fetch safety and data integrity (38 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| A fetch never destroys committed data | 15 | `test_fetch_never_destroys_data.py` |
+| A fetch never destroys committed data | 26 | `test_fetch_never_destroys_data.py` |
+| Committed data agrees with itself | 12 | `test_committed_data_integrity.py` |
+
+The fake-vendor tests in the first file run the real fetch scripts, so they take
+a couple of minutes under Git Bash on Windows and seconds in CI. The second file
+reads the real CSVs on `main`: if it fails, data is damaged, so fix what wrote it
+rather than editing the CSV.
 
 **Public-log hygiene (10 tests):**
 
@@ -1929,11 +2003,11 @@ collection error that hid the whole suite* in Bug Fixes.
 | ----- | ----- | ---- |
 | No payloads or credentials in public logs | 10 | `test_no_payloads_in_public_logs.py` |
 
-**Suite visibility (46 tests):**
+**Suite visibility (47 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| One bad import must not hide the suite | 46 | `test_suite_visibility.py` |
+| One bad import must not hide the suite | 47 | `test_suite_visibility.py` |
 
 That suite parametrizes over every `test_*.py`, so its count rises by one
 with each new test file — including an untracked one sitting in the

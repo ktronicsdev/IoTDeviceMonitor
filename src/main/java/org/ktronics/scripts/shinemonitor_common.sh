@@ -36,6 +36,20 @@ json_blob_get_first() {
   sed -nE "s/.*\"$key\"[[:space:]]*:[[:space:]]*\"?([^\",}]+)\"?.*/\1/p" | head -n 1
 }
 
+# True when a CSV (a header, then key,kwh rows) holds at least one real reading.
+csv_has_production() {
+  [ -f "$1" ] && awk -F, 'NR>1 && $2+0 != 0 {found=1} END{exit !found}' "$1"
+}
+
+# The kwh a CSV already holds for one key (a date or YYYY-MM). Prints nothing,
+# and still succeeds, when there is no such file or row, so it is safe in $(...)
+# under set -e.
+csv_figure_for() {
+  if [ -f "$1" ]; then
+    awk -F, -v key="$2" '$1 == key {print $2; exit}' "$1"
+  fi
+}
+
 # Extract a JSON string value from ONE object string
 json_obj_get_str() {
   local key="$1"

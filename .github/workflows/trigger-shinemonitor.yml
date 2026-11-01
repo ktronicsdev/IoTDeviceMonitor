@@ -83,10 +83,12 @@ jobs:
           # behind a single "Interrupted: 1 error during collection". The run
           # still fails, as it should, but the rest of the suite reports, so
           # you can see whether the production code is actually broken.
+          # The tee is what lets the email below name the tests that failed.
           pytest src/test/java/org/ktronics/scripts/integration/ \
             -v \
             --tb=short \
             --continue-on-collection-errors \
+            2>&1 | tee "$RUNNER_TEMP/pytest-output.txt" \
             || { echo "❌ Tests failed"; exit 1; }
 
           echo "✅ All tests passed"
@@ -97,6 +99,7 @@ jobs:
         shell: bash
         run: |
           set -e
+          failed=$(grep -E '^(FAILED|ERROR) ' "$RUNNER_TEMP/pytest-output.txt" | cut -c1-200 | head -20 || true)
           subject="🧪 TESTS FAILED - ${{ github.repository }} @ ${{ github.sha }}"
           body="Workflow: ${{ github.workflow }} (tests job)
           Status: TESTS FAILING
@@ -106,8 +109,13 @@ jobs:
           Commit: ${{ github.sha }}
           Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
-          Data collection is UNAFFECTED and still running - this is a code-quality
-          signal only. Fix the test, but no production data is being lost.
+          Failing:
+          ${failed:-(see the run log)}
+
+          Data collection is still running; this job cannot stop it.
+          If test_committed_data_integrity is listed, data on main is damaged and
+          alerts and customer reports are reading it now, so act on it. Anything
+          else listed is a code regression: fix the code or the test.
           "
           EMAIL_SUBJECT="$subject" EMAIL_BODY="$body" python3 src/main/java/org/ktronics/scripts/send_email.py
 

@@ -234,8 +234,20 @@ for acc in "${ACCOUNTS[@]}"; do
       rm -f "$out"
     else
       printf "%s\n" "${ROWS[@]}" >> "$out"
-      mv "$out" "$final_out"
-      echo "      Daily CSV written: $final_out"
+
+      # A month of nothing but zeros must not replace real readings. Two plants
+      # in one account can sanitise to one filename: Troy has a dead plant
+      # (pid 1240025) and a live one (pid 1282286) that both map here. The dead
+      # one answers with a full month of 0.0000, and when the live one's call
+      # then failed, the guard above "kept" those zeros. A healthy plant was
+      # mailed DATA LINK DOWN 9 times from 20 to 31 October 2026.
+      if ! csv_has_production "$out" && csv_has_production "$final_out"; then
+        echo "      WARNING: every day came back zero - keeping existing ${final_out}"
+        rm -f "$out"
+      else
+        mv "$out" "$final_out"
+        echo "      Daily CSV written: $final_out"
+      fi
     fi
   done
 done
