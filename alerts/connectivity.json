@@ -213,9 +213,9 @@
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
       "days_stale": 92,
-      "days_since_data": 1,
+      "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-10-31",
+      "last_data_date": "2026-11-01",
       "stale_days_threshold": 3
     },
     {
@@ -264,7 +264,7 @@
     }
   ],
   "excluded": [],
-  "generated_at": "2026-11-01T11:49:03.530688Z",
+  "generated_at": "2026-11-01T15:31:34.422122Z",
   "fleet_wide_outage": false,
   "alerting_now": []
 }
