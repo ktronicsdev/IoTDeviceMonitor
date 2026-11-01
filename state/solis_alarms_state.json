@@ -34,14 +34,5 @@
     "class": "COMMS",
     "started_at_utc": "2026-10-31T19:31:50.628000+00:00",
     "suppressed_reason": "COMMS alarms are not mailed"
-  },
-  "1298491919450541722:1033330256140031:1D4C2@1793491021663": {
-    "send_count": 0,
-    "last_sent": null,
-    "first_seen": "2026-10-31T23:57:01.663000+00:00",
-    "ignored": false,
-    "class": "COMMS",
-    "started_at_utc": "2026-10-31T23:57:01.663000+00:00",
-    "suppressed_reason": "COMMS alarms are not mailed"
   }
 }
