@@ -7,7 +7,7 @@
 ║                          Status: NO ALERTS DETECTED                          ║
 ║                                                                              ║
 ║               Date: 2026-11-01  |  Total Plants Monitored: 25                ║
-║                Reporting: 16  |  Dead link: 9  |  Excluded: 0                ║
+║                Reporting: 17  |  Dead link: 8  |  Excluded: 0                ║
 ║                                                                              ║
 ================================================================================
 
@@ -42,9 +42,6 @@
 │   • chamila-chamila-119h
 │     Last reading: 2026-10-17 (15 days ago)
 │     Symptom: rows still arriving but every reading is 0.0000 kWh
-│   • dessmonitor-mifrazmarsoon-plant
-│     Last reading: 2026-10-29 (3 days ago)
-│     Symptom: no data rows at all — the portal has nothing for this plant
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
@@ -76,8 +73,6 @@
 │ SUPPRESSED ALERTS (Already notified, zero production continues):
 │   • chamila-chamila-119h
 │     Reason: reclassified as CONNECTIVITY: no data for 15 days (rows still arriving but every reading is 0.0000 kWh) — data link down, NOT a production fault
-│   • dessmonitor-mifrazmarsoon-plant
-│     Reason: reclassified as CONNECTIVITY: no data for 3 days (no data rows at all — the portal has nothing for this plant) — data link down, NOT a production fault
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 

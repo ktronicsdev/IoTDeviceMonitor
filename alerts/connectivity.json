@@ -12,9 +12,9 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
+      "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-31",
+      "last_nonzero_date": "2026-11-01",
       "last_data_date": "2026-11-01",
       "stale_days_threshold": 3
     },
@@ -34,9 +34,9 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
+      "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-31",
+      "last_nonzero_date": "2026-11-01",
       "last_data_date": "2026-11-01",
       "stale_days_threshold": 3
     },
@@ -56,10 +56,10 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
-      "days_since_data": 1,
-      "last_nonzero_date": "2026-10-31",
-      "last_data_date": "2026-10-31",
+      "days_stale": 0,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-11-01",
+      "last_data_date": "2026-11-01",
       "stale_days_threshold": 3
     },
     {
@@ -89,10 +89,10 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
-      "days_since_data": 1,
-      "last_nonzero_date": "2026-10-31",
-      "last_data_date": "2026-10-31",
+      "days_stale": 0,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-11-01",
+      "last_data_date": "2026-11-01",
       "stale_days_threshold": 3
     },
     {
@@ -111,10 +111,10 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
-      "days_since_data": 1,
-      "last_nonzero_date": "2026-10-31",
-      "last_data_date": "2026-10-31",
+      "days_stale": 0,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-11-01",
+      "last_data_date": "2026-11-01",
       "stale_days_threshold": 3
     },
     {
@@ -122,9 +122,9 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
+      "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-10-31",
+      "last_nonzero_date": "2026-11-01",
       "last_data_date": "2026-11-01",
       "stale_days_threshold": 3
     },
@@ -191,9 +191,9 @@
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
       "days_stale": 92,
-      "days_since_data": 1,
+      "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-10-31",
+      "last_data_date": "2026-11-01",
       "stale_days_threshold": 3
     },
     {
@@ -224,9 +224,9 @@
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
       "days_stale": 92,
-      "days_since_data": 1,
+      "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-10-31",
+      "last_data_date": "2026-11-01",
       "stale_days_threshold": 3
     },
     {
@@ -257,14 +257,14 @@
       "meaning": "rows still arriving but every reading is 0.0000 kWh",
       "link_down": true,
       "days_stale": 15,
-      "days_since_data": 1,
+      "days_since_data": 0,
       "last_nonzero_date": "2026-10-17",
-      "last_data_date": "2026-10-31",
+      "last_data_date": "2026-11-01",
       "stale_days_threshold": 3
     }
   ],
   "excluded": [],
-  "generated_at": "2026-11-01T03:22:42.366605Z",
+  "generated_at": "2026-11-01T11:49:03.530688Z",
   "fleet_wide_outage": false,
   "alerting_now": []
 }
