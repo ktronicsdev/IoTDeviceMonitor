@@ -76,6 +76,17 @@
     "plant": "samurdi-kohuwala",
     "send_count": 3
   },
+  "thusharasameera-mendis-house": {
+    "customer": "Thusharasameera",
+    "days_stale": 3,
+    "first_seen": "2026-11-02T00:17:24.763954",
+    "ignored": false,
+    "kind": "zeros_only",
+    "last_data": "2026-11-02",
+    "last_sent": "2026-11-02T00:17:24.763954",
+    "plant": "thusharasameera-mendis-house",
+    "send_count": 1
+  },
   "upulatheja-3kw-pro-kadawath": {
     "customer": "Upulatheja",
     "days_stale": 115,
