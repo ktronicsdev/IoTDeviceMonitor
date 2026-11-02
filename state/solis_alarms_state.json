@@ -8,22 +8,22 @@
     "started_at_utc": "2026-10-28T03:14:27.665000+00:00",
     "suppressed_reason": "COMMS alarms are not mailed"
   },
-  "1298491919450541722:1033330256140031:1D4C2@1793590068453": {
+  "1298491919450494631:1801050245260039:1D4C2@1793604046404": {
     "send_count": 0,
     "last_sent": null,
-    "first_seen": "2026-11-02T03:27:48.453000+00:00",
+    "first_seen": "2026-11-02T07:20:46.404000+00:00",
     "ignored": false,
     "class": "COMMS",
-    "started_at_utc": "2026-11-02T03:27:48.453000+00:00",
+    "started_at_utc": "2026-11-02T07:20:46.404000+00:00",
     "suppressed_reason": "COMMS alarms are not mailed"
   },
-  "1298491919449629741:1801150244120486:1D4C2@1793586347234": {
-    "send_count": 0,
-    "last_sent": null,
-    "first_seen": "2026-11-02T02:25:47.234000+00:00",
+  "1298491919450854508:1031720256130279:1015@1793612943000": {
+    "send_count": 1,
+    "first_seen": "2026-11-02T18:42:33.008796",
     "ignored": false,
-    "class": "COMMS",
-    "started_at_utc": "2026-11-02T02:25:47.234000+00:00",
-    "suppressed_reason": "COMMS alarms are not mailed"
+    "last_sent": "2026-11-02T18:42:33.008796",
+    "customer": "Unknown",
+    "plant": "Hiran wijewardhana 15kv Nawala",
+    "message": "NO-Grid"
   }
 }
