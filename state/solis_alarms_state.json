@@ -8,13 +8,22 @@
     "started_at_utc": "2026-10-28T03:14:27.665000+00:00",
     "suppressed_reason": "COMMS alarms are not mailed"
   },
-  "1298491919450077715:1033063258230319:1D4C2@1793568713914": {
+  "1298491919450541722:1033330256140031:1D4C2@1793590068453": {
     "send_count": 0,
     "last_sent": null,
-    "first_seen": "2026-11-01T21:31:53.914000+00:00",
+    "first_seen": "2026-11-02T03:27:48.453000+00:00",
     "ignored": false,
     "class": "COMMS",
-    "started_at_utc": "2026-11-01T21:31:53.914000+00:00",
+    "started_at_utc": "2026-11-02T03:27:48.453000+00:00",
+    "suppressed_reason": "COMMS alarms are not mailed"
+  },
+  "1298491919449629741:1801150244120486:1D4C2@1793586347234": {
+    "send_count": 0,
+    "last_sent": null,
+    "first_seen": "2026-11-02T02:25:47.234000+00:00",
+    "ignored": false,
+    "class": "COMMS",
+    "started_at_utc": "2026-11-02T02:25:47.234000+00:00",
     "suppressed_reason": "COMMS alarms are not mailed"
   }
 }
