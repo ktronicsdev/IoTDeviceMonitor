@@ -1,17 +1,40 @@
 {
-  "generated_at": "2026-11-02T03:35:56.502686Z",
-  "alerts": [],
+  "generated_at": "2026-11-02T11:57:33.758081Z",
+  "alerts": [
+    {
+      "severity": "RED",
+      "plant_key": "thusharasameera-mendis-house",
+      "today": "2026-11-02",
+      "baseline_avg_kwh_per_day": 1.5357,
+      "threshold_kwh_per_day": 0.3071,
+      "rule": "< 20.0% baseline for 3 consecutive days",
+      "escalation": "no data or no production for 3 days \u2014 check the datalogger is online before dispatching",
+      "window": [
+        "2026-10-31",
+        "2026-11-01",
+        "2026-11-02"
+      ],
+      "details": [
+        {
+          "date": "2026-10-31",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-11-01",
+          "kwh": 0.0
+        },
+        {
+          "date": "2026-11-02",
+          "kwh": 0.3
+        }
+      ]
+    }
+  ],
   "suppressed": [
     {
       "plant_key": "chamila-chamila-119h",
       "reason": "reclassified as CONNECTIVITY: no data for 16 days (rows still arriving but every reading is 0.0000 kWh) \u2014 data link down, NOT a production fault",
       "days_stale": 16,
-      "link_down": true
-    },
-    {
-      "plant_key": "thusharasameera-mendis-house",
-      "reason": "reclassified as CONNECTIVITY: no data for 3 days (rows still arriving but every reading is 0.0000 kWh) \u2014 data link down, NOT a production fault",
-      "days_stale": 3,
       "link_down": true
     }
   ],
@@ -168,23 +191,12 @@
       "last_nonzero_date": "2026-10-17",
       "last_data_date": "2026-11-02",
       "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "thusharasameera-mendis-house",
-      "kind": "zeros_only",
-      "meaning": "rows still arriving but every reading is 0.0000 kWh",
-      "link_down": true,
-      "days_stale": 3,
-      "days_since_data": 0,
-      "last_nonzero_date": "2026-10-30",
-      "last_data_date": "2026-11-02",
-      "stale_days_threshold": 3
     }
   ],
   "excluded": [],
   "counts": {
-    "reporting": 16,
-    "link_down": 9,
+    "reporting": 17,
+    "link_down": 8,
     "excluded": 0,
     "monitored": 25
   }

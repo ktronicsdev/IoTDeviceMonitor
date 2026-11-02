@@ -1,8 +1,8 @@
 {
   "stale_days": 3,
   "counts": {
-    "reporting": 14,
-    "link_down": 9,
+    "reporting": 15,
+    "link_down": 8,
     "excluded": 0,
     "monitored": 23
   },
@@ -89,9 +89,9 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
+      "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-11-01",
+      "last_nonzero_date": "2026-11-02",
       "last_data_date": "2026-11-02",
       "stale_days_threshold": 3
     },
@@ -122,9 +122,9 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
+      "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-11-01",
+      "last_nonzero_date": "2026-11-02",
       "last_data_date": "2026-11-02",
       "stale_days_threshold": 3
     },
@@ -144,9 +144,20 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
+      "days_stale": 0,
       "days_since_data": 0,
-      "last_nonzero_date": "2026-11-01",
+      "last_nonzero_date": "2026-11-02",
+      "last_data_date": "2026-11-02",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "thusharasameera-mendis-house",
+      "kind": "reporting",
+      "meaning": "reporting normally",
+      "link_down": false,
+      "days_stale": 0,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-11-02",
       "last_data_date": "2026-11-02",
       "stale_days_threshold": 3
     },
@@ -250,21 +261,10 @@
       "last_nonzero_date": "2026-10-17",
       "last_data_date": "2026-11-02",
       "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "thusharasameera-mendis-house",
-      "kind": "zeros_only",
-      "meaning": "rows still arriving but every reading is 0.0000 kWh",
-      "link_down": true,
-      "days_stale": 3,
-      "days_since_data": 0,
-      "last_nonzero_date": "2026-10-30",
-      "last_data_date": "2026-11-02",
-      "stale_days_threshold": 3
     }
   ],
   "excluded": [],
-  "generated_at": "2026-11-02T03:35:56.606824Z",
+  "generated_at": "2026-11-02T11:57:33.875834Z",
   "fleet_wide_outage": false,
   "alerting_now": []
 }
