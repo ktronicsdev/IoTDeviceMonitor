@@ -18,10 +18,10 @@
     "suppressed_reason": "COMMS alarms are not mailed"
   },
   "1298491919450854508:1031720256130279:1015@1793612943000": {
-    "send_count": 1,
+    "send_count": 2,
     "first_seen": "2026-11-02T18:42:33.008796",
     "ignored": false,
-    "last_sent": "2026-11-02T18:42:33.008796",
+    "last_sent": "2026-11-03T01:44:12.761128",
     "customer": "Unknown",
     "plant": "Hiran wijewardhana 15kv Nawala",
     "message": "NO-Grid"
