@@ -25,14 +25,5 @@
     "customer": "Unknown",
     "plant": "Hiran wijewardhana 15kv Nawala",
     "message": "NO-Grid"
-  },
-  "1298491919449629741:1801150244120486:1D4C2@1793667145377": {
-    "send_count": 0,
-    "last_sent": null,
-    "first_seen": "2026-11-03T00:52:25.377000+00:00",
-    "ignored": false,
-    "class": "COMMS",
-    "started_at_utc": "2026-11-03T00:52:25.377000+00:00",
-    "suppressed_reason": "COMMS alarms are not mailed"
   }
 }
