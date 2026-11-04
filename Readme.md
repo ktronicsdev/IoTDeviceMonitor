@@ -265,16 +265,15 @@ Four things this makes visible that the lists above do not:
 
 **Not part of the pipeline**, though they live beside it:
 `refresh_bms_creds.py` re-bootstraps the BMS credentials from the running
-PACEEX app and needs BlueStacks plus frida on a workstation; `solis_mcp.py` is
-a stdio MCP server that exposes SolisCloud to Claude; `ccv_heatpump_mcp.py` is
-a **read-only** stdio MCP server for the Valla house's ground-source heat pump
-(JEFF CCV Pro controller) — it reads temperatures, relays, alarms and counters
-over Modbus TCP from the heat pump's touch display on the home LAN, finds the
-display itself when DHCP moves it (cached address, then the MAC in the ARP
-table, then a port-502 search of the /24 with a clock/version fingerprint), and
-can send no write function code; and
+PACEEX app and needs BlueStacks plus frida on a workstation; and
 `check_shinemonitor_query-plants.sh` is referenced by no workflow and no test —
 a manual query helper, which is worth knowing before anyone relies on it.
+
+**MCP servers are not in this repo.** The stdio servers that let Claude read
+SolisCloud, Deye Cloud and the author's Tuya home devices are workstation
+tools. They live, with their tests, in `scripts/mcp_servers/`, which is
+gitignored, and the Valla heat-pump server is in a separate private repo.
+`solis_mcp.py` and `tuya_mcp.py` sat beside the scripts here until 2026-11-04.
 
 Customer-facing email goes out **only on scheduled runs**; admin email goes out
 on scheduled and manual runs (UC8). A push sends only "Build OK" or "TESTS
@@ -1900,9 +1899,7 @@ Default thresholds in `check_anomaly.py`:
 │       ├── analyze_plant_roi.py       # ROI report generator (UC11)
 │       ├── check_shinemonitor_daily.sh    # Today's energy per plant, printed
 │       ├── check_shinemonitor_query-plants.sh  # Auth + raw plant list, for debugging
-│       ├── refresh_bms_creds.py       # Re-bootstrap BMS credentials (BlueStacks + frida)
-│       ├── solis_mcp.py               # SolisCloud MCP server
-│       └── tuya_mcp.py                # Tuya Cloud MCP server
+│       └── refresh_bms_creds.py       # Re-bootstrap BMS credentials (BlueStacks + frida)
 ├── data/                              # CSV time-series data
 │   ├── {plant}-YYYY-MM.csv            # ShineMonitor data files
 │   └── dessmonitor-{plant}-YYYY-MM.csv # DessMonitor data files (UC10)
@@ -1933,12 +1930,11 @@ a file that is gone (#35).
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 862 tests — 806 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 833 tests — 777 passed, 56 skipped on Windows (bash and API tests run in CI)
 
-In CI the two workstation-only MCP modules (Tuya, CCV heat pump) each skip as
-a unit — they need `requests` / the `mcp` server package, which CI does not
-install — so CI reports fewer passes and one extra skip per module. See *A
-collection error that hid the whole suite* in Bug Fixes.
+The MCP servers' tests are not counted here: they left the repo with the
+servers on 2026-11-04 (see *Not part of the pipeline*). The 28 Tuya tests that
+used to skip in CI went with them.
 
 **Live inverters + BMS (150 tests):**
 
@@ -2003,11 +1999,11 @@ rather than editing the CSV.
 | ----- | ----- | ---- |
 | No payloads or credentials in public logs | 10 | `test_no_payloads_in_public_logs.py` |
 
-**Suite visibility (47 tests):**
+**Suite visibility (46 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| One bad import must not hide the suite | 47 | `test_suite_visibility.py` |
+| One bad import must not hide the suite | 46 | `test_suite_visibility.py` |
 
 That suite parametrizes over every `test_*.py`, so its count rises by one
 with each new test file — including an untracked one sitting in the
@@ -2022,22 +2018,6 @@ directory. If the total here looks one or two short, check
 
 The first test that reads this README: every workflow and script on `main`
 must have its line in the tree, and every line must name a file that exists.
-
-**Tuya (28 tests, workstation-only):**
-
-| Suite | Tests | File |
-| ----- | ----- | ---- |
-| Tuya Cloud MCP (no UC yet) | 28 | `test_tuya_mcp.py` |
-
-**Heat pump (11 tests, workstation-only — NOT YET ON MAIN, so excluded from the total above):**
-
-| Suite | Tests | File |
-| ----- | ----- | ---- |
-| CCV heat pump MCP (no UC yet) | 11 | `test_ccv_heatpump_mcp.py` |
-
-No network: register decoding against a real snapshot from the display, the
-compressor-relay running flag, the DHCP discovery path (fingerprint, ARP
-parsing, subnet fallback, cache) and that only read function codes can be sent.
 
 **Data-commit push (45 tests):**
 

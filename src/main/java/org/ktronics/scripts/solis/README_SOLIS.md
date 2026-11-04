@@ -148,24 +148,8 @@ It only needs the read API, not the Control permission, and works from an
 `sn` alone — an inverter entry with a blank `inverter_id` is still queryable
 with `--detail`, it is just skipped by the watchdog run.
 
-## MCP server (`solis_mcp.py`)
+## MCP server
 
-Exposes SolisCloud to Claude as tools, reusing `SolisClient`. It is read-only by default.
-
-| Tool | What it does |
-|------|--------------|
-| `list_stations`, `station_detail` | Plants on the account |
-| `list_inverters`, `inverter_detail` | Inverters, live power/SOC/grid/load, per-MPPT DC, data age |
-| `inverter_energy`, `station_energy` | History: `day` (5-min points), `month`, `year` |
-| `alarms` | Alarm list (default: last 7 days) |
-| `compare_inverters` | Per-inverter health for multi-inverter plants: flags stale data, missing values, yield < 50% of the best sibling |
-| `read_control_register` | Read one control register by inverter SN and cid (needs Control permission) |
-| `set_control_register` | **Writes** a setting, by inverter SN. Registered only when `SOLIS_MCP_ALLOW_CONTROL=1` |
-
-Credentials come from `SOLIS_KEY_ID` / `SOLIS_KEY_SECRET` env vars, or else from the `solis` block of `credentials.json`.
-
-```bash
-py -m pip install "mcp>=2"
-claude mcp add -s user solis -- py <repo>/src/main/java/org/ktronics/scripts/solis_mcp.py
-```
-Use `-s user`. A project-scoped add can land under the wrong `c:/` vs `C:/` key in `~/.claude.json` and stay invisible.
+The SolisCloud MCP server (`solis_mcp.py`, which reuses `SolisClient`) is a
+workstation tool and is not in this repo. Since 2026-11-04 it lives in the
+gitignored `scripts/mcp_servers/`, alongside its tool list and setup notes.
