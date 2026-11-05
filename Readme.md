@@ -111,6 +111,7 @@ So:
 | `fleet_benchmark.py` | Weather-adjusted benchmark for production disputes |
 | `check_solis_switch.py`, `solis_common.py` | UC13 SolisCloud watchdog |
 | `check_solis_alarms.py` | UC18 SolisCloud alarms through the six-hour gate |
+| `check_deye_alarms.py`, `deye_cloud.py` | UC19 Deye Cloud alarms through the six-hour gate, and its read-only client |
 | `check_ph1000*.py` | UC12 PH1000 dashboard and its PACEEX BMS decode |
 | `check_ph1800.py` | UC15 generic pass-through dashboard, any inverter |
 | `bms-module/scripts/ingest_bms_reading.py` | UC16 ESP32 reading: CSV, thresholds, alert |
@@ -119,7 +120,7 @@ So:
 
 | File | Holds | If it is missing or broken |
 |---|---|---|
-| `config/credentials.json` | ShineMonitor accounts, plants, customer emails, the `solis` block | Gitignored. In CI it comes from `SHINEMONITOR_CREDENTIALS_JSON` |
+| `config/credentials.json` | ShineMonitor accounts, plants, customer emails, the `solis` and `deye` blocks | Gitignored. In CI it comes from `SHINEMONITOR_CREDENTIALS_JSON` |
 | `config/dessmonitor_credentials.json` | DessMonitor accounts (UC10) | Gitignored. From `DESSMONITOR_CREDENTIALS_JSON` |
 | `config/features.json` | Which emails and alerts are live | **Fails open** — an unknown flag reads as ON, so adding a channel never silently mutes an existing one. Override for one run with `KT_FEATURE_<DOTTED_PATH>=true` |
 | `config/excluded_plants.json` | Plants deliberately dropped, each with a reason and a date | **Fails closed** — it excludes nothing. Losing the file must never silently drop a paying customer off the platform |
@@ -138,6 +139,7 @@ normalised key — lower-cased with every non-alphanumeric character stripped �
 | `state/connectivity_state.json` | Link-down alerts per plant, and the fleet alert |
 | `state/solis_switch_state.json` | SolisCloud watchdog |
 | `state/solis_alarms_state.json` | SolisCloud alarms (UC18): the same fields as device alarms, open alarms only |
+| `state/deye_alarms_state.json` | Deye Cloud alarms (UC19): the same, for Deye |
 | `state/admin_email_state.txt` | UC9 content hash, so an unchanged admin email is not resent |
 
 Every repeating alert channel obeys the same rule: **at most 3 sends, at least 4
@@ -216,6 +218,7 @@ that GitHub Pages serves.
 | `trigger-ph1800-hist.yml` | PH1800 — publish 30-day history | Hourly | UC15 30-day window on `ph1800-hist`, decoupled from the live cycle |
 | `trigger-solis-switch.yml` | Solis — re-enable a switched-off inverter | Every 2 h at **:15** | UC13 watchdog. The Control API key went live on 16 Oct 2026, so it can now re-enable, not just report |
 | `trigger-solis-alarms.yml` | Solis — alarms open 6h+ (hourly) | Hourly at **:33** | **UC18** SolisCloud alarms on hybrid inverters through the six-hour gate; admin only |
+| `trigger-deye-alarms.yml` | Deye — alarms open 6h+ (hourly) | Hourly at **:27** | **UC19** Deye Cloud alarms on hybrid and off-grid inverters through the six-hour gate; admin only |
 | `trigger-bms-ingest.yml` | ESP32 BMS — ingest a pushed reading | On a device push (`repository_dispatch`), ~every 15 min | UC16 ESP32 BMS reading |
 | `trigger-battery-health.yml` | Solis — battery health report | 1st of the month, **06:23** UTC | **UC17** battery state of health and yearly fade rate per battery; read-only, no state kept |
 | `tests.yml` | Tests — pull requests only (no email) | On every pull request to `main` | The full suite, silent by design. **Not** the push test: a push to `main` is tested by the `tests` job inside `trigger-shinemonitor.yml`, which is what sends every "TESTS FAILED" email |
@@ -241,6 +244,7 @@ Derived from the scripts each workflow actually runs, not from its name.
 | `trigger-ph1800-hist.yml` | **UC15** 30-day history |
 | `trigger-solis-switch.yml` | **UC13** |
 | `trigger-solis-alarms.yml` | **UC18** |
+| `trigger-deye-alarms.yml` | **UC19** |
 | `trigger-bms-ingest.yml` | **UC16** |
 | `trigger-battery-health.yml` | **UC17** |
 | `tests.yml` | cross-cutting; owns no use case |
@@ -1176,6 +1180,137 @@ py check_solis_alarms.py --dry-run    # print what would be mailed; no email, no
 
 ---
 
+### UC19: Deye Cloud Alarms Through the Six-Hour Gate
+
+The Deye twin of UC18. The admin is mailed about an alarm on a Deye **hybrid
+or off-grid** inverter only when it is **still open 6 hours after it
+started**, then at most 3 times, 4 hours apart. A two-hour CEB cut never
+reaches the inbox.
+
+**Implementation Status:** ✅ **IMPLEMENTED** (5 Nov 2026). It needs the
+`deye` block in the `SHINEMONITOR_CREDENTIALS_JSON` secret. Until that block
+is there, every hourly run fails with "No 'deye' section in credentials.json".
+
+**How it works:**
+
+1. Runs **hourly at :27** ([trigger-deye-alarms.yml](.github/workflows/trigger-deye-alarms.yml)).
+2. Makes about 40 calls, one a second:
+   - `POST /station/list` for every plant on the company account (35 on 5 Nov 2026).
+   - `/station/device`, ten plants per call, for each device's product id.
+   - `/station/alertList` per plant for the last 7 days.
+3. Keeps an alarm when all three hold:
+   - it is **open**: `status` 1, or no end time when there is no usable status;
+   - it is **not on a grid-tie** product (`0_5406_1`); an unknown product id is kept, because a gap in the feed must never silence alerting;
+   - its plant is not in `excluded_plants.json`.
+4. Hands them to the gate exactly as UC3 and UC18 do: `triage_alarms()`, then `filter_alarms_to_send()`.
+5. Emails the admin one list. Each alarm shows:
+   - plant, inverter type and serial;
+   - alarm name with its protocol word and code, level and class;
+   - open since (plant-local time) and hours open;
+   - send n/3, and the gate's first thing to check.
+
+**Grid-tie left out, as on Solis.** The fleet has one grid-tie unit,
+Tharanga Prasad Ongrid 20 KW. Its AC_NoUtillity alarm (F35) of 17 Oct read
+open from 12:44 until 05:48 the next morning.
+
+**What it would have sent, replayed over 6 Oct–5 Nov 2026:** five alarms, nine
+emails. All five ran from dusk to sunrise: they began between 17:35 and 22:17
+and ended between 06:05 and 06:19.
+
+| Plant | Alarms |
+|---|---|
+| Venura Kottawa | F46 Backup_Battery, F59, F47 |
+| Hiran kesbewa | F47 |
+| Umesh | F59 |
+
+That is the grid-tie pattern again: an inverter asleep at night cannot clear
+its alarm until the sun wakes it. Venura Kottawa has no battery by design but
+is configured with one, which is also where its F46 comes from. These plants
+are left in for now. Whether to drop no-battery hybrids too, as grid-tie units
+are dropped, is a decision for the owner.
+
+**Found while wiring it:**
+
+- **Through the gate's generic reader, Deye's open and closed came out
+  inverted.** The reader follows ShineMonitor, where a `status` of false or 0
+  means *unhandled*, so open. Deye uses 1 for open and 0 for closed. Every
+  closed Deye alarm would have read open, and every open one resolved. The
+  adapter now marks each alarm `open` explicitly, and a test holds it.
+- **`alertCode` does not identify a fault.** It is a bit number inside a
+  protocol word: code 12 is F13 Grid_Mode_changed in ERR3 and F45 overvoltage
+  in ERR5. So the key carries the protocol word, and the class map matches the
+  name, never the code.
+- **`/station/device` takes at most ten station ids** per call. More returns
+  "list too long".
+- **Alert names carry no-break spaces and Deye's own spellings**, for example
+  "W3\xa0Grid_Phase_Wrong", "AC_NoUtillity" and "AC_WU_U nderVolt". The email
+  shows them cleaned; the class map matches them as Deye writes them.
+
+**Class map:**
+
+| Class | Deye alarms |
+|---|---|
+| GRID | F13, F35, F42, F45, F47, F48, W3 Grid_Phase_Wrong |
+| SOC | F56 DC_VoltLow, F46 Backup_Battery, F25 Active_Batt |
+| HARDWARE | F26 BusUnbalance, F55 DC_VoltHigh |
+| LOAD | F34 Overload (already mapped) |
+| UNKNOWN | F59 AC_V_GridCurr_High, F57 AC_BackFeed, a bare "F13" |
+
+UNKNOWN alarms take the same six-hour clock and are logged. Every class except
+COMMS has the same dwell, so the class decides only the email's hint. Deye has
+no comms alarm in its alert list.
+
+**State:** `state/deye_alarms_state.json` holds the same fields as UC18, keyed
+`stationId:deviceSN:protocol-code@startEpoch`. An alarm that is no longer
+open is forgotten.
+
+Two failures save no state:
+
+- **A failed read.** A half-read fleet would prune the plants it missed, and
+  their sent alarms would start again at Send 1/3.
+- **A token that sees no plants at all** (`company_id` missing). This counts as
+  a failure, not an all-clear.
+
+**Public logs:** counts and alarm keys only, never plant names (#4).
+
+**Not covered: a dead Deye logger.** Deye reports it as a device status, not
+an alert, and Deye plants are not in the CSV pipeline. Nothing alerts on it
+yet.
+
+**The client, `deye_cloud.py`:**
+
+- Standard library only.
+- Read-only: an allowlist of the three paths above, so no `/order/*` control
+  call can be sent from CI.
+- Logs in again once if a token is refused.
+- Retries once after a rate limit, a server error or a network error.
+
+The workstation's Deye MCP has its own, fuller client. Like every MCP server,
+it stays out of the repository.
+
+**Feature flags:** `emails.deye_alarms_admin` (the email), and
+`alerts.six_hour_gate` (the gate itself, shared with UC3 and UC18).
+
+**Scripts:**
+
+| Script | Purpose |
+|--------|---------|
+| `check_deye_alarms.py` | Plants → product ids → alert lists → open, not grid-tie → six-hour gate → 3x/4h → email |
+| `deye_cloud.py` | Read-only Deye Cloud client: token, three read paths, one retry |
+| `generate_device_alarms.py` | The gate and send rules it reuses; now names the vendor `Deye` |
+| `six-hour-gate/config/alarm_triage.json` | The Deye alarm names in the class map |
+
+**CLI:**
+
+```bash
+py check_deye_alarms.py              # gate + email the admin + save state (cron entrypoint)
+py check_deye_alarms.py --dry-run    # print what would be mailed; no email, no state
+```
+
+**Test Coverage:** 58/58 PASSED — `test_deye_alarms.py`
+
+---
+
 ## Bug Fixes
 
 ### A password in public logs, and a vendor that stopped answering (2026-10-30)
@@ -1805,7 +1940,7 @@ The system runs automatically via GitHub Actions:
 
 Configure these in GitHub Settings > Secrets:
 
-- `SHINEMONITOR_CREDENTIALS_JSON`: ShineMonitor account credentials (also holds the `solis` block for UC13)
+- `SHINEMONITOR_CREDENTIALS_JSON`: ShineMonitor account credentials (also holds the `solis` block for UC13, UC17 and UC18, and the `deye` block for UC19: `app_id`, `app_secret`, `email`, `password_sha256`, `company_id`, `data_center`)
 - `DESSMONITOR_CREDENTIALS_JSON`: DessMonitor account credentials (UC10)
 - `BMS_IOT_TOKEN`: PH1000 battery BMS session token — Aliyun IoT (UC12; refresh when expired)
 - `BMS_APPSECRET`: PH1000 BMS Aliyun API-Gateway app secret (UC12)
@@ -1849,6 +1984,7 @@ Default thresholds in `check_anomaly.py`:
 │   ├── trigger-ph1800-hist.yml        # PH1800 30-day history (hourly) - UC15
 │   ├── trigger-solis-switch.yml       # SolisCloud ON/OFF watchdog (2h) - UC13
 │   ├── trigger-solis-alarms.yml       # SolisCloud alarms through the six-hour gate (hourly) - UC18
+│   ├── trigger-deye-alarms.yml        # Deye Cloud alarms through the six-hour gate (hourly) - UC19
 │   ├── trigger-battery-health.yml     # SolisCloud battery health (monthly) - UC17
 │   ├── trigger-bms-ingest.yml         # ESP32 BMS reading ingest (on device push) - UC16
 │   └── tests.yml                      # Full test suite, pull requests only - no UC
@@ -1863,8 +1999,8 @@ Default thresholds in `check_anomaly.py`:
 │       ├── common_config.sh           # Centralized Bash config
 │       ├── shinemonitor_common.sh     # ShineMonitor API utilities
 │       ├── dessmonitor_common.sh      # DessMonitor API utilities (UC10)
-│       ├── mask_credentials.sh        # Mask every credential value in a job's logs; 12 workflows
-│       ├── push_data_commit.sh        # Commit + push with retry/merge; used by 7 workflows (#28, #29)
+│       ├── mask_credentials.sh        # Mask every credential value in a job's logs; 13 workflows
+│       ├── push_data_commit.sh        # Commit + push with retry/merge; used by 9 workflows (#28, #29)
 │       ├── merge_alarm_state.py       # Merges cumulative state files on a push conflict
 │       ├── check_shinemonitor_monthly.sh  # ShineMonitor monthly data
 │       ├── check_shinemonitor_yearly.sh   # ShineMonitor yearly data
@@ -1892,6 +2028,8 @@ Default thresholds in `check_anomaly.py`:
 │       ├── check_solis_switch.py      # SolisCloud ON/OFF watchdog (UC13)
 │       ├── check_solis_alarms.py      # SolisCloud alarms through the six-hour gate (UC18)
 │       ├── check_battery_health.py    # SolisCloud battery health report (UC17)
+│       ├── deye_cloud.py              # Deye Cloud read-only client (UC19)
+│       ├── check_deye_alarms.py       # Deye Cloud alarms through the six-hour gate (UC19)
 │       ├── solis/README_SOLIS.md      # SolisCloud setup + Control API guide (UC13)
 │       │
 │       │   # Run by hand or on a workstation - no workflow calls these:
@@ -1917,6 +2055,7 @@ Default thresholds in `check_anomaly.py`:
     ├── device_alarms_state.json       # Device alarm state
     ├── connectivity_state.json        # Link-down alert state (UC14)
     ├── solis_alarms_state.json        # SolisCloud alarms held by / sent through the gate (UC18)
+    ├── deye_alarms_state.json         # Deye Cloud alarms held by / sent through the gate (UC19)
     └── solis_switch_state.json        # SolisCloud watchdog state (UC13)
 ```
 
@@ -1930,7 +2069,7 @@ a file that is gone (#35).
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 833 tests — 777 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 894 tests — 838 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 The MCP servers' tests are not counted here: they left the repo with the
 servers on 2026-11-04 (see *Not part of the pipeline*). The 28 Tuya tests that
@@ -1957,6 +2096,12 @@ used to skip in CI went with them.
 | UC17 (Solis battery health) | 10 | `test_battery_health.py` |
 | UC18 (Solis alarms, six-hour gate) | 31 | `test_solis_alarms.py` |
 
+**Deye Cloud (58 tests):**
+
+| Suite | Tests | File |
+| ----- | ----- | ---- |
+| UC19 (Deye alarms, six-hour gate, read-only client) | 58 | `test_deye_alarms.py` |
+
 **Connectivity, exclusions and flags (127 tests):**
 
 | Suite | Tests | File |
@@ -1973,12 +2118,12 @@ used to skip in CI went with them.
 | Gate rules (R1-R6, classes) | 18 | `test_alarm_triage.py` |
 | Gate wiring + feature mode | 8 | `test_alarm_gate_wiring.py` |
 
-**Alerting discipline (33 tests):**
+**Alerting discipline (35 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
 | UC1 (send cap + interval) | 4 | `test_admin_alert_send_cap.py` |
-| Hourly poll scope | 11 | `test_hourly_poll_scope.py` |
+| Hourly poll scope | 13 | `test_hourly_poll_scope.py` |
 | UC9 (weekly all-clear cadence) | 18 | `test_all_clear_cadence.py` |
 
 **Fetch safety and data integrity (38 tests):**
@@ -1999,11 +2144,11 @@ rather than editing the CSV.
 | ----- | ----- | ---- |
 | No payloads or credentials in public logs | 10 | `test_no_payloads_in_public_logs.py` |
 
-**Suite visibility (46 tests):**
+**Suite visibility (47 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| One bad import must not hide the suite | 46 | `test_suite_visibility.py` |
+| One bad import must not hide the suite | 47 | `test_suite_visibility.py` |
 
 That suite parametrizes over every `test_*.py`, so its count rises by one
 with each new test file — including an untracked one sitting in the

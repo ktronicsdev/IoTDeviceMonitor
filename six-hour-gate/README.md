@@ -14,6 +14,7 @@ Customer-facing device-alarm mail is a separate, independently flagged channel
   ShineMonitor          check_*_alarms.sh
   DessMonitor    -->    parse_alarm_files()   -->   [ SIX-HOUR GATE ]   -->  filter_alarms_to_send()
   SolisCloud                                         normalize()             (3x / 4h — unchanged)
+  Deye Cloud
   SolaX (gap)                                        open?      R3                  |
                                                      classify()                     v
                                                      dwell()    R1 R2 R6      admin + customer mail
@@ -37,7 +38,8 @@ exactly as it is — an alarm that never qualifies simply never spends one of it
 | **Config** | [`config/alarm_triage.json`](config/alarm_triage.json) — class map, dwell hours, matchers |
 | **Blocking** | Nothing. R3 (status filter) shipped with the gate |
 | **Solis** | Live since 23 Oct 2026, **hybrid inverters only** — `check_solis_alarms.py`, hourly (UC18) |
-| **Uncovered** | SolaX — web login only, no API key. Solis grid-tie inverters, by decision (below) |
+| **Deye Cloud** | Built 5 Nov 2026, **hybrid and off-grid inverters** — `check_deye_alarms.py`, hourly (UC19). Live once the `deye` block is in the credentials secret |
+| **Uncovered** | SolaX — web login only, no API key. Solis and Deye grid-tie inverters, by decision (below) |
 
 ## Why
 
@@ -101,6 +103,7 @@ one fails if any script imports `smtplib` directly, one fails if any
 | `emails.build_verification`, `emails.test_regression` | on |
 | `emails.solis_switch_admin` | on (workflow dormant) |
 | `emails.solis_alarms_admin` | on (UC18, from 23 Oct 2026) |
+| `emails.deye_alarms_admin` | on (UC19, from 5 Nov 2026) |
 | `emails.bms_alerts_admin` | on (no hardware deployed) |
 | `alerts.production_red_3day` | on |
 | `alerts.production_orange_3month` | **off** |
@@ -179,16 +182,35 @@ gate never learns a vendor's name.
 | Voltronic / PowMr | ShineMonitor | `webQueryPlantsWarning` | `gts` · plant-local | `status = false` | live behind the gate |
 | Deye | DessMonitor | same shape, `dessmonitor-*` | `gts` · plant-local | `status = false` | live behind the gate |
 | Solis | SolisCloud | `POST /v1/api/alarmList` | `alarmBeginTime` · epoch ms | `state = "0"` | live behind the gate, hybrids only (UC18) |
+| Deye | Deye Cloud | `POST /station/alertList`, per plant | `alertStartTime` · epoch s | `status = 1` | built, hybrids and off-grids (UC19) |
 | SolaX | SolaX Cloud | — portal login only | — | — | **not covered** |
 
 **Solis was cheap, as predicted:** `check_solis_alarms.py` is the alarm list, a field map
 and a hybrid filter in front of the same `triage_alarms()` and `filter_alarms_to_send()`
 UC3 runs. Mail goes to the admin only (`emails.solis_alarms_admin`).
 
+**Deye Cloud was cheap too:** `check_deye_alarms.py` is the plant list, a product-id
+lookup, one alert list per plant and a grid-tie filter in front of the same two functions.
+Mail goes to the admin only (`emails.deye_alarms_admin`). Three things differ from Solis:
+
+- **Deye's `status` reads the other way round.** It is 1 for open and 0 for closed. The
+  generic `_open_flag()` follows ShineMonitor, where 0/false is open, so the adapter sets
+  `open` itself; read through the generic path, every Deye alarm would come out inverted.
+- **Deye's `alertCode` is a bit number inside a protocol word.** Code 12 is F13 in ERR3 and
+  F45 in ERR5. So there is no `vendor_codes.deye` map. Deye alarms are classified on their
+  name (see `_comment_deye` in the class map), and the state key carries the protocol word.
+- **Deye has no comms alarm** in its alert list: a dead logger is a device status there. A
+  dark Deye logger is not alerted by anything yet, and Deye plants have no CSV either.
+
+Over 6 Oct–5 Nov 2026 it would have mailed five alarms. All five ran dusk to sunrise, on
+hybrids that were asleep at night; three were on Venura Kottawa, which has no battery. So
+the grid-tie reason below can reach a no-battery hybrid as well. They are left in, for now.
+
 **Solis grid-tie inverters are left out, by decision (23 Oct 2026).** A grid-tie inverter
 shuts down at dusk, so its alarm cannot clear until it wakes: a NO-Grid that ended at 18:00
 reads open until about 06:30. On 17 Oct three grid-tie plants showed 16–18 h for a cut that
-ended that evening. A hybrid runs around the clock, so its alarm times are real.
+ended that evening. A hybrid runs around the clock, so its alarm times are real. Deye's one grid-tie unit
+(product `0_5406_1`) is left out for the same reason.
 
 **SolisCloud's own comms alarm** is "Loss of internet connection", code `1D4C2`. No COMMS
 pattern matched it, so it would have taken the six-hour clock and been mailed. It is now
@@ -211,8 +233,8 @@ loggers elsewhere. **SolaX is genuinely unmonitored, and silence from it means n
 | File | Change |
 |---|---|
 | `six-hour-gate/alarm_triage.py` | `normalize()`, `classify()`, `is_actionable()`. Pure functions, no I/O |
-| `six-hour-gate/config/alarm_triage.json` | dwell hours per class, COMMS list |
-| `generate_device_alarms.py` | `triage_alarms()` runs between `parse_alarm_files()` and `filter_alarms_to_send()`. Rest untouched |
+| `six-hour-gate/config/alarm_triage.json` | dwell hours per class, COMMS list. Deye's alarm names added to GRID, SOC and HARDWARE (UC19) |
+| `generate_device_alarms.py` | `triage_alarms()` runs between `parse_alarm_files()` and `filter_alarms_to_send()`. Rest untouched. Knows the vendors ShineMonitor, DessMonitor, Solis and Deye |
 | `check_device_alarms.sh`<br>`check_dessmonitor_device_alarms.sh` | TESTING MODE dropped, feed filtered to unhandled (R3), raw-response `DEBUG` dump removed. The scripts still print the response body when a fetch fails — not done yet |
 | `state/*_device_alarms_state.json` | `class`, `started_at_utc`, `suppressed_reason` — so *"why wasn't I told about this?"* is answerable from state alone. Written only for alarms the gate holds — not done yet for the rest |
 | `trigger-shinemonitor.yml`<br>`trigger-dessmonitor.yml` | alarm poll is hourly; the CSV data pull stays at 4 h |
@@ -228,6 +250,7 @@ the gate plugs in:
 - **R3** — a handled alarm never escalates, however old
 - **COMMS** — an offline/comms alarm is never mailed, at any age
 - **R6** — a 3-hour grid cut is silent; a 7-hour one escalates. A battery alarm is held to the same clock, day or night: silent at 5 h 59 m, mailed at 6 h 01 m
+- **Vendors** — `test_solis_alarms.py` (UC18) and `test_deye_alarms.py` (UC19) run each adapter through the real gate: open flag, key, class, the six-hour line and the 3x/4h rule
 
 ## The CSV side
 
@@ -256,13 +279,14 @@ missing is *is this actually ours?*
 
 ## Order of work
 
-The first item was not optional and not reorderable. Steps 1, 2, 4 and 5 are done.
+The first item was not optional and not reorderable. Steps 1, 2, 4, 5 and 5b are done.
 
 1. **R3 — the status filter.** *Done.* Stop pulling resolved alarms. Had to land before or with the gate
 2. **R2 + R1 — the gate itself.** *Done, live since 11 Oct 2026.* Timezone conversion, six-hour dwell, and the `COMMS` never-mail class. The core commit
 3. ~~**R5 — the daylight clock for SOC.**~~ Withdrawn 12 Oct 2026 — battery alarms ride the six-hour clock from step 2
 4. **Hourly alarm poll.** *Done.* Makes the six hours literal instead of six-to-ten
 5. **Solis adapter.** *Done, 23 Oct 2026 (UC18).* `alarmList` against the existing signed client, hourly. Hybrid inverters only, for the reason under *Vendor coverage*
+5b. **Deye Cloud adapter.** *Done, 5 Nov 2026 (UC19).* `/station/alertList` per plant through a new read-only client, hourly. Hybrids and off-grids; live once the secret carries the `deye` block
 6. **CSV gating.** *Half done.* The "check the logger is online" line is in the RED escalation text; the fleet-benchmark gate is not built
 7. **SolaX API token.** Request in parallel — a procurement wait, not engineering work
 8. **SolaX adapter.** After the token, and only if the decision is to derive alarms from `inverterStatus` instead of keeping SolaX on manual portal review
