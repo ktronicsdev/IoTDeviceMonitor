@@ -1418,12 +1418,15 @@
     "suppressed_reason": "dwell time is less than 6 hours"
   },
   "1187499:D70000210184361276:6aed7f1593320501681d8ef4": {
-    "send_count": 0,
-    "last_sent": null,
+    "send_count": 1,
+    "last_sent": "2026-11-06T16:33:08.098089",
     "first_seen": "2026-11-06T07:17:35+00:00",
     "ignored": false,
     "class": "SOC",
     "started_at_utc": "2026-11-06T07:17:35+00:00",
-    "suppressed_reason": "dwell time is less than 6 hours"
+    "suppressed_reason": "dwell time is less than 6 hours",
+    "customer": "Gayan-IMH",
+    "plant": "imbulgoda  3kw",
+    "message": "battery voltage is too high"
   }
 }
