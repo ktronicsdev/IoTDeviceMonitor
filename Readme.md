@@ -438,6 +438,7 @@ this test firing.
 - Gayan-IMH ONLY: Receives device alarm emails with test mode enabled
   - Bypasses ignored flag
   - Bypasses send count limit (3-send rule disabled)
+  - Bypasses the 4-hour interval
   - Always includes most recent alarm
 
 **Implementation:**
@@ -456,7 +457,12 @@ this test firing.
 
 **Implementation Status:** ✅ **IMPLEMENTED** (Session 13)
 
-**Test Coverage:** 3 tests (100% pass rate)
+**Test Coverage:** 3 tests in `TestTestModeRunsTheRealScript`
+(`test_device_alarms.py`). They run the real `main()` with the manual run's
+arguments. The newest Gayan-IMH alarm is mailed though ignored at send 3:
+its state goes to 4 and an older one stays at 3. An alarm sent minutes ago
+at send 2 is mailed anyway. And test mode adds nothing when real alarms are
+already going out.
 
 ---
 
@@ -468,7 +474,9 @@ Test mode filters alarms to Gayan-IMH (test customer) only.
 
 **Parent Use Case:** UC3 (Device Alarm Alerts)
 
-**Test Coverage:** 2 tests
+**Test Coverage:** 2 tests in `TestTestModeRunsTheRealScript`
+(`test_device_alarms.py`), through the real `main()`: another customer's
+newer alarm is never picked, and with no Gayan-IMH alarm nothing is added.
 
 ---
 
@@ -622,8 +630,8 @@ Step 5 also applies the weekly all-clear gate described above.
 **Implementation Status:** ✅ **IMPLEMENTED** (Session 13); all-clear gate
 added 2026-10-16
 
-**Test Coverage:** 24/24 PASSED — `test_uc9_admin_email.py` (9),
-`test_all_clear_cadence.py` (15)
+**Test Coverage:** 27/27 PASSED — `test_uc9_admin_email.py` (9),
+`test_all_clear_cadence.py` (18)
 
 ---
 
@@ -1313,6 +1321,30 @@ py check_deye_alarms.py --dry-run    # print what would be mailed; no email, no 
 
 ## Bug Fixes
 
+### Test-mode tests that tested a copy (2026-11-06)
+
+**What it cost.** Nothing broke, but nothing guarded UC4 and UC5 either. The
+five test-mode tests in `test_device_alarms.py` copied the test-mode branch of
+`generate_device_alarms.py` into themselves and asserted on the copy. A change
+that stopped the Gayan-IMH smoke test, or let test mode mail a real customer's
+alarm, would have passed CI.
+
+**How it was found.** An audit of use cases against test cases on 6 Nov 2026.
+The copies disagreed with each other. Three said test mode bypasses the
+ignored flag and the 3-send cap, which is what UC4 specifies and the script
+does. Two said it respects both, which is the Session 12 fix that UC4 reversed
+(*UC3: Test Mode 3-Send Limit Bug*, below). All five passed, because none of
+them ran the script. The README repeated the contradiction: UC4 said test
+mode bypasses the cap, the Session 12 entry said it respects it.
+
+**The fix.** `TestTestModeRunsTheRealScript` replaces all five. Each test
+writes alarm files and a state file, runs the real `main()` with the manual
+run's arguments, and reads back the state and the email. Each was checked by
+planting the regression it guards and watching it fail: the Session 12 rule
+put back, the Gayan-IMH filter dropped, test mode running while real alarms
+go out, and test mode honouring the 4-hour interval. The file still holds 40
+tests.
+
 ### A password in public logs, and a vendor that stopped answering (2026-10-30)
 
 **What it cost.** A customer account's ShineMonitor password sat in clear
@@ -1821,6 +1853,11 @@ jq -cS '{alerts, suppressed, ignored}' alerts/alerts.json | sha256sum
 **Fix:** Added same validation as `filter_alarms_to_send()` to test mode
 
 **Commit:** `334035b`
+
+**Reversed in Session 13.** UC4 made test mode skip both checks on purpose,
+for the Gayan-IMH smoke test, so this fix no longer holds and a send count
+above 3 on that plant is expected. The two tests that pinned this fix kept
+passing until 2026-11-06 anyway; see *Test-mode tests that tested a copy*.
 
 ---
 
