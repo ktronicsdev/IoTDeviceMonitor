@@ -1,10 +1,10 @@
 {
   "1308675217949897483": {
     "label": "Ktronics Imbulgoda",
-    "last_check": "2026-11-06T06:41:30.189510+00:00",
+    "last_check": "2026-11-06T15:55:15.957606+00:00",
     "last_state": 1,
-    "last_pac": 6.271,
-    "last_reason": "producing pac=6.271kW",
+    "last_pac": 0.0,
+    "last_reason": "on/off register (cid 52) = 190",
     "off": false
   }
 }
