@@ -1,13 +1,32 @@
 {
-  "generated_at": "2026-11-07T23:13:15.197982Z",
+  "generated_at": "2026-11-08T02:49:22.059581Z",
   "alerts": [],
-  "suppressed": [],
+  "suppressed": [
+    {
+      "plant_key": "dessmonitor-mifrazmarsoon-plant",
+      "reason": "reclassified as CONNECTIVITY: no data for 3 days (no data rows at all \u2014 the portal has nothing for this plant) \u2014 data link down, NOT a production fault",
+      "days_stale": 3,
+      "link_down": true
+    }
+  ],
   "ignored": [],
-  "link_down": [],
+  "link_down": [
+    {
+      "plant_key": "dessmonitor-mifrazmarsoon-plant",
+      "kind": "no_rows",
+      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
+      "link_down": true,
+      "days_stale": 3,
+      "days_since_data": 3,
+      "last_nonzero_date": "2026-11-05",
+      "last_data_date": "2026-11-05",
+      "stale_days_threshold": 3
+    }
+  ],
   "excluded": [],
   "counts": {
-    "reporting": 2,
-    "link_down": 0,
+    "reporting": 1,
+    "link_down": 1,
     "excluded": 0,
     "monitored": 2
   }

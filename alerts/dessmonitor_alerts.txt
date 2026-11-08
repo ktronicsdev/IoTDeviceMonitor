@@ -6,8 +6,29 @@
 ║                                                                              ║
 ║                          Status: NO ALERTS DETECTED                          ║
 ║                                                                              ║
-║                Date: 2026-11-07  |  Total Plants Monitored: 2                ║
-║                Reporting: 2  |  Dead link: 0  |  Excluded: 0                 ║
+║                Date: 2026-11-08  |  Total Plants Monitored: 2                ║
+║                Reporting: 1  |  Dead link: 1  |  Excluded: 0                 ║
 ║                                                                              ║
 ================================================================================
+
+┌─ 📡 DATA LINK DOWN (CONNECTIVITY — NOT A PRODUCTION FAULT) ──────────────────┐
+│
+│ These plants have sent no data for 3+ days. The usual cause is the
+│ customer's WiFi or monitoring dongle being offline. The solar system is
+│ very probably running normally — do NOT record these as dead systems.
+│ Production cannot be judged either way until the link is restored.
+│
+│   • dessmonitor-mifrazmarsoon-plant
+│     Last reading: 2026-11-05 (3 days ago)
+│     Symptom: no data rows at all — the portal has nothing for this plant
+│
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ ADDITIONAL INFORMATION ────────────────────────────────────────────────────┐
+│
+│ SUPPRESSED ALERTS (Already notified, zero production continues):
+│   • dessmonitor-mifrazmarsoon-plant
+│     Reason: reclassified as CONNECTIVITY: no data for 3 days (no data rows at all — the portal has nothing for this plant) — data link down, NOT a production fault
+│
+└──────────────────────────────────────────────────────────────────────────────┘
 
