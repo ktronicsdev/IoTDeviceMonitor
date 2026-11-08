@@ -1,14 +1,7 @@
 {
-  "generated_at": "2026-11-08T18:40:22.535556Z",
+  "generated_at": "2026-11-08T20:56:55.145443Z",
   "alerts": [],
-  "suppressed": [
-    {
-      "plant_key": "dessmonitor-mifrazmarsoon-plant",
-      "reason": "reclassified as CONNECTIVITY: no data for 3 days (no data rows at all \u2014 the portal has nothing for this plant) \u2014 data link down, NOT a production fault",
-      "days_stale": 3,
-      "link_down": true
-    }
-  ],
+  "suppressed": [],
   "ignored": [
     {
       "plant_key": "abeetha-plant",
@@ -162,23 +155,12 @@
       "last_nonzero_date": "2026-10-17",
       "last_data_date": "2026-11-08",
       "stale_days_threshold": 3
-    },
-    {
-      "plant_key": "dessmonitor-mifrazmarsoon-plant",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 3,
-      "days_since_data": 3,
-      "last_nonzero_date": "2026-11-05",
-      "last_data_date": "2026-11-05",
-      "stale_days_threshold": 3
     }
   ],
   "excluded": [],
   "counts": {
-    "reporting": 16,
-    "link_down": 9,
+    "reporting": 17,
+    "link_down": 8,
     "excluded": 0,
     "monitored": 25
   }
