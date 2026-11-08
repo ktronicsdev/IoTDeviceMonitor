@@ -1,13 +1,1 @@
-{
-  "dessmonitor-mifrazmarsoon-plant": {
-    "customer": "Unknown",
-    "days_stale": 3,
-    "first_seen": "2026-11-08T02:49:22.191236",
-    "ignored": false,
-    "kind": "no_rows",
-    "last_data": "2026-11-05",
-    "last_sent": "2026-11-08T10:52:15.453351",
-    "plant": "dessmonitor-mifrazmarsoon-plant",
-    "send_count": 2
-  }
-}
+{}
