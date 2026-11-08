@@ -1,7 +1,14 @@
 {
-  "generated_at": "2026-11-07T23:58:46.128083Z",
+  "generated_at": "2026-11-08T03:41:53.512635Z",
   "alerts": [],
-  "suppressed": [],
+  "suppressed": [
+    {
+      "plant_key": "dessmonitor-mifrazmarsoon-plant",
+      "reason": "reclassified as CONNECTIVITY: no data for 3 days (no data rows at all \u2014 the portal has nothing for this plant) \u2014 data link down, NOT a production fault",
+      "days_stale": 3,
+      "link_down": true
+    }
+  ],
   "ignored": [
     {
       "plant_key": "abeetha-plant",
@@ -10,7 +17,7 @@
         "2026-10"
       ],
       "link_down": true,
-      "days_stale": 98
+      "days_stale": 99
     },
     {
       "plant_key": "anuradha-gajanayaka-plant",
@@ -19,7 +26,7 @@
         "2026-10"
       ],
       "link_down": true,
-      "days_stale": 98
+      "days_stale": 99
     },
     {
       "plant_key": "ganishka-ganishka-home-3kw",
@@ -28,7 +35,7 @@
         "2026-10"
       ],
       "link_down": true,
-      "days_stale": 98
+      "days_stale": 99
     },
     {
       "plant_key": "lahiru-ryan-lahiru-plant",
@@ -37,7 +44,7 @@
         "2026-10"
       ],
       "link_down": true,
-      "days_stale": 98
+      "days_stale": 99
     },
     {
       "plant_key": "mifanza-mifanza-solar-system",
@@ -46,7 +53,7 @@
         "2026-10"
       ],
       "link_down": true,
-      "days_stale": 98
+      "days_stale": 99
     },
     {
       "plant_key": "samurdi-kohuwala",
@@ -55,7 +62,7 @@
         "2026-10"
       ],
       "link_down": true,
-      "days_stale": 98
+      "days_stale": 99
     },
     {
       "plant_key": "upulatheja-3kw-pro-kadawath",
@@ -64,7 +71,7 @@
         "2026-10"
       ],
       "link_down": true,
-      "days_stale": 98
+      "days_stale": 99
     }
   ],
   "link_down": [
@@ -73,10 +80,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 98,
+      "days_stale": 99,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-11-07",
+      "last_data_date": "2026-11-08",
       "stale_days_threshold": 3
     },
     {
@@ -84,10 +91,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 98,
+      "days_stale": 99,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-11-07",
+      "last_data_date": "2026-11-08",
       "stale_days_threshold": 3
     },
     {
@@ -95,10 +102,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 98,
+      "days_stale": 99,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-11-07",
+      "last_data_date": "2026-11-08",
       "stale_days_threshold": 3
     },
     {
@@ -106,10 +113,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 98,
+      "days_stale": 99,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-11-07",
+      "last_data_date": "2026-11-08",
       "stale_days_threshold": 3
     },
     {
@@ -117,10 +124,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 98,
+      "days_stale": 99,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-11-07",
+      "last_data_date": "2026-11-08",
       "stale_days_threshold": 3
     },
     {
@@ -128,10 +135,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 98,
+      "days_stale": 99,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-11-07",
+      "last_data_date": "2026-11-08",
       "stale_days_threshold": 3
     },
     {
@@ -139,10 +146,10 @@
       "kind": "never_reported",
       "meaning": "no non-zero reading has ever been recorded",
       "link_down": true,
-      "days_stale": 98,
+      "days_stale": 99,
       "days_since_data": 0,
       "last_nonzero_date": null,
-      "last_data_date": "2026-11-07",
+      "last_data_date": "2026-11-08",
       "stale_days_threshold": 3
     },
     {
@@ -150,17 +157,28 @@
       "kind": "zeros_only",
       "meaning": "rows still arriving but every reading is 0.0000 kWh",
       "link_down": true,
-      "days_stale": 21,
+      "days_stale": 22,
       "days_since_data": 0,
       "last_nonzero_date": "2026-10-17",
-      "last_data_date": "2026-11-07",
+      "last_data_date": "2026-11-08",
+      "stale_days_threshold": 3
+    },
+    {
+      "plant_key": "dessmonitor-mifrazmarsoon-plant",
+      "kind": "no_rows",
+      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
+      "link_down": true,
+      "days_stale": 3,
+      "days_since_data": 3,
+      "last_nonzero_date": "2026-11-05",
+      "last_data_date": "2026-11-05",
       "stale_days_threshold": 3
     }
   ],
   "excluded": [],
   "counts": {
-    "reporting": 17,
-    "link_down": 8,
+    "reporting": 16,
+    "link_down": 9,
     "excluded": 0,
     "monitored": 25
   }
