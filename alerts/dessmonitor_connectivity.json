@@ -33,9 +33,7 @@
     }
   ],
   "excluded": [],
-  "generated_at": "2026-11-08T10:52:15.453151Z",
+  "generated_at": "2026-11-08T14:40:21.569509Z",
   "fleet_wide_outage": false,
-  "alerting_now": [
-    "dessmonitor-mifrazmarsoon-plant"
-  ]
+  "alerting_now": []
 }
