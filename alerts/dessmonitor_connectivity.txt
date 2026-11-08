@@ -6,7 +6,7 @@
 ║                                                                              ║
 ================================================================================
 
-Report Time: 2026-11-08 02:49:22 UTC
+Report Time: 2026-11-08 10:52:15 UTC
 
 ┌─ FLEET STATUS ───────────────────────────────────────────────────────────────┐
 │
@@ -38,7 +38,7 @@ Report Time: 2026-11-08 02:49:22 UTC
 │    Last data:   2026-11-05  (3 days ago)
 │    Symptom:     no data rows at all — the portal has nothing for this plant
 │    Diagnosis:   DATA LINK DOWN — not a production fault
-│    Status:      Send #1/3
+│    Status:      Send #2/3
 │
 └──────────────────────────────────────────────────────────────────────────────┘
 
