@@ -39,6 +39,7 @@ exactly as it is — an alarm that never qualifies simply never spends one of it
 | **Blocking** | Nothing. R3 (status filter) shipped with the gate |
 | **Solis** | Live since 23 Oct 2026, **hybrid inverters only** — `check_solis_alarms.py`, hourly (UC18) |
 | **Deye Cloud** | Built 5 Nov 2026, **hybrid and off-grid inverters** — `check_deye_alarms.py`, hourly (UC19). Live once the `deye` block is in the credentials secret |
+| **MUST telemetry** | Built 10 Nov 2026 — `check_must_telemetry.py`, hourly (UC20). Grid loss and backup failed, made from the ShineMonitor MUST inverters' own readings: their warning list never reports a grid loss |
 | **Uncovered** | SolaX — web login only, no API key. Solis and Deye grid-tie inverters, by decision (below) |
 
 ## Why
@@ -104,6 +105,7 @@ one fails if any script imports `smtplib` directly, one fails if any
 | `emails.solis_switch_admin` | on (workflow dormant) |
 | `emails.solis_alarms_admin` | on (UC18, from 23 Oct 2026) |
 | `emails.deye_alarms_admin` | on (UC19, from 5 Nov 2026) |
+| `emails.must_telemetry_admin` | on (UC20, from 10 Nov 2026) |
 | `emails.bms_alerts_admin` | on (no hardware deployed) |
 | `alerts.production_red_3day` | on |
 | `alerts.production_orange_3month` | **off** |
@@ -183,11 +185,19 @@ gate never learns a vendor's name.
 | Deye | DessMonitor | same shape, `dessmonitor-*` | `gts` · plant-local | `status = false` | live behind the gate |
 | Solis | SolisCloud | `POST /v1/api/alarmList` | `alarmBeginTime` · epoch ms | `state = "0"` | live behind the gate, hybrids only (UC18) |
 | Deye | Deye Cloud | `POST /station/alertList`, per plant | `alertStartTime` · epoch s | `status = 1` | built, hybrids and off-grids (UC19) |
+| MUST | ShineMonitor | **none** — made from `queryDeviceDataOneDayPaging` readings | the outage's first reading · plant-local | set by the adapter | built (UC20) |
 | SolaX | SolaX Cloud | — portal login only | — | — | **not covered** |
 
 **Solis was cheap, as predicted:** `check_solis_alarms.py` is the alarm list, a field map
 and a hybrid filter in front of the same `triage_alarms()` and `filter_alarms_to_send()`
 UC3 runs. Mail goes to the admin only (`emails.solis_alarms_admin`).
+
+**MUST needed alarms of its own.** ShineMonitor's warning list never reports a MUST inverter
+losing the grid: 0 of the 157 alarms UC3 had tracked, against 32 grid-off episodes in 14 days
+of the inverters' readings. `check_must_telemetry.py` makes two alarms from those readings,
+grid loss (GRID) and backup failed (SOC), and hands them to the same two functions. The
+backup alarm carries the outage's start time, so the gate times it on the outage's clock.
+Mail goes to the admin only (`emails.must_telemetry_admin`).
 
 **Deye Cloud was cheap too:** `check_deye_alarms.py` is the plant list, a product-id
 lookup, one alert list per plant and a grid-tie filter in front of the same two functions.
@@ -233,7 +243,7 @@ loggers elsewhere. **SolaX is genuinely unmonitored, and silence from it means n
 | File | Change |
 |---|---|
 | `six-hour-gate/alarm_triage.py` | `normalize()`, `classify()`, `is_actionable()`. Pure functions, no I/O |
-| `six-hour-gate/config/alarm_triage.json` | dwell hours per class, COMMS list. Deye's alarm names added to GRID, SOC and HARDWARE (UC19) |
+| `six-hour-gate/config/alarm_triage.json` | dwell hours per class, COMMS list. Deye's alarm names added to GRID, SOC and HARDWARE (UC19); "backup failed" and "battery flat" to SOC (UC20) |
 | `generate_device_alarms.py` | `triage_alarms()` runs between `parse_alarm_files()` and `filter_alarms_to_send()`. Rest untouched. Knows the vendors ShineMonitor, DessMonitor, Solis and Deye |
 | `check_device_alarms.sh`<br>`check_dessmonitor_device_alarms.sh` | TESTING MODE dropped, feed filtered to unhandled (R3), raw-response `DEBUG` dump removed. The scripts still print the response body when a fetch fails — not done yet |
 | `state/*_device_alarms_state.json` | `class`, `started_at_utc`, `suppressed_reason` — so *"why wasn't I told about this?"* is answerable from state alone. Written only for alarms the gate holds — not done yet for the rest |
@@ -250,7 +260,7 @@ the gate plugs in:
 - **R3** — a handled alarm never escalates, however old
 - **COMMS** — an offline/comms alarm is never mailed, at any age
 - **R6** — a 3-hour grid cut is silent; a 7-hour one escalates. A battery alarm is held to the same clock, day or night: silent at 5 h 59 m, mailed at 6 h 01 m
-- **Vendors** — `test_solis_alarms.py` (UC18) and `test_deye_alarms.py` (UC19) run each adapter through the real gate: open flag, key, class, the six-hour line and the 3x/4h rule
+- **Vendors** — `test_solis_alarms.py` (UC18), `test_deye_alarms.py` (UC19) and `test_must_telemetry.py` (UC20) run each adapter through the real gate: open flag, key, class, the six-hour line and the 3x/4h rule
 
 ## The CSV side
 
@@ -279,7 +289,7 @@ missing is *is this actually ours?*
 
 ## Order of work
 
-The first item was not optional and not reorderable. Steps 1, 2, 4, 5 and 5b are done.
+The first item was not optional and not reorderable. Steps 1, 2, 4, 5, 5b and 5c are done.
 
 1. **R3 — the status filter.** *Done.* Stop pulling resolved alarms. Had to land before or with the gate
 2. **R2 + R1 — the gate itself.** *Done, live since 11 Oct 2026.* Timezone conversion, six-hour dwell, and the `COMMS` never-mail class. The core commit
@@ -287,6 +297,7 @@ The first item was not optional and not reorderable. Steps 1, 2, 4, 5 and 5b are
 4. **Hourly alarm poll.** *Done.* Makes the six hours literal instead of six-to-ten
 5. **Solis adapter.** *Done, 23 Oct 2026 (UC18).* `alarmList` against the existing signed client, hourly. Hybrid inverters only, for the reason under *Vendor coverage*
 5b. **Deye Cloud adapter.** *Done, 5 Nov 2026 (UC19).* `/station/alertList` per plant through a new read-only client, hourly. Hybrids and off-grids; live once the secret carries the `deye` block
+5c. **MUST telemetry adapter.** *Done, 10 Nov 2026 (UC20).* Grid loss and backup failed from the inverters' 5-minute readings, hourly, because ShineMonitor's warning list never sends a MUST grid loss
 6. **CSV gating.** *Half done.* The "check the logger is online" line is in the RED escalation text; the fleet-benchmark gate is not built
 7. **SolaX API token.** Request in parallel — a procurement wait, not engineering work
 8. **SolaX adapter.** After the token, and only if the decision is to derive alarms from `inverterStatus` instead of keeping SolaX on manual portal review

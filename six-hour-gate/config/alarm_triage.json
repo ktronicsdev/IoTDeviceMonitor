@@ -37,6 +37,7 @@
 
   "match": {
     "_comment": "Lowercased substring match against the vendor's message. LONGEST PATTERN WINS, so 'overload time out' beats 'overload'. Anything unmatched falls to UNKNOWN and is logged.",
+    "_comment_must": "'backup failed' and 'battery flat' are the MUST telemetry alarms' own words (UC20): made from the inverters' readings, not sent by any vendor.",
     "_comment_deye": "Deye Cloud alert names (UC19), as the fleet's alert lists wrote them Oct-Nov 2026: F-code and name run together ('F47AC_OverFreq_Fault') or apart ('AC_UnderFreq_Fault F48'), and 'NoUtillity' and 'U nderVolt' are Deye's own spellings. Matched on the name, never the code: Deye's alertCode repeats across protocol words. Not yet placed, so UNKNOWN: F59 AC_V_GridCurr_High, F57 AC_BackFeed, a bare 'F13'.",
     "COMMS": [
       "offline",
@@ -53,7 +54,9 @@
       "low battery",
       "dc_voltlow",
       "backup_battery_fault",
-      "active_batt_fault"
+      "active_batt_fault",
+      "backup failed",
+      "battery flat"
     ],
     "HARDWARE": [
       "inverter bus voltage is too low",

@@ -112,6 +112,7 @@ So:
 | `check_solis_switch.py`, `solis_common.py` | UC13 SolisCloud watchdog |
 | `check_solis_alarms.py` | UC18 SolisCloud alarms through the six-hour gate |
 | `check_deye_alarms.py`, `deye_cloud.py` | UC19 Deye Cloud alarms through the six-hour gate, and its read-only client |
+| `check_must_telemetry.py` | UC20 MUST grid-loss and backup-failed alarms, made from the inverters' own readings, through the six-hour gate |
 | `check_ph1000*.py` | UC12 PH1000 dashboard and its PACEEX BMS decode |
 | `check_ph1800.py` | UC15 generic pass-through dashboard, any inverter |
 | `bms-module/scripts/ingest_bms_reading.py` | UC16 ESP32 reading: CSV, thresholds, alert |
@@ -124,6 +125,7 @@ So:
 | `config/dessmonitor_credentials.json` | DessMonitor accounts (UC10) | Gitignored. From `DESSMONITOR_CREDENTIALS_JSON` |
 | `config/features.json` | Which emails and alerts are live | **Fails open** — an unknown flag reads as ON, so adding a channel never silently mutes an existing one. Override for one run with `KT_FEATURE_<DOTTED_PATH>=true` |
 | `config/excluded_plants.json` | Plants deliberately dropped, each with a reason and a date | **Fails closed** — it excludes nothing. Losing the file must never silently drop a paying customer off the platform |
+| `config/must_telemetry.json` | UC20 thresholds (grid, flat battery 22.5 V / 45.5 V, freshness) and `no_grid_expected`, the plants built without an AC input | Committed. The list ships **empty**: every plant is expected to have grid |
 
 Matching in `exclusions.py`, and in the plant-to-customer mapping, is on a
 normalised key — lower-cased with every non-alphanumeric character stripped — so
@@ -140,6 +142,7 @@ normalised key — lower-cased with every non-alphanumeric character stripped �
 | `state/solis_switch_state.json` | SolisCloud watchdog |
 | `state/solis_alarms_state.json` | SolisCloud alarms (UC18): the same fields as device alarms, open alarms only |
 | `state/deye_alarms_state.json` | Deye Cloud alarms (UC19): the same, for Deye |
+| `state/must_telemetry_state.json` | MUST telemetry (UC20): the same alarm fields, plus each inverter's last reading, open outage and backup episode under `device:pid:pn` |
 | `state/admin_email_state.txt` | UC9 content hash, so an unchanged admin email is not resent |
 
 Every repeating alert channel obeys the same rule: **at most 3 sends, at least 4
@@ -219,6 +222,7 @@ that GitHub Pages serves.
 | `trigger-solis-switch.yml` | Solis — re-enable a switched-off inverter | Every 2 h at **:15** | UC13 watchdog. The Control API key went live on 16 Oct 2026, so it can now re-enable, not just report |
 | `trigger-solis-alarms.yml` | Solis — alarms open 6h+ (hourly) | Hourly at **:33** | **UC18** SolisCloud alarms on hybrid inverters through the six-hour gate; admin only |
 | `trigger-deye-alarms.yml` | Deye — alarms open 6h+ (hourly) | Hourly at **:27** | **UC19** Deye Cloud alarms on hybrid and off-grid inverters through the six-hour gate; admin only |
+| `trigger-must-telemetry.yml` | MUST — grid and battery alarms from telemetry (hourly) | Hourly at **:43** | **UC20** grid loss and backup failed on the ShineMonitor MUST inverters, from their 5-minute readings, through the six-hour gate; admin only |
 | `trigger-bms-ingest.yml` | ESP32 BMS — ingest a pushed reading | On a device push (`repository_dispatch`), ~every 15 min | UC16 ESP32 BMS reading |
 | `trigger-battery-health.yml` | Solis — battery health report | 1st of the month, **06:23** UTC | **UC17** battery state of health and yearly fade rate per battery; read-only, no state kept |
 | `tests.yml` | Tests — pull requests only (no email) | On every pull request to `main` | The full suite, silent by design. **Not** the push test: a push to `main` is tested by the `tests` job inside `trigger-shinemonitor.yml`, which is what sends every "TESTS FAILED" email |
@@ -245,6 +249,7 @@ Derived from the scripts each workflow actually runs, not from its name.
 | `trigger-solis-switch.yml` | **UC13** |
 | `trigger-solis-alarms.yml` | **UC18** |
 | `trigger-deye-alarms.yml` | **UC19** |
+| `trigger-must-telemetry.yml` | **UC20** |
 | `trigger-bms-ingest.yml` | **UC16** |
 | `trigger-battery-health.yml` | **UC17** |
 | `tests.yml` | cross-cutting; owns no use case |
@@ -408,6 +413,7 @@ Monitors device-level warnings from ShineMonitor API and sends targeted notifica
 - 3-send rule: once an alarm passes the gate it is sent 3 times, at least 4 hours apart, then auto-ignored
 - State persistence with human-readable fields (customer, plant, message)
 - Vendor silence: a ShineMonitor login or call that gets no answer is tried once more, 3 s later. The first try gets 15 s and the second 25 s. This shares `shinemonitor_common.sh` with data collection. Since 2026-10-27 about four calls in ten from a GitHub runner hang, and without the retry each run missed alarms for 9-16 of the 23 accounts (see Bug Fixes, 2026-10-30)
+- What UC3 cannot see: ShineMonitor's warning list never reports a MUST inverter losing the grid, and does not always report a flat battery. Those alarms are made from the inverters' readings by **UC20**, and pass through the same gate
 
 **Test Coverage:** 40/40 PASSED — `test_device_alarms.py`, which also
 carries the UC4, UC5, UC6, UC7 and UC8 tests
@@ -1319,7 +1325,140 @@ py check_deye_alarms.py --dry-run    # print what would be mailed; no email, no 
 
 ---
 
+### UC20: MUST Telemetry Alarms Through the Six-Hour Gate
+
+The admin is mailed when a MUST inverter on ShineMonitor has had **no grid for
+6 hours**, and when its **backup fails** in such an outage. Neither alarm comes
+from ShineMonitor. Both are made here from the inverter's own 5-minute readings,
+then go through the same six-hour gate and three-sends / four-hours rule as UC3,
+UC18 and UC19.
+
+**Implementation Status:** ✅ **IMPLEMENTED** (10 Nov 2026)
+
+**Why it exists:** ShineMonitor's warning list does not report a MUST inverter
+losing the grid. When one customer was without grid for 25 hours on 8–9 Nov
+2026 and the inverter shut down twice on a flat battery, the gate had nothing
+to hold (see *No alarm for a 25-hour MUST outage* in Bug Fixes).
+
+**How it works:**
+
+1. Runs **hourly at :43** ([trigger-must-telemetry.yml](.github/workflows/trigger-must-telemetry.yml)). It reads every account in the `accounts` block of the credentials, the same accounts UC3 polls, six at a time.
+2. For each inverter it calls `queryDeviceDataOneDayPaging`, starting after the last reading it has already seen.
+   - That is usually one call, because the newest rows come first.
+   - A first look walks back a day at a time (at most 7) until a reading shows grid. An outage that began days ago is then timed from its real start.
+   - An inverter whose logger is dark costs one call a run.
+   - A feed with no grid or battery voltage is not watched.
+3. It keeps a small state per inverter: its last two readings, any open outage and any open backup episode.
+4. It makes at most two alarms per inverter and hands them to `triage_alarms()`, then `filter_alarms_to_send()`.
+5. It emails the admin one list. Each alarm shows:
+   - the plant and the inverter, what happened and since when;
+   - the latest reading: grid, battery (and its lowest in this outage), load and output;
+   - the hours on the clock, send n/3, and the gate's first thing to check.
+
+**The rules:**
+
+| Alarm | Class | Open when | Clock |
+|---|---|---|---|
+| Grid loss | GRID | an outage is open and the latest reading, under 30 minutes old, still shows no grid | the outage's start |
+| Backup failed (shut down) | SOC | no grid, the battery's last reading is flat, and nothing has come for 20 minutes | the outage's start |
+| Battery flat | SOC | no grid, two readings in a row flat | the outage's start |
+| Backup failed (dead output) | SOC | no grid, two readings in a row with the AC output below 100 V | the outage's start |
+
+How the rules decide:
+
+- **An outage** opens on two readings in a row below 100 V on the AC input, and is timed from the first of them. A reading of 180 V or more closes it. A reading between the two (a brownout) neither opens nor closes one.
+- **Flat** is 22.5 V on a 24 V battery and 45.5 V on a 48 V one, confirmed by the owner on 10 Nov 2026. The nominal voltage is read off the battery's own readings.
+- **The three backup alarms share one episode and one key.** The episode ends when the grid is back. It also ends when the output works and the battery is 2.5 V clear of flat (5 V on 48 V).
+
+**Decisions (10 Nov 2026):**
+
+- **One clock.** The backup alarm runs on the outage's clock, not its own. Six hours into an outage, a battery that gives out goes at the next run. A battery that dies in a short outage is never mailed: a two-hour cut stays silent, whatever it did.
+- **Every plant has grid**, unless `config/must_telemetry.json` lists it in `no_grid_expected`. A listed plant raises no grid-loss alarm. Its battery is still watched, on the backup episode's own clock. The list ships empty.
+- **Admin only.**
+- **Silence never confirms an outage.** A logger whose Wi-Fi dropped looks exactly like one whose grid is still off, so the grid alarm needs a fresh reading. Silence counts only straight after a flat-battery reading, because an inverter that cuts off takes its logger with it.
+- **0 W is not a failure.** On three nights, 27–29 Oct, Jeremy's inverter showed 0 W for 7–11 hours, and the first design counted that as a dead backup. Its output held 229.8 V throughout: nothing was drawing on a working inverter. So the rule reads the output voltage, not the load.
+- **The grid voltage, not the work state.** Kasun's and Muadh's inverters read OffGrid with 232–235 V on their input.
+
+**What it would have sent.** The real code was replayed on the fleet's real readings from 27 Oct to 10 Nov 2026, one run an hour. It sent 28 mails on four plants:
+
+| Plant | Mails | What |
+|---|---|---|
+| Ravi Botheju | 4 | Grid loss at 12:13, 16:13 and 20:13 on 8 Nov. "Battery flat at 22.2 V" at 04:13 on 9 Nov, half an hour before the inverter cut off |
+| Jeremy | 4 | Grid loss on three nights, 27–29 Oct |
+| Gayan-IMH | 3 | Grid loss since 23:27 on 5 Nov, still open on 10 Nov |
+| SandamalSilva | 17 | Grid loss on most days. Until 29 Oct the grid went at about 10:00 each day; since then it has been gone for days at a time |
+
+GitHub fires about one hourly run in three (#31). At that rate it sends 26 mails, and Ravi's backup mail comes at 05:13 from the shutdown rule instead ("no reading since 04:46").
+
+The dead-output rule never fired. Only four readings in the 14 days showed a dead output, and never two in a row.
+
+**The first run mails the two outages still open:** Gayan-IMH (since 5 Nov) and SandamalSilva (since 8 Nov).
+
+**State:** `state/must_telemetry_state.json` is one flat map, like every state file here, so `merge_alarm_state.py` can union two runs.
+
+- Alarm records live under `pid:pn:grid-loss@<start>` and `pid:pn:backup@<start>`, with the device-alarm fields.
+- Each inverter's readings state lives under `device:pid:pn`.
+- An alarm key lasts as long as its outage or episode, even while the alarm reads closed for a moment. A flicker therefore does not restart it at Send 1/3.
+- An inverter that could not be read keeps its state and its keys.
+
+**Public logs:** counts and alarm keys only, never names (#4). `--dry-run`
+prints the email body, and is meant for a workstation.
+
+**Not covered:**
+
+- **An outage that also takes the logger's Wi-Fi down.** No readings arrive, so there is nothing to alarm on. UC14 reports the link down after 3 days.
+- **DessMonitor plants (UC10).** Only the ShineMonitor accounts are read.
+
+**Feature flags:** `emails.must_telemetry_admin` (the email), and
+`alerts.six_hour_gate` (the gate itself, shared with UC3, UC18 and UC19).
+
+**Scripts:**
+
+| Script | Purpose |
+|--------|---------|
+| `check_must_telemetry.py` | Readings → outage and backup state → alarms → six-hour gate → 3x/4h → email |
+| `config/must_telemetry.json` | The thresholds, and the plants built without grid |
+| `six-hour-gate/config/alarm_triage.json` | "backup failed" and "battery flat" in the SOC class |
+
+**CLI:**
+
+```bash
+py check_must_telemetry.py              # gate + email the admin + save state (cron entrypoint)
+py check_must_telemetry.py --dry-run    # print what would be mailed; no email, no state
+```
+
+**Test Coverage:** 38/38 PASSED — `test_must_telemetry.py`
+
+---
+
 ## Bug Fixes
+
+### No alarm for a 25-hour MUST outage (2026-11-10)
+
+**What it cost.** Ravi Botheju's MUST inverter lost the grid at 06:10 on 8 Nov
+2026 and did not get it back until 07:40 the next morning. Overnight his 24 V
+battery ran down to 21.9 V. The logger went silent at 04:46 and again at
+06:08: the inverter was shutting itself off on a flat battery, and the house
+was dark until the sun or the grid came back. The admin heard nothing.
+
+**How it was found.** The owner asked whether an alarm had been registered,
+then why the six-hour gate had not caught 25 hours. The Actions logs answered
+it. Twelve alarm polls ran inside the outage, and eleven of them were told
+"No device alarms found (err: 264)" for this account, including the two
+during the shutdowns. The twelfth could not log in. Only 12 of the roughly 32
+scheduled runs fired in those hours (#31), but more runs would have got the
+same answer. The gate cannot hold what it is never given.
+
+**Root cause.** ShineMonitor's warning list does not report a MUST inverter
+losing the grid. Of the 157 alarms UC3 had tracked from it since January, not
+one was a grid loss, while the inverters' own readings showed 32 grid-off
+episodes in 14 days. It does sometimes report "battery voltage is too low" (58
+times in that history), but not on this night, at 21.9 V. The gate's GRID class
+had only ever been fed by Solis, Deye and DessMonitor.
+
+**Fix.** UC20 makes the alarms from the readings. Replayed over this outage,
+it mails grid loss at 12:13 on 8 Nov and a flat battery at 04:13 on 9 Nov,
+half an hour before the first shutdown.
 
 ### Test-mode tests that tested a copy (2026-11-06)
 
@@ -2022,6 +2161,7 @@ Default thresholds in `check_anomaly.py`:
 │   ├── trigger-solis-switch.yml       # SolisCloud ON/OFF watchdog (2h) - UC13
 │   ├── trigger-solis-alarms.yml       # SolisCloud alarms through the six-hour gate (hourly) - UC18
 │   ├── trigger-deye-alarms.yml        # Deye Cloud alarms through the six-hour gate (hourly) - UC19
+│   ├── trigger-must-telemetry.yml     # MUST grid/battery alarms from telemetry (hourly) - UC20
 │   ├── trigger-battery-health.yml     # SolisCloud battery health (monthly) - UC17
 │   ├── trigger-bms-ingest.yml         # ESP32 BMS reading ingest (on device push) - UC16
 │   └── tests.yml                      # Full test suite, pull requests only - no UC
@@ -2030,6 +2170,7 @@ Default thresholds in `check_anomaly.py`:
 │   │   ├── credentials.json           # ShineMonitor credentials (gitignored)
 │   │   ├── dessmonitor_credentials.json # DessMonitor credentials (gitignored)
 │   │   ├── features.json              # Which emails and alerts are live
+│   │   ├── must_telemetry.json        # UC20 thresholds and the plants built without grid
 │   │   └── excluded_plants.json       # Plants deliberately off the platform (UC14)
 │   └── scripts/
 │       ├── config.py                  # Centralized Python config
@@ -2067,6 +2208,7 @@ Default thresholds in `check_anomaly.py`:
 │       ├── check_battery_health.py    # SolisCloud battery health report (UC17)
 │       ├── deye_cloud.py              # Deye Cloud read-only client (UC19)
 │       ├── check_deye_alarms.py       # Deye Cloud alarms through the six-hour gate (UC19)
+│       ├── check_must_telemetry.py    # MUST grid loss + backup failed from readings, six-hour gate (UC20)
 │       ├── solis/README_SOLIS.md      # SolisCloud setup + Control API guide (UC13)
 │       │
 │       │   # Run by hand or on a workstation - no workflow calls these:
@@ -2093,6 +2235,7 @@ Default thresholds in `check_anomaly.py`:
     ├── connectivity_state.json        # Link-down alert state (UC14)
     ├── solis_alarms_state.json        # SolisCloud alarms held by / sent through the gate (UC18)
     ├── deye_alarms_state.json         # Deye Cloud alarms held by / sent through the gate (UC19)
+    ├── must_telemetry_state.json      # MUST outages, backup episodes and their alarms (UC20)
     └── solis_switch_state.json        # SolisCloud watchdog state (UC13)
 ```
 
@@ -2106,7 +2249,7 @@ a file that is gone (#35).
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 894 tests — 838 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 935 tests — 879 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 The MCP servers' tests are not counted here: they left the repo with the
 servers on 2026-11-04 (see *Not part of the pipeline*). The 28 Tuya tests that
@@ -2139,6 +2282,12 @@ used to skip in CI went with them.
 | ----- | ----- | ---- |
 | UC19 (Deye alarms, six-hour gate, read-only client) | 58 | `test_deye_alarms.py` |
 
+**MUST telemetry (38 tests):**
+
+| Suite | Tests | File |
+| ----- | ----- | ---- |
+| UC20 (grid loss + backup failed from readings, six-hour gate) | 38 | `test_must_telemetry.py` |
+
 **Connectivity, exclusions and flags (127 tests):**
 
 | Suite | Tests | File |
@@ -2155,12 +2304,12 @@ used to skip in CI went with them.
 | Gate rules (R1-R6, classes) | 18 | `test_alarm_triage.py` |
 | Gate wiring + feature mode | 8 | `test_alarm_gate_wiring.py` |
 
-**Alerting discipline (35 tests):**
+**Alerting discipline (37 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
 | UC1 (send cap + interval) | 4 | `test_admin_alert_send_cap.py` |
-| Hourly poll scope | 13 | `test_hourly_poll_scope.py` |
+| Hourly poll scope | 15 | `test_hourly_poll_scope.py` |
 | UC9 (weekly all-clear cadence) | 18 | `test_all_clear_cadence.py` |
 
 **Fetch safety and data integrity (38 tests):**
@@ -2181,11 +2330,11 @@ rather than editing the CSV.
 | ----- | ----- | ---- |
 | No payloads or credentials in public logs | 10 | `test_no_payloads_in_public_logs.py` |
 
-**Suite visibility (47 tests):**
+**Suite visibility (48 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| One bad import must not hide the suite | 47 | `test_suite_visibility.py` |
+| One bad import must not hide the suite | 48 | `test_suite_visibility.py` |
 
 That suite parametrizes over every `test_*.py`, so its count rises by one
 with each new test file — including an untracked one sitting in the

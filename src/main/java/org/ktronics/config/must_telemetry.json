@@ -1,0 +1,25 @@
+{
+  "_comment": [
+    "MUST telemetry alarms (UC20): thresholds read by check_must_telemetry.py.",
+    "ShineMonitor's warning list never reports a MUST inverter losing the grid, so these",
+    "alarms are made from the inverters' own 5-minute readings and handed to the six-hour gate.",
+    "Every plant is expected to have grid. A plant built without an AC input goes in",
+    "no_grid_expected (its account label, a reason and a since date): it then raises no",
+    "grid-loss alarm, but its battery is still watched."
+  ],
+  "version": 1,
+
+  "grid_absent_below_v": 100,
+  "grid_present_from_v": 180,
+  "output_dead_below_v": 100,
+
+  "flat_battery_v": {"24": 22.5, "48": 45.5},
+  "_flat_battery_v": "Confirmed by the owner 10 Nov 2026. A battery that reads this low with no grid is flat.",
+  "recharged_above_flat_v": {"24": 2.5, "48": 5.0},
+
+  "fresh_minutes": 30,
+  "silent_minutes": 20,
+  "first_look_back_days": 7,
+
+  "no_grid_expected": []
+}

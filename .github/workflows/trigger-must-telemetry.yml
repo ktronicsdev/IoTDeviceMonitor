@@ -1,0 +1,77 @@
+name: MUST — grid and battery alarms from telemetry (hourly)
+
+# Every hour: read every ShineMonitor MUST inverter's own 5-minute readings and
+# make the alarms ShineMonitor's warning list never sends (UC20): grid loss,
+# and a backup that failed (flat battery, shut-down inverter, dead output).
+# They go through the six-hour gate, as UC3, UC18 and UC19 do: the admin is
+# mailed only when an outage is still on 6 hours after it began, then at most
+# 3 times, 4 hours apart.
+#
+# The ShineMonitor accounts are the `accounts` block of the
+# SHINEMONITOR_CREDENTIALS_JSON secret, the same ones UC3 polls.
+on:
+  schedule:
+    - cron: "43 * * * *"          # hourly, clear of the other hourly jobs (:13 :17 :27 :33 :41 :47)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "print what would be mailed; send nothing, save no state"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write                # to commit updated state/must_telemetry_state.json
+
+concurrency:
+  group: must-telemetry
+  cancel-in-progress: false
+
+jobs:
+  telemetry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Create credentials.json from secret
+        shell: bash
+        run: |
+          set -e
+          mkdir -p src/main/java/org/ktronics/config
+          cat <<'EOF' > src/main/java/org/ktronics/config/credentials.json
+          ${{ secrets.SHINEMONITOR_CREDENTIALS_JSON }}
+          EOF
+          chmod 600 src/main/java/org/ktronics/config/credentials.json
+          bash src/main/java/org/ktronics/scripts/mask_credentials.sh src/main/java/org/ktronics/config/credentials.json
+
+      - name: Run MUST telemetry alarms
+        shell: bash
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+        run: |
+          DRY=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then DRY="--dry-run"; fi
+          python3 src/main/java/org/ktronics/scripts/check_must_telemetry.py $DRY
+
+      - name: Commit updated state
+        shell: bash
+        run: |
+          if [ -n "$(git status --porcelain state/must_telemetry_state.json)" ]; then
+            git config user.name  "must-telemetry-bot"
+            git config user.email "actions@users.noreply.github.com"
+            git add state/must_telemetry_state.json
+            git commit -m "Update MUST telemetry alarm state"
+            chmod +x src/main/java/org/ktronics/scripts/push_data_commit.sh
+            src/main/java/org/ktronics/scripts/push_data_commit.sh --resolve-conflicts
+          else
+            echo "No state change to commit."
+          fi
