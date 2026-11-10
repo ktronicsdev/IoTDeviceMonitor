@@ -71,8 +71,13 @@ PAGE_SIZE = 100          # queryDeviceDataOneDayPaging returns at most 100 rows 
 MAX_PAGES_PER_DAY = 5    # a 5-minute logger writes about 290 rows a day
 TIMEOUTS_S = (15, 25)    # one try, one retry: the vendor-silence rule of shinemonitor_common.sh
 RETRY_PAUSE_S = 3
-WORKERS = 6
-NO_RECORD = 12           # ERR_NO_RECORD: no rows for that day or page
+# Accounts read at once. Six lost 9 of 23 logins on the first CI run (10 Nov 2026),
+# where UC3, one account at a time, loses 3-4: ShineMonitor answers a runner worse
+# when logins arrive together.
+WORKERS = 3
+SECOND_PASS_BUDGET_S = 360   # time for trying the failed accounts again, one at a time
+SECOND_PASS_PAUSE_S = 5      # let the vendor settle before the second pass
+NO_RECORD = 12          # ERR_NO_RECORD: no rows for that day or page
 DEVICE_PREFIX = "device:"
 TS_FMT = "%Y-%m-%d %H:%M:%S"
 FIELDS = {"Timestamp": "ts", "Grid Voltage": "grid_v", "Battery Voltage": "batt_v",
@@ -535,10 +540,44 @@ def read_account(account, company_key, device_states, cfg, now_local, client_fac
     return out
 
 
-def read_fleet(accounts, company_key, device_states, cfg, now_local, client_factory=None):
+def _better(first, second):
+    """The read to keep for an account tried twice: the second only if it did better."""
+    if second["ok"] and (not first["ok"] or second["failed"] < first["failed"]):
+        return second
+    return first
+
+
+def read_fleet(accounts, company_key, device_states, cfg, now_local, client_factory=None,
+               budget_s=None, pause_s=None, clock=time.monotonic):
+    """Read every account, then try once more, one at a time, each that failed.
+
+    From a GitHub runner ShineMonitor leaves a share of logins and calls
+    unanswered, and the share is not the same twice: an account that hung on
+    the first pass usually answers on the second. The second pass stops when
+    its time budget is spent, so a vendor that answers nobody cannot run the
+    job into its timeout. Returns (results, accounts recovered on the second try).
+    """
+    budget_s = SECOND_PASS_BUDGET_S if budget_s is None else budget_s
+    pause_s = SECOND_PASS_PAUSE_S if pause_s is None else pause_s
+
+    def read(account):
+        return read_account(account, company_key, device_states, cfg, now_local, client_factory)
+
     with ThreadPoolExecutor(max_workers=WORKERS) as pool:
-        return list(pool.map(lambda a: read_account(a, company_key, device_states, cfg, now_local,
-                                                    client_factory), accounts))
+        results = list(pool.map(read, accounts))
+    again = [i for i, r in enumerate(results) if not r["ok"] or r["failed"]]
+    recovered = 0
+    deadline = clock() + budget_s
+    if again and budget_s > 0 and pause_s:
+        time.sleep(pause_s)
+    for i in again:
+        if clock() >= deadline:
+            break
+        second = read(accounts[i])
+        best = _better(results[i], second)
+        recovered += best is second
+        results[i] = best
+    return results, recovered
 
 
 # --------------------------------------------------------------------------- #
@@ -629,8 +668,8 @@ def main(argv=None, client_factory=None, utc_now=None):
                 if not exclusions.is_customer_excluded(a.get("label", ""))]
     excluded = len(creds.get("accounts", [])) - len(accounts)
     state = load_state(args.state_file)
-    results = read_fleet(accounts, creds["company_key"], device_states(state), cfg, now_local,
-                         client_factory)
+    results, recovered = read_fleet(accounts, creds["company_key"], device_states(state), cfg,
+                                    now_local, client_factory)
     read_ok = sum(r["ok"] for r in results)
     if accounts and not read_ok:
         print("✗ ShineMonitor answered for no account - state left as it was", file=sys.stderr)
@@ -640,7 +679,8 @@ def main(argv=None, client_factory=None, utc_now=None):
     outages = sum(1 for k in read if state[DEVICE_PREFIX + k].get("outage"))
     episodes = sum(1 for k in read if state[DEVICE_PREFIX + k].get("backup"))
     # Counts and keys only: Actions logs of this repo are public, names are not (#4).
-    print(f"✓ {read_ok}/{len(accounts)} accounts read ({excluded} excluded); {len(read)} devices "
+    print(f"✓ {read_ok}/{len(accounts)} accounts read ({recovered} on a second try, {excluded} "
+          f"excluded); {len(read)} devices "
           f"read, {sum(r['failed'] for r in results)} failed, "
           f"{sum(r['unsupported'] for r in results)} without grid/battery readings")
     print(f"✓ {outages} open grid outage(s), {episodes} backup episode(s); {len(alarms)} alarm(s) open")

@@ -29,7 +29,7 @@ concurrency:
 jobs:
   telemetry:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20             # first pass ~3 min; the second pass is capped at 6
     steps:
       - name: Checkout
         uses: actions/checkout@v4

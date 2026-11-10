@@ -390,6 +390,7 @@ def fleet(tmp_path, monkeypatch):
     creds.write_text(json.dumps({"company_key": "k", "accounts": [
         {"label": "Ravi Test", "username": "ravi-user", "password": "s3cret-pw", "email": "x@y"}]}))
     monkeypatch.setattr(m, "CREDENTIALS_PATH", creds)
+    monkeypatch.setattr(m, "SECOND_PASS_PAUSE_S", 0)
     monkeypatch.setenv("KT_FEATURE_EMAILS_MUST_TELEMETRY_ADMIN", "false")
     return tmp_path
 
@@ -445,6 +446,71 @@ def test_a_dark_logger_costs_one_call_a_run_after_its_first_look(fleet):
     assert len(clients[0].feed.calls) == CFG["first_look_back_days"] + 1
     m.main(["--state-file", str(state_file)], client_factory=factory, utc_now=utc("2026-11-10 08:43:00"))
     assert clients[1].feed.calls == [("2026-11-10", 0)]
+
+
+# --------------------------------------------------------------------------- #
+# The second pass. On its first CI run (10 Nov 2026) six logins at a time lost
+# 9 of 23 accounts, Gayan-IMH and SandamalSilva among them, so the two open
+# outages went unseen. UC3, one account at a time, loses 3-4.
+# --------------------------------------------------------------------------- #
+ACCOUNTS = [{"label": f"A{i}", "username": f"u{i}", "password": "p", "email": "x@y"} for i in range(4)]
+
+
+def flaky(fail_first):
+    """A login that hangs the first time for the usernames given, then answers."""
+    calls = []
+
+    def factory(u, p, k):
+        calls.append(u)
+        if u in fail_first and calls.count(u) == 1:
+            raise m.FetchError("login failed")
+        return FakeClient(ravi_rows())
+    return factory, calls
+
+
+def test_an_account_that_hung_is_tried_once_more_and_kept_when_it_answers():
+    factory, calls = flaky({"u1", "u3"})
+    results, recovered = m.read_fleet(ACCOUNTS, "k", {}, CFG, "2026-11-08 12:13:00", factory, pause_s=0)
+    assert [r["ok"] for r in results] == [True] * 4 and recovered == 2
+    assert sorted(calls) == ["u0", "u1", "u1", "u2", "u3", "u3"]
+
+
+def test_an_account_that_never_answers_is_tried_twice_and_no_more():
+    def refuse(u, p, k):
+        calls.append(u)
+        raise m.FetchError("login failed")
+    calls = []
+    results, recovered = m.read_fleet(ACCOUNTS[:1], "k", {}, CFG, "2026-11-08 12:13:00", refuse, pause_s=0)
+    assert calls == ["u0", "u0"] and not results[0]["ok"] and recovered == 0
+
+
+def test_the_second_pass_stops_when_its_time_is_spent():
+    factory, calls = flaky({"u0", "u1", "u2", "u3"})
+    ticks = iter([0, 0, 400, 400, 400])
+    results, recovered = m.read_fleet(ACCOUNTS, "k", {}, CFG, "2026-11-08 12:13:00", factory,
+                                      budget_s=360, pause_s=0, clock=lambda: next(ticks))
+    assert recovered == 1 and sum(r["ok"] for r in results) == 1
+
+
+def test_a_second_read_is_kept_only_if_it_did_better():
+    ok = {"ok": True, "devices": [1], "unsupported": 0, "failed": 0}
+    partial = {"ok": True, "devices": [], "unsupported": 0, "failed": 1}
+    down = {"ok": False, "devices": [], "unsupported": 0, "failed": 0}
+    assert m._better(partial, ok) is ok
+    assert m._better(partial, down) is partial
+    assert m._better(down, partial) is partial
+    assert m._better(ok, dict(ok)) is ok
+
+
+def test_logins_go_out_three_at_a_time_at_most():
+    assert m.WORKERS <= 3
+
+
+def test_main_says_how_many_came_back_on_a_second_try(fleet, capsys):
+    factory, _ = flaky({"ravi-user"})
+    m.main(["--state-file", str(fleet / "state.json")], client_factory=factory,
+           utc_now=utc("2026-11-08 12:13:00"))
+    assert "1/1 accounts read (1 on a second try, 0 excluded)" in capsys.readouterr().out
 
 
 # --------------------------------------------------------------------------- #

@@ -1342,7 +1342,7 @@ to hold (see *No alarm for a 25-hour MUST outage* in Bug Fixes).
 
 **How it works:**
 
-1. Runs **hourly at :43** ([trigger-must-telemetry.yml](.github/workflows/trigger-must-telemetry.yml)). It reads every account in the `accounts` block of the credentials, the same accounts UC3 polls, six at a time.
+1. Runs **hourly at :43** ([trigger-must-telemetry.yml](.github/workflows/trigger-must-telemetry.yml)). It reads every account in the `accounts` block of the credentials, the same accounts UC3 polls, three at a time. Every account that fails then gets a second try, one at a time, within a 6-minute budget.
 2. For each inverter it calls `queryDeviceDataOneDayPaging`, starting after the last reading it has already seen.
    - That is usually one call, because the newest rows come first.
    - A first look walks back a day at a time (at most 7) until a reading shows grid. An outage that began days ago is then timed from its real start.
@@ -1401,6 +1401,16 @@ The dead-output rule never fired. Only four readings in the 14 days showed a dea
 - An alarm key lasts as long as its outage or episode, even while the alarm reads closed for a moment. A flicker therefore does not restart it at Send 1/3.
 - An inverter that could not be read keeps its state and its keys.
 
+**Found on its first CI run (10 Nov 2026): logins sent together are lost
+together.** The first run read the accounts six at a time from a GitHub runner,
+and 9 of the 23 logins went unanswered. Gayan-IMH and SandamalSilva were among
+them, so the run reported no open outage while both were 46-105 hours into one.
+UC3, which logs in one account at a time, lost 3 and 4 of 23 in the two runs
+before it. Every account did log in from a workstation, six at a time. So the
+fleet is now read three at a time, and every account that fails is tried once
+more, one at a time, before the run gives up on it. The log says how many came
+back on that second try.
+
 **Public logs:** counts and alarm keys only, never names (#4). `--dry-run`
 prints the email body, and is meant for a workstation.
 
@@ -1427,7 +1437,7 @@ py check_must_telemetry.py              # gate + email the admin + save state (c
 py check_must_telemetry.py --dry-run    # print what would be mailed; no email, no state
 ```
 
-**Test Coverage:** 38/38 PASSED — `test_must_telemetry.py`
+**Test Coverage:** 44/44 PASSED — `test_must_telemetry.py`
 
 ---
 
@@ -2249,7 +2259,7 @@ a file that is gone (#35).
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 935 tests — 879 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 941 tests — 885 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 The MCP servers' tests are not counted here: they left the repo with the
 servers on 2026-11-04 (see *Not part of the pipeline*). The 28 Tuya tests that
@@ -2282,11 +2292,11 @@ used to skip in CI went with them.
 | ----- | ----- | ---- |
 | UC19 (Deye alarms, six-hour gate, read-only client) | 58 | `test_deye_alarms.py` |
 
-**MUST telemetry (38 tests):**
+**MUST telemetry (44 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| UC20 (grid loss + backup failed from readings, six-hour gate) | 38 | `test_must_telemetry.py` |
+| UC20 (grid loss + backup failed from readings, six-hour gate, second pass) | 44 | `test_must_telemetry.py` |
 
 **Connectivity, exclusions and flags (127 tests):**
 
