@@ -139,3 +139,28 @@ def test_no_push_only_step_is_left_in_the_run_job():
         "these steps of the `run` job are conditioned on push, which never "
         "runs that job any more:\n  - " + "\n  - ".join(dead)
     )
+
+
+@pytest.mark.parametrize("status, title", [
+    ("SUCCESS", "Build Successful"),
+    ("TESTS PASSED", "Build Successful"),
+    ("TESTS FAILING", "Build Failed"),
+    ("FAILURE", "Build Failed"),
+])
+def test_the_build_email_header_follows_the_status_line(status, title):
+    """
+    The push email reads "Status: TESTS PASSED" and its subject said Build OK,
+    but its header was a red "Build Failed" since that change: the header looked
+    only for "Status: SUCCESS", a word the push email stopped using on
+    2026-10-23. Found from a screenshot of the mail on 2026-11-10.
+    """
+    import sys
+    scripts = next(p for p in Path(__file__).resolve().parents
+                   if (p / "src" / "main" / "java" / "org" / "ktronics" / "scripts").is_dir()
+                   ) / "src" / "main" / "java" / "org" / "ktronics" / "scripts"
+    sys.path.insert(0, str(scripts))
+    from email_utils import convert_plain_text_to_simple_html
+    body = "\n".join(["Workflow: W", f"Status: {status}", "Commit: abc", ""])
+    html = convert_plain_text_to_simple_html(body)
+    assert title in html
+    assert ("Build Failed" in html) == (title == "Build Failed")

@@ -1455,6 +1455,19 @@ py check_must_telemetry.py --dry-run    # print what would be mailed; no email, 
 
 ## Bug Fixes
 
+### A green build mail with a red header (2026-11-10)
+
+Since 2026-10-23 a push runs the tests only, and the mail it sends reads
+`Status: TESTS PASSED` under the subject `Build OK`. The mail's header, a
+red `Build Failed` banner, only looked for `Status: SUCCESS`, the word the
+old full run used, so every push mail since has had a failure banner on a
+passing build. It cost trust rather than data: a red banner on a good push is
+what makes a real failure get skimmed past. It was found on 2026-11-10 from a
+screenshot of the mail for 533c7661, whose own text said `TESTS PASSED`. The
+header now follows the Status line: `SUCCESS` and `TESTS PASSED` are green,
+`TESTS FAILING` and `FAILURE` are red (`email_utils.build_succeeded`). 4 tests
+render the mail for each status.
+
 ### No alarm for a 25-hour MUST outage (2026-11-10)
 
 **What it cost.** Ravi Botheju's MUST inverter lost the grid at 06:10 on 8 Nov
@@ -2271,7 +2284,7 @@ a file that is gone (#35).
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 944 tests — 888 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 948 tests — 892 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 The MCP servers' tests are not counted here: they left the repo with the
 servers on 2026-11-04 (see *Not part of the pipeline*). The 28 Tuya tests that
@@ -2380,11 +2393,11 @@ must have its line in the tree, and every line must name a file that exists.
 | Cumulative state merge | 8 | `test_merge_alarm_state.py` |
 | No bare push to main | 10 | `test_no_bare_push_to_main.py` |
 
-**What a push runs (6 tests):**
+**What a push runs (10 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| A push runs the test suite only | 6 | `test_push_is_tests_only.py` |
+| A push runs the test suite only, and its mail says so | 10 | `test_push_is_tests_only.py` |
 
 **ShineMonitor (150 tests):**
 

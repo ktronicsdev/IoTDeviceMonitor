@@ -169,6 +169,16 @@ def create_html_template(content_html, header_class='success', title=''):
 """
 
 
+# The Status line of a build email, as the workflows write it. A push sends
+# "TESTS PASSED" (since 2026-10-23); the others say SUCCESS. Anything else,
+# TESTS FAILING or FAILURE, is a failure.
+BUILD_OK_STATUSES = ("Status: SUCCESS", "Status: TESTS PASSED")
+
+
+def build_succeeded(text_body):
+    return any(status in text_body for status in BUILD_OK_STATUSES)
+
+
 def convert_plain_text_to_simple_html(text_body):
     """
     Convert plain text to simple HTML wrapped in styled container.
@@ -181,7 +191,7 @@ def convert_plain_text_to_simple_html(text_body):
 
     # Determine header style
     if is_build_email:
-        is_success = "Status: SUCCESS" in text_body
+        is_success = build_succeeded(text_body)
         header_class = 'success' if is_success else 'alert'
         title = '✅ Build Successful' if is_success else '❌ Build Failed'
     elif is_weekly:
