@@ -30,8 +30,13 @@ Every `site/ph1800/<label>/index.html` is an identical copy of the canonical das
      "batt_kw": 1.8       // battery size   (optional)
    }
    ```
-2. Push that same content into the cloud secret so the workflow sees it:
-   `gh secret set SHINEMONITOR_CREDENTIALS_JSON < …/credentials.json`
+2. Push that same content into the cloud secret so the workflow sees it, **without the local-only sections**:
+   `jq '(._meta.local_only_sections // []) as $l | with_entries(select(.key | IN($l[]) | not))' …/credentials.json | gh secret set SHINEMONITOR_CREDENTIALS_JSON`
+
+   Never `gh secret set … < credentials.json` as it is. Since 2026-11-10 the file is also the owner's central store of personal
+   credentials (Healthchecks ping URLs, the Valla nodes' secrets, MCP tokens), listed in `_meta.local_only_sections`. This repo
+   is public, and `mask_credentials.sh` hides only values whose key looks like a password, secret, token or key, so a ping URL
+   or a DuckDNS URL in the secret would print in the open in the Actions logs.
 
 That's it. The workflow auto-creates `site/ph1800/<label>/` (copied from `_app.html`) and publishes
 the plant's data. No code changes.
