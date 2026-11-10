@@ -178,6 +178,47 @@ def test_first_look_stops_at_the_look_back_limit():
     assert sorted({d for d, _ in feed.calls}) == ["2026-11-07", "2026-11-08", "2026-11-09", "2026-11-10"]
 
 
+class DiesAfter:
+    """A feed whose calls stop being answered after `n` of them."""
+
+    def __init__(self, feed, n):
+        self.feed, self.n, self.calls = feed, n, 0
+
+    def __call__(self, day, page):
+        self.calls += 1
+        if self.calls > self.n:
+            raise m.FetchError("no answer")
+        return self.feed(day, page)
+
+
+def _gridless_week():
+    rows = series("2026-11-05 22:00:00", "2026-11-05 23:22:00", lambda t: (230.0, 26.8))
+    rows += series("2026-11-05 23:27:30", "2026-11-10 07:45:00", lambda t: (0.0, 25.5))
+    return FakeFeed(rows)
+
+
+def test_a_first_look_cut_short_keeps_the_days_it_read():
+    """Gayan-IMH and SandamalSilva were never read in CI: a first look into a
+    five-day outage is 15+ calls, and one unanswered call threw all of them away."""
+    feed = DiesAfter(_gridless_week(), 5)
+    got = m.fetch_new_rows(feed, datetime(2026, 11, 10).date(), None, 7, 180)
+    assert got and got == sorted(got, key=lambda r: r["ts"])
+    assert got[-1]["ts"] == "2026-11-10 07:42:30"
+    dev = m.advance(m.new_device_state(), got, CFG)
+    assert dev["outage"] is not None and dev["outage"]["start_known"] is False
+
+
+def test_a_first_look_with_nothing_read_still_fails():
+    with pytest.raises(m.FetchError):
+        m.fetch_new_rows(DiesAfter(_gridless_week(), 0), datetime(2026, 11, 10).date(), None, 7, 180)
+
+
+def test_a_cursor_read_cut_short_still_fails_so_no_reading_is_skipped():
+    with pytest.raises(m.FetchError):
+        m.fetch_new_rows(DiesAfter(_gridless_week(), 1), datetime(2026, 11, 10).date(),
+                         "2026-11-08 00:00:00", 7, 180)
+
+
 def test_a_feed_that_is_not_a_must_returns_none():
     assert m.fetch_new_rows(lambda d, p: (None, False), datetime(2026, 11, 10).date(),
                             None, 7, 180) is None

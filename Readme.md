@@ -1411,6 +1411,18 @@ fleet is now read three at a time, and every account that fails is tried once
 more, one at a time, before the run gives up on it. The log says how many came
 back on that second try.
 
+**Found on the runs after it (10 Nov 2026): a first look that is cut short must
+keep what it read.** Even with every login answered, the state file held 19 of
+22 inverters and Gayan-IMH's and SandamalSilva's were never among them. They
+were never read, not read randomly: an inverter with no grid for days is read
+back until a reading shows grid, 15 or more calls for a five-day outage, and
+one unanswered call threw all of them away, run after run. The second pass
+repeated the same walk and lost it the same way. It was found by looking at
+which devices the state file had a record for, not at the counts in the log.
+A first look cut short now keeps the days it did read and times the outage from
+the oldest of them, marked "or earlier". A read that has a cursor still fails
+whole, so no reading is skipped.
+
 **Public logs:** counts and alarm keys only, never names (#4). `--dry-run`
 prints the email body, and is meant for a workstation.
 
@@ -1437,7 +1449,7 @@ py check_must_telemetry.py              # gate + email the admin + save state (c
 py check_must_telemetry.py --dry-run    # print what would be mailed; no email, no state
 ```
 
-**Test Coverage:** 44/44 PASSED — `test_must_telemetry.py`
+**Test Coverage:** 47/47 PASSED — `test_must_telemetry.py`
 
 ---
 
@@ -2259,7 +2271,7 @@ a file that is gone (#35).
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 941 tests — 885 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 944 tests — 888 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 The MCP servers' tests are not counted here: they left the repo with the
 servers on 2026-11-04 (see *Not part of the pipeline*). The 28 Tuya tests that
@@ -2292,11 +2304,11 @@ used to skip in CI went with them.
 | ----- | ----- | ---- |
 | UC19 (Deye alarms, six-hour gate, read-only client) | 58 | `test_deye_alarms.py` |
 
-**MUST telemetry (44 tests):**
+**MUST telemetry (47 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| UC20 (grid loss + backup failed from readings, six-hour gate, second pass) | 44 | `test_must_telemetry.py` |
+| UC20 (grid loss + backup failed from readings, six-hour gate, second pass, partial first look) | 47 | `test_must_telemetry.py` |
 
 **Connectivity, exclusions and flags (127 tests):**
 

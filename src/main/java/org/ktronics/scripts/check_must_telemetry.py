@@ -178,7 +178,16 @@ def fetch_new_rows(get_page, today, since, look_back_days, present_v):
             break
         reached = False
         for page in range(MAX_PAGES_PER_DAY):
-            items, more = get_page(day, page)
+            try:
+                items, more = get_page(day, page)
+            except FetchError:
+                # A first look that walks back several days is many calls, and one
+                # unanswered call must not cost all of them: keep what was read.
+                # Those rows are the newest, so an outage still open in them is
+                # timed from the oldest one, marked "or earlier".
+                if since is None and rows:
+                    return sorted({r["ts"]: r for r in rows}.values(), key=lambda r: r["ts"])
+                raise
             if items is None:
                 return None
             for row in items:
