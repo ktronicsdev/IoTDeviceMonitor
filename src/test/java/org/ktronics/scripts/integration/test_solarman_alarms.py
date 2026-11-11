@@ -175,10 +175,12 @@ class TestClient:
                           "refresh_token": jwt(180, tag="newr")}, 1)]
         assert t.calls[1]["headers"]["Authorization"] == "Bearer " + jwt(60, tag="new")
 
-    def test_a_short_refresh_chain_renews_too(self):
+    def test_a_refresh_token_near_its_end_is_not_renewed(self):
+        """A renewal keeps the refresh token's end date (checked 11 Nov 2026), so
+        renewing for it would only rewrite the secret every hour; main() mails instead."""
         t = Transport()
         client(t, access_days=40, refresh_days=20).stations()
-        assert t.calls[0]["url"].endswith(sc.TOKEN_PATH)
+        assert not any(c["url"].endswith(sc.TOKEN_PATH) for c in t.calls)
 
     def test_a_refused_renewal_is_tried_once_and_the_old_token_kept(self):
         t = Transport(token_reply=(400, {"code": "invalid_grant"}))
@@ -642,6 +644,15 @@ class TestMain:
         main(workdir, c, extra=["--dry-run"])
         out = capsys.readouterr().out
         assert "solarman:signin:renew-refused" in out and "1/1 plants read" in out
+
+    def test_a_sign_in_near_its_end_is_mailed_with_its_end_date(self, workdir, capsys):
+        class Ending(FakeClient):
+            def days_left(self):
+                return {"access": 40.0, "refresh": 15.0}
+        main(workdir, Ending(CHANGEOVER, "2026-11-10 23:55:00"), extra=["--dry-run"])
+        out = capsys.readouterr().out
+        assert "solarman:signin:login-due" in out and "1/1 plants read" in out
+        assert "ends in 15 days (2026-11-25)" in out and "browser login" in out
 
     def test_a_fixed_sign_in_forgets_its_alarm(self, workdir, monkeypatch):
         monkeypatch.setenv("KT_FEATURE_EMAILS_SOLARMAN_ALARMS_ADMIN", "false")

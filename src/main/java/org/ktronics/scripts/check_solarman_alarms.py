@@ -561,8 +561,16 @@ def main(argv=None, client_factory=None, utc_now=None, env=os.environ):
             signin.append(("not-saved", "The GitHub job renewed its SOLARMAN sign-in but could "
                            f"not save it to the SOLARMAN_TOKENS_JSON secret ({client.save_error}). "
                            "Check the SOLARMAN_SECRET_WRITER token."))
+        left = client.days_left()
+        if left["refresh"] < solarman_cloud.LOGIN_DUE_BELOW_S / 86400:
+            ends = (utc_now + timedelta(days=max(left["refresh"], 0))).date().isoformat()
+            signin.append(("login-due", "The GitHub job's SOLARMAN sign-in ends in "
+                           f"{max(left['refresh'], 0):.0f} days ({ends}). Renewing cannot extend "
+                           "it: SOLARMAN keeps the end date of the browser login it came from. "
+                           "Seed a new one with a browser login (Readme, UC22 sign-in)."))
         print(f"✓ sign-in: renewed {'yes' if client.refreshed else 'no'}, "
-              f"{client.days_left()['access']:.0f} days left on the access token")
+              f"{left['access']:.0f} days left on the access token, "
+              f"{left['refresh']:.0f} on the sign-in")
 
     if total:
         # Counts and keys only: Actions logs of this repo are public, names are not (#4).

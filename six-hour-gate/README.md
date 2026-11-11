@@ -250,8 +250,9 @@ It reuses UC20's grid-loss and backup code, and adds a lost battery, output off,
 not on the inverter, a fault and no data. Two readings in a row open an episode, and the episode
 keeps one key, so a flicker does not restart Send 1/3. Replayed over 1 Sep–11 Nov 2026 it would
 have sent 89 alarms in 88 mails over 71 days, and the gate held back 99 shorter episodes. Mail goes
-to the admin only (`emails.solarman_alarms_admin`). Its sign-in renews itself, because SOLARMAN's
-password login has a captcha (see UC22 in the main README).
+to the admin only (`emails.solarman_alarms_admin`). SOLARMAN's password login has a captcha, so the
+job renews its own sign-in, but a renewal keeps the browser login's end date: a browser
+login is due every 180 days, and the admin is mailed 21 days ahead (see UC22 in the main README).
 
 ## What changed
 
@@ -316,7 +317,7 @@ The first item was not optional and not reorderable. Steps 1, 2, 4, 5, 5b, 5c, 7
 6. **CSV gating.** *Half done.* The "check the logger is online" line is in the RED escalation text; the fleet-benchmark gate is not built
 7. **SolaX API token.** *Done, 11 Nov 2026.* OAuth app in the SolaX developer portal; the `solax` block is in credentials.json
 8. **SolaX adapter.** *Done, 11 Nov 2026 (UC21).* Ongoing alarms per plant through a new read-only client, hourly; live once the secret carries the `solax` block
-9. **SOLARMAN adapter.** *Done, 11 Nov 2026 (UC22).* Alarms made from the readings of all 4 plants, hourly, through a new read-only client with its own self-renewing sign-in; live once `SOLARMAN_TOKENS_JSON` is seeded
+9. **SOLARMAN adapter.** *Done, 11 Nov 2026 (UC22).* Alarms made from the readings of all 4 plants, hourly, through a new read-only client that renews its own sign-in (a browser login every 180 days); live once `SOLARMAN_TOKENS_JSON` is seeded
 
 ## Expected effect
 

@@ -10,11 +10,17 @@ gets. Checked live on 9-11 Nov 2026:
   * A password login needs a Cloudflare Turnstile token (HTTP 412
     AUTH_SLIDE_ERROR without it), so a GitHub job cannot log in by itself.
   * POST /oauth2-s/oauth/token with grant_type=refresh_token needs no captcha.
-    It returns a new access token (60 days) and a new refresh token (180 days).
-  * So the job's session is seeded once from a browser login, kept in the
+    It returns a new access token (60 days) and a new refresh token, but the new
+    refresh token keeps the END DATE of the browser login it came from (11 Nov
+    2026: three renewals of a 9 Nov login all ended 8 May 2027). Renewing never
+    outlives that login, so a browser login is needed every 180 days.
+  * Two pairs renew side by side: renewing one leaves the other working (checked
+    11 Nov 2026), so the job's pair can be one renewal of a workstation's session.
+  * So the job's session is seeded from a browser login, kept in the
     SOLARMAN_TOKENS_JSON secret, and renewed here: when the access token has
-    under 7 days left (or the refresh token under 21), the pair is refreshed and
-    the new one written back to that secret at once (publish_tokens).
+    under 7 days left, the pair is refreshed and the new one written back to
+    that secret at once (publish_tokens). The refresh token's own age is no
+    reason to renew; under 21 days the caller mails that a browser login is due.
 
 The token is NOT read-only on SOLARMAN's side: it carries the account's full
 rights, Remote Control included. This client is read-only by construction:
@@ -50,7 +56,7 @@ READ_PATHS = (
 )
 
 REFRESH_ACCESS_BELOW_S = 7 * 86400     # renew when the access token has under 7 days
-REFRESH_CHAIN_BELOW_S = 21 * 86400     # or the refresh token under 21
+LOGIN_DUE_BELOW_S = 21 * 86400         # warn when the sign-in itself ends within 21 days
 MIN_REQUEST_GAP_S = 0.5
 RETRY_WAIT_S = 5.0
 USER_AGENT = "ktronics-iot-pipeline (SOLARMAN read-only)"
@@ -227,12 +233,13 @@ class SolarmanClient:
 
         A renewal that is refused while the old token still works is kept in
         `refresh_error` and the run goes on: the caller mails about it. Only a
-        token that has run out stops the run.
+        token that has run out stops the run. A refresh token near its end is
+        not renewed: a renewal keeps its end date, so it would only rewrite the
+        secret every run.
         """
         now = self._now()
         a_left = seconds_left(self.tokens["access_token"], now)
-        r_left = seconds_left(self.tokens["refresh_token"], now)
-        due = force_refresh or a_left < REFRESH_ACCESS_BELOW_S or r_left < REFRESH_CHAIN_BELOW_S
+        due = force_refresh or a_left < REFRESH_ACCESS_BELOW_S
         if due and not self.refreshed and not self.refresh_error:
             # One try a run: a refused renewal is not asked again for every request.
             try:

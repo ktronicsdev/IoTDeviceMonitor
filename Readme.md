@@ -117,7 +117,7 @@ So:
 | `check_deye_alarms.py`, `deye_cloud.py` | UC19 Deye Cloud alarms through the six-hour gate, and its read-only client |
 | `check_solax_alarms.py`, `solax_cloud.py` | UC21 SolaX Cloud alarms through the six-hour gate, and its read-only client |
 | `check_must_telemetry.py` | UC20 MUST grid-loss and backup-failed alarms, made from the inverters' own readings, through the six-hour gate |
-| `check_solarman_alarms.py`, `solarman_cloud.py` | UC22 SOLARMAN alarms made from the inverters' readings, status and silence, through the six-hour gate, and its read-only client with the self-renewing sign-in |
+| `check_solarman_alarms.py`, `solarman_cloud.py` | UC22 SOLARMAN alarms made from the inverters' readings, status and silence, through the six-hour gate, and its read-only client, which renews its own sign-in |
 | `check_ph1000*.py` | UC12 PH1000 dashboard and its PACEEX BMS decode |
 | `check_ph1800.py` | UC15 generic pass-through dashboard, any inverter |
 | `bms-module/scripts/ingest_bms_reading.py` | UC16 ESP32 reading: CSV, thresholds, alert |
@@ -1632,8 +1632,9 @@ How the rules decide:
 GitHub job cannot log in. Renewing a sign-in needs no captcha.
 
 - The job's sign-in is a token pair kept in the `SOLARMAN_TOKENS_JSON` secret. SOLARMAN's access token lasts 60 days and its refresh token 180.
-- When the access token has under 7 days left (or the refresh token under 21), the job renews the pair. It masks both new tokens in the log, then writes them back to the secret at once with `gh secret set`, reading them from stdin. The token it uses for that is `SOLARMAN_SECRET_WRITER`, a fine-grained token with Secrets: read and write on this repository only.
-- If a renewal is refused, if the write-back fails, or if no working sign-in is left, the admin is mailed **at once** (no six-hour wait). The mail goes at most 3 times, 4 hours apart. Its key is `solarman:signin:<kind>`, and it is forgotten when the sign-in works again.
+- **Renewing never outlives the browser login.** A renewal returns a new pair, but the new refresh token keeps the end date of the login it came from: on 11 Nov 2026 three renewals of a 9 Nov login all ended on 8 May 2027. So a browser login is needed every 180 days, for the job and for the workstation alike. 21 days before the end the admin is mailed (`solarman:signin:login-due`), with the date.
+- When the access token has under 7 days left, the job renews the pair. It masks both new tokens in the log, then writes them back to the secret at once with `gh secret set`, reading them from stdin. The token it uses for that is `SOLARMAN_SECRET_WRITER`, a fine-grained token with Secrets: read and write on this repository only.
+- If a renewal is refused, if the write-back fails, if the sign-in ends within 21 days, or if no working sign-in is left, the admin is mailed **at once** (no six-hour wait). The mail goes at most 3 times, 4 hours apart. Its key is `solarman:signin:<kind>`, and it is forgotten when the sign-in works again.
 - The token carries the account's full rights, Remote Control included. `solarman_cloud.py` is read-only by construction: it refuses any path outside five read paths before anything is sent, and nothing under `/order-s` is among them.
 
 To seed or re-seed it, on a workstation:
@@ -1643,10 +1644,12 @@ To seed or re-seed it, on a workstation:
 3. Once: create the fine-grained token (this repository only; Secrets: read and write; the longest expiry allowed) and store it as `SOLARMAN_SECRET_WRITER`.
 4. Check that the workstation's session still works (`py solarman_mcp.py --status`). Then dispatch the workflow once with `force_refresh` to prove the write-back: the secret's "updated" time changes, and the next run still signs in.
 
+Two pairs renew side by side: renewing one leaves the other working (checked 11 Nov 2026). So step 1 can also be one renewal of the workstation's own session, which is how the job was first seeded on 11 Nov 2026. Its pair ends with the workstation's, on 8 May 2027.
+
 **Decisions (11 Nov 2026):**
 
 - **All four plants.**
-- **Its own self-renewing sign-in**, not a copy of the workstation's.
+- **Its own sign-in**: its own token pair, renewed by the job, not a copy of the workstation's file.
 - **No data is mailed.** Other vendors' COMMS alarms are never mailed. Here silence gets its own class, SILENT, and is mailed, because on SOLARMAN silence is the only sign of an inverter that has died or been switched off. Its messages avoid every COMMS word, so the class cannot be lost to "offline".
 - **Admin only.**
 - **One grid rule for every vendor.** The grid and backup rules are UC20's code, with UC20's thresholds.
@@ -1706,11 +1709,28 @@ py check_solarman_alarms.py --tokens <file> --publish-secret   # gate + email + 
 py check_solarman_alarms.py --tokens <file> --dry-run          # workstation only: print what would be mailed; no email, no state
 ```
 
-**Test Coverage:** 63/63 PASSED — `test_solarman_alarms.py`
+**Test Coverage:** 64/64 PASSED — `test_solarman_alarms.py`
 
 ---
 
 ## Bug Fixes
+
+### A sign-in that could not renew itself (2026-11-11)
+
+UC22 was built on the belief that each renewal of the SOLARMAN sign-in
+returns a refresh token good for another 180 days, so the GitHub job would
+keep itself signed in for ever. It does not: the new refresh token keeps the
+end date of the browser login it came from. The code renewed whenever the
+refresh token had under 21 days left, and a renewal cannot lift that. So from
+about 17 Apr 2027 every hourly run would have renewed and rewritten the
+`SOLARMAN_TOKENS_JSON` secret, and nothing would have warned anyone until
+the sign-in ran out on 8 May 2027 and every SOLARMAN alarm stopped. Nothing
+was lost, because it was caught before it ever ran. It was found on
+2026-11-11 while seeding the job's sign-in, the day UC22 was pushed: three
+renewals in a row all showed 178.1 days left. Now the job renews only for
+the access token, and mails `solarman:signin:login-due` with the end date
+21 days ahead. 2 tests: one replaces the test that expected the renewal,
+and one is new.
 
 ### A green build mail with a red header (2026-11-10)
 
@@ -2508,7 +2528,7 @@ Default thresholds in `check_anomaly.py`:
 │       ├── solax_cloud.py             # SolaX Cloud read-only client (UC21)
 │       ├── check_solax_alarms.py      # SolaX Cloud alarms through the six-hour gate (UC21)
 │       ├── check_must_telemetry.py    # MUST grid loss + backup failed from readings, six-hour gate (UC20)
-│       ├── solarman_cloud.py          # SOLARMAN read-only client + self-renewing sign-in (UC22)
+│       ├── solarman_cloud.py          # SOLARMAN read-only client + sign-in renewal (UC22)
 │       ├── check_solarman_alarms.py   # SOLARMAN alarms from readings, status, silence; six-hour gate (UC22)
 │       ├── solis/README_SOLIS.md      # SolisCloud setup + Control API guide (UC13)
 │       │
@@ -2552,7 +2572,7 @@ a file that is gone (#35).
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 1046 tests — 990 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 1047 tests — 991 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 The MCP servers' tests are not counted here: they left the repo with the
 servers on 2026-11-04 (see *Not part of the pipeline*). The 28 Tuya tests that
@@ -2597,11 +2617,11 @@ used to skip in CI went with them.
 | ----- | ----- | ---- |
 | UC20 (grid loss + backup failed from readings, six-hour gate, second pass, partial first look, no battery voltage) | 48 | `test_must_telemetry.py` |
 
-**SOLARMAN (63 tests):**
+**SOLARMAN (64 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| UC22 (read-only client, sign-in renewal and write-back, rules from readings, six-hour gate, wiring) | 63 | `test_solarman_alarms.py` |
+| UC22 (read-only client, sign-in renewal and write-back, rules from readings, six-hour gate, wiring) | 64 | `test_solarman_alarms.py` |
 
 **Connectivity, exclusions and flags (127 tests):**
 
