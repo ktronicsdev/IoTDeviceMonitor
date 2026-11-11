@@ -1440,5 +1440,14 @@
     "customer": "Gayan-IMH",
     "plant": "imbulgoda  3kw",
     "message": "battery voltage is too high"
+  },
+  "1128741:D70000210187727485:6af4750193320501683773fc": {
+    "send_count": 0,
+    "last_sent": null,
+    "first_seen": "2026-11-11T14:00:27+00:00",
+    "ignored": false,
+    "class": "SOC",
+    "started_at_utc": "2026-11-11T14:00:27+00:00",
+    "suppressed_reason": "dwell time is less than 6 hours"
   }
 }
