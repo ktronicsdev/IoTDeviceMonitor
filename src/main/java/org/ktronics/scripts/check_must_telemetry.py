@@ -242,6 +242,17 @@ def _summary(row):
     return {key: row.get(key) for key in ("ts",) + READINGS}
 
 
+def _lower(a, b):
+    """The lower of two battery readings, either of which may be missing. A
+    feed with no battery voltage (UC22's SRNE history) has no flat check."""
+    known = [v for v in (a, b) if v is not None]
+    return min(known) if known else None
+
+
+def _at_or_below(value, mark):
+    return value is not None and mark is not None and value <= mark
+
+
 def advance(dev, rows, cfg):
     """Feed new readings, oldest first, through the device's outage and backup state.
 
@@ -281,7 +292,7 @@ def advance(dev, rows, cfg):
                     pending = dev["pending"]
                     dev["outage"] = {"start": pending["ts"], "start_known": pending["known"],
                                      "last_absent": row["ts"],
-                                     "min_batt_v": min(pending["batt_v"], row["batt_v"])}
+                                     "min_batt_v": _lower(pending["batt_v"], row["batt_v"])}
                     dev["pending"] = None
             else:
                 dev["pending"] = None
@@ -289,15 +300,15 @@ def advance(dev, rows, cfg):
             dev["outage"] = None
         elif grid < absent_v:
             outage["last_absent"] = row["ts"]
-            outage["min_batt_v"] = min(outage["min_batt_v"], row["batt_v"])
+            outage["min_batt_v"] = _lower(outage["min_batt_v"], row["batt_v"])
 
-        flat_now = flat is not None and row["batt_v"] <= flat
+        flat_now = _at_or_below(row["batt_v"], flat)
         dead_now = row.get("out_v") is not None and row["out_v"] < dead_v
         if dev["backup"] is None:
             if grid < absent_v and (flat_now or dead_now):
                 dev["backup"] = {"start": row["ts"]}
-        elif grid >= present_v or (recharged is not None and row["batt_v"] >= recharged
-                                   and not dead_now):
+        elif grid >= present_v or (recharged is not None and row["batt_v"] is not None
+                                   and row["batt_v"] >= recharged and not dead_now):
             # A healthy battery behind a dead output is still a failure.
             dev["backup"] = None
 
@@ -339,10 +350,10 @@ def open_alarms(dev, now_local, cfg, grid_expected):
     flat = flat_mark(dev, cfg)
     pair = [prev, last] if prev else []
     message = None
-    if flat is not None and last["batt_v"] <= flat and silent:
+    if _at_or_below(last["batt_v"], flat) and silent:
         message = (f"Backup failed: battery flat at {last['batt_v']:.1f} V with no grid, and no "
                    f"reading since {last['ts'][11:16]}; the inverter has most likely shut down")
-    elif fresh and pair and flat is not None and all(r["batt_v"] <= flat for r in pair):
+    elif fresh and pair and flat is not None and all(_at_or_below(r["batt_v"], flat) for r in pair):
         message = (f"Battery flat at {last['batt_v']:.1f} V with no grid: "
                    f"the inverter will cut off soon")
     elif fresh and pair and all(r.get("out_v") is not None and
@@ -361,9 +372,11 @@ def open_alarms(dev, now_local, cfg, grid_expected):
 
 
 def _detail(last, outage):
-    parts = [f"grid {last['grid_v']:.0f} V", f"battery {last['batt_v']:.1f} V"]
-    if outage:
-        parts[-1] += f" (lowest {outage['min_batt_v']:.1f} V)"
+    parts = [f"grid {last['grid_v']:.0f} V"]
+    if last.get("batt_v") is not None:
+        parts.append(f"battery {last['batt_v']:.1f} V")
+        if outage and outage.get("min_batt_v") is not None:
+            parts[-1] += f" (lowest {outage['min_batt_v']:.1f} V)"
     if last.get("load_w") is not None:
         parts.append(f"load {last['load_w']:.0f} W")
     if last.get("out_v") is not None:

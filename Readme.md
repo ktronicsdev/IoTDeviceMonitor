@@ -18,6 +18,8 @@ Automated monitoring system for **multi-cloud solar panel installations** with i
 | DessMonitor  | `web.dessmonitor.com`   | Production (UC10)|
 | SolisCloud   | `soliscloud.com:13333`  | Production (UC13, UC17, UC18)|
 | SolaX Cloud  | `openapi-eu.solaxcloud.com` | Production (UC21)|
+| Deye Cloud   | `eu1-developer.deyecloud.com` | Production (UC19)|
+| SOLARMAN Business | `globalpro.solarmanpv.com` | Production (UC22)|
 
 **Features:**
 
@@ -115,6 +117,7 @@ So:
 | `check_deye_alarms.py`, `deye_cloud.py` | UC19 Deye Cloud alarms through the six-hour gate, and its read-only client |
 | `check_solax_alarms.py`, `solax_cloud.py` | UC21 SolaX Cloud alarms through the six-hour gate, and its read-only client |
 | `check_must_telemetry.py` | UC20 MUST grid-loss and backup-failed alarms, made from the inverters' own readings, through the six-hour gate |
+| `check_solarman_alarms.py`, `solarman_cloud.py` | UC22 SOLARMAN alarms made from the inverters' readings, status and silence, through the six-hour gate, and its read-only client with the self-renewing sign-in |
 | `check_ph1000*.py` | UC12 PH1000 dashboard and its PACEEX BMS decode |
 | `check_ph1800.py` | UC15 generic pass-through dashboard, any inverter |
 | `bms-module/scripts/ingest_bms_reading.py` | UC16 ESP32 reading: CSV, thresholds, alert |
@@ -124,10 +127,12 @@ So:
 | File | Holds | If it is missing or broken |
 |---|---|---|
 | `config/credentials.json` | ShineMonitor accounts, plants, customer emails, the `solis` and `deye` blocks | Gitignored. In CI it comes from `SHINEMONITOR_CREDENTIALS_JSON` |
+| `solarman_tokens.json` (CI only) | UC22's SOLARMAN token pair | Gitignored. Written from `SOLARMAN_TOKENS_JSON` for the run and deleted after it; a renewal is written back to that secret |
 | `config/dessmonitor_credentials.json` | DessMonitor accounts (UC10) | Gitignored. From `DESSMONITOR_CREDENTIALS_JSON` |
 | `config/features.json` | Which emails and alerts are live | **Fails open** — an unknown flag reads as ON, so adding a channel never silently mutes an existing one. Override for one run with `KT_FEATURE_<DOTTED_PATH>=true` |
 | `config/excluded_plants.json` | Plants deliberately dropped, each with a reason and a date | **Fails closed** — it excludes nothing. Losing the file must never silently drop a paying customer off the platform |
 | `config/must_telemetry.json` | UC20 thresholds (grid, flat battery 22.5 V / 45.5 V, freshness) and `no_grid_expected`, the plants built without an AC input | Committed. The list ships **empty**: every plant is expected to have grid |
+| `config/solarman_alarms.json` | UC22 thresholds, the SOLARMAN series names per inverter type, product ids, and rules switched off per plant | Committed. `rules_off` ships **empty** |
 
 Matching in `exclusions.py`, and in the plant-to-customer mapping, is on a
 normalised key — lower-cased with every non-alphanumeric character stripped — so
@@ -146,6 +151,7 @@ normalised key — lower-cased with every non-alphanumeric character stripped �
 | `state/deye_alarms_state.json` | Deye Cloud alarms (UC19): the same, for Deye |
 | `state/solax_alarms_state.json` | SolaX Cloud alarms (UC21): the same, for SolaX |
 | `state/must_telemetry_state.json` | MUST telemetry (UC20): the same alarm fields, plus each inverter's last reading, open outage and backup episode under `device:pid:pn` |
+| `state/solarman_alarms_state.json` | SOLARMAN alarms (UC22): the same, plus each inverter's open episodes and status under `device:station:sn`, and the sign-in's own alarm under `solarman:signin:<kind>` |
 | `state/admin_email_state.txt` | UC9 content hash, so an unchanged admin email is not resent |
 
 Every repeating alert channel obeys the same rule: **at most 3 sends, at least 4
@@ -227,6 +233,7 @@ that GitHub Pages serves.
 | `trigger-deye-alarms.yml` | Deye — alarms open 6h+ (hourly) | Hourly at **:27** | **UC19** Deye Cloud alarms on hybrid and off-grid inverters through the six-hour gate; admin only |
 | `trigger-solax-alarms.yml` | SolaX — alarms open 6h+ (hourly) | Hourly at **:21** | **UC21** SolaX Cloud alarms through the six-hour gate, checked 09:00–17:00 plant time only; admin only |
 | `trigger-must-telemetry.yml` | MUST — grid and battery alarms from telemetry (hourly) | Hourly at **:43** | **UC20** grid loss and backup failed on the ShineMonitor MUST inverters, from their 5-minute readings, through the six-hour gate; admin only |
+| `trigger-solarman-alarms.yml` | SOLARMAN — alarms open 6h+ (hourly) | Hourly at **:53** | **UC22** grid loss, backup, battery, output, load, fault and no-data alarms on the SOLARMAN plants, from their readings, through the six-hour gate; admin only. Does nothing until `SOLARMAN_TOKENS_JSON` exists |
 | `trigger-bms-ingest.yml` | ESP32 BMS — ingest a pushed reading | On a device push (`repository_dispatch`), ~every 15 min | UC16 ESP32 BMS reading |
 | `trigger-battery-health.yml` | Solis — battery health report | 1st of the month, **06:23** UTC | **UC17** battery state of health and yearly fade rate per battery; read-only, no state kept |
 | `tests.yml` | Tests — pull requests only (no email) | On every pull request to `main` | The full suite, silent by design. **Not** the push test: a push to `main` is tested by the `tests` job inside `trigger-shinemonitor.yml`, which is what sends every "TESTS FAILED" email |
@@ -255,6 +262,7 @@ Derived from the scripts each workflow actually runs, not from its name.
 | `trigger-deye-alarms.yml` | **UC19** |
 | `trigger-solax-alarms.yml` | **UC21** |
 | `trigger-must-telemetry.yml` | **UC20** |
+| `trigger-solarman-alarms.yml` | **UC22** |
 | `trigger-bms-ingest.yml` | **UC16** |
 | `trigger-battery-health.yml` | **UC17** |
 | `tests.yml` | cross-cutting; owns no use case |
@@ -1546,7 +1554,159 @@ py check_must_telemetry.py              # gate + email the admin + save state (c
 py check_must_telemetry.py --dry-run    # print what would be mailed; no email, no state
 ```
 
-**Test Coverage:** 47/47 PASSED — `test_must_telemetry.py`
+**Test Coverage:** 48/48 PASSED — `test_must_telemetry.py`
+
+### UC22: SOLARMAN Alarms Through the Six-Hour Gate
+
+The admin is mailed when an inverter on SOLARMAN Business has been in trouble
+for **6 hours**:
+- no grid, or a backup that failed in a cut;
+- a lost battery;
+- an output that is off;
+- a house load that does not go through it;
+- a fault;
+- no data at all.
+
+These are the four plants of the "Ktronics KH" organisation:
+
+| Plant | Station | Inverter |
+|---|---|---|
+| Ktronics kelaniya | 64690226 | SRNE 3 kW (product `0_2421_1`) |
+| Hasika Deye | 63371506 | Deye-type, single phase (`0_5407_1`) |
+| Bandaragama | 63398238 | Deye-type, single phase (`0_5407_1`) |
+| Mr. Dikkubura | 65430172 | 2 × Deye-type, three phase (`0_5411_1`) |
+
+None of the alarms comes from SOLARMAN. They are made here from each inverter's
+5-minute history, its live status and its silence. Then they go through the same
+six-hour gate and three-sends / four-hours rule as UC3 and UC18–UC21.
+
+**Implementation Status:** ✅ **IMPLEMENTED** (11 Nov 2026). It does nothing
+until its sign-in is seeded (below).
+
+**Why it exists:** these plants had no alarm path at all.
+- None of them is in Deye Cloud, so UC19 does not see them.
+- SOLARMAN's own Alerts tab returned nothing for any of them in Nov 2026. That
+  includes Dikkubura's inverter 2408134651, which has sent nothing since 24 May.
+- The readings carry no fault codes.
+
+Meanwhile Kelaniya's battery cut out on most nights in September and October,
+and its house sat on the manual changeover for weeks. Nobody was told.
+
+**How it works:**
+
+1. Runs **hourly at :53** ([trigger-solarman-alarms.yml](.github/workflows/trigger-solarman-alarms.yml)). It lists the organisation's plants, then for each plant its inverters and its open Alerts-tab items.
+2. For each inverter with new data, it reads the day history (`/device-s/device/{id}/stats/day`).
+   - It reads from the last reading it has already processed. On a first look it reads yesterday and today.
+   - An inverter that has uploaded nothing new costs no history call.
+   - Each type of inverter is mapped to its own series names (`profiles` in `config/solarman_alarms.json`): `srne`, `deye`, and `deye3`, which takes the lowest of the three phases.
+3. For each inverter with fresh data it reads the live status (`/device-s/device/v3/detail`).
+4. It keeps a small state per inverter: its outage and backup episode (UC20's own), its open episodes, and its fault status.
+5. It hands the open alarms to `triage_alarms()`, then `filter_alarms_to_send()`, and emails the admin one list. Each alarm shows:
+   - the plant and the inverter, what happened and since when;
+   - the latest reading: grid, output, load, SoC, battery and DC bus, where the inverter reports them;
+   - the hours on the clock, the class, send n/3, and the gate's first thing to check.
+
+**The rules:**
+
+| Alarm | Class | Opens | Closes | Clock |
+|---|---|---|---|---|
+| Grid loss | GRID | UC20's rule: two readings in a row under 100 V on the grid input, and a fresh reading (30 min) still shows no grid | one reading of 180 V or more | the outage's start |
+| Backup failed / battery flat | SOC | UC20's rules, in a cut. The flat-battery checks need a battery voltage, which the SRNE history does not carry, so Kelaniya has the dead-output check only | the grid back, or the battery recharged | the outage's start |
+| Battery connection open | HARDWARE | SRNE: SoC exactly 0 with the DC bus at 440 V or more, on two readings in a row. Deye-type: battery under 10 V, twice | SRNE: SoC above 0 and the bus under 430 V. Deye-type: battery 20 V or more | the first reading |
+| Inverter output off | HARDWARE | output under 100 V on two readings in a row while the grid reads 180 V or more | output 180 V or more | the first reading |
+| House load not on the inverter | LOAD | 25 W or less on two readings in a row, with the output alive (180 V or more) | one reading of 50 W or more, or the output dead | the first reading |
+| Inverter fault | HARDWARE | a live status field that reads "fault" or "error" | the status normal again | first seen |
+| No data | SILENT | the inverter's last upload is more than 30 minutes old | data again | the last upload; the outage's start if the last reading showed no grid |
+| Alerts tab | by its text | any open alert | the alert closed | the alert's time |
+
+How the rules decide:
+
+- **Two readings in a row** open an episode, timed from the first of them. A reading that does neither keeps the episode as it was.
+- **An episode found on a first look** may have begun earlier, so its message says "or earlier".
+- **The SRNE's lost battery** reads like this: on 19 Sep the SoC fell 20 → 15 → 0 at 02:33 and the DC bus jumped from 366 V to 470 V. Both stayed there until the sun brought the battery back at 10:17. A healthy battery holds the bus at 366–416 V.
+- **A house on the changeover** leaves the SRNE idling at 10–16 W, its own meter's noise. A house on the inverter never stays under 50 W for six hours: the fridge alone is more.
+- **One episode keeps one key**, `station:sn:<kind>@<start>`. A flicker does not start it again at Send 1/3.
+- **An alarm is claimed only from a fresh reading.** When an inverter goes quiet, its other alarms rest and the no-data alarm takes over.
+
+**The sign-in.** SOLARMAN puts a Cloudflare captcha on password logins, so a
+GitHub job cannot log in. Renewing a sign-in needs no captcha.
+
+- The job's sign-in is a token pair kept in the `SOLARMAN_TOKENS_JSON` secret. SOLARMAN's access token lasts 60 days and its refresh token 180.
+- When the access token has under 7 days left (or the refresh token under 21), the job renews the pair. It masks both new tokens in the log, then writes them back to the secret at once with `gh secret set`, reading them from stdin. The token it uses for that is `SOLARMAN_SECRET_WRITER`, a fine-grained token with Secrets: read and write on this repository only.
+- If a renewal is refused, if the write-back fails, or if no working sign-in is left, the admin is mailed **at once** (no six-hour wait). The mail goes at most 3 times, 4 hours apart. Its key is `solarman:signin:<kind>`, and it is forgotten when the sign-in works again.
+- The token carries the account's full rights, Remote Control included. `solarman_cloud.py` is read-only by construction: it refuses any path outside five read paths before anything is sent, and nothing under `/order-s` is among them.
+
+To seed or re-seed it, on a workstation:
+
+1. Log in with the gitignored MCP helper, into a file of its own so the workstation's own session is not overwritten: `py solarman_mcp.py --login --token-file <file>`. A view-only member of the organisation is better than the main login: a token that cannot send Remote Control orders.
+2. `gh secret set SOLARMAN_TOKENS_JSON < <file>`, then delete the file.
+3. Once: create the fine-grained token (this repository only; Secrets: read and write; the longest expiry allowed) and store it as `SOLARMAN_SECRET_WRITER`.
+4. Check that the workstation's session still works (`py solarman_mcp.py --status`). Then dispatch the workflow once with `force_refresh` to prove the write-back: the secret's "updated" time changes, and the next run still signs in.
+
+**Decisions (11 Nov 2026):**
+
+- **All four plants.**
+- **Its own self-renewing sign-in**, not a copy of the workstation's.
+- **No data is mailed.** Other vendors' COMMS alarms are never mailed. Here silence gets its own class, SILENT, and is mailed, because on SOLARMAN silence is the only sign of an inverter that has died or been switched off. Its messages avoid every COMMS word, so the class cannot be lost to "offline".
+- **Admin only.**
+- **One grid rule for every vendor.** The grid and backup rules are UC20's code, with UC20's thresholds.
+- **No `dry_run` input.** A dry run prints plant names, and this repository's logs are public.
+
+**What it would have sent.** The real code was replayed on the plants' real
+history from 1 Sep to 11 Nov 2026, one run an hour at :53. It sent **89 alarms
+in 88 mails over 71 days**, about 1.2 a day:
+
+| Plant | Mails | What |
+|---|---|---|
+| Ktronics kelaniya | 42 | The battery cut out 13 times, most of them in the small hours, 21 mails. The house load was not on the inverter in 8 episodes, 18 mails; the last has run since 27 Oct and is still open. The output was off from 23 to 27 Oct, 3 mails |
+| Hasika Deye | 23 | No grid for 6 hours or more 8 times, 14 mails, the battery carrying the house throughout. Most began late morning or afternoon and ended late at night. No data for one to two days, three times, 9 mails |
+| Mr. Dikkubura | 14 | The newer inverter read 0 V on all three grid phases for 6 days from 12 Oct and on three other days, 10 mails. No data once, 1 mail. The older inverter, silent since 24 May, 3 mails |
+| Bandaragama | 10 | No data for 3 to 6 days, three times, 9 mails. A grid cut on 17 Oct, at the same time as Hasika's, 1 mail |
+
+The gate held back 99 shorter episodes: 59 low-load dips, 19 grid cuts, 16
+data gaps, 4 output stops and 1 battery cut-out.
+
+**The first run mails two:** Dikkubura's older inverter (no data since 24 May)
+and Kelaniya's house not on the inverter (open since 27 Oct; a first look reads back
+only to the day before, so it says "or earlier").
+
+**State:** `state/solarman_alarms_state.json` is one flat map, like every state file here, so `merge_alarm_state.py` can union two runs.
+
+- Alarm records live under `station:sn:<kind>@<start>`, with the device-alarm fields. Alerts-tab items live under `station:station:alert-<id>`, so they are pruned even when SOLARMAN raised them on a logger.
+- Each inverter's state lives under `device:station:sn`.
+- A plant that could not be read keeps its state and its keys.
+
+**Public logs:** counts and alarm keys only, never names (#4). `--dry-run`
+prints the email body, and is meant for a workstation.
+
+**Not covered:**
+
+- **Fault codes.** SOLARMAN's readings carry none. The SRNE's `Flag Bit` is empty, and the Deye-types have no fault field.
+- **A flat battery on the SRNE.** Its history has no battery voltage, so a flat battery in a cut shows only as a dead output, or as no data.
+- **A fault shorter than an hour.** The live status is read once a run.
+- **A lost phase on a three-phase plant** reads as grid loss: the lowest phase is the grid voltage.
+
+**Feature flags:** `emails.solarman_alarms_admin` (the email), and
+`alerts.six_hour_gate` (the gate itself, shared with UC3 and UC18–UC21).
+
+**Scripts:**
+
+| Script | Purpose |
+|--------|---------|
+| `check_solarman_alarms.py` | History → episodes → alarms → six-hour gate → 3x/4h → email; the sign-in's own alarm |
+| `solarman_cloud.py` | Read-only SOLARMAN client: five read paths, one retry, renewal and write-back of the sign-in |
+| `config/solarman_alarms.json` | Thresholds, series names per inverter type, product ids, rules off per plant |
+| `six-hour-gate/config/alarm_triage.json` | The SILENT class, and UC22's words in LOAD and HARDWARE |
+| `check_must_telemetry.py` | UC20's grid and backup rules, which now accept readings without a battery voltage |
+
+**CLI:**
+
+```bash
+py check_solarman_alarms.py --tokens <file> --publish-secret   # gate + email + save state + write a renewal back (cron entrypoint)
+py check_solarman_alarms.py --tokens <file> --dry-run          # workstation only: print what would be mailed; no email, no state
+```
+
+**Test Coverage:** 63/63 PASSED — `test_solarman_alarms.py`
 
 ---
 
@@ -2250,6 +2410,8 @@ Configure these in GitHub Settings > Secrets:
 
 - `SHINEMONITOR_CREDENTIALS_JSON`: ShineMonitor account credentials (also holds the `solis` block for UC13, UC17 and UC18, the `solax` block for UC21 (`client_id`, `client_secret`, `api_base`, `tz_offset_minutes`), and the `deye` block for UC19: `app_id`, `app_secret`, `email`, `password_sha256`, `company_id`, `data_center`)
 - `DESSMONITOR_CREDENTIALS_JSON`: DessMonitor account credentials (UC10)
+- `SOLARMAN_TOKENS_JSON`: UC22's SOLARMAN sign-in, `{"access_token", "refresh_token"}`, seeded from a browser login and renewed by the job itself (see UC22)
+- `SOLARMAN_SECRET_WRITER`: a fine-grained GitHub token with **Secrets: read and write** on this repository only, so UC22 can write its renewed sign-in back to `SOLARMAN_TOKENS_JSON`
 - `BMS_IOT_TOKEN`: PH1000 battery BMS session token — Aliyun IoT (UC12; refresh when expired)
 - `BMS_APPSECRET`: PH1000 BMS Aliyun API-Gateway app secret (UC12)
 - `SMTP_HOST`: SMTP server (e.g., smtp.gmail.com)
@@ -2295,6 +2457,7 @@ Default thresholds in `check_anomaly.py`:
 │   ├── trigger-deye-alarms.yml        # Deye Cloud alarms through the six-hour gate (hourly) - UC19
 │   ├── trigger-solax-alarms.yml       # SolaX Cloud alarms through the six-hour gate (hourly) - UC21
 │   ├── trigger-must-telemetry.yml     # MUST grid/battery alarms from telemetry (hourly) - UC20
+│   ├── trigger-solarman-alarms.yml    # SOLARMAN alarms from readings, six-hour gate (hourly) - UC22
 │   ├── trigger-battery-health.yml     # SolisCloud battery health (monthly) - UC17
 │   ├── trigger-bms-ingest.yml         # ESP32 BMS reading ingest (on device push) - UC16
 │   └── tests.yml                      # Full test suite, pull requests only - no UC
@@ -2304,14 +2467,15 @@ Default thresholds in `check_anomaly.py`:
 │   │   ├── dessmonitor_credentials.json # DessMonitor credentials (gitignored)
 │   │   ├── features.json              # Which emails and alerts are live
 │   │   ├── must_telemetry.json        # UC20 thresholds and the plants built without grid
+│   │   ├── solarman_alarms.json       # UC22 thresholds, series names, rules off per plant
 │   │   └── excluded_plants.json       # Plants deliberately off the platform (UC14)
 │   └── scripts/
 │       ├── config.py                  # Centralized Python config
 │       ├── common_config.sh           # Centralized Bash config
 │       ├── shinemonitor_common.sh     # ShineMonitor API utilities
 │       ├── dessmonitor_common.sh      # DessMonitor API utilities (UC10)
-│       ├── mask_credentials.sh        # Mask every credential value in a job's logs; 13 workflows
-│       ├── push_data_commit.sh        # Commit + push with retry/merge; used by 9 workflows (#28, #29)
+│       ├── mask_credentials.sh        # Mask every credential value in a job's logs; 16 workflows
+│       ├── push_data_commit.sh        # Commit + push with retry/merge; used by 12 workflows (#28, #29)
 │       ├── merge_alarm_state.py       # Merges cumulative state files on a push conflict
 │       ├── check_shinemonitor_monthly.sh  # ShineMonitor monthly data
 │       ├── check_shinemonitor_yearly.sh   # ShineMonitor yearly data
@@ -2344,6 +2508,8 @@ Default thresholds in `check_anomaly.py`:
 │       ├── solax_cloud.py             # SolaX Cloud read-only client (UC21)
 │       ├── check_solax_alarms.py      # SolaX Cloud alarms through the six-hour gate (UC21)
 │       ├── check_must_telemetry.py    # MUST grid loss + backup failed from readings, six-hour gate (UC20)
+│       ├── solarman_cloud.py          # SOLARMAN read-only client + self-renewing sign-in (UC22)
+│       ├── check_solarman_alarms.py   # SOLARMAN alarms from readings, status, silence; six-hour gate (UC22)
 │       ├── solis/README_SOLIS.md      # SolisCloud setup + Control API guide (UC13)
 │       │
 │       │   # Run by hand or on a workstation - no workflow calls these:
@@ -2372,6 +2538,7 @@ Default thresholds in `check_anomaly.py`:
     ├── deye_alarms_state.json         # Deye Cloud alarms held by / sent through the gate (UC19)
     ├── solax_alarms_state.json        # SolaX Cloud alarms held by / sent through the gate (UC21)
     ├── must_telemetry_state.json      # MUST outages, backup episodes and their alarms (UC20)
+    ├── solarman_alarms_state.json     # SOLARMAN episodes and their alarms (UC22)
     └── solis_switch_state.json        # SolisCloud watchdog state (UC13)
 ```
 
@@ -2385,7 +2552,7 @@ a file that is gone (#35).
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 979 tests — 923 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 1046 tests — 990 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 The MCP servers' tests are not counted here: they left the repo with the
 servers on 2026-11-04 (see *Not part of the pipeline*). The 28 Tuya tests that
@@ -2424,11 +2591,17 @@ used to skip in CI went with them.
 | ----- | ----- | ---- |
 | UC21 (SolaX alarms, six-hour gate, daytime window, read-only client) | 28 | `test_solax_alarms.py` |
 
-**MUST telemetry (47 tests):**
+**MUST telemetry (48 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| UC20 (grid loss + backup failed from readings, six-hour gate, second pass, partial first look) | 47 | `test_must_telemetry.py` |
+| UC20 (grid loss + backup failed from readings, six-hour gate, second pass, partial first look, no battery voltage) | 48 | `test_must_telemetry.py` |
+
+**SOLARMAN (63 tests):**
+
+| Suite | Tests | File |
+| ----- | ----- | ---- |
+| UC22 (read-only client, sign-in renewal and write-back, rules from readings, six-hour gate, wiring) | 63 | `test_solarman_alarms.py` |
 
 **Connectivity, exclusions and flags (127 tests):**
 
@@ -2446,12 +2619,12 @@ used to skip in CI went with them.
 | Gate rules (R1-R6, classes) | 18 | `test_alarm_triage.py` |
 | Gate wiring + feature mode | 8 | `test_alarm_gate_wiring.py` |
 
-**Alerting discipline (39 tests):**
+**Alerting discipline (41 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
 | UC1 (send cap + interval) | 4 | `test_admin_alert_send_cap.py` |
-| Hourly poll scope | 17 | `test_hourly_poll_scope.py` |
+| Hourly poll scope | 19 | `test_hourly_poll_scope.py` |
 | UC9 (weekly all-clear cadence) | 18 | `test_all_clear_cadence.py` |
 
 **Fetch safety and data integrity (38 tests):**
@@ -2472,11 +2645,11 @@ rather than editing the CSV.
 | ----- | ----- | ---- |
 | No payloads or credentials in public logs | 10 | `test_no_payloads_in_public_logs.py` |
 
-**Suite visibility (49 tests):**
+**Suite visibility (50 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| One bad import must not hide the suite | 49 | `test_suite_visibility.py` |
+| One bad import must not hide the suite | 50 | `test_suite_visibility.py` |
 
 That suite parametrizes over every `test_*.py`, so its count rises by one
 with each new test file — including an untracked one sitting in the

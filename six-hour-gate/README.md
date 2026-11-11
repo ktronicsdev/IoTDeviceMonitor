@@ -16,7 +16,7 @@ Customer-facing device-alarm mail is a separate, independently flagged channel
   SolisCloud                                         normalize()             (3x / 4h — unchanged)
   Deye Cloud
   SolaX Cloud                                        open?      R3                  |
-                                                     classify()                     v
+  SOLARMAN                                           classify()                     v
                                                      dwell()    R1 R2 R6      admin + customer mail
                                                           |
                                               held / suppressed
@@ -41,6 +41,7 @@ exactly as it is — an alarm that never qualifies simply never spends one of it
 | **Deye Cloud** | Built 5 Nov 2026, **hybrid and off-grid inverters** — `check_deye_alarms.py`, hourly (UC19). Live once the `deye` block is in the credentials secret |
 | **MUST telemetry** | Built 10 Nov 2026 — `check_must_telemetry.py`, hourly (UC20). Grid loss and backup failed, made from the ShineMonitor MUST inverters' own readings: their warning list never reports a grid loss |
 | **SolaX Cloud** | Built 11 Nov 2026 — `check_solax_alarms.py`, hourly (UC21). Every inverter, grid loss included; checked 09:00–17:00 plant time only and alarms over 14 days old skipped. Live once the `solax` block is in the credentials secret |
+| **SOLARMAN** | Built 11 Nov 2026 — `check_solarman_alarms.py`, hourly (UC22). All 4 plants. Grid loss, backup failed, a lost battery, output off, the house load not on the inverter, faults and no data, all made from the inverters' readings, plus SOLARMAN's own Alerts tab. Live once the `SOLARMAN_TOKENS_JSON` secret is seeded |
 | **Uncovered** | Solis and Deye grid-tie inverters, by decision (below). Offline SolaX inverters (5 of 24 on 11 Nov) |
 
 ## Why
@@ -107,6 +108,7 @@ one fails if any script imports `smtplib` directly, one fails if any
 | `emails.solis_alarms_admin` | on (UC18, from 23 Oct 2026) |
 | `emails.deye_alarms_admin` | on (UC19, from 5 Nov 2026) |
 | `emails.solax_alarms_admin` | on (UC21, from 11 Nov 2026) |
+| `emails.solarman_alarms_admin` | on (UC22, from 11 Nov 2026) |
 | `emails.must_telemetry_admin` | on (UC20, from 10 Nov 2026) |
 | `emails.bms_alerts_admin` | on (no hardware deployed) |
 | `alerts.production_red_3day` | on |
@@ -159,17 +161,20 @@ comes back.
 
 Six classes, two gates. Counts are the state files of 9 Sep 2026. `COMMS` is the "ignore offline"
 rule from the original brief: never mailed, never digested — if a logger stays dark it
-shows up as a 3-day production-loss alert instead.
+shows up as a 3-day production-loss alert instead. `SILENT` (UC22) is the one exception:
+SOLARMAN plants have no CSV, so an inverter that has sent nothing for six hours is mailed.
+Its words avoid every `COMMS` word, so it cannot be lost to "offline".
 
 | Class | How our fleet words it | Gate | Today |
 |---|---|---|---|
 | `COMMS` | offline · datalogger lost · device disconnected | **never mail** | — |
 | `SOC` | battery voltage too low (57) · Low battery (26) · too high (18) · charger stops, low battery (4) | **6 h clock** | 105 |
-| `HARDWARE` | bus voltage too low (7) · battery connection open (5) · bus soft start failed (3) · sensor error · voltage class error | **6 h clock** | 17 |
-| `LOAD` | over current protection (9) · overload time out (2) · charger stops, over load (2) · overload | **6 h clock** | 14 |
+| `HARDWARE` | bus voltage too low (7) · battery connection open (5) · bus soft start failed (3) · sensor error · voltage class error · inverter output is off · inverter fault (UC22) | **6 h clock** | 17 |
+| `LOAD` | over current protection (9) · overload time out (2) · charger stops, over load (2) · overload · not on the inverter (UC22) | **6 h clock** | 14 |
 | `THERMAL` | radiator over temperature · fan locked (on) · fan locked (off) | **6 h clock** | 3 |
 | `GRID` | `1015 NO-Grid` (Solis) · grid under frequency · utility loss | **6 h clock** | 1 |
 | `PV` | charger stops, high PV voltage | **6 h clock** | 1 |
+| `SILENT` | has sent nothing to SOLARMAN (UC22 only) | **6 h clock**, mailed | — |
 
 Unrecognised messages fall to `UNKNOWN` and take the 6-hour clock — the safe default is to
 let a novel fault through, then add it to the map. Every `UNKNOWN` is logged so the map
@@ -189,6 +194,7 @@ gate never learns a vendor's name.
 | Deye | Deye Cloud | `POST /station/alertList`, per plant | `alertStartTime` · epoch s | `status = 1` | built, hybrids and off-grids (UC19) |
 | MUST | ShineMonitor | **none** — made from `queryDeviceDataOneDayPaging` readings | the outage's first reading · plant-local | set by the adapter | built (UC20) |
 | SolaX | SolaX Cloud | `GET /openapi/v2/alarm/page_alarm_info?alarmState=1`, per plant | `alarmStartTime` · plant-local | `alarmState = 1` | built, all inverters, daytime window (UC21) |
+| SRNE / Deye-type | SOLARMAN Business | **none of its own** — made from `/device-s/device/{id}/stats/day` readings, the live status and silence; plus the Alerts tab | the episode's first reading · plant-local | set by the adapter | built, all 4 plants (UC22) |
 
 **Solis was cheap, as predicted:** `check_solis_alarms.py` is the alarm list, a field map
 and a hybrid filter in front of the same `triage_alarms()` and `filter_alarms_to_send()`
@@ -237,13 +243,23 @@ every working inverter is awake, and skips alarms older than 14 days (a record o
 e.g. 53 days). **Still open:** an offline SolaX inverter raises no alarm and SolaX plants have no CSV
 for the 3-day rule, so a dead inverter is not reported by anything.
 
+**SOLARMAN (UC22) had to make every alarm itself.** Its readings carry no fault codes, and its
+Alerts tab returned nothing for any of the four plants in Nov 2026, even for an inverter silent
+since 24 May. `check_solarman_alarms.py` reads each inverter's 5-minute history and live status.
+It reuses UC20's grid-loss and backup code, and adds a lost battery, output off, the house load
+not on the inverter, a fault and no data. Two readings in a row open an episode, and the episode
+keeps one key, so a flicker does not restart Send 1/3. Replayed over 1 Sep–11 Nov 2026 it would
+have sent 89 alarms in 88 mails over 71 days, and the gate held back 99 shorter episodes. Mail goes
+to the admin only (`emails.solarman_alarms_admin`). Its sign-in renews itself, because SOLARMAN's
+password login has a captcha (see UC22 in the main README).
+
 ## What changed
 
 | File | Change |
 |---|---|
 | `six-hour-gate/alarm_triage.py` | `normalize()`, `classify()`, `is_actionable()`. Pure functions, no I/O |
-| `six-hour-gate/config/alarm_triage.json` | dwell hours per class, COMMS list. Deye's alarm names added to GRID, SOC and HARDWARE (UC19); "backup failed" and "battery flat" to SOC (UC20) |
-| `generate_device_alarms.py` | `triage_alarms()` runs between `parse_alarm_files()` and `filter_alarms_to_send()`. Rest untouched. Knows the vendors ShineMonitor, DessMonitor, Solis and Deye |
+| `six-hour-gate/config/alarm_triage.json` | dwell hours per class, COMMS list. Deye's alarm names added to GRID, SOC and HARDWARE (UC19); "backup failed" and "battery flat" to SOC (UC20); the SILENT class, "not on the inverter" in LOAD and "inverter output is off" and "inverter fault" in HARDWARE (UC22) |
+| `generate_device_alarms.py` | `triage_alarms()` runs between `parse_alarm_files()` and `filter_alarms_to_send()`. Rest untouched. Knows the vendors ShineMonitor, DessMonitor, Solis, Deye, SolaX and SOLARMAN |
 | `check_device_alarms.sh`<br>`check_dessmonitor_device_alarms.sh` | TESTING MODE dropped, feed filtered to unhandled (R3), raw-response `DEBUG` dump removed. The scripts still print the response body when a fetch fails — not done yet |
 | `state/*_device_alarms_state.json` | `class`, `started_at_utc`, `suppressed_reason` — so *"why wasn't I told about this?"* is answerable from state alone. Written only for alarms the gate holds — not done yet for the rest |
 | `trigger-shinemonitor.yml`<br>`trigger-dessmonitor.yml` | alarm poll is hourly; the CSV data pull stays at 4 h |
@@ -259,7 +275,7 @@ the gate plugs in:
 - **R3** — a handled alarm never escalates, however old
 - **COMMS** — an offline/comms alarm is never mailed, at any age
 - **R6** — a 3-hour grid cut is silent; a 7-hour one escalates. A battery alarm is held to the same clock, day or night: silent at 5 h 59 m, mailed at 6 h 01 m
-- **Vendors** — `test_solis_alarms.py` (UC18), `test_deye_alarms.py` (UC19) and `test_must_telemetry.py` (UC20) run each adapter through the real gate: open flag, key, class, the six-hour line and the 3x/4h rule
+- **Vendors** — `test_solis_alarms.py` (UC18), `test_deye_alarms.py` (UC19), `test_must_telemetry.py` (UC20), `test_solax_alarms.py` (UC21) and `test_solarman_alarms.py` (UC22) run each adapter through the real gate: open flag, key, class, the six-hour line and the 3x/4h rule
 
 ## The CSV side
 
@@ -288,7 +304,7 @@ missing is *is this actually ours?*
 
 ## Order of work
 
-The first item was not optional and not reorderable. Steps 1, 2, 4, 5, 5b and 5c are done.
+The first item was not optional and not reorderable. Steps 1, 2, 4, 5, 5b, 5c, 7, 8 and 9 are done.
 
 1. **R3 — the status filter.** *Done.* Stop pulling resolved alarms. Had to land before or with the gate
 2. **R2 + R1 — the gate itself.** *Done, live since 11 Oct 2026.* Timezone conversion, six-hour dwell, and the `COMMS` never-mail class. The core commit
@@ -300,6 +316,7 @@ The first item was not optional and not reorderable. Steps 1, 2, 4, 5, 5b and 5c
 6. **CSV gating.** *Half done.* The "check the logger is online" line is in the RED escalation text; the fleet-benchmark gate is not built
 7. **SolaX API token.** *Done, 11 Nov 2026.* OAuth app in the SolaX developer portal; the `solax` block is in credentials.json
 8. **SolaX adapter.** *Done, 11 Nov 2026 (UC21).* Ongoing alarms per plant through a new read-only client, hourly; live once the secret carries the `solax` block
+9. **SOLARMAN adapter.** *Done, 11 Nov 2026 (UC22).* Alarms made from the readings of all 4 plants, hourly, through a new read-only client with its own self-renewing sign-in; live once `SOLARMAN_TOKENS_JSON` is seeded
 
 ## Expected effect
 

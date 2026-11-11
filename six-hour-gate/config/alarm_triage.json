@@ -25,6 +25,8 @@
     "LOAD":     { "gate": "clock", "dwell_hours": 6 },
     "THERMAL":  { "gate": "clock", "dwell_hours": 6 },
     "GRID":     { "gate": "clock", "dwell_hours": 6 },
+    "SILENT":   { "gate": "clock", "dwell_hours": 6,
+                  "_comment": "UC22 only: a SOLARMAN inverter that has sent nothing. Unlike COMMS it IS mailed (the owner's decision, 11 Nov 2026): SOLARMAN's Alerts tab reports nothing, so silence is the only sign of an inverter that has died or been switched off. Its messages avoid every COMMS word, so this class wins." },
     "PV":       { "gate": "clock", "dwell_hours": 6 },
     "UNKNOWN":  { "gate": "clock", "dwell_hours": 6, "log": true }
   },
@@ -32,12 +34,15 @@
   "escalation_hint": {
     "GRID": "Grid absent 6h+ — check the AC input breaker before blaming CEB.",
     "SOC": "Battery alarm open 6h+ — check strings, charge controller and pack health.",
+    "SILENT": "No data from the inverter 6h+ — ask the customer whether it is switched on, then check the logger stick and the Wi-Fi.",
+    "LOAD": "Load alarm open 6h+ — check whether the house has been put on the changeover (bypass) and the inverter left idle.",
     "COMMS": "Datalogger offline — customer-side network. Not mailed from here; a sustained outage surfaces as a 3-day production-loss alert."
   },
 
   "match": {
     "_comment": "Lowercased substring match against the vendor's message. LONGEST PATTERN WINS, so 'overload time out' beats 'overload'. Anything unmatched falls to UNKNOWN and is logged.",
     "_comment_must": "'backup failed' and 'battery flat' are the MUST telemetry alarms' own words (UC20): made from the inverters' readings, not sent by any vendor.",
+    "_comment_solarman": "'has sent nothing to solarman', 'inverter output is off', 'inverter fault' and 'not on the inverter' are UC22's own words, made from SOLARMAN readings. 'battery connection is open' is shared with ShineMonitor's SRNE text on purpose.",
     "_comment_deye": "Deye Cloud alert names (UC19), as the fleet's alert lists wrote them Oct-Nov 2026: F-code and name run together ('F47AC_OverFreq_Fault') or apart ('AC_UnderFreq_Fault F48'), and 'NoUtillity' and 'U nderVolt' are Deye's own spellings. Matched on the name, never the code: Deye's alertCode repeats across protocol words. Not yet placed, so UNKNOWN: F59 AC_V_GridCurr_High, F57 AC_BackFeed, a bare 'F13'.",
     "_comment_solax": "SolaX Cloud alarmName (UC21), as the fleet's alarm lists wrote them 2024-2026: GridVoltFault, GridFreqFault, GridLostFault, GridVolt10MFault, Ac10Mins_Voltage_Fault, GRID_PHS_LOSS, GRID_LOSS, GRID_UNBLC, GRID_UVP3 (all grid) and ResidualOCP (leakage current, hardware). Anything else falls to UNKNOWN and is still mailed.",
     "COMMS": [
@@ -67,13 +72,16 @@
       "solar charger battery voltage class error",
       "busunbalance",
       "dc_volthigh",
-      "residualocp"
+      "residualocp",
+      "inverter output is off",
+      "inverter fault"
     ],
     "LOAD": [
       "inverter over current protection error",
       "solar charger stops due to over load",
       "overload time out",
-      "overload"
+      "overload",
+      "not on the inverter"
     ],
     "THERMAL": [
       "inverter radiator over temperature",
@@ -102,6 +110,9 @@
       "grid_loss",
       "grid_unblc",
       "grid_uvp3"
+    ],
+    "SILENT": [
+      "has sent nothing to solarman"
     ],
     "PV": [
       "solar charger stops due to high pv voltage"

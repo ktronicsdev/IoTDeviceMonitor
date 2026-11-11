@@ -1,0 +1,76 @@
+{
+  "_comment": [
+    "SOLARMAN alarms (UC22): thresholds and field names read by check_solarman_alarms.py.",
+    "SOLARMAN's own Alerts tab returned nothing for any of the four plants (Nov 2026), and the",
+    "readings carry no fault codes, so the alarms are made from the inverters' 5-minute history,",
+    "their live status and their silence, and handed to the six-hour gate.",
+    "The grid and backup thresholds are UC20's (config/must_telemetry.json) on purpose: one",
+    "rule for 'the grid is off' across every vendor."
+  ],
+  "version": 1,
+
+  "grid_absent_below_v": 100,
+  "grid_present_from_v": 180,
+  "output_dead_below_v": 100,
+  "output_alive_from_v": 180,
+
+  "flat_battery_v": {"24": 22.5, "48": 45.5},
+  "recharged_above_flat_v": {"24": 2.5, "48": 5.0},
+
+  "battery_open": {
+    "_comment": "An SRNE that has lost its battery reads SoC exactly 0 with its DC bus at about 470 V (370-416 V while the battery is on). A Deye-type reads its battery terminal near 0 V.",
+    "soc_zero_bus_from_v": 440,
+    "soc_back_bus_below_v": 430,
+    "battery_missing_below_v": 10,
+    "battery_back_from_v": 20
+  },
+
+  "load": {
+    "_comment": "A house on the inverter never draws under 50 W for six hours: the fridge alone is more. An SRNE whose house is on the manual changeover reads 10-16 W, its own meter's noise.",
+    "off_at_or_below_w": 25,
+    "back_from_w": 50
+  },
+
+  "fault_words": ["fault", "error"],
+
+  "fresh_minutes": 30,
+  "silent_minutes": 20,
+  "no_data_minutes": 30,
+
+  "profiles": {
+    "_comment": "Series names as SOLARMAN's day history writes them, matched with spaces collapsed and case ignored. Several names = several phases: voltages take the lowest phase.",
+    "srne": {
+      "grid_v": ["Grid Voltage"],
+      "out_v": ["AC Voltage R/U/A"],
+      "load_w": ["Load Power-Local"],
+      "soc": ["SoC"],
+      "bus_v": ["Bus Voltage"],
+      "batt_v": ["Battery Voltage"]
+    },
+    "deye": {
+      "grid_v": ["Grid Voltage L1L2"],
+      "out_v": ["Load Voltage L1L2"],
+      "load_w": ["Total Consumption Power"],
+      "soc": ["SoC"],
+      "batt_v": ["Battery Voltage"]
+    },
+    "deye3": {
+      "grid_v": ["Grid Voltage L1", "Grid Voltage L2", "Grid Voltage L3"],
+      "out_v": ["Load Voltage L1", "Load Voltage L2", "Load Voltage L3"],
+      "load_w": ["Total Consumption Power"],
+      "soc": ["SoC"],
+      "batt_v": ["Battery Voltage"]
+    }
+  },
+
+  "products": {
+    "_comment": "SOLARMAN productId -> profile. An inverter of any other product is still watched for silence and its alert tab, not for its readings.",
+    "0_2421_1": "srne",
+    "0_5407_1": "deye",
+    "0_5411_1": "deye3"
+  },
+
+  "rules_off": {
+    "_comment": "Station id -> rules switched off for that plant, e.g. {\"12345\": [\"load-off\"]}. Rules: grid-loss, backup, battery-open, output-off, load-off, fault, silent, alert."
+  }
+}

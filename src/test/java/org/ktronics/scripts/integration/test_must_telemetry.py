@@ -554,6 +554,23 @@ def test_main_says_how_many_came_back_on_a_second_try(fleet, capsys):
     assert "1/1 accounts read (1 on a second try, 0 excluded)" in capsys.readouterr().out
 
 
+def test_readings_without_a_battery_voltage_still_time_an_outage():
+    """UC22's SRNE history has no battery voltage. The outage and a dead output are
+    still read from it; only the flat-battery checks need the battery, and they
+    are skipped instead of failing on min(None, ...)."""
+    rows = series("2026-11-08 18:00:00", "2026-11-08 18:10:00", lambda t: (231.0, None))
+    rows += series("2026-11-08 18:15:00", "2026-11-09 01:00:00", lambda t: (0.0, None, 0.0, 0.0))
+    dev = m.new_device_state()
+    m.advance(dev, rows, CFG)
+    assert dev["outage"]["start"] == "2026-11-08 18:15:00"
+    assert dev["outage"]["min_batt_v"] is None
+    assert dev["nominal_v"] is None
+    specs = m.open_alarms(dev, "2026-11-09 01:03:00", CFG, True)
+    assert [s["kind"] for s in specs] == ["grid-loss", "backup"]
+    assert "battery" not in specs[0]["detail"]
+    assert specs[1]["message"].startswith("Backup failed: AC output at 0 V")
+
+
 # --------------------------------------------------------------------------- #
 # Wiring
 # --------------------------------------------------------------------------- #

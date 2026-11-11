@@ -1,0 +1,108 @@
+name: SOLARMAN — alarms open 6h+ (hourly)
+
+# Every hour: read each SOLARMAN Business plant's inverters (the "Ktronics KH"
+# organisation) and make alarms from their own 5-minute readings, live status
+# and silence (UC22): grid loss, backup failed, battery connection open, output
+# off, house load not on the inverter, inverter fault, no data. SOLARMAN's
+# Alerts tab is read too. The admin is mailed only when an alarm is still open
+# 6 hours after it started, then at most 3 times, 4 hours apart.
+#
+# Sign-in: SOLARMAN puts a captcha on password logins, so this job runs on a
+# token pair seeded once from a browser login (secret SOLARMAN_TOKENS_JSON) and
+# renews it itself: the renewed pair is written back to that secret with
+# SOLARMAN_SECRET_WRITER, a fine-grained token with Secrets: read and write on
+# this repository only. Until SOLARMAN_TOKENS_JSON exists the job does nothing.
+#
+# No dry_run input: a dry run prints plant names, and this repo's logs are public.
+on:
+  schedule:
+    - cron: "53 * * * *"          # hourly, clear of the other hourly jobs (Deye :27, Solis :33, MUST :43)
+  workflow_dispatch:
+    inputs:
+      force_refresh:
+        description: "renew the SOLARMAN sign-in now, to prove the write-back"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write                # to commit updated state/solarman_alarms_state.json
+
+concurrency:
+  group: solarman-alarms
+  cancel-in-progress: false
+
+jobs:
+  alarms:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Create credentials.json from secret
+        shell: bash
+        run: |
+          set -e
+          mkdir -p src/main/java/org/ktronics/config
+          cat <<'EOF' > src/main/java/org/ktronics/config/credentials.json
+          ${{ secrets.SHINEMONITOR_CREDENTIALS_JSON }}
+          EOF
+          chmod 600 src/main/java/org/ktronics/config/credentials.json
+          bash src/main/java/org/ktronics/scripts/mask_credentials.sh src/main/java/org/ktronics/config/credentials.json
+
+      - name: Write the SOLARMAN sign-in from its secret
+        id: signin
+        shell: bash
+        env:
+          SOLARMAN_TOKENS_JSON: ${{ secrets.SOLARMAN_TOKENS_JSON }}
+        run: |
+          set -e
+          if [ -z "${SOLARMAN_TOKENS_JSON}" ]; then
+            echo "::notice::SOLARMAN_TOKENS_JSON is not set - UC22 waits for its sign-in (Readme, UC22)"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          umask 077
+          printf '%s' "${SOLARMAN_TOKENS_JSON}" > solarman_tokens.json
+          bash src/main/java/org/ktronics/scripts/mask_credentials.sh solarman_tokens.json
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: Run SOLARMAN alarm gate
+        if: steps.signin.outputs.ready == 'true'
+        shell: bash
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          GH_TOKEN: ${{ secrets.SOLARMAN_SECRET_WRITER }}
+        run: |
+          FORCE=""
+          if [ "${{ github.event.inputs.force_refresh }}" = "true" ]; then FORCE="--force-refresh"; fi
+          python3 src/main/java/org/ktronics/scripts/check_solarman_alarms.py \
+            --tokens solarman_tokens.json --publish-secret $FORCE
+
+      - name: Remove the sign-in file
+        if: always()
+        shell: bash
+        run: rm -f solarman_tokens.json solarman_tokens.json.tmp
+
+      - name: Commit updated state
+        if: steps.signin.outputs.ready == 'true'
+        shell: bash
+        run: |
+          if [ -n "$(git status --porcelain state/solarman_alarms_state.json)" ]; then
+            git config user.name  "solarman-alarms-bot"
+            git config user.email "actions@users.noreply.github.com"
+            git add state/solarman_alarms_state.json
+            git commit -m "Update SOLARMAN alarm gate state"
+            chmod +x src/main/java/org/ktronics/scripts/push_data_commit.sh
+            src/main/java/org/ktronics/scripts/push_data_commit.sh --resolve-conflicts
+          else
+            echo "No state change to commit."
+          fi

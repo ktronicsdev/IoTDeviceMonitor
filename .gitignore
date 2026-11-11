@@ -48,6 +48,10 @@ src/main/java/org/ktronics/config/dessmonitor_credentials.json
 # API secret in the working tree of a PUBLIC repo.
 src/main/java/org/ktronics/config/credentials.json.*
 src/main/java/org/ktronics/config/dessmonitor_credentials.json.*
+# UC22: the SOLARMAN token pair the GitHub job writes from its secret. It carries the
+# account's full rights (Remote Control too), and the repo is public.
+solarman_tokens.json
+solarman_tokens.json.tmp
 *.bak
 *.orig
 src/main/java/org/ktronics/scripts/data

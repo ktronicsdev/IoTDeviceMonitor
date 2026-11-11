@@ -28,6 +28,7 @@
     "solis_alarms_admin": true,
     "deye_alarms_admin": true,
     "solax_alarms_admin": true,
+    "solarman_alarms_admin": true,
     "must_telemetry_admin": true,
     "battery_health_admin": true,
     "bms_alerts_admin": true
