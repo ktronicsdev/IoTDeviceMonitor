@@ -17,6 +17,7 @@ Automated monitoring system for **multi-cloud solar panel installations** with i
 | ShineMonitor | `web.shinemonitor.com`  | Production       |
 | DessMonitor  | `web.dessmonitor.com`   | Production (UC10)|
 | SolisCloud   | `soliscloud.com:13333`  | Production (UC13, UC17, UC18)|
+| SolaX Cloud  | `openapi-eu.solaxcloud.com` | Production (UC21)|
 
 **Features:**
 
@@ -112,6 +113,7 @@ So:
 | `check_solis_switch.py`, `solis_common.py` | UC13 SolisCloud watchdog |
 | `check_solis_alarms.py` | UC18 SolisCloud alarms through the six-hour gate |
 | `check_deye_alarms.py`, `deye_cloud.py` | UC19 Deye Cloud alarms through the six-hour gate, and its read-only client |
+| `check_solax_alarms.py`, `solax_cloud.py` | UC21 SolaX Cloud alarms through the six-hour gate, and its read-only client |
 | `check_must_telemetry.py` | UC20 MUST grid-loss and backup-failed alarms, made from the inverters' own readings, through the six-hour gate |
 | `check_ph1000*.py` | UC12 PH1000 dashboard and its PACEEX BMS decode |
 | `check_ph1800.py` | UC15 generic pass-through dashboard, any inverter |
@@ -142,6 +144,7 @@ normalised key — lower-cased with every non-alphanumeric character stripped �
 | `state/solis_switch_state.json` | SolisCloud watchdog |
 | `state/solis_alarms_state.json` | SolisCloud alarms (UC18): the same fields as device alarms, open alarms only |
 | `state/deye_alarms_state.json` | Deye Cloud alarms (UC19): the same, for Deye |
+| `state/solax_alarms_state.json` | SolaX Cloud alarms (UC21): the same, for SolaX |
 | `state/must_telemetry_state.json` | MUST telemetry (UC20): the same alarm fields, plus each inverter's last reading, open outage and backup episode under `device:pid:pn` |
 | `state/admin_email_state.txt` | UC9 content hash, so an unchanged admin email is not resent |
 
@@ -222,6 +225,7 @@ that GitHub Pages serves.
 | `trigger-solis-switch.yml` | Solis — re-enable a switched-off inverter | Every 2 h at **:15** | UC13 watchdog. The Control API key went live on 16 Oct 2026, so it can now re-enable, not just report |
 | `trigger-solis-alarms.yml` | Solis — alarms open 6h+ (hourly) | Hourly at **:33** | **UC18** SolisCloud alarms on hybrid inverters through the six-hour gate; admin only |
 | `trigger-deye-alarms.yml` | Deye — alarms open 6h+ (hourly) | Hourly at **:27** | **UC19** Deye Cloud alarms on hybrid and off-grid inverters through the six-hour gate; admin only |
+| `trigger-solax-alarms.yml` | SolaX — alarms open 6h+ (hourly) | Hourly at **:21** | **UC21** SolaX Cloud alarms through the six-hour gate, checked 09:00–17:00 plant time only; admin only |
 | `trigger-must-telemetry.yml` | MUST — grid and battery alarms from telemetry (hourly) | Hourly at **:43** | **UC20** grid loss and backup failed on the ShineMonitor MUST inverters, from their 5-minute readings, through the six-hour gate; admin only |
 | `trigger-bms-ingest.yml` | ESP32 BMS — ingest a pushed reading | On a device push (`repository_dispatch`), ~every 15 min | UC16 ESP32 BMS reading |
 | `trigger-battery-health.yml` | Solis — battery health report | 1st of the month, **06:23** UTC | **UC17** battery state of health and yearly fade rate per battery; read-only, no state kept |
@@ -249,6 +253,7 @@ Derived from the scripts each workflow actually runs, not from its name.
 | `trigger-solis-switch.yml` | **UC13** |
 | `trigger-solis-alarms.yml` | **UC18** |
 | `trigger-deye-alarms.yml` | **UC19** |
+| `trigger-solax-alarms.yml` | **UC21** |
 | `trigger-must-telemetry.yml` | **UC20** |
 | `trigger-bms-ingest.yml` | **UC16** |
 | `trigger-battery-health.yml` | **UC17** |
@@ -1325,6 +1330,98 @@ py check_deye_alarms.py --dry-run    # print what would be mailed; no email, no 
 
 ---
 
+### UC21: SolaX Cloud Alarms Through the Six-Hour Gate
+
+The SolaX twin of UC18 and UC19. The admin is mailed about an alarm on any
+SolaX inverter, grid loss included, only when it is **still open 6 hours after
+it started**, then at most 3 times, 4 hours apart.
+
+**Implementation Status:** ✅ **IMPLEMENTED** (11 Nov 2026). It needs the
+`solax` block in the `SHINEMONITOR_CREDENTIALS_JSON` secret (`client_id`,
+`client_secret`, `api_base`, `tz_offset_minutes`). Until it is there, every
+hourly run fails with "No 'solax' section in credentials.json". Before this,
+SolaX had no automated alerting at all.
+
+**How it works:**
+
+1. Runs **hourly at :21** ([trigger-solax-alarms.yml](.github/workflows/trigger-solax-alarms.yml)).
+2. Fetches a fresh OAuth token every run (client-credentials; it lasts 30 days, so none is stored), then reads the 24 residential plants and each plant's **ongoing** alarms, one call every 0.75 s (the limit is 100 a minute). Closed history is never read.
+3. Keeps an alarm when it is open, not stale (below) and its plant is not in `excluded_plants.json`.
+4. Hands them to the gate as UC3, UC18 and UC19 do: `triage_alarms()`, then `filter_alarms_to_send()`.
+5. Emails the admin one list: plant, model and serial, alarm name with code, level and class, open since (plant-local) and hours open, send n/3 and the first thing to check.
+
+**Why SolaX needed its own rule.** All 24 plants are grid-tie, so UC18's and
+UC19's answer (leave grid-tie inverters out) would leave nothing to watch. The
+problem it answers is real, though: an inverter asleep at night cannot clear an
+alarm that ended at dusk. SolaX's history shows it, with 35 of 540 closed
+alarms spanning midnight and the longest at 100-168 hours. Two rules instead:
+
+- **Daytime only.** The run evaluates alarms between **09:00 and 17:00 plant
+  time** and otherwise does nothing, state untouched. By then every working
+  inverter is awake and would have cleared a finished alarm, so what is still
+  open is real. An alarm that began the evening before and is open at 09:00 is
+  mailed as usual if it has passed 6 hours.
+- **Stale cap, 14 days.** An older alarm is a record on a dead inverter, not a
+  fault in progress. Pasindu 6kw had GridFreqFault and GridVoltFault open since
+  18 Sep on an offline inverter, 53 days when this was built. They are counted
+  and skipped.
+
+**A real outage still gets through.** A grid cut of more than 6 hours in the
+daytime leaves the alarm open and is mailed at the next run inside the window.
+A cut that started overnight and is still open at 09:00 is mailed then.
+
+**Known gap: an offline inverter.** Five of the 24 inverters were offline on
+11 Nov 2026. UC21 does not report them: an offline unit is a device status in
+SolaX, not an alarm. The 3-day production-loss rule is meant to catch them,
+but SolaX plants have no CSV, so nothing does yet. This is open.
+
+**Class map.** The alarm names the fleet has produced, all matched in
+`alarm_triage.json` by name and by `vendor_codes.solax`:
+
+| Class | SolaX alarms (errorCode) |
+|---|---|
+| GRID | GridLostFault (1), GridVoltFault (2), GridFreqFault (3), GridVolt10MFault and Ac10Mins_Voltage_Fault (7), GRID_LOSS (91), GRID_PHS_LOSS (102), GRID_UNBLC (103), GRID_UVP3 (108) |
+| HARDWARE | ResidualOCP (11), leakage current |
+| UNKNOWN | anything new; it takes the same six-hour clock and is still mailed |
+
+**State:** `state/solax_alarms_state.json` holds the same fields as UC18,
+keyed `plantId:deviceSN:errorCode@startTime`. An alarm that is no longer open
+is forgotten. A failed read, or a token that sees no plants, saves no state:
+a half-read fleet would prune the plants it missed and restart their sent
+alarms at Send 1/3.
+
+**Public logs:** counts and alarm keys only, never plant names (#4). The
+`client_secret` and the access token are masked by `mask_credentials.sh`.
+
+**The client, `solax_cloud.py`:** standard library only; read-only (an
+allowlist of three paths, so no control or realtime call can be sent); logs in
+again once if a token is refused; retries once after a rate limit, a server
+error or a network error.
+
+**Feature flags:** `emails.solax_alarms_admin` (the email) and
+`alerts.six_hour_gate` (the gate itself, shared with UC3, UC18 and UC19).
+
+**Scripts:**
+
+| Script | Purpose |
+|--------|---------|
+| `check_solax_alarms.py` | Plants → ongoing alarms → open, not stale → six-hour gate → 3x/4h → email |
+| `solax_cloud.py` | Read-only SolaX developer-API client: token, three read paths, one retry |
+| `generate_device_alarms.py` | The gate and send rules it reuses; now names the vendor `SolaX` |
+| `six-hour-gate/config/alarm_triage.json` | The SolaX alarm names and codes |
+
+**CLI:**
+
+```bash
+py check_solax_alarms.py              # gate + email the admin + save state (cron entrypoint)
+py check_solax_alarms.py --dry-run    # print what would be mailed; no email, no state
+py check_solax_alarms.py --any-hour   # ignore the 09:00-17:00 window, for a manual look
+```
+
+**Test Coverage:** 28/28 PASSED — `test_solax_alarms.py`
+
+---
+
 ### UC20: MUST Telemetry Alarms Through the Six-Hour Gate
 
 The admin is mailed when a MUST inverter on ShineMonitor has had **no grid for
@@ -2151,7 +2248,7 @@ The system runs automatically via GitHub Actions:
 
 Configure these in GitHub Settings > Secrets:
 
-- `SHINEMONITOR_CREDENTIALS_JSON`: ShineMonitor account credentials (also holds the `solis` block for UC13, UC17 and UC18, and the `deye` block for UC19: `app_id`, `app_secret`, `email`, `password_sha256`, `company_id`, `data_center`)
+- `SHINEMONITOR_CREDENTIALS_JSON`: ShineMonitor account credentials (also holds the `solis` block for UC13, UC17 and UC18, the `solax` block for UC21 (`client_id`, `client_secret`, `api_base`, `tz_offset_minutes`), and the `deye` block for UC19: `app_id`, `app_secret`, `email`, `password_sha256`, `company_id`, `data_center`)
 - `DESSMONITOR_CREDENTIALS_JSON`: DessMonitor account credentials (UC10)
 - `BMS_IOT_TOKEN`: PH1000 battery BMS session token — Aliyun IoT (UC12; refresh when expired)
 - `BMS_APPSECRET`: PH1000 BMS Aliyun API-Gateway app secret (UC12)
@@ -2196,6 +2293,7 @@ Default thresholds in `check_anomaly.py`:
 │   ├── trigger-solis-switch.yml       # SolisCloud ON/OFF watchdog (2h) - UC13
 │   ├── trigger-solis-alarms.yml       # SolisCloud alarms through the six-hour gate (hourly) - UC18
 │   ├── trigger-deye-alarms.yml        # Deye Cloud alarms through the six-hour gate (hourly) - UC19
+│   ├── trigger-solax-alarms.yml       # SolaX Cloud alarms through the six-hour gate (hourly) - UC21
 │   ├── trigger-must-telemetry.yml     # MUST grid/battery alarms from telemetry (hourly) - UC20
 │   ├── trigger-battery-health.yml     # SolisCloud battery health (monthly) - UC17
 │   ├── trigger-bms-ingest.yml         # ESP32 BMS reading ingest (on device push) - UC16
@@ -2243,6 +2341,8 @@ Default thresholds in `check_anomaly.py`:
 │       ├── check_battery_health.py    # SolisCloud battery health report (UC17)
 │       ├── deye_cloud.py              # Deye Cloud read-only client (UC19)
 │       ├── check_deye_alarms.py       # Deye Cloud alarms through the six-hour gate (UC19)
+│       ├── solax_cloud.py             # SolaX Cloud read-only client (UC21)
+│       ├── check_solax_alarms.py      # SolaX Cloud alarms through the six-hour gate (UC21)
 │       ├── check_must_telemetry.py    # MUST grid loss + backup failed from readings, six-hour gate (UC20)
 │       ├── solis/README_SOLIS.md      # SolisCloud setup + Control API guide (UC13)
 │       │
@@ -2270,6 +2370,7 @@ Default thresholds in `check_anomaly.py`:
     ├── connectivity_state.json        # Link-down alert state (UC14)
     ├── solis_alarms_state.json        # SolisCloud alarms held by / sent through the gate (UC18)
     ├── deye_alarms_state.json         # Deye Cloud alarms held by / sent through the gate (UC19)
+    ├── solax_alarms_state.json        # SolaX Cloud alarms held by / sent through the gate (UC21)
     ├── must_telemetry_state.json      # MUST outages, backup episodes and their alarms (UC20)
     └── solis_switch_state.json        # SolisCloud watchdog state (UC13)
 ```
@@ -2284,7 +2385,7 @@ a file that is gone (#35).
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 948 tests — 892 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 979 tests — 923 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 The MCP servers' tests are not counted here: they left the repo with the
 servers on 2026-11-04 (see *Not part of the pipeline*). The 28 Tuya tests that
@@ -2317,6 +2418,12 @@ used to skip in CI went with them.
 | ----- | ----- | ---- |
 | UC19 (Deye alarms, six-hour gate, read-only client) | 58 | `test_deye_alarms.py` |
 
+**SolaX Cloud (28 tests):**
+
+| Suite | Tests | File |
+| ----- | ----- | ---- |
+| UC21 (SolaX alarms, six-hour gate, daytime window, read-only client) | 28 | `test_solax_alarms.py` |
+
 **MUST telemetry (47 tests):**
 
 | Suite | Tests | File |
@@ -2339,12 +2446,12 @@ used to skip in CI went with them.
 | Gate rules (R1-R6, classes) | 18 | `test_alarm_triage.py` |
 | Gate wiring + feature mode | 8 | `test_alarm_gate_wiring.py` |
 
-**Alerting discipline (37 tests):**
+**Alerting discipline (39 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
 | UC1 (send cap + interval) | 4 | `test_admin_alert_send_cap.py` |
-| Hourly poll scope | 15 | `test_hourly_poll_scope.py` |
+| Hourly poll scope | 17 | `test_hourly_poll_scope.py` |
 | UC9 (weekly all-clear cadence) | 18 | `test_all_clear_cadence.py` |
 
 **Fetch safety and data integrity (38 tests):**
@@ -2365,11 +2472,11 @@ rather than editing the CSV.
 | ----- | ----- | ---- |
 | No payloads or credentials in public logs | 10 | `test_no_payloads_in_public_logs.py` |
 
-**Suite visibility (48 tests):**
+**Suite visibility (49 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| One bad import must not hide the suite | 48 | `test_suite_visibility.py` |
+| One bad import must not hide the suite | 49 | `test_suite_visibility.py` |
 
 That suite parametrizes over every `test_*.py`, so its count rises by one
 with each new test file — including an untracked one sitting in the

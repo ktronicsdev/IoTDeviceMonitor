@@ -1,0 +1,78 @@
+name: SolaX — alarms open 6h+ (hourly)
+
+# Every hour: pull every SolaX Cloud plant's ongoing alarms and put them
+# through the six-hour gate (UC21, the SolaX twin of UC18 and UC19). The admin is
+# mailed only when an alarm is still open 6 hours after it started, then at most
+# 3 times, 4 hours apart. Every SolaX inverter here is grid-tie, so the script
+# evaluates alarms only 09:00-17:00 plant time (outside it the run does nothing)
+# and skips alarms older than 14 days.
+#
+# The developer app's credentials live in the `solax` block of the
+# SHINEMONITOR_CREDENTIALS_JSON secret: client_id, client_secret, api_base,
+# tz_offset_minutes. The token is fetched fresh every run (it lasts 30 days).
+on:
+  schedule:
+    - cron: "21 * * * *"          # hourly, clear of the others (Deye :27, Solis :33, MUST :43)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "print what would be mailed; send nothing, save no state"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write                # to commit updated state/solax_alarms_state.json
+
+concurrency:
+  group: solax-alarms
+  cancel-in-progress: false
+
+jobs:
+  alarms:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Create credentials.json from secret
+        shell: bash
+        run: |
+          set -e
+          mkdir -p src/main/java/org/ktronics/config
+          cat <<'EOF' > src/main/java/org/ktronics/config/credentials.json
+          ${{ secrets.SHINEMONITOR_CREDENTIALS_JSON }}
+          EOF
+          chmod 600 src/main/java/org/ktronics/config/credentials.json
+          bash src/main/java/org/ktronics/scripts/mask_credentials.sh src/main/java/org/ktronics/config/credentials.json
+
+      - name: Run SolaX alarm gate
+        shell: bash
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+        run: |
+          DRY=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then DRY="--dry-run"; fi
+          python3 src/main/java/org/ktronics/scripts/check_solax_alarms.py $DRY
+
+      - name: Commit updated state
+        shell: bash
+        run: |
+          if [ -n "$(git status --porcelain state/solax_alarms_state.json)" ]; then
+            git config user.name  "solax-alarms-bot"
+            git config user.email "actions@users.noreply.github.com"
+            git add state/solax_alarms_state.json
+            git commit -m "Update SolaX alarm gate state"
+            chmod +x src/main/java/org/ktronics/scripts/push_data_commit.sh
+            src/main/java/org/ktronics/scripts/push_data_commit.sh --resolve-conflicts
+          else
+            echo "No state change to commit."
+          fi

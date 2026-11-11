@@ -39,6 +39,7 @@
     "_comment": "Lowercased substring match against the vendor's message. LONGEST PATTERN WINS, so 'overload time out' beats 'overload'. Anything unmatched falls to UNKNOWN and is logged.",
     "_comment_must": "'backup failed' and 'battery flat' are the MUST telemetry alarms' own words (UC20): made from the inverters' readings, not sent by any vendor.",
     "_comment_deye": "Deye Cloud alert names (UC19), as the fleet's alert lists wrote them Oct-Nov 2026: F-code and name run together ('F47AC_OverFreq_Fault') or apart ('AC_UnderFreq_Fault F48'), and 'NoUtillity' and 'U nderVolt' are Deye's own spellings. Matched on the name, never the code: Deye's alertCode repeats across protocol words. Not yet placed, so UNKNOWN: F59 AC_V_GridCurr_High, F57 AC_BackFeed, a bare 'F13'.",
+    "_comment_solax": "SolaX Cloud alarmName (UC21), as the fleet's alarm lists wrote them 2024-2026: GridVoltFault, GridFreqFault, GridLostFault, GridVolt10MFault, Ac10Mins_Voltage_Fault, GRID_PHS_LOSS, GRID_LOSS, GRID_UNBLC, GRID_UVP3 (all grid) and ResidualOCP (leakage current, hardware). Anything else falls to UNKNOWN and is still mailed.",
     "COMMS": [
       "offline",
       "device disconnected",
@@ -65,7 +66,8 @@
       "inverter output voltage sensor error",
       "solar charger battery voltage class error",
       "busunbalance",
-      "dc_volthigh"
+      "dc_volthigh",
+      "residualocp"
     ],
     "LOAD": [
       "inverter over current protection error",
@@ -90,7 +92,16 @@
       "ac_underfreq",
       "ac_uv_overvolt",
       "ac_wu_u ndervolt",
-      "ac_wu_undervolt"
+      "ac_wu_undervolt",
+      "gridvoltfault",
+      "gridfreqfault",
+      "gridlostfault",
+      "gridvolt10mfault",
+      "ac10mins_voltage_fault",
+      "grid_phs_loss",
+      "grid_loss",
+      "grid_unblc",
+      "grid_uvp3"
     ],
     "PV": [
       "solar charger stops due to high pv voltage"
@@ -110,6 +121,18 @@
       "1057": "LOAD",
       "1D4C2": "COMMS",
       "2012": "SOC"
+    },
+    "solax": {
+      "_comment": "SolaX errorCode. 1 GridLostFault, 2 GridVoltFault, 3 GridFreqFault, 7 GridVolt10MFault / Ac10Mins_Voltage_Fault, 91 GRID_LOSS, 102 GRID_PHS_LOSS, 103 GRID_UNBLC, 108 GRID_UVP3 are grid; 11 ResidualOCP is leakage current. The code differs by inverter generation, so the name map above is the fallback.",
+      "1": "GRID",
+      "2": "GRID",
+      "3": "GRID",
+      "7": "GRID",
+      "91": "GRID",
+      "102": "GRID",
+      "103": "GRID",
+      "108": "GRID",
+      "11": "HARDWARE"
     }
   }
 }

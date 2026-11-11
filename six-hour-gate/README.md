@@ -15,7 +15,7 @@ Customer-facing device-alarm mail is a separate, independently flagged channel
   DessMonitor    -->    parse_alarm_files()   -->   [ SIX-HOUR GATE ]   -->  filter_alarms_to_send()
   SolisCloud                                         normalize()             (3x / 4h — unchanged)
   Deye Cloud
-  SolaX (gap)                                        open?      R3                  |
+  SolaX Cloud                                        open?      R3                  |
                                                      classify()                     v
                                                      dwell()    R1 R2 R6      admin + customer mail
                                                           |
@@ -40,7 +40,8 @@ exactly as it is — an alarm that never qualifies simply never spends one of it
 | **Solis** | Live since 23 Oct 2026, **hybrid inverters only** — `check_solis_alarms.py`, hourly (UC18) |
 | **Deye Cloud** | Built 5 Nov 2026, **hybrid and off-grid inverters** — `check_deye_alarms.py`, hourly (UC19). Live once the `deye` block is in the credentials secret |
 | **MUST telemetry** | Built 10 Nov 2026 — `check_must_telemetry.py`, hourly (UC20). Grid loss and backup failed, made from the ShineMonitor MUST inverters' own readings: their warning list never reports a grid loss |
-| **Uncovered** | SolaX — web login only, no API key. Solis and Deye grid-tie inverters, by decision (below) |
+| **SolaX Cloud** | Built 11 Nov 2026 — `check_solax_alarms.py`, hourly (UC21). Every inverter, grid loss included; checked 09:00–17:00 plant time only and alarms over 14 days old skipped. Live once the `solax` block is in the credentials secret |
+| **Uncovered** | Solis and Deye grid-tie inverters, by decision (below). Offline SolaX inverters (5 of 24 on 11 Nov) |
 
 ## Why
 
@@ -105,6 +106,7 @@ one fails if any script imports `smtplib` directly, one fails if any
 | `emails.solis_switch_admin` | on (workflow dormant) |
 | `emails.solis_alarms_admin` | on (UC18, from 23 Oct 2026) |
 | `emails.deye_alarms_admin` | on (UC19, from 5 Nov 2026) |
+| `emails.solax_alarms_admin` | on (UC21, from 11 Nov 2026) |
 | `emails.must_telemetry_admin` | on (UC20, from 10 Nov 2026) |
 | `emails.bms_alerts_admin` | on (no hardware deployed) |
 | `alerts.production_red_3day` | on |
@@ -186,7 +188,7 @@ gate never learns a vendor's name.
 | Solis | SolisCloud | `POST /v1/api/alarmList` | `alarmBeginTime` · epoch ms | `state = "0"` | live behind the gate, hybrids only (UC18) |
 | Deye | Deye Cloud | `POST /station/alertList`, per plant | `alertStartTime` · epoch s | `status = 1` | built, hybrids and off-grids (UC19) |
 | MUST | ShineMonitor | **none** — made from `queryDeviceDataOneDayPaging` readings | the outage's first reading · plant-local | set by the adapter | built (UC20) |
-| SolaX | SolaX Cloud | — portal login only | — | — | **not covered** |
+| SolaX | SolaX Cloud | `GET /openapi/v2/alarm/page_alarm_info?alarmState=1`, per plant | `alarmStartTime` · plant-local | `alarmState = 1` | built, all inverters, daytime window (UC21) |
 
 **Solis was cheap, as predicted:** `check_solis_alarms.py` is the alarm list, a field map
 and a hybrid filter in front of the same `triage_alarms()` and `filter_alarms_to_send()`
@@ -228,15 +230,12 @@ COMMS by code and by text. A dark Solis logger is therefore not mailed, and unli
 ShineMonitor and DessMonitor, Solis plants have no CSV for the 3-day rule to catch it. That
 gap is open.
 
-**SolaX is the weak link — say so out loud.** We have a web login and no API key, so SolaX
-plants are currently unmonitored by anything automated. Note that even the public SolaX
-Cloud token API returns `getRealtimeInfo` with an `inverterStatus` code and live values —
-**not** an alarm list with start times. A token alone would not satisfy R1; we'd have to
-derive alarms from `inverterStatus` transitions and time the dwell from our own
-`first_seen`, which is the weaker fallback R1 allows. Until then SolaX stays on manual
-portal review. Note there is no digest to flag them in — SolaX plants are not in `data/`
-either, so the 3-day production-loss path does not cover them the way it covers offline
-loggers elsewhere. **SolaX is genuinely unmonitored, and silence from it means nothing.**
+**SolaX (UC21).** The developer OAuth API does return an alarm list with start times, so R1 is met
+without deriving alarms from `inverterStatus`. All 24 plants are grid-tie, so UC18's and UC19's
+grid-tie exclusion cannot be copied; instead the adapter evaluates only 09:00–17:00 plant time, when
+every working inverter is awake, and skips alarms older than 14 days (a record on a dead inverter,
+e.g. 53 days). **Still open:** an offline SolaX inverter raises no alarm and SolaX plants have no CSV
+for the 3-day rule, so a dead inverter is not reported by anything.
 
 ## What changed
 
@@ -299,8 +298,8 @@ The first item was not optional and not reorderable. Steps 1, 2, 4, 5, 5b and 5c
 5b. **Deye Cloud adapter.** *Done, 5 Nov 2026 (UC19).* `/station/alertList` per plant through a new read-only client, hourly. Hybrids and off-grids; live once the secret carries the `deye` block
 5c. **MUST telemetry adapter.** *Done, 10 Nov 2026 (UC20).* Grid loss and backup failed from the inverters' 5-minute readings, hourly, because ShineMonitor's warning list never sends a MUST grid loss
 6. **CSV gating.** *Half done.* The "check the logger is online" line is in the RED escalation text; the fleet-benchmark gate is not built
-7. **SolaX API token.** Request in parallel — a procurement wait, not engineering work
-8. **SolaX adapter.** After the token, and only if the decision is to derive alarms from `inverterStatus` instead of keeping SolaX on manual portal review
+7. **SolaX API token.** *Done, 11 Nov 2026.* OAuth app in the SolaX developer portal; the `solax` block is in credentials.json
+8. **SolaX adapter.** *Done, 11 Nov 2026 (UC21).* Ongoing alarms per plant through a new read-only client, hourly; live once the secret carries the `solax` block
 
 ## Expected effect
 
