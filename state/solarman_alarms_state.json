@@ -3,46 +3,37 @@
     "customer": "Hasika Deye",
     "first_seen": "2026-11-12T02:02:15.506819",
     "ignored": false,
-    "last_sent": "2026-11-12T02:02:15.506819",
+    "last_sent": "2026-11-12T10:15:54.822367",
     "message": "Grid loss: no AC input on the inverter since 2026-11-11 17:24",
     "plant": "Hasika Deye - 2310262088",
-    "send_count": 1
-  },
-  "64690226:SR-2405220345-301484:load-off@2026-11-11T000419": {
-    "customer": "Ktronics kelaniya",
-    "first_seen": "2026-11-12T02:02:15.506819",
-    "ignored": false,
-    "last_sent": "2026-11-12T02:02:15.506819",
-    "message": "House load not on the inverter since 2026-11-11 00:04 or earlier: the inverter is idle with its output alive (the house is most likely on the changeover)",
-    "plant": "Ktronics kelaniya - kh srn Inverter",
-    "send_count": 1
+    "send_count": 2
   },
   "65430172:2408134651:silent@2026-05-24T100842": {
     "customer": "Mr. Dikkubura",
     "first_seen": "2026-11-12T02:02:15.506819",
     "ignored": false,
-    "last_sent": "2026-11-12T02:02:15.506819",
+    "last_sent": "2026-11-12T10:15:54.822367",
     "message": "Inverter has sent nothing to SOLARMAN since 2026-05-24 10:08",
     "plant": "Mr. Dikkubura - 2408134651",
-    "send_count": 1
+    "send_count": 2
   },
   "device:63371506:2310262088": {
     "backup": null,
     "episodes": {},
     "fault": null,
     "last_row": {
-      "batt_v": 49.09,
+      "batt_v": 49.61,
       "bus_v": null,
-      "grid_v": 3.9,
-      "load_w": 425.0,
-      "out_v": 233.4,
-      "soc": 53.0,
-      "ts": "2026-11-12 07:29:13"
+      "grid_v": 4.0,
+      "load_w": 1535.0,
+      "out_v": 234.5,
+      "soc": 98.0,
+      "ts": "2026-11-12 15:41:22"
     },
-    "last_ts": "2026-11-12 07:29:13",
+    "last_ts": "2026-11-12 15:41:22",
     "nominal_v": 48,
     "outage": {
-      "last_absent": "2026-11-12 07:29:13",
+      "last_absent": "2026-11-12 15:41:22",
       "min_batt_v": 48.95,
       "start": "2026-11-11 17:24:05",
       "start_known": true
@@ -50,18 +41,18 @@
     "pending": null,
     "recent": [
       {
-        "batt_v": 49.13,
-        "grid_v": 3.9,
-        "load_w": 380.0,
-        "out_v": 234.4,
-        "ts": "2026-11-12 07:24:08"
+        "batt_v": 49.66,
+        "grid_v": 4.0,
+        "load_w": 1489.0,
+        "out_v": 234.5,
+        "ts": "2026-11-12 15:36:18"
       },
       {
-        "batt_v": 49.09,
-        "grid_v": 3.9,
-        "load_w": 425.0,
-        "out_v": 233.4,
-        "ts": "2026-11-12 07:29:13"
+        "batt_v": 49.61,
+        "grid_v": 4.0,
+        "load_w": 1535.0,
+        "out_v": 234.5,
+        "ts": "2026-11-12 15:41:22"
       }
     ]
   },
@@ -72,69 +63,64 @@
     "last_row": {
       "batt_v": 55.69,
       "bus_v": null,
-      "grid_v": 229.5,
-      "load_w": 281.0,
-      "out_v": 227.7,
+      "grid_v": 224.1,
+      "load_w": 190.0,
+      "out_v": 222.4,
       "soc": 100.0,
-      "ts": "2026-11-12 07:30:29"
+      "ts": "2026-11-12 15:40:13"
     },
-    "last_ts": "2026-11-12 07:30:29",
+    "last_ts": "2026-11-12 15:40:13",
     "nominal_v": 48,
     "outage": null,
     "pending": null,
     "recent": [
       {
-        "batt_v": 55.69,
-        "grid_v": 235.6,
-        "load_w": 248.0,
-        "out_v": 233.7,
-        "ts": "2026-11-12 07:24:50"
+        "batt_v": 55.7,
+        "grid_v": 226.2,
+        "load_w": 196.0,
+        "out_v": 223.8,
+        "ts": "2026-11-12 15:34:35"
       },
       {
         "batt_v": 55.69,
-        "grid_v": 229.5,
-        "load_w": 281.0,
-        "out_v": 227.7,
-        "ts": "2026-11-12 07:30:29"
+        "grid_v": 224.1,
+        "load_w": 190.0,
+        "out_v": 222.4,
+        "ts": "2026-11-12 15:40:13"
       }
     ]
   },
   "device:64690226:SR-2405220345-301484": {
     "backup": null,
-    "episodes": {
-      "load-off": {
-        "start": "2026-11-11 00:04:19",
-        "start_known": false
-      }
-    },
+    "episodes": {},
     "fault": null,
     "last_row": {
       "batt_v": null,
-      "bus_v": 400.7,
-      "grid_v": 234.1,
-      "load_w": 14.0,
-      "out_v": 240.1,
-      "soc": 60.0,
-      "ts": "2026-11-12 07:30:13"
+      "bus_v": 381.2,
+      "grid_v": 230.7,
+      "load_w": 244.0,
+      "out_v": 240.0,
+      "soc": 45.0,
+      "ts": "2026-11-12 15:43:40"
     },
-    "last_ts": "2026-11-12 07:30:13",
+    "last_ts": "2026-11-12 15:43:40",
     "nominal_v": null,
     "outage": null,
     "pending": null,
     "recent": [
       {
         "batt_v": null,
-        "grid_v": 234.0,
-        "load_w": 14.0,
-        "out_v": 240.1,
-        "ts": "2026-11-12 07:25:01"
+        "grid_v": 232.6,
+        "load_w": 148.0,
+        "out_v": 239.9,
+        "ts": "2026-11-12 15:38:28"
       },
       {
         "batt_v": null,
-        "grid_v": 234.1,
-        "load_w": 14.0,
-        "out_v": 240.1,
-        "ts": "2026-11-12 07:30:13"
+        "grid_v": 230.7,
+        "load_w": 244.0,
+        "out_v": 240.0,
+        "ts": "2026-11-12 15:43:40"
       }
     ]
   },
@@ -154,32 +140,32 @@
     "episodes": {},
     "fault": null,
     "last_row": {
-      "batt_v": 53.61,
+      "batt_v": 53.86,
       "bus_v": null,
-      "grid_v": 227.0,
-      "load_w": 343.0,
-      "out_v": 228.1,
-      "soc": 81.0,
-      "ts": "2026-11-12 07:30:50"
+      "grid_v": 219.3,
+      "load_w": 329.0,
+      "out_v": 220.5,
+      "soc": 100.0,
+      "ts": "2026-11-12 15:45:00"
     },
-    "last_ts": "2026-11-12 07:30:50",
+    "last_ts": "2026-11-12 15:45:00",
     "nominal_v": 48,
     "outage": null,
     "pending": null,
     "recent": [
       {
-        "batt_v": 53.37,
-        "grid_v": 228.9,
-        "load_w": 341.0,
-        "out_v": 230.1,
-        "ts": "2026-11-12 07:25:45"
+        "batt_v": 53.87,
+        "grid_v": 220.3,
+        "load_w": 158.0,
+        "out_v": 221.7,
+        "ts": "2026-11-12 15:39:53"
       },
       {
-        "batt_v": 53.61,
-        "grid_v": 227.0,
-        "load_w": 343.0,
-        "out_v": 228.1,
-        "ts": "2026-11-12 07:30:50"
+        "batt_v": 53.86,
+        "grid_v": 219.3,
+        "load_w": 329.0,
+        "out_v": 220.5,
+        "ts": "2026-11-12 15:45:00"
       }
     ]
   }
