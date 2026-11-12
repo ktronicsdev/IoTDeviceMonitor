@@ -10,10 +10,6 @@ does not depend on customer email addresses — only 6 of 23 ShineMonitor accoun
 Customer-facing device-alarm mail is a separate, independently flagged channel
 (`emails.device_alarms_customer`).
 
-An animated walk-through of the whole alarm flow is at
-[`site/alarm-pipeline/`](../site/alarm-pipeline/index.html)
-(live: `https://ktronicsdev.github.io/IoTDeviceMonitor/site/alarm-pipeline/`).
-
 ```
   ShineMonitor          check_*_alarms.sh
   DessMonitor    -->    parse_alarm_files()   -->   [ SIX-HOUR GATE ]   -->  filter_alarms_to_send()
