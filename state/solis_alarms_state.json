@@ -7,5 +7,32 @@
     "customer": "Unknown",
     "plant": "Hiran wijewardhana 15kv Nawala",
     "message": "Inefficient Power Plants"
+  },
+  "1298491919450541722:1033330256140031:1D4C2@1794456297615": {
+    "send_count": 0,
+    "last_sent": null,
+    "first_seen": "2026-11-12T04:04:57.615000+00:00",
+    "ignored": false,
+    "class": "COMMS",
+    "started_at_utc": "2026-11-12T04:04:57.615000+00:00",
+    "suppressed_reason": "COMMS alarms are not mailed"
+  },
+  "1298491919450541722:1033330256140031:1015@1794456297000": {
+    "send_count": 1,
+    "first_seen": "2026-11-12T11:42:04.989679",
+    "ignored": false,
+    "last_sent": "2026-11-12T11:42:04.989679",
+    "customer": "Unknown",
+    "plant": "Charitha ktronics Solar",
+    "message": "NO-Grid"
+  },
+  "1298491919450854508:None:1D4C3@1794326400000": {
+    "send_count": 1,
+    "first_seen": "2026-11-12T11:42:04.989679",
+    "ignored": false,
+    "last_sent": "2026-11-12T11:42:04.989679",
+    "customer": "Unknown",
+    "plant": "Hiran wijewardhana 15kv Nawala",
+    "message": "Inefficient Power Plants"
   }
 }
