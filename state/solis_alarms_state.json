@@ -18,19 +18,19 @@
     "suppressed_reason": "COMMS alarms are not mailed"
   },
   "1298491919450541722:1033330256140031:1015@1794456297000": {
-    "send_count": 1,
+    "send_count": 2,
     "first_seen": "2026-11-12T11:42:04.989679",
     "ignored": false,
-    "last_sent": "2026-11-12T11:42:04.989679",
+    "last_sent": "2026-11-12T20:17:50.585516",
     "customer": "Unknown",
     "plant": "Charitha ktronics Solar",
     "message": "NO-Grid"
   },
   "1298491919450854508:None:1D4C3@1794326400000": {
-    "send_count": 1,
+    "send_count": 2,
     "first_seen": "2026-11-12T11:42:04.989679",
     "ignored": false,
-    "last_sent": "2026-11-12T11:42:04.989679",
+    "last_sent": "2026-11-12T20:17:50.585516",
     "customer": "Unknown",
     "plant": "Hiran wijewardhana 15kv Nawala",
     "message": "Inefficient Power Plants"
