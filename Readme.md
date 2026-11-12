@@ -43,9 +43,10 @@ does; this says *how it is put together*, and which rules may not be broken.
 **Keep it current in the same commit as the code** — a use case that changes its
 state file, its flag or its schedule changes this section too.
 
-### One run, five steps
+### One run, two ways
 
-Every scheduled run does the same five things in the same order:
+A scheduled run takes one of two ways. Production data takes the **CSV way**,
+the same five steps in the same order:
 
 ```
   ShineMonitor API ─┐
@@ -53,8 +54,8 @@ Every scheduled run does the same five things in the same order:
   SolisCloud   API ─┼─► COLLECT   check_*_monthly.sh / _yearly.sh   (bash, per platform)
   Deye Cloud   API ─┤             └─► data/{plant}-YYYY-MM.csv      date,kwh
   SolaX Cloud  API ─┤                 data/{plant}-YYYY.csv         month,kwh
-  SOLARMAN     API ─┘             Deye Cloud, SolaX, SOLARMAN: alarms only, no CSV
-                                  (check_*_alarms.py, through the six-hour gate)
+  SOLARMAN     API ─┘             Deye Cloud, SolaX, SOLARMAN: no CSV; they take
+                                  the six-hour-gate way only (below)
                                                 │
                                                 ▼
                                   CLASSIFY  (python, in this order)
@@ -69,6 +70,35 @@ Every scheduled run does the same five things in the same order:
                                                 ▼
                                   NOTIFY    send_email.py           (admin)
                                             send_customer_emails.py (customers)
+                                                │
+                                                ▼
+                                  REMEMBER  state/*.json, committed back by the
+                                            workflow so the next run knows
+```
+
+Device alarms take the **six-hour-gate way**. Every platform's alarms, or the
+alarms made from its readings, go through one gate before anyone is mailed:
+
+```
+  ShineMonitor  warning list ─┐
+  DessMonitor   warning list ─┤
+  SolisCloud    alarm list   ─┤
+  Deye Cloud    alert list   ─┼─► READ      check_*_alarms.py, check_*device_alarms.sh
+  SolaX Cloud   alarm list   ─┤             one record per alarm: plant, device, message, start
+  MUST          readings     ─┤             (MUST and SOLARMAN: alarms made from readings)
+  SOLARMAN      readings     ─┘
+                                                │
+                                                ▼
+                                  GATE      six-hour-gate/alarm_triage.py
+                                            still open 6 h after it started?
+                                            the COMMS class is never mailed
+                                                │
+                                                ▼
+                                  DECIDE    3 sends, 4 h apart (filter_alarms_to_send)
+                                            features.py — is this channel live?
+                                                │
+                                                ▼
+                                  NOTIFY    admin mail; UC3 also mails customers
                                                 │
                                                 ▼
                                   REMEMBER  state/*.json, committed back by the
