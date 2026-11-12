@@ -49,9 +49,12 @@ Every scheduled run does the same five things in the same order:
 
 ```
   ShineMonitor API ─┐
-  DessMonitor  API ─┼─► COLLECT   check_*_monthly.sh / _yearly.sh   (bash, per platform)
-  SolisCloud   API ─┘             └─► data/{plant}-YYYY-MM.csv      date,kwh
-                                      data/{plant}-YYYY.csv         month,kwh
+  DessMonitor  API ─┤
+  SolisCloud   API ─┼─► COLLECT   check_*_monthly.sh / _yearly.sh   (bash, per platform)
+  Deye Cloud   API ─┤             └─► data/{plant}-YYYY-MM.csv      date,kwh
+  SolaX Cloud  API ─┤                 data/{plant}-YYYY.csv         month,kwh
+  SOLARMAN     API ─┘             Deye Cloud, SolaX, SOLARMAN: alarms only, no CSV
+                                  (check_*_alarms.py, through the six-hour gate)
                                                 │
                                                 ▼
                                   CLASSIFY  (python, in this order)
