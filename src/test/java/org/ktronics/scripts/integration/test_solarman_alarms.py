@@ -698,7 +698,7 @@ class TestWiring:
         text = WORKFLOW.read_text(encoding="utf-8")
         assert "mask_credentials.sh src/main/java/org/ktronics/config/credentials.json" in text
         assert "mask_credentials.sh solarman_tokens.json" in text
-        assert "GH_TOKEN: ${{ secrets.SOLARMAN_SECRET_WRITER }}" in text
+        assert "GH_TOKEN: ${{ secrets.GH_PAT }}" in text
 
     def test_there_is_no_dry_run_input(self):
         """A dry run prints plant names, and this repo's logs are public."""

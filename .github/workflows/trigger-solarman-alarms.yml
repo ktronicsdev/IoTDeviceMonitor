@@ -8,10 +8,11 @@ name: SOLARMAN — alarms open 6h+ (hourly)
 # 6 hours after it started, then at most 3 times, 4 hours apart.
 #
 # Sign-in: SOLARMAN puts a captcha on password logins, so this job runs on a
-# token pair seeded once from a browser login (secret SOLARMAN_TOKENS_JSON) and
+# token pair seeded from a browser login (secret SOLARMAN_TOKENS_JSON) and
 # renews it itself: the renewed pair is written back to that secret with
-# SOLARMAN_SECRET_WRITER, a fine-grained token with Secrets: read and write on
-# this repository only. Until SOLARMAN_TOKENS_JSON exists the job does nothing.
+# GH_PAT, the token the PH1000 loop already saves its BMS sign-in with. A
+# renewal never outlives the browser login: one is due every 180 days.
+# Until SOLARMAN_TOKENS_JSON exists the job does nothing.
 #
 # No dry_run input: a dry run prints plant names, and this repo's logs are public.
 on:
@@ -80,7 +81,7 @@ jobs:
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
-          GH_TOKEN: ${{ secrets.SOLARMAN_SECRET_WRITER }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}   # writes the renewed sign-in back to SOLARMAN_TOKENS_JSON
         run: |
           FORCE=""
           if [ "${{ github.event.inputs.force_refresh }}" = "true" ]; then FORCE="--force-refresh"; fi

@@ -1633,7 +1633,7 @@ GitHub job cannot log in. Renewing a sign-in needs no captcha.
 
 - The job's sign-in is a token pair kept in the `SOLARMAN_TOKENS_JSON` secret. SOLARMAN's access token lasts 60 days and its refresh token 180.
 - **Renewing never outlives the browser login.** A renewal returns a new pair, but the new refresh token keeps the end date of the login it came from: on 11 Nov 2026 three renewals of a 9 Nov login all ended on 8 May 2027. So a browser login is needed every 180 days, for the job and for the workstation alike. 21 days before the end the admin is mailed (`solarman:signin:login-due`), with the date.
-- When the access token has under 7 days left, the job renews the pair. It masks both new tokens in the log, then writes them back to the secret at once with `gh secret set`, reading them from stdin. The token it uses for that is `SOLARMAN_SECRET_WRITER`, a fine-grained token with Secrets: read and write on this repository only.
+- When the access token has under 7 days left, the job renews the pair. It masks both new tokens in the log, then writes them back to the secret at once with `gh secret set`, reading them from stdin. The token it uses for that is `GH_PAT`, the same one the PH1000 loop saves its renewed BMS sign-in with.
 - If a renewal is refused, if the write-back fails, if the sign-in ends within 21 days, or if no working sign-in is left, the admin is mailed **at once** (no six-hour wait). The mail goes at most 3 times, 4 hours apart. Its key is `solarman:signin:<kind>`, and it is forgotten when the sign-in works again.
 - The token carries the account's full rights, Remote Control included. `solarman_cloud.py` is read-only by construction: it refuses any path outside five read paths before anything is sent, and nothing under `/order-s` is among them.
 
@@ -1641,7 +1641,7 @@ To seed or re-seed it, on a workstation:
 
 1. Log in with the gitignored MCP helper, into a file of its own so the workstation's own session is not overwritten: `py solarman_mcp.py --login --token-file <file>`. A view-only member of the organisation is better than the main login: a token that cannot send Remote Control orders.
 2. `gh secret set SOLARMAN_TOKENS_JSON < <file>`, then delete the file.
-3. Once: create the fine-grained token (this repository only; Secrets: read and write; the longest expiry allowed) and store it as `SOLARMAN_SECRET_WRITER`.
+3. Nothing more to set up: the write-back uses the `GH_PAT` secret, which the PH1000 and PH1800 loops already need.
 4. Check that the workstation's session still works (`py solarman_mcp.py --status`). Then dispatch the workflow once with `force_refresh` to prove the write-back: the secret's "updated" time changes, and the next run still signs in.
 
 Two pairs renew side by side: renewing one leaves the other working (checked 11 Nov 2026). So step 1 can also be one renewal of the workstation's own session, which is how the job was first seeded on 11 Nov 2026. Its pair ends with the workstation's, on 8 May 2027.
@@ -2431,7 +2431,7 @@ Configure these in GitHub Settings > Secrets:
 - `SHINEMONITOR_CREDENTIALS_JSON`: ShineMonitor account credentials (also holds the `solis` block for UC13, UC17 and UC18, the `solax` block for UC21 (`client_id`, `client_secret`, `api_base`, `tz_offset_minutes`), and the `deye` block for UC19: `app_id`, `app_secret`, `email`, `password_sha256`, `company_id`, `data_center`)
 - `DESSMONITOR_CREDENTIALS_JSON`: DessMonitor account credentials (UC10)
 - `SOLARMAN_TOKENS_JSON`: UC22's SOLARMAN sign-in, `{"access_token", "refresh_token"}`, seeded from a browser login and renewed by the job itself (see UC22)
-- `SOLARMAN_SECRET_WRITER`: a fine-grained GitHub token with **Secrets: read and write** on this repository only, so UC22 can write its renewed sign-in back to `SOLARMAN_TOKENS_JSON`
+- `GH_PAT`: a GitHub token that can start workflows and write this repository's secrets. The PH1000 and PH1800 live loops use it to re-launch themselves (PH1000 also saves its renewed BMS sign-in with it), and UC22 writes its renewed sign-in back to `SOLARMAN_TOKENS_JSON` with it
 - `BMS_IOT_TOKEN`: PH1000 battery BMS session token — Aliyun IoT (UC12; refresh when expired)
 - `BMS_APPSECRET`: PH1000 BMS Aliyun API-Gateway app secret (UC12)
 - `SMTP_HOST`: SMTP server (e.g., smtp.gmail.com)

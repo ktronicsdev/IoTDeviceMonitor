@@ -560,7 +560,7 @@ def main(argv=None, client_factory=None, utc_now=None, env=os.environ):
         if client.save_error:
             signin.append(("not-saved", "The GitHub job renewed its SOLARMAN sign-in but could "
                            f"not save it to the SOLARMAN_TOKENS_JSON secret ({client.save_error}). "
-                           "Check the SOLARMAN_SECRET_WRITER token."))
+                           "Check the GH_PAT secret."))
         left = client.days_left()
         if left["refresh"] < solarman_cloud.LOGIN_DUE_BELOW_S / 86400:
             ends = (utc_now + timedelta(days=max(left["refresh"], 0))).date().isoformat()

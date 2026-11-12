@@ -121,8 +121,8 @@ def mask_in_actions(tokens, emit=print, env=os.environ):
 def publish_tokens(tokens, env=os.environ, run=subprocess.run):
     """Write the renewed pair back to the SOLARMAN_TOKENS_JSON secret with gh.
 
-    GH_TOKEN is a fine-grained token with Secrets: read and write on this one
-    repository (the SOLARMAN_SECRET_WRITER secret); the job's own GITHUB_TOKEN
+    GH_TOKEN is the repository's GH_PAT secret, the token the PH1000 loop
+    already saves its renewed BMS sign-in with; the job's own GITHUB_TOKEN
     cannot write secrets. The pair goes on stdin, never on the command line,
     and gh's output is not printed.
     """
