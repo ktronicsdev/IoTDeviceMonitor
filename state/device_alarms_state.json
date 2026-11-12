@@ -1454,10 +1454,10 @@
     "message": "Low battery"
   },
   "1187499:D70000210184361276:6af509299332050168ab6f70": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-11-12T12:03:24.751977",
-    "ignored": false,
-    "last_sent": "2026-11-12T17:32:44.146476",
+    "ignored": true,
+    "last_sent": "2026-11-12T23:22:07.909398",
     "customer": "Gayan-IMH",
     "plant": "imbulgoda  3kw",
     "message": "battery voltage is too low"
