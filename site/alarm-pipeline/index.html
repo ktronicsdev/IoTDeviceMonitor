@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alarm Pipeline</title>
+<style>
+:root{--bg:#0b0f17;--card:#151c28;--line:#2a3547;--text:#e6edf6;--muted:#8a97ab;
+  --blue:#4c9aff;--green:#3ddc97;--amber:#ffb84d;--red:#ff6b6b}
+@media (prefers-color-scheme:light){:root{--bg:#f4f6fa;--card:#fff;--line:#c9d2e0;--text:#172033;--muted:#5b6880}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,Segoe UI,sans-serif}
+.wrap{max-width:520px;margin:0 auto;padding:20px 16px 48px}
+h1{margin:0 0 4px;font-size:1.4rem}
+p.sub{margin:0 0 18px;color:var(--muted)}
+a{color:var(--blue)}
+
+/* One 16 s loop. Every animation uses the same duration, so they stay in step;
+   each one only differs by its start delay. The page plays even when the OS asks
+   for reduced motion: the motion is the whole point of it. */
+:root{--T:16s}
+
+/* sources */
+.srcs{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.src{background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:8px 12px;
+  animation:pulse var(--T) infinite}
+.src b{display:block;font-size:.95rem}
+.src span{font-size:.75rem;color:var(--muted)}
+.src:nth-child(1){animation-delay:.2s}.src:nth-child(2){animation-delay:.4s}
+.src:nth-child(3){animation-delay:.6s}.src:nth-child(4){animation-delay:.8s}
+.src:nth-child(5){animation-delay:1s}.src:nth-child(6){animation-delay:1.2s}.src:nth-child(7){animation-delay:1.4s}
+.src.k{grid-column:1/-1}
+@keyframes pulse{0%{border-color:var(--line)}2%,8%{border-color:var(--amber);box-shadow:0 0 0 3px rgba(255,184,77,.18)}12%,100%{border-color:var(--line);box-shadow:none}}
+
+/* connectors with a travelling dot */
+.link{position:relative;height:34px;display:flex;justify-content:center}
+.link:before{content:"";width:2px;background:var(--line)}
+.link i{position:absolute;top:0;width:10px;height:10px;border-radius:50%;background:var(--amber);opacity:0;
+  animation:drop var(--T) infinite}
+@keyframes drop{0%{opacity:0;transform:translateY(0)}1%{opacity:1}5%{opacity:1;transform:translateY(24px)}6%,100%{opacity:0;transform:translateY(24px)}}
+.l0 i{animation-delay:1.6s}.l1 i{animation-delay:3.9s}.l2 i{animation-delay:6.6s}
+.l3 i{animation-delay:9.2s}.l4 i{animation-delay:12.6s}
+
+/* stages */
+.stage{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:14px 16px;
+  animation:act var(--T) infinite}
+.stage h2{margin:0 0 2px;font-size:1.05rem;letter-spacing:.04em;display:flex;align-items:center;gap:10px}
+.stage p{margin:0;font-size:.85rem;color:var(--muted)}
+.stage code{font:inherit;color:var(--text)}
+.s1{animation-delay:2s}.s2{animation-delay:4.5s}.s3{animation-delay:7.2s}.s4{animation-delay:9.8s}.s5{animation-delay:13.2s}
+@keyframes act{0%{border-color:var(--line);box-shadow:none}2%,15%{border-color:var(--blue);box-shadow:0 0 0 4px rgba(76,154,255,.18)}18%,100%{border-color:var(--line);box-shadow:none}}
+
+/* read: one record */
+.rec{display:inline-block;margin-top:8px;padding:2px 8px;border-radius:6px;font-size:.75rem;
+  background:rgba(76,154,255,.15);color:var(--blue);opacity:0;animation:chip var(--T) infinite;animation-delay:2.4s}
+@keyframes chip{0%{opacity:0;transform:translateY(-4px)}2%,12%{opacity:1;transform:none}16%,100%{opacity:0}}
+
+/* gate: clock + COMMS chip dropped */
+.ring{width:24px;height:24px;margin-left:auto}
+.ring circle{fill:none;stroke-width:4}
+.ring .bg{stroke:var(--line)}
+.ring .fg{stroke:var(--amber);stroke-dasharray:63;stroke-dashoffset:63;animation:ring var(--T) infinite;animation-delay:4.6s;
+  transform:rotate(-90deg);transform-origin:50% 50%}
+@keyframes ring{0%{stroke-dashoffset:63}12%,16%{stroke-dashoffset:0}18%,100%{stroke-dashoffset:63}}
+.chips{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.chip{padding:2px 8px;border-radius:6px;font-size:.75rem}
+.chip.red{background:rgba(255,107,107,.15);color:var(--red);opacity:.35;animation:drop2 var(--T) infinite;animation-delay:4.8s}
+.chip.grn{background:rgba(61,220,151,.15);color:var(--green);opacity:.35;animation:keep var(--T) infinite;animation-delay:4.8s}
+@keyframes drop2{0%{opacity:.35;text-decoration:none}8%{opacity:1}14%{opacity:1;text-decoration:line-through}18%,100%{opacity:.35;text-decoration:none}}
+@keyframes keep{0%{opacity:.35}12%,16%{opacity:1}18%,100%{opacity:.35}}
+
+/* decide: three pips */
+.pips{display:flex;gap:8px;margin-top:8px}
+.pips u{width:12px;height:12px;border-radius:50%;background:var(--line);animation:pip var(--T) infinite}
+.pips u:nth-child(1){animation-delay:7.4s}.pips u:nth-child(2){animation-delay:7.9s}.pips u:nth-child(3){animation-delay:8.4s}
+@keyframes pip{0%{background:var(--line)}2%,12%{background:var(--green)}16%,100%{background:var(--line)}}
+
+/* notify: customer popup */
+.pop-slot{position:relative;height:88px;margin-top:10px}
+.pop{position:absolute;inset:0;border-radius:12px;padding:10px 34px 10px 12px;background:var(--bg);
+  border:2px solid var(--amber);display:flex;gap:10px;opacity:0;transform:translateY(-10px) scale(.96);
+  animation:pop var(--T) infinite;animation-delay:10.3s}
+.pop .ic{flex:none;width:28px;height:28px;border-radius:8px;background:var(--amber);color:#1a1200;
+  font-weight:800;display:flex;align-items:center;justify-content:center}
+.pop b{display:block;font-size:.85rem}
+.pop span{font-size:.78rem;color:var(--muted)}
+.pop .x{position:absolute;top:6px;right:8px;width:22px;height:22px;border-radius:50%;text-align:center;line-height:22px;
+  font-size:.8rem;color:var(--muted);animation:xpress var(--T) infinite;animation-delay:10.3s}
+@keyframes pop{0%{opacity:0;transform:translateY(-10px) scale(.96);box-shadow:none}
+  2%{opacity:1;transform:none}
+  5%,8%{box-shadow:0 0 0 5px rgba(255,184,77,.30)}
+  11%{box-shadow:0 0 0 0 rgba(255,184,77,0)}
+  14%{opacity:1;transform:none}
+  17%{opacity:0;transform:translateY(-10px) scale(.96)}100%{opacity:0}}
+@keyframes xpress{0%,12%{background:transparent;color:var(--muted)}13.5%,15%{background:var(--red);color:#fff}16%,100%{background:transparent;color:var(--muted)}}
+
+/* remember */
+.file{display:inline-block;max-width:100%;overflow-wrap:anywhere;margin-top:8px;padding:2px 8px;border-radius:6px;font-size:.75rem;opacity:.35;
+  background:rgba(76,154,255,.15);color:var(--blue);animation:wr var(--T) infinite;animation-delay:13.4s}
+@keyframes wr{0%{opacity:.35}4%,14%{opacity:1}18%,100%{opacity:.35}}
+
+.back{margin-top:14px;padding:10px 14px;border:1.5px dashed var(--line);border-radius:12px;font-size:.85rem;color:var(--muted);
+  animation:dashglow var(--T) infinite;animation-delay:14.4s}
+@keyframes dashglow{0%{border-color:var(--line)}4%,10%{border-color:var(--blue)}14%,100%{border-color:var(--line)}}
+
+/* Wide screens: the first, horizontal layout (sources on the left, stages in a row).
+   Narrow screens (phones): the vertical column above. Same animations in both. */
+@media (min-width:900px){
+  .wrap{max-width:1200px}
+  .flow{display:flex;align-items:center}
+  .srcs{grid-template-columns:1fr;width:150px;flex:none}
+  .link{height:2px;width:30px;flex:none;align-items:center;justify-content:flex-start}
+  .link:before{width:100%;height:2px}
+  .link i{top:-4px;left:0}
+  .l0 i{animation-name:dropx}.l1 i{animation-name:dropx}.l2 i{animation-name:dropx}.l3 i{animation-name:dropx}.l4 i{animation-name:dropx}
+  .stage{flex:1 1 0;min-width:0;align-self:center}
+  .stage p{font-size:.8rem}
+  .pop-slot{height:200px}
+  .pop{flex-direction:column;gap:6px}
+}
+@keyframes dropx{0%{opacity:0;transform:translateX(0)}1%{opacity:1}5%{opacity:1;transform:translateX(22px)}6%,100%{opacity:0;transform:translateX(22px)}}
+.key{margin:18px 0 0;padding-left:18px;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Alarm pipeline</h1>
+  <p class="sub">How a device alarm becomes (or does not become) an email. Seven sources, five steps, one rule: it must still be wrong six hours later. <a href="../../six-hour-gate/README.md">Six-hour gate</a> &middot; <a href="../../dashboard.html">UC dashboard</a></p>
+
+  <div class="flow">
+  <div class="srcs" aria-label="Sources">
+    <div class="src"><b>Shine Cloud</b><span>readings</span></div>
+    <div class="src"><b>Dess Cloud</b><span>readings</span></div>
+    <div class="src"><b>Solis Cloud</b><span>readings</span></div>
+    <div class="src"><b>Deye Cloud</b><span>readings</span></div>
+    <div class="src"><b>SolaX Cloud</b><span>readings</span></div>
+    <div class="src"><b>Solarman Cloud</b><span>readings</span></div>
+    <div class="src k"><b>Ktronics IoT Cloud</b><span>readings</span></div>
+  </div>
+
+  <div class="link l0"><i></i></div>
+  <div class="stage s1">
+    <h2>READ</h2>
+    <p><code>check_*_alarms</code> &mdash; one record per alarm: plant, device, message, start. Solarman: alarms made from readings.</p>
+    <span class="rec">1 record &middot; plant, device, message, start</span>
+  </div>
+
+  <div class="link l1"><i></i></div>
+  <div class="stage s2">
+    <h2>GATE
+      <svg class="ring" viewBox="0 0 24 24" aria-hidden="true"><circle class="bg" cx="12" cy="12" r="10"/><circle class="fg" cx="12" cy="12" r="10"/></svg>
+    </h2>
+    <p><code>alarm_triage</code> &mdash; still open 6 h after it started? The COMMS class is never mailed.</p>
+    <div class="chips"><span class="chip red">COMMS &middot; dropped</span><span class="chip grn">fault &middot; open 6 h</span></div>
+  </div>
+
+  <div class="link l2"><i></i></div>
+  <div class="stage s3">
+    <h2>DECIDE</h2>
+    <p><code>filter_alarms_to_send</code> &mdash; 3 sends, 4 h apart. <code>features</code> &mdash; is this channel live?</p>
+    <div class="pips" aria-label="three sends"><u></u><u></u><u></u></div>
+  </div>
+
+  <div class="link l3"><i></i></div>
+  <div class="stage s4">
+    <h2>NOTIFY</h2>
+    <p>Admin mail. UC3 also mails the customer.</p>
+    <div class="pop-slot">
+      <div class="pop">
+        <div class="ic">!</div>
+        <div><b>Device alarm &middot; your solar plant</b><span>Inverter fault, still open after 6 hours. Send 1 of 3.</span></div>
+        <div class="x">&#x2715;</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="link l4"><i></i></div>
+  <div class="stage s5">
+    <h2>REMEMBER</h2>
+    <p><code>state/*.json</code>, committed back by the workflow so the next run knows.</p>
+    <span class="file">state/device_alarms_state.json &middot; saved</span>
+  </div>
+
+  </div>
+
+  <div class="back">&#x21BB; Next run reads that state first, so the same alarm is never mailed twice for the same window.</div>
+
+  <ul class="key">
+    <li><b style="color:var(--amber)">Amber</b>: a raw alarm moving down the pipeline.</li>
+    <li><b style="color:var(--red)">Red</b>: dropped at the gate (COMMS). <b style="color:var(--green)">Green</b>: survived six hours.</li>
+    <li>Three dots: the three allowed sends, four hours apart.</li>
+  </ul>
+</div>
+</body>
+</html>

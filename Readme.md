@@ -2605,7 +2605,7 @@ a file that is gone (#35).
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 1047 tests — 991 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 1054 tests — 998 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 The MCP servers' tests are not counted here: they left the repo with the
 servers on 2026-11-04 (see *Not part of the pipeline*). The 28 Tuya tests that
@@ -2698,11 +2698,17 @@ rather than editing the CSV.
 | ----- | ----- | ---- |
 | No payloads or credentials in public logs | 10 | `test_no_payloads_in_public_logs.py` |
 
-**Suite visibility (50 tests):**
+**Alarm pipeline page (6 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| One bad import must not hide the suite | 50 | `test_suite_visibility.py` |
+| Animated alarm-pipeline page (sources, stages, vertical layout, customer popup, no CDN) | 6 | `test_alarm_pipeline_page.py` |
+
+**Suite visibility (51 tests):**
+
+| Suite | Tests | File |
+| ----- | ----- | ---- |
+| One bad import must not hide the suite | 51 | `test_suite_visibility.py` |
 
 That suite parametrizes over every `test_*.py`, so its count rises by one
 with each new test file — including an untracked one sitting in the
