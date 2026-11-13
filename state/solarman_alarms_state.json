@@ -1,13 +1,4 @@
 {
-  "63371506:2310262088:silent@2026-11-13T203020": {
-    "class": "SILENT",
-    "first_seen": "2026-11-13T15:00:20+00:00",
-    "ignored": false,
-    "last_sent": null,
-    "send_count": 0,
-    "started_at_utc": "2026-11-13T15:00:20+00:00",
-    "suppressed_reason": "dwell time is less than 6 hours"
-  },
   "65430172:2408134651:silent@2026-05-24T100842": {
     "customer": "Mr. Dikkubura",
     "first_seen": "2026-11-12T02:02:15.506819",
@@ -22,10 +13,10 @@
     "customer": "Mr. Dikkubura",
     "first_seen": "2026-11-13T06:01:34+00:00",
     "ignored": false,
-    "last_sent": "2026-11-13T15:42:56.512088",
+    "last_sent": "2026-11-13T21:41:17.741390",
     "message": "Grid loss: no AC input on the inverter since 2026-11-13 11:31",
     "plant": "Mr. Dikkubura - 2508294273",
-    "send_count": 1,
+    "send_count": 2,
     "started_at_utc": "2026-11-13T06:01:34+00:00",
     "suppressed_reason": "dwell time is less than 6 hours"
   },
@@ -34,32 +25,32 @@
     "episodes": {},
     "fault": null,
     "last_row": {
-      "batt_v": 49.84,
+      "batt_v": 49.02,
       "bus_v": null,
-      "grid_v": 234.4,
-      "load_w": 128.0,
-      "out_v": 238.2,
-      "soc": 98.0,
-      "ts": "2026-11-13 20:30:20"
+      "grid_v": 236.5,
+      "load_w": 1081.0,
+      "out_v": 238.9,
+      "soc": 74.0,
+      "ts": "2026-11-14 03:05:24"
     },
-    "last_ts": "2026-11-13 20:30:20",
+    "last_ts": "2026-11-14 03:05:24",
     "nominal_v": 48,
     "outage": null,
     "pending": null,
     "recent": [
       {
-        "batt_v": 49.87,
-        "grid_v": 235.3,
-        "load_w": 109.0,
-        "out_v": 239.5,
-        "ts": "2026-11-13 20:25:16"
+        "batt_v": 49.23,
+        "grid_v": 236.6,
+        "load_w": 328.0,
+        "out_v": 239.4,
+        "ts": "2026-11-14 03:04:48"
       },
       {
-        "batt_v": 49.84,
-        "grid_v": 234.4,
-        "load_w": 128.0,
-        "out_v": 238.2,
-        "ts": "2026-11-13 20:30:20"
+        "batt_v": 49.02,
+        "grid_v": 236.5,
+        "load_w": 1081.0,
+        "out_v": 238.9,
+        "ts": "2026-11-14 03:05:24"
       }
     ]
   },
@@ -68,32 +59,32 @@
     "episodes": {},
     "fault": null,
     "last_row": {
-      "batt_v": 55.69,
+      "batt_v": 55.7,
       "bus_v": null,
-      "grid_v": 228.2,
-      "load_w": 329.0,
-      "out_v": 230.8,
+      "grid_v": 232.8,
+      "load_w": 274.0,
+      "out_v": 235.5,
       "soc": 100.0,
-      "ts": "2026-11-13 21:08:51"
+      "ts": "2026-11-14 03:09:02"
     },
-    "last_ts": "2026-11-13 21:08:51",
+    "last_ts": "2026-11-14 03:09:02",
     "nominal_v": 48,
     "outage": null,
     "pending": null,
     "recent": [
       {
-        "batt_v": 55.7,
-        "grid_v": 228.7,
-        "load_w": 329.0,
-        "out_v": 231.4,
-        "ts": "2026-11-13 21:03:13"
+        "batt_v": 55.69,
+        "grid_v": 231.0,
+        "load_w": 271.0,
+        "out_v": 233.7,
+        "ts": "2026-11-14 03:03:25"
       },
       {
-        "batt_v": 55.69,
-        "grid_v": 228.2,
-        "load_w": 329.0,
-        "out_v": 230.8,
-        "ts": "2026-11-13 21:08:51"
+        "batt_v": 55.7,
+        "grid_v": 232.8,
+        "load_w": 274.0,
+        "out_v": 235.5,
+        "ts": "2026-11-14 03:09:02"
       }
     ]
   },
@@ -104,30 +95,30 @@
     "last_row": {
       "batt_v": null,
       "bus_v": 414.7,
-      "grid_v": 229.2,
-      "load_w": 157.0,
-      "out_v": 230.3,
+      "grid_v": 233.1,
+      "load_w": 148.0,
+      "out_v": 234.3,
       "soc": 45.0,
-      "ts": "2026-11-13 21:08:20"
+      "ts": "2026-11-14 03:08:12"
     },
-    "last_ts": "2026-11-13 21:08:20",
+    "last_ts": "2026-11-14 03:08:12",
     "nominal_v": null,
     "outage": null,
     "pending": null,
     "recent": [
       {
         "batt_v": null,
-        "grid_v": 229.1,
-        "load_w": 157.0,
-        "out_v": 230.2,
-        "ts": "2026-11-13 21:03:08"
+        "grid_v": 232.6,
+        "load_w": 145.0,
+        "out_v": 233.8,
+        "ts": "2026-11-14 03:03:00"
       },
       {
         "batt_v": null,
-        "grid_v": 229.2,
-        "load_w": 157.0,
-        "out_v": 230.3,
-        "ts": "2026-11-13 21:08:20"
+        "grid_v": 233.1,
+        "load_w": 148.0,
+        "out_v": 234.3,
+        "ts": "2026-11-14 03:08:12"
       }
     ]
   },
@@ -147,18 +138,18 @@
     "episodes": {},
     "fault": null,
     "last_row": {
-      "batt_v": 52.9,
+      "batt_v": 52.89,
       "bus_v": null,
       "grid_v": 0.0,
-      "load_w": 434.0,
-      "out_v": 230.1,
-      "soc": 94.0,
-      "ts": "2026-11-13 21:09:43"
+      "load_w": 376.0,
+      "out_v": 229.8,
+      "soc": 85.0,
+      "ts": "2026-11-14 03:09:52"
     },
-    "last_ts": "2026-11-13 21:09:43",
+    "last_ts": "2026-11-14 03:09:52",
     "nominal_v": 48,
     "outage": {
-      "last_absent": "2026-11-13 21:09:43",
+      "last_absent": "2026-11-14 03:09:52",
       "min_batt_v": 52.84,
       "start": "2026-11-13 11:31:34",
       "start_known": true
@@ -166,18 +157,18 @@
     "pending": null,
     "recent": [
       {
-        "batt_v": 52.9,
+        "batt_v": 52.89,
         "grid_v": 0.0,
-        "load_w": 438.0,
+        "load_w": 386.0,
         "out_v": 229.9,
-        "ts": "2026-11-13 21:04:37"
+        "ts": "2026-11-14 03:04:45"
       },
       {
-        "batt_v": 52.9,
+        "batt_v": 52.89,
         "grid_v": 0.0,
-        "load_w": 434.0,
-        "out_v": 230.1,
-        "ts": "2026-11-13 21:09:43"
+        "load_w": 376.0,
+        "out_v": 229.8,
+        "ts": "2026-11-14 03:09:52"
       }
     ]
   }
