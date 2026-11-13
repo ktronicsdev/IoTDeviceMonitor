@@ -18,10 +18,10 @@
     "message": "Inefficient Power Plants"
   },
   "1298491919450854508:None:1D4C3@1794412800000": {
-    "send_count": 2,
+    "send_count": 3,
     "first_seen": "2026-11-13T08:34:30.894236",
-    "ignored": false,
-    "last_sent": "2026-11-13T17:19:39.589375",
+    "ignored": true,
+    "last_sent": "2026-11-13T22:46:13.716301",
     "customer": "Unknown",
     "plant": "Hiran wijewardhana 15kv Nawala",
     "message": "Inefficient Power Plants"
