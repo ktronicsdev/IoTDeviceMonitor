@@ -11,11 +11,11 @@
   "63371506:2310262088:silent@2026-11-12T160405": {
     "customer": "Hasika Deye",
     "first_seen": "2026-11-12T18:37:46.372652",
-    "ignored": false,
-    "last_sent": "2026-11-12T23:54:33.937131",
+    "ignored": true,
+    "last_sent": "2026-11-13T07:24:41.952850",
     "message": "Inverter has sent nothing to SOLARMAN since 2026-11-12 16:04; its last reading showed no grid, so it has most likely shut down on a flat battery, or the router lost power",
     "plant": "Hasika Deye - 2310262088",
-    "send_count": 2
+    "send_count": 3
   },
   "65430172:2408134651:silent@2026-05-24T100842": {
     "customer": "Mr. Dikkubura",
@@ -25,6 +25,15 @@
     "message": "Inverter has sent nothing to SOLARMAN since 2026-05-24 10:08",
     "plant": "Mr. Dikkubura - 2408134651",
     "send_count": 3
+  },
+  "65430172:2508294273:grid-loss@2026-11-13T113134": {
+    "class": "GRID",
+    "first_seen": "2026-11-13T06:01:34+00:00",
+    "ignored": false,
+    "last_sent": null,
+    "send_count": 0,
+    "started_at_utc": "2026-11-13T06:01:34+00:00",
+    "suppressed_reason": "dwell time is less than 6 hours"
   },
   "device:63371506:2310262088": {
     "backup": null,
@@ -72,30 +81,30 @@
     "last_row": {
       "batt_v": 55.7,
       "bus_v": null,
-      "grid_v": 224.4,
-      "load_w": 209.0,
-      "out_v": 226.8,
+      "grid_v": 261.2,
+      "load_w": 157.0,
+      "out_v": 258.0,
       "soc": 100.0,
-      "ts": "2026-11-13 05:22:54"
+      "ts": "2026-11-13 12:53:17"
     },
-    "last_ts": "2026-11-13 05:22:54",
+    "last_ts": "2026-11-13 12:53:17",
     "nominal_v": 48,
     "outage": null,
     "pending": null,
     "recent": [
       {
         "batt_v": 55.7,
-        "grid_v": 228.1,
-        "load_w": 219.0,
-        "out_v": 231.1,
-        "ts": "2026-11-13 05:17:17"
+        "grid_v": 253.1,
+        "load_w": 253.0,
+        "out_v": 250.1,
+        "ts": "2026-11-13 12:47:38"
       },
       {
         "batt_v": 55.7,
-        "grid_v": 224.4,
-        "load_w": 209.0,
-        "out_v": 226.8,
-        "ts": "2026-11-13 05:22:54"
+        "grid_v": 261.2,
+        "load_w": 157.0,
+        "out_v": 258.0,
+        "ts": "2026-11-13 12:53:17"
       }
     ]
   },
@@ -105,31 +114,31 @@
     "fault": null,
     "last_row": {
       "batt_v": null,
-      "bus_v": 414.8,
-      "grid_v": 232.1,
-      "load_w": 148.0,
-      "out_v": 233.2,
-      "soc": 45.0,
-      "ts": "2026-11-13 05:20:35"
+      "bus_v": 397.7,
+      "grid_v": 232.9,
+      "load_w": 143.0,
+      "out_v": 240.1,
+      "soc": 100.0,
+      "ts": "2026-11-13 12:50:53"
     },
-    "last_ts": "2026-11-13 05:20:35",
+    "last_ts": "2026-11-13 12:50:53",
     "nominal_v": null,
     "outage": null,
     "pending": null,
     "recent": [
       {
         "batt_v": null,
-        "grid_v": 228.4,
-        "load_w": 143.0,
-        "out_v": 229.3,
-        "ts": "2026-11-13 05:15:22"
+        "grid_v": 233.0,
+        "load_w": 230.0,
+        "out_v": 239.9,
+        "ts": "2026-11-13 12:45:41"
       },
       {
         "batt_v": null,
-        "grid_v": 232.1,
-        "load_w": 148.0,
-        "out_v": 233.2,
-        "ts": "2026-11-13 05:20:35"
+        "grid_v": 232.9,
+        "load_w": 143.0,
+        "out_v": 240.1,
+        "ts": "2026-11-13 12:50:53"
       }
     ]
   },
@@ -149,32 +158,37 @@
     "episodes": {},
     "fault": null,
     "last_row": {
-      "batt_v": 52.86,
+      "batt_v": 53.61,
       "bus_v": null,
-      "grid_v": 217.9,
-      "load_w": 259.0,
-      "out_v": 219.1,
-      "soc": 71.0,
-      "ts": "2026-11-13 05:22:03"
+      "grid_v": 0.0,
+      "load_w": 253.0,
+      "out_v": 230.1,
+      "soc": 100.0,
+      "ts": "2026-11-13 12:50:26"
     },
-    "last_ts": "2026-11-13 05:22:03",
+    "last_ts": "2026-11-13 12:50:26",
     "nominal_v": 48,
-    "outage": null,
+    "outage": {
+      "last_absent": "2026-11-13 12:50:26",
+      "min_batt_v": 53.59,
+      "start": "2026-11-13 11:31:34",
+      "start_known": true
+    },
     "pending": null,
     "recent": [
       {
-        "batt_v": 52.87,
-        "grid_v": 220.3,
-        "load_w": 262.0,
-        "out_v": 221.7,
-        "ts": "2026-11-13 05:16:57"
+        "batt_v": 53.62,
+        "grid_v": 0.0,
+        "load_w": 261.0,
+        "out_v": 229.9,
+        "ts": "2026-11-13 12:45:20"
       },
       {
-        "batt_v": 52.86,
-        "grid_v": 217.9,
-        "load_w": 259.0,
-        "out_v": 219.1,
-        "ts": "2026-11-13 05:22:03"
+        "batt_v": 53.61,
+        "grid_v": 0.0,
+        "load_w": 253.0,
+        "out_v": 230.1,
+        "ts": "2026-11-13 12:50:26"
       }
     ]
   }
