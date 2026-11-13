@@ -34,5 +34,23 @@
     "customer": "Unknown",
     "plant": "Hiran wijewardhana 15kv Nawala",
     "message": "Inefficient Power Plants"
+  },
+  "1298491919449629741:1801150244120486:1D4C2@1794486647545": {
+    "send_count": 0,
+    "last_sent": null,
+    "first_seen": "2026-11-12T12:30:47.545000+00:00",
+    "ignored": false,
+    "class": "COMMS",
+    "started_at_utc": "2026-11-12T12:30:47.545000+00:00",
+    "suppressed_reason": "COMMS alarms are not mailed"
+  },
+  "1298491919450854508:None:1D4C3@1794412800000": {
+    "send_count": 1,
+    "first_seen": "2026-11-13T08:34:30.894236",
+    "ignored": false,
+    "last_sent": "2026-11-13T08:34:30.894236",
+    "customer": "Unknown",
+    "plant": "Hiran wijewardhana 15kv Nawala",
+    "message": "Inefficient Power Plants"
   }
 }
