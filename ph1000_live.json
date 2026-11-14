@@ -1,0 +1,3881 @@
+{
+  "device": {
+    "pn": "D70000210150180785",
+    "sn": "08B40001",
+    "alias": "08B40001",
+    "devcode": "697",
+    "status": "Online",
+    "online": true,
+    "last_update": "2026-11-15 03:32:27"
+  },
+  "latest": {
+    "battery_v": {
+      "value": "52.6",
+      "unit": "V"
+    },
+    "battery_a": {
+      "value": "7.2",
+      "unit": "A"
+    },
+    "battery_w": {
+      "value": "378",
+      "unit": "W"
+    },
+    "work_state": {
+      "value": "PowerOn",
+      "unit": ""
+    },
+    "pinverter_w": {
+      "value": "0",
+      "unit": "W"
+    },
+    "pv_power_w_est": {
+      "value": 0,
+      "unit": "W",
+      "estimated": true
+    },
+    "load_power_w_est": {
+      "value": 338,
+      "unit": "W",
+      "estimated": true
+    }
+  },
+  "series7d": [
+    {
+      "timestamp": "2026-11-12 19:06:26",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.5,
+      "battery_w": 399.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 359.0
+    },
+    {
+      "timestamp": "2026-11-12 19:07:51",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.5,
+      "battery_w": 399.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 359.0
+    },
+    {
+      "timestamp": "2026-11-12 19:12:47",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.5,
+      "battery_w": 399.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 359.0
+    },
+    {
+      "timestamp": "2026-11-12 19:17:36",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.5,
+      "battery_w": 399.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 359.0
+    },
+    {
+      "timestamp": "2026-11-12 19:18:22",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.5,
+      "battery_w": 399.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 359.0
+    },
+    {
+      "timestamp": "2026-11-12 19:23:18",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 52.6,
+      "battery_a": 43.3,
+      "battery_w": 2277.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 2237.0
+    },
+    {
+      "timestamp": "2026-11-12 19:28:07",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.0,
+      "battery_w": 319.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 279.0
+    },
+    {
+      "timestamp": "2026-11-12 19:32:56",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.6,
+      "battery_w": 404.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 364.0
+    },
+    {
+      "timestamp": "2026-11-12 19:37:45",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 9.9,
+      "battery_w": 526.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 486.0
+    },
+    {
+      "timestamp": "2026-11-12 19:42:35",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 10.4,
+      "battery_w": 553.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 513.0
+    },
+    {
+      "timestamp": "2026-11-12 19:47:24",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.1,
+      "battery_a": 10.5,
+      "battery_w": 558.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 518.0
+    },
+    {
+      "timestamp": "2026-11-12 19:52:13",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 9.8,
+      "battery_w": 521.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 481.0
+    },
+    {
+      "timestamp": "2026-11-12 19:57:03",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.1,
+      "battery_a": 10.5,
+      "battery_w": 558.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 518.0
+    },
+    {
+      "timestamp": "2026-11-12 20:01:52",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.7,
+      "battery_w": 409.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 369.0
+    },
+    {
+      "timestamp": "2026-11-12 20:06:41",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.3,
+      "battery_a": 4.1,
+      "battery_w": 218.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 178.0
+    },
+    {
+      "timestamp": "2026-11-12 20:11:30",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.3,
+      "battery_a": 4.9,
+      "battery_w": 261.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 221.0
+    },
+    {
+      "timestamp": "2026-11-12 20:16:20",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.0,
+      "battery_w": 425.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 385.0
+    },
+    {
+      "timestamp": "2026-11-12 20:21:09",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.0,
+      "battery_w": 425.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 385.0
+    },
+    {
+      "timestamp": "2026-11-12 20:25:58",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.2,
+      "battery_w": 436.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 396.0
+    },
+    {
+      "timestamp": "2026-11-12 20:30:48",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.9,
+      "battery_w": 420.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 380.0
+    },
+    {
+      "timestamp": "2026-11-12 20:35:37",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.9,
+      "battery_w": 420.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 380.0
+    },
+    {
+      "timestamp": "2026-11-12 20:40:26",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.9,
+      "battery_w": 420.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 380.0
+    },
+    {
+      "timestamp": "2026-11-12 20:45:15",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 5.5,
+      "battery_w": 292.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 252.0
+    },
+    {
+      "timestamp": "2026-11-12 20:50:05",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.3,
+      "battery_a": 5.7,
+      "battery_w": 303.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 263.0
+    },
+    {
+      "timestamp": "2026-11-12 20:54:54",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.4,
+      "battery_w": 340.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 300.0
+    },
+    {
+      "timestamp": "2026-11-12 20:59:43",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.8,
+      "battery_w": 468.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 428.0
+    },
+    {
+      "timestamp": "2026-11-12 21:04:32",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.7,
+      "battery_w": 462.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 422.0
+    },
+    {
+      "timestamp": "2026-11-12 21:09:21",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.7,
+      "battery_w": 462.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 422.0
+    },
+    {
+      "timestamp": "2026-11-12 21:14:11",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.7,
+      "battery_w": 462.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 422.0
+    },
+    {
+      "timestamp": "2026-11-12 21:19:00",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.7,
+      "battery_w": 462.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 422.0
+    },
+    {
+      "timestamp": "2026-11-12 21:23:49",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.7,
+      "battery_w": 462.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 422.0
+    },
+    {
+      "timestamp": "2026-11-12 21:28:39",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.3,
+      "battery_w": 335.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 295.0
+    },
+    {
+      "timestamp": "2026-11-12 21:33:28",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.3,
+      "battery_w": 335.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 295.0
+    },
+    {
+      "timestamp": "2026-11-12 21:38:17",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.7,
+      "battery_w": 462.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 422.0
+    },
+    {
+      "timestamp": "2026-11-12 21:43:06",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 52.5,
+      "battery_a": 46.7,
+      "battery_w": 2451.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 2411.0
+    },
+    {
+      "timestamp": "2026-11-12 21:47:56",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.1,
+      "battery_a": 8.7,
+      "battery_w": 461.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 421.0
+    },
+    {
+      "timestamp": "2026-11-12 21:52:45",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.7,
+      "battery_w": 462.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 422.0
+    },
+    {
+      "timestamp": "2026-11-12 21:57:34",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.6,
+      "battery_w": 457.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 417.0
+    },
+    {
+      "timestamp": "2026-11-12 22:02:23",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.6,
+      "battery_w": 457.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 417.0
+    },
+    {
+      "timestamp": "2026-11-12 22:07:13",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.2,
+      "battery_w": 329.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 289.0
+    },
+    {
+      "timestamp": "2026-11-12 22:12:02",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.8,
+      "battery_w": 361.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 321.0
+    },
+    {
+      "timestamp": "2026-11-12 22:16:51",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.7,
+      "battery_w": 356.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 316.0
+    },
+    {
+      "timestamp": "2026-11-12 22:21:40",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.1,
+      "battery_a": 9.1,
+      "battery_w": 483.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 443.0
+    },
+    {
+      "timestamp": "2026-11-12 22:26:29",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.3,
+      "battery_w": 388.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 348.0
+    },
+    {
+      "timestamp": "2026-11-12 22:31:19",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.3,
+      "battery_w": 388.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 348.0
+    },
+    {
+      "timestamp": "2026-11-12 22:36:08",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.3,
+      "battery_w": 388.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 348.0
+    },
+    {
+      "timestamp": "2026-11-12 22:40:57",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.3,
+      "battery_w": 388.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 348.0
+    },
+    {
+      "timestamp": "2026-11-12 22:45:46",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.2,
+      "battery_w": 383.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 343.0
+    },
+    {
+      "timestamp": "2026-11-12 22:50:36",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 5.6,
+      "battery_w": 297.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 257.0
+    },
+    {
+      "timestamp": "2026-11-12 22:55:25",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 5.6,
+      "battery_w": 297.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 257.0
+    },
+    {
+      "timestamp": "2026-11-12 23:00:14",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.0,
+      "battery_w": 425.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 385.0
+    },
+    {
+      "timestamp": "2026-11-12 23:01:35",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.0,
+      "battery_w": 425.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 385.0
+    },
+    {
+      "timestamp": "2026-11-12 23:06:29",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.5,
+      "battery_w": 399.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 359.0
+    },
+    {
+      "timestamp": "2026-11-12 23:11:18",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.5,
+      "battery_w": 399.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 359.0
+    },
+    {
+      "timestamp": "2026-11-12 23:16:07",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.5,
+      "battery_w": 399.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 359.0
+    },
+    {
+      "timestamp": "2026-11-12 23:20:57",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.5,
+      "battery_w": 398.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 358.0
+    },
+    {
+      "timestamp": "2026-11-12 23:25:46",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.5,
+      "battery_w": 399.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 359.0
+    },
+    {
+      "timestamp": "2026-11-12 23:30:36",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 5.1,
+      "battery_w": 271.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 231.0
+    },
+    {
+      "timestamp": "2026-11-12 23:35:25",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 5.0,
+      "battery_w": 266.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 226.0
+    },
+    {
+      "timestamp": "2026-11-12 23:40:14",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.4,
+      "battery_w": 393.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 353.0
+    },
+    {
+      "timestamp": "2026-11-12 23:45:03",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.1,
+      "battery_a": 7.5,
+      "battery_w": 398.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 358.0
+    },
+    {
+      "timestamp": "2026-11-12 23:49:53",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.1,
+      "battery_a": 7.5,
+      "battery_w": 398.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 358.0
+    },
+    {
+      "timestamp": "2026-11-12 23:54:44",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.1,
+      "battery_a": 7.5,
+      "battery_w": 398.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 358.0
+    },
+    {
+      "timestamp": "2026-11-12 23:59:33",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.1,
+      "battery_a": 7.5,
+      "battery_w": 398.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 358.0
+    },
+    {
+      "timestamp": "2026-11-14 16:11:33",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.9,
+      "battery_a": 35.5,
+      "battery_w": 1909.0,
+      "pinverter_w": 610.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 610.0,
+      "load_power_w_est": 2479.0
+    },
+    {
+      "timestamp": "2026-11-14 16:16:25",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 54.2,
+      "battery_a": -0.8,
+      "battery_w": -43.0,
+      "pinverter_w": 527.0,
+      "charge_state": "charging",
+      "pv_power_w_est": 527.0,
+      "load_power_w_est": 444.0
+    },
+    {
+      "timestamp": "2026-11-14 16:21:15",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 54.2,
+      "battery_a": 0.0,
+      "battery_w": 0.0,
+      "pinverter_w": 470.0,
+      "charge_state": "idle",
+      "pv_power_w_est": 470.0,
+      "load_power_w_est": 430.0
+    },
+    {
+      "timestamp": "2026-11-14 16:26:05",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 54.3,
+      "battery_a": -2.2,
+      "battery_w": -119.0,
+      "pinverter_w": 444.0,
+      "charge_state": "charging",
+      "pv_power_w_est": 444.0,
+      "load_power_w_est": 285.0
+    },
+    {
+      "timestamp": "2026-11-14 16:30:55",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 54.4,
+      "battery_a": -1.7,
+      "battery_w": -92.0,
+      "pinverter_w": 422.0,
+      "charge_state": "charging",
+      "pv_power_w_est": 422.0,
+      "load_power_w_est": 290.0
+    },
+    {
+      "timestamp": "2026-11-14 16:35:45",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 54.5,
+      "battery_a": -0.6,
+      "battery_w": -32.0,
+      "pinverter_w": 392.0,
+      "charge_state": "charging",
+      "pv_power_w_est": 392.0,
+      "load_power_w_est": 320.0
+    },
+    {
+      "timestamp": "2026-11-14 16:40:35",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 54.3,
+      "battery_a": 2.3,
+      "battery_w": 124.0,
+      "pinverter_w": 353.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 353.0,
+      "load_power_w_est": 437.0
+    },
+    {
+      "timestamp": "2026-11-14 16:45:25",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 54.2,
+      "battery_a": 2.9,
+      "battery_w": 156.0,
+      "pinverter_w": 302.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 302.0,
+      "load_power_w_est": 418.0
+    },
+    {
+      "timestamp": "2026-11-14 16:50:16",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 54.0,
+      "battery_a": 3.7,
+      "battery_w": 199.0,
+      "pinverter_w": 255.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 255.0,
+      "load_power_w_est": 414.0
+    },
+    {
+      "timestamp": "2026-11-14 16:55:07",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.8,
+      "battery_a": 5.0,
+      "battery_w": 269.0,
+      "pinverter_w": 163.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 163.0,
+      "load_power_w_est": 392.0
+    },
+    {
+      "timestamp": "2026-11-14 16:59:57",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.7,
+      "battery_a": 2.8,
+      "battery_w": 150.0,
+      "pinverter_w": 127.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 127.0,
+      "load_power_w_est": 237.0
+    },
+    {
+      "timestamp": "2026-11-14 17:04:49",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.6,
+      "battery_a": 3.4,
+      "battery_w": 182.0,
+      "pinverter_w": 84.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 84.0,
+      "load_power_w_est": 226.0
+    },
+    {
+      "timestamp": "2026-11-14 17:06:45",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.6,
+      "battery_a": 1.4,
+      "battery_w": 75.0,
+      "pinverter_w": 68.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 68.0,
+      "load_power_w_est": 103.0
+    },
+    {
+      "timestamp": "2026-11-14 17:11:43",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.5,
+      "battery_a": 2.2,
+      "battery_w": 117.0,
+      "pinverter_w": 51.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 51.0,
+      "load_power_w_est": 128.0
+    },
+    {
+      "timestamp": "2026-11-14 17:16:33",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.5,
+      "battery_a": 1.9,
+      "battery_w": 101.0,
+      "pinverter_w": 36.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 36.0,
+      "load_power_w_est": 97.0
+    },
+    {
+      "timestamp": "2026-11-14 17:21:22",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.4,
+      "battery_a": 4.7,
+      "battery_w": 250.0,
+      "pinverter_w": 19.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 19.0,
+      "load_power_w_est": 229.0
+    },
+    {
+      "timestamp": "2026-11-14 17:26:13",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.3,
+      "battery_a": 4.9,
+      "battery_w": 261.0,
+      "pinverter_w": 6.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 6.0,
+      "load_power_w_est": 227.0
+    },
+    {
+      "timestamp": "2026-11-14 17:31:03",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.1,
+      "battery_w": 377.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 337.0
+    },
+    {
+      "timestamp": "2026-11-14 17:35:53",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.1,
+      "battery_a": 6.9,
+      "battery_w": 366.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 326.0
+    },
+    {
+      "timestamp": "2026-11-14 17:40:42",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.1,
+      "battery_w": 377.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 337.0
+    },
+    {
+      "timestamp": "2026-11-14 17:45:32",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.2,
+      "battery_w": 383.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 343.0
+    },
+    {
+      "timestamp": "2026-11-14 17:50:23",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.3,
+      "battery_a": 5.0,
+      "battery_w": 266.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 226.0
+    },
+    {
+      "timestamp": "2026-11-14 17:55:12",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.3,
+      "battery_a": 4.9,
+      "battery_w": 261.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 221.0
+    },
+    {
+      "timestamp": "2026-11-14 18:00:02",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.3,
+      "battery_a": 4.9,
+      "battery_w": 261.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 221.0
+    },
+    {
+      "timestamp": "2026-11-14 18:04:52",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.7,
+      "battery_w": 409.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 369.0
+    },
+    {
+      "timestamp": "2026-11-14 18:09:41",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.9,
+      "battery_w": 420.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 380.0
+    },
+    {
+      "timestamp": "2026-11-14 18:14:31",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.9,
+      "battery_w": 420.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 380.0
+    },
+    {
+      "timestamp": "2026-11-14 18:19:20",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 9.5,
+      "battery_w": 505.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 465.0
+    },
+    {
+      "timestamp": "2026-11-14 18:24:09",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 9.5,
+      "battery_w": 505.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 465.0
+    },
+    {
+      "timestamp": "2026-11-14 18:29:00",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 9.5,
+      "battery_w": 505.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 465.0
+    },
+    {
+      "timestamp": "2026-11-14 18:30:20",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 9.5,
+      "battery_w": 505.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 465.0
+    },
+    {
+      "timestamp": "2026-11-14 18:35:15",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.6,
+      "battery_w": 351.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 311.0
+    },
+    {
+      "timestamp": "2026-11-14 18:40:05",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.6,
+      "battery_w": 351.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 311.0
+    },
+    {
+      "timestamp": "2026-11-14 18:44:55",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.9,
+      "battery_w": 473.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 433.0
+    },
+    {
+      "timestamp": "2026-11-14 18:49:45",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.9,
+      "battery_w": 473.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 433.0
+    },
+    {
+      "timestamp": "2026-11-14 18:54:35",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.9,
+      "battery_w": 473.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 433.0
+    },
+    {
+      "timestamp": "2026-11-14 18:59:25",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 9.0,
+      "battery_w": 478.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 438.0
+    },
+    {
+      "timestamp": "2026-11-14 19:04:14",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.9,
+      "battery_w": 473.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 433.0
+    },
+    {
+      "timestamp": "2026-11-14 19:06:47",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 9.1,
+      "battery_w": 484.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 444.0
+    },
+    {
+      "timestamp": "2026-11-14 19:11:41",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 9.4,
+      "battery_w": 500.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 460.0
+    },
+    {
+      "timestamp": "2026-11-14 19:16:30",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.0,
+      "battery_a": 6.8,
+      "battery_w": 360.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 320.0
+    },
+    {
+      "timestamp": "2026-11-14 19:21:19",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 5.7,
+      "battery_w": 303.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 263.0
+    },
+    {
+      "timestamp": "2026-11-14 19:26:08",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.0,
+      "battery_w": 425.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 385.0
+    },
+    {
+      "timestamp": "2026-11-14 19:30:58",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.7,
+      "battery_w": 462.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 422.0
+    },
+    {
+      "timestamp": "2026-11-14 19:35:47",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.6,
+      "battery_w": 457.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 417.0
+    },
+    {
+      "timestamp": "2026-11-14 19:40:36",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.8,
+      "battery_w": 414.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 374.0
+    },
+    {
+      "timestamp": "2026-11-14 19:45:25",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.7,
+      "battery_w": 409.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 369.0
+    },
+    {
+      "timestamp": "2026-11-14 19:50:15",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.7,
+      "battery_w": 409.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 369.0
+    },
+    {
+      "timestamp": "2026-11-14 19:51:36",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.7,
+      "battery_w": 409.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 369.0
+    },
+    {
+      "timestamp": "2026-11-14 19:56:29",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 5.4,
+      "battery_w": 287.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 247.0
+    },
+    {
+      "timestamp": "2026-11-14 20:01:19",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.3,
+      "battery_a": 4.6,
+      "battery_w": 245.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 205.0
+    },
+    {
+      "timestamp": "2026-11-14 20:06:08",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.5,
+      "battery_w": 399.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 359.0
+    },
+    {
+      "timestamp": "2026-11-14 20:10:57",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.1,
+      "battery_a": 10.1,
+      "battery_w": 536.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 496.0
+    },
+    {
+      "timestamp": "2026-11-14 20:15:46",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.1,
+      "battery_a": 9.8,
+      "battery_w": 520.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 480.0
+    },
+    {
+      "timestamp": "2026-11-14 20:20:36",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.1,
+      "battery_a": 9.8,
+      "battery_w": 520.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 480.0
+    },
+    {
+      "timestamp": "2026-11-14 20:25:25",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 10.1,
+      "battery_w": 536.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 496.0
+    },
+    {
+      "timestamp": "2026-11-14 20:30:14",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.1,
+      "battery_a": 10.1,
+      "battery_w": 536.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 496.0
+    },
+    {
+      "timestamp": "2026-11-14 20:35:04",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.1,
+      "battery_w": 430.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 390.0
+    },
+    {
+      "timestamp": "2026-11-14 20:39:53",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.3,
+      "battery_a": 5.6,
+      "battery_w": 297.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 257.0
+    },
+    {
+      "timestamp": "2026-11-14 20:44:42",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.9,
+      "battery_w": 473.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 433.0
+    },
+    {
+      "timestamp": "2026-11-14 20:49:31",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.8,
+      "battery_w": 468.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 428.0
+    },
+    {
+      "timestamp": "2026-11-14 20:54:20",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.3,
+      "battery_w": 441.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 401.0
+    },
+    {
+      "timestamp": "2026-11-14 20:59:10",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.9,
+      "battery_w": 420.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 380.0
+    },
+    {
+      "timestamp": "2026-11-14 21:03:59",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.7,
+      "battery_w": 462.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 422.0
+    },
+    {
+      "timestamp": "2026-11-14 21:08:48",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.6,
+      "battery_w": 457.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 417.0
+    },
+    {
+      "timestamp": "2026-11-14 21:13:37",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.3,
+      "battery_w": 441.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 401.0
+    },
+    {
+      "timestamp": "2026-11-14 21:18:26",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.3,
+      "battery_w": 441.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 401.0
+    },
+    {
+      "timestamp": "2026-11-14 21:23:16",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.2,
+      "battery_w": 436.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 396.0
+    },
+    {
+      "timestamp": "2026-11-14 21:28:05",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.2,
+      "battery_w": 436.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 396.0
+    },
+    {
+      "timestamp": "2026-11-14 21:32:55",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.0,
+      "battery_a": 8.2,
+      "battery_w": 434.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 394.0
+    },
+    {
+      "timestamp": "2026-11-14 21:37:44",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.2,
+      "battery_w": 436.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 396.0
+    },
+    {
+      "timestamp": "2026-11-14 21:42:33",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.1,
+      "battery_w": 430.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 390.0
+    },
+    {
+      "timestamp": "2026-11-14 21:47:22",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.0,
+      "battery_w": 425.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 385.0
+    },
+    {
+      "timestamp": "2026-11-14 21:52:12",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.1,
+      "battery_w": 430.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 390.0
+    },
+    {
+      "timestamp": "2026-11-14 21:57:01",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.1,
+      "battery_w": 430.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 390.0
+    },
+    {
+      "timestamp": "2026-11-14 22:01:50",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.4,
+      "battery_w": 446.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 406.0
+    },
+    {
+      "timestamp": "2026-11-14 22:06:39",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.1,
+      "battery_w": 430.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 390.0
+    },
+    {
+      "timestamp": "2026-11-14 22:11:28",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.0,
+      "battery_w": 425.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 385.0
+    },
+    {
+      "timestamp": "2026-11-14 22:16:18",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.0,
+      "battery_w": 425.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 385.0
+    },
+    {
+      "timestamp": "2026-11-14 22:21:07",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 5.7,
+      "battery_w": 303.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 263.0
+    },
+    {
+      "timestamp": "2026-11-14 22:25:56",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 5.6,
+      "battery_w": 297.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 257.0
+    },
+    {
+      "timestamp": "2026-11-14 22:30:45",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.0,
+      "battery_w": 425.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 385.0
+    },
+    {
+      "timestamp": "2026-11-14 22:35:35",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.2,
+      "battery_w": 436.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 396.0
+    },
+    {
+      "timestamp": "2026-11-14 22:40:24",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 8.5,
+      "battery_w": 451.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 411.0
+    },
+    {
+      "timestamp": "2026-11-14 22:45:14",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 7.3,
+      "battery_w": 388.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 348.0
+    },
+    {
+      "timestamp": "2026-11-14 22:50:03",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.1,
+      "battery_w": 324.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 284.0
+    },
+    {
+      "timestamp": "2026-11-14 22:54:52",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.1,
+      "battery_w": 324.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 284.0
+    },
+    {
+      "timestamp": "2026-11-14 22:59:41",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.1,
+      "battery_w": 324.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 284.0
+    },
+    {
+      "timestamp": "2026-11-14 23:04:30",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.3,
+      "battery_a": 3.6,
+      "battery_w": 191.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 151.0
+    },
+    {
+      "timestamp": "2026-11-14 23:09:20",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.3,
+      "battery_a": 3.6,
+      "battery_w": 191.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 151.0
+    },
+    {
+      "timestamp": "2026-11-14 23:14:09",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.7,
+      "battery_w": 356.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 316.0
+    },
+    {
+      "timestamp": "2026-11-14 23:18:59",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.3,
+      "battery_w": 335.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 295.0
+    },
+    {
+      "timestamp": "2026-11-14 23:23:48",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.3,
+      "battery_w": 335.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 295.0
+    },
+    {
+      "timestamp": "2026-11-14 23:28:37",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.3,
+      "battery_w": 335.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 295.0
+    },
+    {
+      "timestamp": "2026-11-14 23:33:26",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.3,
+      "battery_w": 335.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 295.0
+    },
+    {
+      "timestamp": "2026-11-14 23:38:16",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.3,
+      "battery_w": 335.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 295.0
+    },
+    {
+      "timestamp": "2026-11-14 23:43:05",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.3,
+      "battery_w": 335.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 295.0
+    },
+    {
+      "timestamp": "2026-11-14 23:47:55",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 3.8,
+      "battery_w": 202.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 162.0
+    },
+    {
+      "timestamp": "2026-11-14 23:52:44",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.3,
+      "battery_a": 3.8,
+      "battery_w": 202.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 162.0
+    },
+    {
+      "timestamp": "2026-11-14 23:57:33",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.2,
+      "battery_w": 329.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 289.0
+    },
+    {
+      "timestamp": "2026-11-15 00:02:23",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.3,
+      "battery_w": 335.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 295.0
+    },
+    {
+      "timestamp": "2026-11-15 00:07:12",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.2,
+      "battery_w": 329.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 289.0
+    },
+    {
+      "timestamp": "2026-11-15 00:12:01",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.2,
+      "battery_w": 329.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 289.0
+    },
+    {
+      "timestamp": "2026-11-15 00:16:50",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.2,
+      "battery_w": 329.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 289.0
+    },
+    {
+      "timestamp": "2026-11-15 00:21:39",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.2,
+      "battery_w": 329.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 289.0
+    },
+    {
+      "timestamp": "2026-11-15 00:26:29",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 3.8,
+      "battery_w": 202.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 162.0
+    },
+    {
+      "timestamp": "2026-11-15 00:31:18",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 3.8,
+      "battery_w": 202.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 162.0
+    },
+    {
+      "timestamp": "2026-11-15 00:36:07",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 3.7,
+      "battery_w": 196.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 156.0
+    },
+    {
+      "timestamp": "2026-11-15 00:39:52",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 6.2,
+      "battery_w": 329.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 289.0
+    },
+    {
+      "timestamp": "2026-11-15 00:44:46",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 5.6,
+      "battery_w": 297.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 257.0
+    },
+    {
+      "timestamp": "2026-11-15 00:49:35",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.1,
+      "battery_a": 5.6,
+      "battery_w": 297.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 257.0
+    },
+    {
+      "timestamp": "2026-11-15 00:54:24",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.1,
+      "battery_a": 5.6,
+      "battery_w": 297.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 257.0
+    },
+    {
+      "timestamp": "2026-11-15 00:59:14",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.1,
+      "battery_a": 5.5,
+      "battery_w": 292.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 252.0
+    },
+    {
+      "timestamp": "2026-11-15 01:04:03",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.1,
+      "battery_a": 5.5,
+      "battery_w": 292.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 252.0
+    },
+    {
+      "timestamp": "2026-11-15 01:08:52",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 3.1,
+      "battery_w": 164.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 124.0
+    },
+    {
+      "timestamp": "2026-11-15 01:13:41",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 3.8,
+      "battery_w": 202.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 162.0
+    },
+    {
+      "timestamp": "2026-11-15 01:18:31",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.2,
+      "battery_a": 3.8,
+      "battery_w": 202.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 162.0
+    },
+    {
+      "timestamp": "2026-11-15 01:23:20",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.1,
+      "battery_a": 6.3,
+      "battery_w": 334.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 294.0
+    },
+    {
+      "timestamp": "2026-11-15 01:28:09",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.1,
+      "battery_a": 6.6,
+      "battery_w": 350.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 310.0
+    },
+    {
+      "timestamp": "2026-11-15 01:32:58",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.0,
+      "battery_a": 7.3,
+      "battery_w": 387.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 347.0
+    },
+    {
+      "timestamp": "2026-11-15 01:37:47",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.0,
+      "battery_a": 7.2,
+      "battery_w": 381.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 341.0
+    },
+    {
+      "timestamp": "2026-11-15 01:42:37",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.0,
+      "battery_a": 7.2,
+      "battery_w": 381.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 341.0
+    },
+    {
+      "timestamp": "2026-11-15 01:47:26",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.0,
+      "battery_a": 7.1,
+      "battery_w": 376.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 336.0
+    },
+    {
+      "timestamp": "2026-11-15 01:52:15",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.0,
+      "battery_a": 4.7,
+      "battery_w": 249.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 209.0
+    },
+    {
+      "timestamp": "2026-11-15 01:57:05",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.1,
+      "battery_a": 4.7,
+      "battery_w": 249.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 209.0
+    },
+    {
+      "timestamp": "2026-11-15 02:01:54",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 53.0,
+      "battery_a": 7.2,
+      "battery_w": 381.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 341.0
+    },
+    {
+      "timestamp": "2026-11-15 02:06:43",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 52.9,
+      "battery_a": 7.2,
+      "battery_w": 380.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 340.0
+    },
+    {
+      "timestamp": "2026-11-15 02:11:33",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 52.9,
+      "battery_a": 7.1,
+      "battery_w": 375.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 335.0
+    },
+    {
+      "timestamp": "2026-11-15 02:16:23",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 52.9,
+      "battery_a": 7.1,
+      "battery_w": 375.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 335.0
+    },
+    {
+      "timestamp": "2026-11-15 02:21:12",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 52.8,
+      "battery_a": 7.1,
+      "battery_w": 374.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 334.0
+    },
+    {
+      "timestamp": "2026-11-15 02:26:02",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 52.8,
+      "battery_a": 6.5,
+      "battery_w": 343.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 303.0
+    },
+    {
+      "timestamp": "2026-11-15 02:30:51",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 52.9,
+      "battery_a": 4.1,
+      "battery_w": 216.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 176.0
+    },
+    {
+      "timestamp": "2026-11-15 02:35:40",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 52.9,
+      "battery_a": 4.0,
+      "battery_w": 211.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 171.0
+    },
+    {
+      "timestamp": "2026-11-15 02:40:30",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 52.9,
+      "battery_a": 4.1,
+      "battery_w": 216.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 176.0
+    },
+    {
+      "timestamp": "2026-11-15 02:45:19",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 52.8,
+      "battery_a": 6.6,
+      "battery_w": 348.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 308.0
+    },
+    {
+      "timestamp": "2026-11-15 02:50:08",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 52.8,
+      "battery_a": 6.6,
+      "battery_w": 348.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 308.0
+    },
+    {
+      "timestamp": "2026-11-15 02:54:57",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 52.7,
+      "battery_a": 7.2,
+      "battery_w": 379.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 339.0
+    },
+    {
+      "timestamp": "2026-11-15 02:59:47",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 52.7,
+      "battery_a": 7.2,
+      "battery_w": 379.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 339.0
+    },
+    {
+      "timestamp": "2026-11-15 03:04:36",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 52.7,
+      "battery_a": 7.3,
+      "battery_w": 384.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 344.0
+    },
+    {
+      "timestamp": "2026-11-15 03:09:25",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 52.7,
+      "battery_a": 7.2,
+      "battery_w": 379.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 339.0
+    },
+    {
+      "timestamp": "2026-11-15 03:14:15",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 52.7,
+      "battery_a": 4.8,
+      "battery_w": 252.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 212.0
+    },
+    {
+      "timestamp": "2026-11-15 03:19:04",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 52.7,
+      "battery_a": 4.8,
+      "battery_w": 252.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 212.0
+    },
+    {
+      "timestamp": "2026-11-15 03:23:53",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 52.7,
+      "battery_a": 7.2,
+      "battery_w": 379.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 339.0
+    },
+    {
+      "timestamp": "2026-11-15 03:28:42",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 52.6,
+      "battery_a": 7.2,
+      "battery_w": 378.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 338.0
+    },
+    {
+      "timestamp": "2026-11-15 03:32:27",
+      "battery_v": "52.6",
+      "battery_a": "7.2",
+      "battery_w": "378",
+      "pinverter_w": "0",
+      "pv_power_w_est": "0.0",
+      "load_power_w_est": "338.0",
+      "work_state": "PowerOn",
+      "charge_state": "discharging",
+      "source": "measured"
+    },
+    {
+      "timestamp": "2026-11-15 03:37:21",
+      "work_state": "",
+      "source": "measured",
+      "battery_v": 52.6,
+      "battery_a": 7.1,
+      "battery_w": 373.0,
+      "pinverter_w": 0.0,
+      "charge_state": "discharging",
+      "pv_power_w_est": 0.0,
+      "load_power_w_est": 333.0
+    }
+  ],
+  "fields_note": "Only Battery V/A/W and PInverter are reliable from ShineMonitor for this PH1000; PV power, load power and SOC are not exposed.",
+  "last_updated": "2026-11-14T22:07:56.759959+00:00",
+  "plant": {
+    "name": "Mifanza Solar System",
+    "nominal_power_kw": 5.1,
+    "design_company": "Ktronics pvt ltd",
+    "install": "2026-06-20 00:00:00",
+    "country": "Sri Lanka",
+    "lat": 6.942118,
+    "lon": 79.858673,
+    "energy": {
+      "daily": 0.0,
+      "monthly": 0.3,
+      "yearly": 0.3,
+      "total": 0.3,
+      "logged_from_days": 3
+    },
+    "load_daily": 1.0,
+    "gains_lkr": 7.5,
+    "gains_rate": 25.0,
+    "co2_t": 0.0,
+    "energy_note": "Daily/period energy integrated from PInverter (PV power); the cloud's accumulated counters are frozen so there is no lifetime total.",
+    "device_totals": {
+      "charged_kwh": 782.2,
+      "discharged_kwh": 700.7,
+      "pv_sell_kwh": 1182.0,
+      "as_of": "2026-11-15 03:37:21"
+    }
+  },
+  "bms": {
+    "ok": false,
+    "packs": [],
+    "generated": "Sat, 14 Nov 2026 22:07:59 GMT",
+    "auth_failed": true
+  },
+  "weather": {
+    "ok": true,
+    "lat": 6.942118,
+    "lon": 79.858673,
+    "location_source": "plant",
+    "source": "open-meteo",
+    "generated": "2026-11-14T22:07:59.368750+00:00",
+    "current": {
+      "temp_c": 24.7,
+      "cloud_pct": 100.0,
+      "rain_mm": 0.0,
+      "ghi_wm2": 0,
+      "code": 3,
+      "condition": "Overcast",
+      "category": "cloudy"
+    },
+    "today": {
+      "date": "2026-11-15",
+      "code": 51,
+      "condition": "Light drizzle",
+      "category": "drizzle",
+      "cloud_pct": 100,
+      "rain_mm": 3.4,
+      "ghi_kwh_m2": 1.98,
+      "clear_kwh_m2": 7.07,
+      "harvest_factor": 0.28,
+      "loss_pct": 72
+    },
+    "daily": [
+      {
+        "date": "2026-11-08",
+        "code": 3,
+        "condition": "Overcast",
+        "category": "cloudy",
+        "cloud_pct": 83,
+        "rain_mm": 11.9,
+        "ghi_kwh_m2": 5.32,
+        "clear_kwh_m2": 7.17,
+        "harvest_factor": 0.742,
+        "loss_pct": 26
+      },
+      {
+        "date": "2026-11-09",
+        "code": 2,
+        "condition": "Partly cloudy",
+        "category": "partly",
+        "cloud_pct": 73,
+        "rain_mm": 12.3,
+        "ghi_kwh_m2": 5.58,
+        "clear_kwh_m2": 7.15,
+        "harvest_factor": 0.78,
+        "loss_pct": 22
+      },
+      {
+        "date": "2026-11-10",
+        "code": 3,
+        "condition": "Overcast",
+        "category": "cloudy",
+        "cloud_pct": 91,
+        "rain_mm": 6.9,
+        "ghi_kwh_m2": 5.43,
+        "clear_kwh_m2": 7.14,
+        "harvest_factor": 0.761,
+        "loss_pct": 24
+      },
+      {
+        "date": "2026-11-11",
+        "code": 51,
+        "condition": "Light drizzle",
+        "category": "drizzle",
+        "cloud_pct": 86,
+        "rain_mm": 29.2,
+        "ghi_kwh_m2": 4.44,
+        "clear_kwh_m2": 7.12,
+        "harvest_factor": 0.624,
+        "loss_pct": 38
+      },
+      {
+        "date": "2026-11-12",
+        "code": 51,
+        "condition": "Light drizzle",
+        "category": "drizzle",
+        "cloud_pct": 95,
+        "rain_mm": 15.5,
+        "ghi_kwh_m2": 3.95,
+        "clear_kwh_m2": 7.11,
+        "harvest_factor": 0.556,
+        "loss_pct": 44
+      },
+      {
+        "date": "2026-11-13",
+        "code": 2,
+        "condition": "Partly cloudy",
+        "category": "partly",
+        "cloud_pct": 60,
+        "rain_mm": 0.0,
+        "ghi_kwh_m2": 5.54,
+        "clear_kwh_m2": 7.09,
+        "harvest_factor": 0.781,
+        "loss_pct": 22
+      },
+      {
+        "date": "2026-11-14",
+        "code": 3,
+        "condition": "Overcast",
+        "category": "cloudy",
+        "cloud_pct": 99,
+        "rain_mm": 0.0,
+        "ghi_kwh_m2": 3.64,
+        "clear_kwh_m2": 7.08,
+        "harvest_factor": 0.514,
+        "loss_pct": 49
+      },
+      {
+        "date": "2026-11-15",
+        "code": 51,
+        "condition": "Light drizzle",
+        "category": "drizzle",
+        "cloud_pct": 100,
+        "rain_mm": 3.4,
+        "ghi_kwh_m2": 1.98,
+        "clear_kwh_m2": 7.07,
+        "harvest_factor": 0.28,
+        "loss_pct": 72
+      }
+    ],
+    "hourly_ghi": [
+      {
+        "timestamp": "2026-11-08 00:00",
+        "ghi": 0,
+        "cloud": 93,
+        "rain": 0.2
+      },
+      {
+        "timestamp": "2026-11-08 01:00",
+        "ghi": 0,
+        "cloud": 96,
+        "rain": 0.1
+      },
+      {
+        "timestamp": "2026-11-08 02:00",
+        "ghi": 0,
+        "cloud": 91,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-08 03:00",
+        "ghi": 0,
+        "cloud": 84,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-08 04:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-08 05:00",
+        "ghi": 0,
+        "cloud": 99,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-08 06:00",
+        "ghi": 11,
+        "cloud": 98,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-08 07:00",
+        "ghi": 141,
+        "cloud": 99,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-08 08:00",
+        "ghi": 343,
+        "cloud": 98,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-08 09:00",
+        "ghi": 574,
+        "cloud": 83,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-08 10:00",
+        "ghi": 756,
+        "cloud": 56,
+        "rain": 0.1
+      },
+      {
+        "timestamp": "2026-11-08 11:00",
+        "ghi": 727,
+        "cloud": 48,
+        "rain": 2.3
+      },
+      {
+        "timestamp": "2026-11-08 12:00",
+        "ghi": 831,
+        "cloud": 42,
+        "rain": 0.2
+      },
+      {
+        "timestamp": "2026-11-08 13:00",
+        "ghi": 788,
+        "cloud": 57,
+        "rain": 0.9
+      },
+      {
+        "timestamp": "2026-11-08 14:00",
+        "ghi": 668,
+        "cloud": 98,
+        "rain": 0.4
+      },
+      {
+        "timestamp": "2026-11-08 15:00",
+        "ghi": 327,
+        "cloud": 100,
+        "rain": 0.8
+      },
+      {
+        "timestamp": "2026-11-08 16:00",
+        "ghi": 90,
+        "cloud": 99,
+        "rain": 5.0
+      },
+      {
+        "timestamp": "2026-11-08 17:00",
+        "ghi": 60,
+        "cloud": 99,
+        "rain": 1.9
+      },
+      {
+        "timestamp": "2026-11-08 18:00",
+        "ghi": 2,
+        "cloud": 99,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-08 19:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-08 20:00",
+        "ghi": 0,
+        "cloud": 99,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-08 21:00",
+        "ghi": 0,
+        "cloud": 99,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-08 22:00",
+        "ghi": 0,
+        "cloud": 99,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-08 23:00",
+        "ghi": 0,
+        "cloud": 98,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-09 00:00",
+        "ghi": 0,
+        "cloud": 98,
+        "rain": 0.1
+      },
+      {
+        "timestamp": "2026-11-09 01:00",
+        "ghi": 0,
+        "cloud": 89,
+        "rain": 0.1
+      },
+      {
+        "timestamp": "2026-11-09 02:00",
+        "ghi": 0,
+        "cloud": 34,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-09 03:00",
+        "ghi": 0,
+        "cloud": 47,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-09 04:00",
+        "ghi": 0,
+        "cloud": 94,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-09 05:00",
+        "ghi": 0,
+        "cloud": 93,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-09 06:00",
+        "ghi": 10,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-09 07:00",
+        "ghi": 133,
+        "cloud": 96,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-09 08:00",
+        "ghi": 264,
+        "cloud": 79,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-09 09:00",
+        "ghi": 471,
+        "cloud": 77,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-09 10:00",
+        "ghi": 705,
+        "cloud": 51,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-09 11:00",
+        "ghi": 855,
+        "cloud": 51,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-09 12:00",
+        "ghi": 886,
+        "cloud": 31,
+        "rain": 0.3
+      },
+      {
+        "timestamp": "2026-11-09 13:00",
+        "ghi": 806,
+        "cloud": 45,
+        "rain": 0.5
+      },
+      {
+        "timestamp": "2026-11-09 14:00",
+        "ghi": 718,
+        "cloud": 58,
+        "rain": 1.1
+      },
+      {
+        "timestamp": "2026-11-09 15:00",
+        "ghi": 423,
+        "cloud": 70,
+        "rain": 1.4
+      },
+      {
+        "timestamp": "2026-11-09 16:00",
+        "ghi": 256,
+        "cloud": 91,
+        "rain": 0.7
+      },
+      {
+        "timestamp": "2026-11-09 17:00",
+        "ghi": 49,
+        "cloud": 98,
+        "rain": 4.1
+      },
+      {
+        "timestamp": "2026-11-09 18:00",
+        "ghi": 3,
+        "cloud": 100,
+        "rain": 0.9
+      },
+      {
+        "timestamp": "2026-11-09 19:00",
+        "ghi": 0,
+        "cloud": 99,
+        "rain": 1.9
+      },
+      {
+        "timestamp": "2026-11-09 20:00",
+        "ghi": 0,
+        "cloud": 99,
+        "rain": 0.5
+      },
+      {
+        "timestamp": "2026-11-09 21:00",
+        "ghi": 0,
+        "cloud": 98,
+        "rain": 0.4
+      },
+      {
+        "timestamp": "2026-11-09 22:00",
+        "ghi": 0,
+        "cloud": 97,
+        "rain": 0.2
+      },
+      {
+        "timestamp": "2026-11-09 23:00",
+        "ghi": 0,
+        "cloud": 98,
+        "rain": 0.1
+      },
+      {
+        "timestamp": "2026-11-10 00:00",
+        "ghi": 0,
+        "cloud": 99,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-10 01:00",
+        "ghi": 0,
+        "cloud": 99,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-10 02:00",
+        "ghi": 0,
+        "cloud": 99,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-10 03:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-10 04:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-10 05:00",
+        "ghi": 0,
+        "cloud": 98,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-10 06:00",
+        "ghi": 12,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-10 07:00",
+        "ghi": 156,
+        "cloud": 90,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-10 08:00",
+        "ghi": 381,
+        "cloud": 73,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-10 09:00",
+        "ghi": 596,
+        "cloud": 91,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-10 10:00",
+        "ghi": 754,
+        "cloud": 86,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-10 11:00",
+        "ghi": 824,
+        "cloud": 92,
+        "rain": 0.1
+      },
+      {
+        "timestamp": "2026-11-10 12:00",
+        "ghi": 878,
+        "cloud": 65,
+        "rain": 0.3
+      },
+      {
+        "timestamp": "2026-11-10 13:00",
+        "ghi": 694,
+        "cloud": 94,
+        "rain": 2.4
+      },
+      {
+        "timestamp": "2026-11-10 14:00",
+        "ghi": 491,
+        "cloud": 99,
+        "rain": 0.7
+      },
+      {
+        "timestamp": "2026-11-10 15:00",
+        "ghi": 327,
+        "cloud": 99,
+        "rain": 0.3
+      },
+      {
+        "timestamp": "2026-11-10 16:00",
+        "ghi": 247,
+        "cloud": 100,
+        "rain": 1.2
+      },
+      {
+        "timestamp": "2026-11-10 17:00",
+        "ghi": 63,
+        "cloud": 98,
+        "rain": 1.6
+      },
+      {
+        "timestamp": "2026-11-10 18:00",
+        "ghi": 3,
+        "cloud": 98,
+        "rain": 0.3
+      },
+      {
+        "timestamp": "2026-11-10 19:00",
+        "ghi": 0,
+        "cloud": 96,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-10 20:00",
+        "ghi": 0,
+        "cloud": 98,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-10 21:00",
+        "ghi": 0,
+        "cloud": 98,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-10 22:00",
+        "ghi": 0,
+        "cloud": 99,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-10 23:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-11 00:00",
+        "ghi": 0,
+        "cloud": 95,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-11 01:00",
+        "ghi": 0,
+        "cloud": 98,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-11 02:00",
+        "ghi": 0,
+        "cloud": 94,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-11 03:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-11 04:00",
+        "ghi": 0,
+        "cloud": 96,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-11 05:00",
+        "ghi": 0,
+        "cloud": 85,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-11 06:00",
+        "ghi": 11,
+        "cloud": 72,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-11 07:00",
+        "ghi": 156,
+        "cloud": 52,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-11 08:00",
+        "ghi": 372,
+        "cloud": 44,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-11 09:00",
+        "ghi": 517,
+        "cloud": 62,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-11 10:00",
+        "ghi": 714,
+        "cloud": 91,
+        "rain": 0.1
+      },
+      {
+        "timestamp": "2026-11-11 11:00",
+        "ghi": 745,
+        "cloud": 98,
+        "rain": 0.1
+      },
+      {
+        "timestamp": "2026-11-11 12:00",
+        "ghi": 744,
+        "cloud": 97,
+        "rain": 0.2
+      },
+      {
+        "timestamp": "2026-11-11 13:00",
+        "ghi": 663,
+        "cloud": 100,
+        "rain": 0.2
+      },
+      {
+        "timestamp": "2026-11-11 14:00",
+        "ghi": 355,
+        "cloud": 100,
+        "rain": 4.8
+      },
+      {
+        "timestamp": "2026-11-11 15:00",
+        "ghi": 55,
+        "cloud": 100,
+        "rain": 3.5
+      },
+      {
+        "timestamp": "2026-11-11 16:00",
+        "ghi": 74,
+        "cloud": 100,
+        "rain": 5.9
+      },
+      {
+        "timestamp": "2026-11-11 17:00",
+        "ghi": 35,
+        "cloud": 100,
+        "rain": 2.3
+      },
+      {
+        "timestamp": "2026-11-11 18:00",
+        "ghi": 1,
+        "cloud": 100,
+        "rain": 1.8
+      },
+      {
+        "timestamp": "2026-11-11 19:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 1.4
+      },
+      {
+        "timestamp": "2026-11-11 20:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 1.1
+      },
+      {
+        "timestamp": "2026-11-11 21:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 5.5
+      },
+      {
+        "timestamp": "2026-11-11 22:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 1.6
+      },
+      {
+        "timestamp": "2026-11-11 23:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.7
+      },
+      {
+        "timestamp": "2026-11-12 00:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.5
+      },
+      {
+        "timestamp": "2026-11-12 01:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.3
+      },
+      {
+        "timestamp": "2026-11-12 02:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.2
+      },
+      {
+        "timestamp": "2026-11-12 03:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.2
+      },
+      {
+        "timestamp": "2026-11-12 04:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.1
+      },
+      {
+        "timestamp": "2026-11-12 05:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.2
+      },
+      {
+        "timestamp": "2026-11-12 06:00",
+        "ghi": 5,
+        "cloud": 80,
+        "rain": 0.6
+      },
+      {
+        "timestamp": "2026-11-12 07:00",
+        "ghi": 101,
+        "cloud": 99,
+        "rain": 0.2
+      },
+      {
+        "timestamp": "2026-11-12 08:00",
+        "ghi": 277,
+        "cloud": 86,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-12 09:00",
+        "ghi": 415,
+        "cloud": 99,
+        "rain": 0.3
+      },
+      {
+        "timestamp": "2026-11-12 10:00",
+        "ghi": 408,
+        "cloud": 86,
+        "rain": 0.1
+      },
+      {
+        "timestamp": "2026-11-12 11:00",
+        "ghi": 757,
+        "cloud": 92,
+        "rain": 0.2
+      },
+      {
+        "timestamp": "2026-11-12 12:00",
+        "ghi": 702,
+        "cloud": 98,
+        "rain": 0.3
+      },
+      {
+        "timestamp": "2026-11-12 13:00",
+        "ghi": 510,
+        "cloud": 100,
+        "rain": 3.3
+      },
+      {
+        "timestamp": "2026-11-12 14:00",
+        "ghi": 490,
+        "cloud": 100,
+        "rain": 3.2
+      },
+      {
+        "timestamp": "2026-11-12 15:00",
+        "ghi": 91,
+        "cloud": 100,
+        "rain": 1.5
+      },
+      {
+        "timestamp": "2026-11-12 16:00",
+        "ghi": 132,
+        "cloud": 100,
+        "rain": 0.2
+      },
+      {
+        "timestamp": "2026-11-12 17:00",
+        "ghi": 59,
+        "cloud": 99,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-12 18:00",
+        "ghi": 2,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-12 19:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-12 20:00",
+        "ghi": 0,
+        "cloud": 97,
+        "rain": 0.8
+      },
+      {
+        "timestamp": "2026-11-12 21:00",
+        "ghi": 0,
+        "cloud": 95,
+        "rain": 1.3
+      },
+      {
+        "timestamp": "2026-11-12 22:00",
+        "ghi": 0,
+        "cloud": 98,
+        "rain": 1.2
+      },
+      {
+        "timestamp": "2026-11-12 23:00",
+        "ghi": 0,
+        "cloud": 75,
+        "rain": 0.8
+      },
+      {
+        "timestamp": "2026-11-13 00:00",
+        "ghi": 0,
+        "cloud": 71,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 01:00",
+        "ghi": 0,
+        "cloud": 96,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 02:00",
+        "ghi": 0,
+        "cloud": 98,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 03:00",
+        "ghi": 0,
+        "cloud": 54,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 04:00",
+        "ghi": 0,
+        "cloud": 94,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 05:00",
+        "ghi": 0,
+        "cloud": 75,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 06:00",
+        "ghi": 10,
+        "cloud": 27,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 07:00",
+        "ghi": 149,
+        "cloud": 28,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 08:00",
+        "ghi": 380,
+        "cloud": 53,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 09:00",
+        "ghi": 560,
+        "cloud": 57,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 10:00",
+        "ghi": 720,
+        "cloud": 96,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 11:00",
+        "ghi": 718,
+        "cloud": 62,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 12:00",
+        "ghi": 870,
+        "cloud": 92,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 13:00",
+        "ghi": 653,
+        "cloud": 63,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 14:00",
+        "ghi": 559,
+        "cloud": 38,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 15:00",
+        "ghi": 496,
+        "cloud": 50,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 16:00",
+        "ghi": 317,
+        "cloud": 97,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 17:00",
+        "ghi": 110,
+        "cloud": 37,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 18:00",
+        "ghi": 3,
+        "cloud": 78,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 19:00",
+        "ghi": 0,
+        "cloud": 88,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 20:00",
+        "ghi": 0,
+        "cloud": 90,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 21:00",
+        "ghi": 0,
+        "cloud": 61,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 22:00",
+        "ghi": 0,
+        "cloud": 30,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-13 23:00",
+        "ghi": 0,
+        "cloud": 24,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 00:00",
+        "ghi": 0,
+        "cloud": 38,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 01:00",
+        "ghi": 0,
+        "cloud": 94,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 02:00",
+        "ghi": 0,
+        "cloud": 99,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 03:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 04:00",
+        "ghi": 0,
+        "cloud": 96,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 05:00",
+        "ghi": 0,
+        "cloud": 99,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 06:00",
+        "ghi": 6,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 07:00",
+        "ghi": 92,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 08:00",
+        "ghi": 132,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 09:00",
+        "ghi": 221,
+        "cloud": 94,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 10:00",
+        "ghi": 689,
+        "cloud": 99,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 11:00",
+        "ghi": 663,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 12:00",
+        "ghi": 656,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 13:00",
+        "ghi": 250,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 14:00",
+        "ghi": 367,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 15:00",
+        "ghi": 384,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 16:00",
+        "ghi": 149,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 17:00",
+        "ghi": 31,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 18:00",
+        "ghi": 1,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 19:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 20:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 21:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 22:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-14 23:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-15 00:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-15 01:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-15 02:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-15 03:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-15 04:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-15 05:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-15 06:00",
+        "ghi": 5,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-15 07:00",
+        "ghi": 80,
+        "cloud": 100,
+        "rain": 0.1
+      },
+      {
+        "timestamp": "2026-11-15 08:00",
+        "ghi": 193,
+        "cloud": 100,
+        "rain": 0.2
+      },
+      {
+        "timestamp": "2026-11-15 09:00",
+        "ghi": 325,
+        "cloud": 100,
+        "rain": 0.3
+      },
+      {
+        "timestamp": "2026-11-15 10:00",
+        "ghi": 247,
+        "cloud": 100,
+        "rain": 0.2
+      },
+      {
+        "timestamp": "2026-11-15 11:00",
+        "ghi": 239,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-15 12:00",
+        "ghi": 198,
+        "cloud": 100,
+        "rain": 0.1
+      },
+      {
+        "timestamp": "2026-11-15 13:00",
+        "ghi": 216,
+        "cloud": 100,
+        "rain": 1.5
+      },
+      {
+        "timestamp": "2026-11-15 14:00",
+        "ghi": 160,
+        "cloud": 100,
+        "rain": 0.3
+      },
+      {
+        "timestamp": "2026-11-15 15:00",
+        "ghi": 195,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-15 16:00",
+        "ghi": 100,
+        "cloud": 100,
+        "rain": 0.2
+      },
+      {
+        "timestamp": "2026-11-15 17:00",
+        "ghi": 24,
+        "cloud": 100,
+        "rain": 0.2
+      },
+      {
+        "timestamp": "2026-11-15 18:00",
+        "ghi": 1,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-15 19:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.2
+      },
+      {
+        "timestamp": "2026-11-15 20:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.1
+      },
+      {
+        "timestamp": "2026-11-15 21:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-15 22:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      },
+      {
+        "timestamp": "2026-11-15 23:00",
+        "ghi": 0,
+        "cloud": 100,
+        "rain": 0.0
+      }
+    ]
+  }
+}
