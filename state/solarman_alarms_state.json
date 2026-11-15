@@ -3,10 +3,10 @@
     "customer": "Hasika Deye",
     "first_seen": "2026-11-15T14:59:59.888792",
     "ignored": false,
-    "last_sent": "2026-11-15T14:59:59.888792",
+    "last_sent": "2026-11-15T20:37:05.753431",
     "message": "Inverter has sent nothing to SOLARMAN since 2026-11-15 13:26",
     "plant": "Hasika Deye - 2310262088",
-    "send_count": 1
+    "send_count": 2
   },
   "65430172:2408134651:silent@2026-05-24T100842": {
     "customer": "Mr. Dikkubura",
@@ -56,32 +56,32 @@
     "episodes": {},
     "fault": null,
     "last_row": {
-      "batt_v": 55.7,
+      "batt_v": 55.69,
       "bus_v": null,
-      "grid_v": 229.1,
-      "load_w": 197.0,
-      "out_v": 232.1,
+      "grid_v": 233.6,
+      "load_w": 180.0,
+      "out_v": 236.4,
       "soc": 100.0,
-      "ts": "2026-11-15 20:28:47"
+      "ts": "2026-11-16 02:00:51"
     },
-    "last_ts": "2026-11-15 20:28:47",
+    "last_ts": "2026-11-16 02:00:51",
     "nominal_v": 48,
     "outage": null,
     "pending": null,
     "recent": [
       {
         "batt_v": 55.69,
-        "grid_v": 224.5,
+        "grid_v": 232.0,
         "load_w": 193.0,
-        "out_v": 227.3,
-        "ts": "2026-11-15 20:23:09"
+        "out_v": 234.6,
+        "ts": "2026-11-16 01:55:14"
       },
       {
-        "batt_v": 55.7,
-        "grid_v": 229.1,
-        "load_w": 197.0,
-        "out_v": 232.1,
-        "ts": "2026-11-15 20:28:47"
+        "batt_v": 55.69,
+        "grid_v": 233.6,
+        "load_w": 180.0,
+        "out_v": 236.4,
+        "ts": "2026-11-16 02:00:51"
       }
     ]
   },
@@ -91,31 +91,31 @@
     "fault": null,
     "last_row": {
       "batt_v": null,
-      "bus_v": 379.0,
-      "grid_v": 231.1,
-      "load_w": 145.0,
-      "out_v": 240.1,
-      "soc": 36.0,
-      "ts": "2026-11-15 20:28:18"
+      "bus_v": 411.2,
+      "grid_v": 234.2,
+      "load_w": 133.0,
+      "out_v": 235.0,
+      "soc": 40.0,
+      "ts": "2026-11-16 02:02:24"
     },
-    "last_ts": "2026-11-15 20:28:18",
+    "last_ts": "2026-11-16 02:02:24",
     "nominal_v": null,
     "outage": null,
     "pending": null,
     "recent": [
       {
         "batt_v": null,
-        "grid_v": 231.1,
-        "load_w": 143.0,
-        "out_v": 239.9,
-        "ts": "2026-11-15 20:23:06"
+        "grid_v": 234.8,
+        "load_w": 133.0,
+        "out_v": 235.8,
+        "ts": "2026-11-16 01:57:12"
       },
       {
         "batt_v": null,
-        "grid_v": 231.1,
-        "load_w": 145.0,
-        "out_v": 240.1,
-        "ts": "2026-11-15 20:28:18"
+        "grid_v": 234.2,
+        "load_w": 133.0,
+        "out_v": 235.0,
+        "ts": "2026-11-16 02:02:24"
       }
     ]
   },
@@ -137,30 +137,30 @@
     "last_row": {
       "batt_v": 52.9,
       "bus_v": null,
-      "grid_v": 218.2,
-      "load_w": 432.0,
-      "out_v": 219.1,
-      "soc": 94.0,
-      "ts": "2026-11-15 20:28:08"
+      "grid_v": 227.9,
+      "load_w": 255.0,
+      "out_v": 229.2,
+      "soc": 85.0,
+      "ts": "2026-11-16 02:02:41"
     },
-    "last_ts": "2026-11-15 20:28:08",
+    "last_ts": "2026-11-16 02:02:41",
     "nominal_v": 48,
     "outage": null,
     "pending": null,
     "recent": [
       {
         "batt_v": 52.9,
-        "grid_v": 220.6,
-        "load_w": 438.0,
-        "out_v": 222.1,
-        "ts": "2026-11-15 20:23:01"
+        "grid_v": 230.2,
+        "load_w": 264.0,
+        "out_v": 232.4,
+        "ts": "2026-11-16 01:57:37"
       },
       {
         "batt_v": 52.9,
-        "grid_v": 218.2,
-        "load_w": 432.0,
-        "out_v": 219.1,
-        "ts": "2026-11-15 20:28:08"
+        "grid_v": 227.9,
+        "load_w": 255.0,
+        "out_v": 229.2,
+        "ts": "2026-11-16 02:02:41"
       }
     ]
   }
