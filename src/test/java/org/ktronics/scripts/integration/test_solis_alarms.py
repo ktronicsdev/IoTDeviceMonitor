@@ -49,7 +49,7 @@ def gate_on(monkeypatch):
 def run_gate(raw, state=None):
     """select -> prune -> six-hour gate -> 3x/4h filter, as main() runs them."""
     state = {} if state is None else state
-    alarms, _ = sa.select_alarms(raw)
+    alarms, _ = sa.select_alarms(raw, NOW)
     sa.prune_state(state, {gda.create_alarm_key(a) for a in alarms})
     passed = gda.triage_alarms(alarms, state, sa.PLATFORM, NOW)
     return gda.filter_alarms_to_send(passed, state), state
@@ -82,9 +82,17 @@ class TestOpen:
 class TestSelect:
     def test_keeps_open_hybrid_alarms_only(self):
         alarms, counts = sa.select_alarms([
-            alarm(7), alarm(7, state="2"), alarm(16, machine=GRID_TIE)])
+            alarm(7), alarm(7, state="2"), alarm(16, machine=GRID_TIE)], NOW)
         assert len(alarms) == 1
         assert counts["closed"] == 1 and counts["grid_tie"] == 1
+
+    def test_grid_tie_open_a_full_day_is_kept(self):
+        """Pengirihena Resort (S5-GR3P20K): UN-G-V02 open 12-16 Nov 2026, 0 kWh,
+        and nothing mailed because every grid-tie alarm was dropped."""
+        alarms, counts = sa.select_alarms([
+            alarm(23.9, machine="S5-GR3P20K"), alarm(24.1, machine="S5-GR3P20K")], NOW)
+        assert len(alarms) == 1
+        assert counts["grid_tie"] == 1 and counts["grid_tie_old"] == 1
 
     def test_unknown_model_is_kept(self):
         """A gap in the feed must never silence alerting."""
@@ -131,6 +139,16 @@ class TestGate:
     def test_grid_tie_overnight_alarm_is_never_mailed(self, gate_on):
         """A grid-tie NO-Grid stays open until the inverter wakes: 16 h is normal."""
         assert run_gate([alarm(16, machine=GRID_TIE)])[0] == []
+
+    def test_grid_tie_stuck_for_days_is_mailed(self, gate_on):
+        """The same inverter, 4 days into a dead phase: now it reaches the admin."""
+        to_send, _ = run_gate([alarm(100, machine="S5-GR3P20K", code="1011", msg="UN-G-V02")])
+        assert len(to_send) == 1
+
+    def test_grid_tie_dead_logger_is_still_never_mailed(self, gate_on):
+        to_send, _ = run_gate([alarm(100, machine=GRID_TIE, code="1D4C2",
+                                     msg="Loss of internet connection")])
+        assert to_send == []
 
     def test_three_sends_four_hours_apart(self, gate_on):
         to_send, state = run_gate([alarm(7)])

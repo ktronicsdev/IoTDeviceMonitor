@@ -9,11 +9,13 @@ about an alarm only when it is still open six hours after it started: a CEB cut
 that lasts two hours never reaches the inbox; a grid outage or a battery alarm
 that outlives six hours does.
 
-Hybrids only. A grid-tie inverter shuts down at dusk, so its alarms cannot
-clear until it wakes the next morning: a NO-Grid that really ended at 18:00
-reads "open" until about 06:30 and would mail at midnight. A hybrid runs around
-the clock, so its alarm times are real. Comms alarms ("Loss of internet
-connection") are never mailed, as everywhere else on the gate.
+Hybrids go straight to the gate. A grid-tie inverter shuts down at dusk, so its
+alarms cannot clear until it wakes the next morning: a NO-Grid that really ended
+at 18:00 reads "open" until about 06:30 and would mail at midnight. A hybrid runs
+around the clock, so its alarm times are real. A grid-tie alarm is therefore held
+back until it has been open 24 hours (a whole day of sun and still not cleared =
+a stuck inverter, e.g. Pengirihena's dead L2 phase, 12-16 Nov 2026). Comms alarms
+("Loss of internet connection") are never mailed, as everywhere else on the gate.
 
 Config: the `solis` block of credentials.json (same key as UC13 and UC17).
 
@@ -49,6 +51,7 @@ PLATFORM = "solis"
 LOOKBACK_DAYS = 7          # an alarm open longer than this has long since been mailed 3x
 REQUEST_GAP_S = 1.0        # stay well under the per-key rate limit
 DEFAULT_TZ_OFFSET_MIN = 330
+GRID_TIE_MIN_HOURS = 24    # a grid-tie alarm older than a night is a stuck inverter, not dusk
 
 # Solis hybrids: S6-EH1P/EH3P (and the older RHI/RAI families). Grid-tie
 # models read S5-GR/S6-GR/S5-GC and are left out (see the module docstring).
@@ -94,15 +97,32 @@ def to_gate_alarm(raw):
     return alarm
 
 
-def select_alarms(raw_alarms):
-    """Open alarms on hybrid inverters of plants still on the platform.
+def grid_tie_alarm_is_old(raw, utc_now):
+    """True when a grid-tie alarm has been open GRID_TIE_MIN_HOURS or more.
+
+    A grid-tie inverter sleeps overnight, so an alarm that really ended at dusk
+    reads open until about 06:30: at most ~16 h. One still open after 24 h has
+    had a whole day of sunshine to clear itself and has not: the inverter is stuck.
+    """
+    try:
+        begin_ms = int(raw.get("alarmBeginTime"))
+    except (TypeError, ValueError):
+        return False
+    hours = (utc_now - datetime.fromtimestamp(begin_ms / 1000, tz=timezone.utc)).total_seconds() / 3600
+    return hours >= GRID_TIE_MIN_HOURS
+
+
+def select_alarms(raw_alarms, utc_now=None):
+    """Open alarms on hybrid inverters, plus grid-tie alarms open 24 h or more,
+    of plants still on the platform.
 
     Returns (alarms, counts). An alarm whose inverter model is missing is kept:
     a gap in the feed must never silence alerting. In practice only SolisCloud's
     own "Loss of internet connection" (1D4C2) comes without one, and the gate
     never mails that.
     """
-    counts = {"closed": 0, "grid_tie": 0, "unknown_model": 0, "excluded": 0}
+    utc_now = utc_now or datetime.now(timezone.utc)
+    counts = {"closed": 0, "grid_tie": 0, "grid_tie_old": 0, "unknown_model": 0, "excluded": 0}
     alarms = []
     for raw in raw_alarms:
         if not is_open(raw):
@@ -110,8 +130,10 @@ def select_alarms(raw_alarms):
             continue
         hybrid = is_hybrid(raw.get("machine"))
         if hybrid is False:
-            counts["grid_tie"] += 1
-            continue
+            if not grid_tie_alarm_is_old(raw, utc_now):
+                counts["grid_tie"] += 1
+                continue
+            counts["grid_tie_old"] += 1
         if hybrid is None:
             counts["unknown_model"] += 1
         if exclusions.is_plant_excluded(raw.get("stationName") or ""):
@@ -175,7 +197,8 @@ def format_email(items, utc_now, tz_offset_min=DEFAULT_TZ_OFFSET_MIN):
     lines += [
         "Rule: an alarm is mailed only when it is still open 6 hours after it started",
         "(the six-hour gate), then at most 3 times, 4 hours apart. Comms alarms are",
-        "never mailed. Grid-tie inverters are left out: their alarms stay open overnight.",
+        "never mailed. Grid-tie inverters sleep overnight, so theirs count only once",
+        f"they have been open {GRID_TIE_MIN_HOURS} hours or more.",
     ]
     return "\n".join(lines)
 
@@ -195,9 +218,10 @@ def main():
     today = (utc_now + timedelta(minutes=tz_offset)).date()
 
     raw = fetch_alarms(client, today)
-    alarms, counts = select_alarms(raw)
+    alarms, counts = select_alarms(raw, utc_now)
     print(f"✓ {len(raw)} alarms in the last {LOOKBACK_DAYS} days; {len(alarms)} open on "
-          f"hybrids (closed {counts['closed']}, grid-tie {counts['grid_tie']}, "
+          f"hybrids or grid-tie 24h+ (closed {counts['closed']}, grid-tie under 24h "
+          f"{counts['grid_tie']}, grid-tie 24h+ {counts['grid_tie_old']}, "
           f"model unknown {counts['unknown_model']}, excluded {counts['excluded']})")
 
     state = gda.load_alarm_state(args.state_file)

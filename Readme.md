@@ -1161,7 +1161,7 @@ where the BMS can lock the pack out and it will not restart on its own.
 
 1. Runs **hourly at :33** ([trigger-solis-alarms.yml](.github/workflows/trigger-solis-alarms.yml)), so the six hours are literal, as on the ShineMonitor alarm poll.
 2. One call, `POST /v1/api/alarmList`, for every alarm that began in the last 7 days, across all plants on the account.
-3. Keeps alarms that are **open** (`state == "0"`), on a **hybrid** (`machine` reads `S6-EH…`, `RHI…` or `RAI…`), on a plant not in `excluded_plants.json`.
+3. Keeps alarms that are **open** (`state == "0"`), on a plant not in `excluded_plants.json`, and either on a **hybrid** (`machine` reads `S6-EH…`, `RHI…` or `RAI…`) or, for a grid-tie inverter, **open 24 hours or more** (below).
 4. Hands them to the gate exactly as UC3 does: `triage_alarms()` (six-hour dwell, COMMS never mailed, the `alerts.six_hour_gate` off / dry_run / on mode), then `filter_alarms_to_send()` (3 sends, 4 h apart).
 5. Emails the admin one list: plant, inverter, alarm, open since (plant-local time), hours open, send n/3, and the gate's first thing to check.
 
@@ -1171,6 +1171,20 @@ dusk, so its alarm cannot clear until it wakes the next morning. Ruwani's data r
 NO-Grid for 16–18 h for a CEB cut that ended that evening. On a grid-tie plant
 the six hours would be mostly darkness. A hybrid runs around the clock, so its
 alarm times are real.
+
+**Grid-tie alarms open 24 h or more are mailed (16 Nov 2026).** "Hybrids only"
+left a hole: a grid-tie inverter that is stuck, not asleep, never reached the
+admin. Pengirihena Resort (S5-GR3P20K, 20 kW, Galle) lost its L2 phase at
+12:33 on 11 Nov (L2 235 V → 112 V in one step, L1 and L3 normal, alarm 1011
+UN-G-V02) and then produced 0 kWh on 12, 13, 14, 15 and 16 Nov. Nothing was
+mailed: `emails.solis_alarms_admin` was on and the hourly run was committing
+state, but `select_alarms` counted the alarm as grid-tie and dropped it before
+the gate. It was found by asking why Solis had sent nothing, and the model came
+from the raw `inverter_detail` record (`machine`), which the normal view omits.
+The overnight reasoning still holds up to about 16 h (a dusk cut reads open until
+~06:30), so the line is 24 h: a whole day of sun and still not cleared means the
+inverter is stuck. It then takes the same six-hour gate and 3 sends / 4 h as a
+hybrid, and COMMS stays unmailed. A 7-day look-back still bounds it.
 
 **What it would have sent, replayed over 16–23 Oct 2026:** nine alarms on six
 plants. They were the 17 Oct CEB outage (NO-Grid 6.6–9.2 h at Hiran's three floors,
@@ -1235,7 +1249,7 @@ py check_solis_alarms.py              # gate + email the admin + save state (cro
 py check_solis_alarms.py --dry-run    # print what would be mailed; no email, no state
 ```
 
-**Test Coverage:** 31/31 PASSED — `test_solis_alarms.py`; the gate fixes are
+**Test Coverage:** 34/34 PASSED — `test_solis_alarms.py`; the gate fixes are
 4 more in `test_alarm_triage.py`
 
 ---
@@ -2605,7 +2619,7 @@ a file that is gone (#35).
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 1047 tests — 991 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 1050 tests — 994 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 The MCP servers' tests are not counted here: they left the repo with the
 servers on 2026-11-04 (see *Not part of the pipeline*). The 28 Tuya tests that
@@ -2624,13 +2638,13 @@ used to skip in CI went with them.
 | UC12 + UC15 (live loop budget) | 16 | `test_live_loop_budget.py` |
 | UC16 (ESP32 BMS ingest) | 16 | `test_bms_ingest.py` |
 
-**SolisCloud (85 tests):**
+**SolisCloud (88 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
 | UC13 (Solis ON/OFF Watchdog) | 44 | `test_solis_switch.py` |
 | UC17 (Solis battery health) | 10 | `test_battery_health.py` |
-| UC18 (Solis alarms, six-hour gate) | 31 | `test_solis_alarms.py` |
+| UC18 (Solis alarms, six-hour gate) | 34 | `test_solis_alarms.py` |
 
 **Deye Cloud (58 tests):**
 
