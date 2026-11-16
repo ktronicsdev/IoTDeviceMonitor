@@ -9,11 +9,13 @@ SolisCloud alarms. The admin hears about an alarm only when it is still open
 six hours after it started: a two-hour CEB cut never reaches the inbox; a grid
 fault or a battery fault that outlives six hours does.
 
-Grid-tie inverters are left out, as on Solis: one shuts down at dusk, so its
+Grid-tie inverters are held back, as on Solis: one shuts down at dusk, so its
 alarm cannot clear until it wakes next morning, and an alarm that really ended
 at 18:00 would read "open" all night. Hybrids and off-grid units run around the
-clock, so their alarm times are real. An inverter whose product id is not yet
-known is kept: a gap in the feed must never silence alerting.
+clock, so their alarm times are real. A grid-tie alarm still open after 24 hours
+has had a whole day of sun to clear itself, so it is a stuck inverter and goes
+through the gate too. An inverter whose product id is not yet known is kept: a
+gap in the feed must never silence alerting.
 
 Deye has no comms alarm in its alert list (a dead logger is a device status
 there, not an alert), so nothing here needs the COMMS rule; it still applies.
@@ -50,6 +52,7 @@ EMAIL_CHANNEL = "emails.deye_alarms_admin"
 PLATFORM = "deye"
 LOOKBACK_DAYS = 7           # an alarm open longer than this has long since been mailed 3x
 DEFAULT_TZ_OFFSET_MIN = 330
+GRID_TIE_MIN_HOURS = 24     # a grid-tie alarm older than a night is a stuck inverter, not dusk
 PAGE_SIZE = 200
 STATIONS_PER_DEVICE_CALL = 10   # /station/device answers "list too long" above 10
 
@@ -144,13 +147,24 @@ def to_gate_alarm(raw, station, product_id=None):
     return alarm
 
 
-def select_alarms(entries, products):
-    """Open alarms on non-grid-tie inverters of plants still on the platform.
+def grid_tie_alarm_is_old(raw, utc_now):
+    """True when a grid-tie alarm has been open GRID_TIE_MIN_HOURS or more.
+    Without a usable start time it cannot be judged, so it stays held back."""
+    started = epoch_s(raw.get("alertStartTime"))
+    if started is None:
+        return False
+    return (utc_now.timestamp() - started) / 3600 >= GRID_TIE_MIN_HOURS
+
+
+def select_alarms(entries, products, utc_now=None):
+    """Open alarms on non-grid-tie inverters, plus grid-tie alarms open 24 h or
+    more, of plants still on the platform.
 
     entries: (station, raw alert) pairs. products: deviceSn -> productId.
     Returns (alarms, counts).
     """
-    counts = {"closed": 0, "grid_tie": 0, "unknown_product": 0, "excluded": 0}
+    utc_now = utc_now or datetime.now(timezone.utc)
+    counts = {"closed": 0, "grid_tie": 0, "grid_tie_old": 0, "unknown_product": 0, "excluded": 0}
     alarms = []
     for station, raw in entries:
         if not is_open(raw):
@@ -159,8 +173,10 @@ def select_alarms(entries, products):
         product_id = products.get(str(raw.get("deviceSn")))
         grid_tie = is_grid_tie(product_id)
         if grid_tie:
-            counts["grid_tie"] += 1
-            continue
+            if not grid_tie_alarm_is_old(raw, utc_now):
+                counts["grid_tie"] += 1
+                continue
+            counts["grid_tie_old"] += 1
         if grid_tie is None:
             counts["unknown_product"] += 1
         if exclusions.is_plant_excluded(station.get("name") or ""):
@@ -249,7 +265,7 @@ def format_email(items, utc_now, tz_offset_min=DEFAULT_TZ_OFFSET_MIN):
     lines += [
         "Rule: an alarm is mailed only when it is still open 6 hours after it started",
         "(the six-hour gate), then at most 3 times, 4 hours apart. Grid-tie inverters",
-        "are left out: their alarms stay open overnight.",
+        f"sleep overnight, so theirs count only once open {GRID_TIE_MIN_HOURS} hours or more.",
     ]
     return "\n".join(lines)
 
@@ -280,9 +296,10 @@ def main():
         print(f"✗ Deye Cloud: {e}", file=sys.stderr)
         return 1
 
-    alarms, counts = select_alarms(entries, products)
+    alarms, counts = select_alarms(entries, products, utc_now)
     print(f"✓ {len(stations)} plants, {len(entries)} alarms in the last {LOOKBACK_DAYS} days; "
-          f"{len(alarms)} open (closed {counts['closed']}, grid-tie {counts['grid_tie']}, "
+          f"{len(alarms)} open (closed {counts['closed']}, grid-tie under 24h {counts['grid_tie']}, "
+          f"grid-tie 24h+ {counts['grid_tie_old']}, "
           f"product unknown {counts['unknown_product']}, excluded {counts['excluded']})")
 
     state = gda.load_alarm_state(args.state_file)

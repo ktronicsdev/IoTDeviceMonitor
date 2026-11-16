@@ -1274,7 +1274,7 @@ is there, every hourly run fails with "No 'deye' section in credentials.json".
    - `/station/alertList` per plant for the last 7 days.
 3. Keeps an alarm when all three hold:
    - it is **open**: `status` 1, or no end time when there is no usable status;
-   - it is **not on a grid-tie** product (`0_5406_1`); an unknown product id is kept, because a gap in the feed must never silence alerting;
+   - it is **not on a grid-tie** product (`0_5406_1`), or it is and has been **open 24 hours or more** (below); an unknown product id is kept, because a gap in the feed must never silence alerting;
    - its plant is not in `excluded_plants.json`.
 4. Hands them to the gate exactly as UC3 and UC18 do: `triage_alarms()`, then `filter_alarms_to_send()`.
 5. Emails the admin one list. Each alarm shows:
@@ -1283,9 +1283,15 @@ is there, every hourly run fails with "No 'deye' section in credentials.json".
    - open since (plant-local time) and hours open;
    - send n/3, and the gate's first thing to check.
 
-**Grid-tie left out, as on Solis.** The fleet has one grid-tie unit,
+**Grid-tie held back, as on Solis, until 24 h.** The fleet has one grid-tie unit,
 Tharanga Prasad Ongrid 20 KW. Its AC_NoUtillity alarm (F35) of 17 Oct read
-open from 12:44 until 05:48 the next morning.
+open from 12:44 until 05:48 the next morning, so a short grid-tie alarm is not
+mailed. Since 16 Nov 2026 one open **24 hours or more** is: it has had a whole
+day of sun to clear and has not, so the inverter is stuck. Found on Solis, where
+a grid-tie inverter with a dead phase (Pengirihena, 12-16 Nov) went four days
+unreported because every grid-tie alarm was dropped; Deye had the same hole on
+its one grid-tie unit, so it got the same rule. A grid-tie alarm with no start
+time cannot be aged and stays held back.
 
 **What it would have sent, replayed over 6 Oct–5 Nov 2026:** five alarms, nine
 emails. All five ran from dusk to sunrise: they began between 17:35 and 22:17
@@ -1369,7 +1375,7 @@ it stays out of the repository.
 
 | Script | Purpose |
 |--------|---------|
-| `check_deye_alarms.py` | Plants → product ids → alert lists → open, not grid-tie → six-hour gate → 3x/4h → email |
+| `check_deye_alarms.py` | Plants → product ids → alert lists → open, not grid-tie (or grid-tie 24h+) → six-hour gate → 3x/4h → email |
 | `deye_cloud.py` | Read-only Deye Cloud client: token, three read paths, one retry |
 | `generate_device_alarms.py` | The gate and send rules it reuses; now names the vendor `Deye` |
 | `six-hour-gate/config/alarm_triage.json` | The Deye alarm names in the class map |
@@ -1381,7 +1387,7 @@ py check_deye_alarms.py              # gate + email the admin + save state (cron
 py check_deye_alarms.py --dry-run    # print what would be mailed; no email, no state
 ```
 
-**Test Coverage:** 58/58 PASSED — `test_deye_alarms.py`
+**Test Coverage:** 61/61 PASSED — `test_deye_alarms.py`
 
 ---
 
@@ -2619,7 +2625,7 @@ a file that is gone (#35).
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 1050 tests — 994 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 1053 tests — 997 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 The MCP servers' tests are not counted here: they left the repo with the
 servers on 2026-11-04 (see *Not part of the pipeline*). The 28 Tuya tests that
@@ -2646,11 +2652,11 @@ used to skip in CI went with them.
 | UC17 (Solis battery health) | 10 | `test_battery_health.py` |
 | UC18 (Solis alarms, six-hour gate) | 34 | `test_solis_alarms.py` |
 
-**Deye Cloud (58 tests):**
+**Deye Cloud (61 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| UC19 (Deye alarms, six-hour gate, read-only client) | 58 | `test_deye_alarms.py` |
+| UC19 (Deye alarms, six-hour gate, read-only client) | 61 | `test_deye_alarms.py` |
 
 **SolaX Cloud (28 tests):**
 

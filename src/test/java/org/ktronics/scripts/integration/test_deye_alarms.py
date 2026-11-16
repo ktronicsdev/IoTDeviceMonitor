@@ -54,7 +54,7 @@ def gate_on(monkeypatch):
 def run_gate(raws, state=None, station=STATION):
     """select -> prune -> six-hour gate -> 3x/4h filter, as main() runs them."""
     state = {} if state is None else state
-    alarms, _ = da.select_alarms(entries(*raws, station=station), PRODUCTS)
+    alarms, _ = da.select_alarms(entries(*raws, station=station), PRODUCTS, NOW)
     da.prune_state(state, {gda.create_alarm_key(a) for a in alarms})
     passed = gda.triage_alarms(alarms, state, da.PLATFORM, NOW)
     return gda.filter_alarms_to_send(passed, state), state
@@ -119,9 +119,23 @@ class TestSelect:
     def test_keeps_open_alarms_off_grid_tie_inverters(self):
         alarms, counts = da.select_alarms(entries(
             alert(7), alert(7, status=0), alert(7, sn="2503000002"),
-            alert(7, sn="2502000001")), PRODUCTS)
+            alert(7, sn="2502000001")), PRODUCTS, NOW)
         assert [a["sn"] for a in alarms] == ["2501215093", "2502000001"]
         assert counts["closed"] == 1 and counts["grid_tie"] == 1
+
+    def test_grid_tie_open_a_full_day_is_kept(self):
+        """A grid-tie inverter stuck for a day is not dusk: it is mailed (Pengirihena
+        on Solis went 4 days unreported before the same rule was added there)."""
+        alarms, counts = da.select_alarms(entries(
+            alert(23.9, sn="2503000002"), alert(24.1, sn="2503000002")), PRODUCTS, NOW)
+        assert len(alarms) == 1
+        assert counts["grid_tie"] == 1 and counts["grid_tie_old"] == 1
+
+    def test_grid_tie_without_a_start_time_stays_held_back(self):
+        raw = alert(100, sn="2503000002")
+        del raw["alertStartTime"]
+        alarms, counts = da.select_alarms(entries(raw), PRODUCTS, NOW)
+        assert alarms == [] and counts["grid_tie"] == 1
 
     def test_unknown_product_is_kept(self):
         """A gap in the feed must never silence alerting."""
@@ -176,6 +190,9 @@ class TestGate:
 
     def test_grid_tie_overnight_alarm_is_never_mailed(self, gate_on):
         assert run_gate([alert(16, sn="2503000002")])[0] == []
+
+    def test_grid_tie_stuck_for_days_is_mailed(self, gate_on):
+        assert len(run_gate([alert(100, sn="2503000002")])[0]) == 1
 
     def test_a_missing_start_time_passes_rather_than_hides(self, gate_on):
         raw = alert(1)
