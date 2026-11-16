@@ -151,8 +151,8 @@ def parse_alarm_files(alarms_dir, platform=None):
     return all_alarms
 
 
-def triage_alarms(alarms, state, platform=None, utc_now=None):
-    """Apply the six-hour gate and record held alarms without changing send rules."""
+def triage_alarms(alarms, state, platform=None, utc_now=None, record_state=True):
+    """Apply the six-hour gate, optionally recording its decisions."""
     vendor = {'dessmonitor': 'DessMonitor', 'solis': 'Solis', 'deye': 'Deye',
               'solax': 'SolaX', 'solarman': 'SOLARMAN'}.get(platform, 'ShineMonitor')
     utc_now = utc_now or datetime.now(timezone.utc)
@@ -195,6 +195,11 @@ def triage_alarms(alarms, state, platform=None, utc_now=None):
 
         if mode == 'off':
             actionable.append(alarm)
+            continue
+
+        if not record_state:
+            if allowed:
+                actionable.append(alarm)
             continue
 
         alarm_state = state.setdefault(alarm_key, {
