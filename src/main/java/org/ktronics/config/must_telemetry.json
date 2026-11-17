@@ -21,5 +21,7 @@
   "silent_minutes": 20,
   "first_look_back_days": 7,
 
-  "no_grid_expected": []
+  "no_grid_expected": [
+    {"label": "SandamalSilva", "reason": "Off-grid plant, built without an AC input (owner 17 Nov 2026)", "since": "2026-11-17"}
+  ]
 }

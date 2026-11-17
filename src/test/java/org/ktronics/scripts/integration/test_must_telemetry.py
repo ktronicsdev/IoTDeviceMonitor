@@ -574,9 +574,10 @@ def test_readings_without_a_battery_voltage_still_time_an_outage():
 # --------------------------------------------------------------------------- #
 # Wiring
 # --------------------------------------------------------------------------- #
-def test_the_config_ships_the_owners_marks_and_no_plant_off_grid():
+def test_the_config_ships_the_owners_marks_and_only_sandamal_off_grid():
     assert CFG["flat_battery_v"] == {"24": 22.5, "48": 45.5}
-    assert CFG["no_grid_expected"] == []
+    assert [e["label"] for e in CFG["no_grid_expected"]] == ["SandamalSilva"]
+    assert m.exclusions.normalize("SandamalSilva") in m.no_grid_labels(CFG)
 
 
 def test_the_email_has_its_own_flag():

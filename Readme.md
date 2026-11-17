@@ -164,7 +164,7 @@ So:
 | `config/dessmonitor_credentials.json` | DessMonitor accounts (UC10) | Gitignored. From `DESSMONITOR_CREDENTIALS_JSON` |
 | `config/features.json` | Which emails and alerts are live | **Fails open** — an unknown flag reads as ON, so adding a channel never silently mutes an existing one. Override for one run with `KT_FEATURE_<DOTTED_PATH>=true` |
 | `config/excluded_plants.json` | Plants deliberately dropped, each with a reason and a date | **Fails closed** — it excludes nothing. Losing the file must never silently drop a paying customer off the platform |
-| `config/must_telemetry.json` | UC20 thresholds (grid, flat battery 22.5 V / 45.5 V, freshness) and `no_grid_expected`, the plants built without an AC input | Committed. The list ships **empty**: every plant is expected to have grid |
+| `config/must_telemetry.json` | UC20 thresholds (grid, flat battery 22.5 V / 45.5 V, freshness) and `no_grid_expected`, the plants built without an AC input | Committed. The list holds only SandamalSilva (off-grid): every other plant is expected to have grid |
 | `config/solarman_alarms.json` | UC22 thresholds, the SOLARMAN series names per inverter type, product ids, and rules switched off per plant | Committed. `rules_off` ships **empty** |
 
 Matching in `exclusions.py`, and in the plant-to-customer mapping, is on a
@@ -1531,7 +1531,7 @@ How the rules decide:
 **Decisions (10 Nov 2026):**
 
 - **One clock.** The backup alarm runs on the outage's clock, not its own. Six hours into an outage, a battery that gives out goes at the next run. A battery that dies in a short outage is never mailed: a two-hour cut stays silent, whatever it did.
-- **Every plant has grid**, unless `config/must_telemetry.json` lists it in `no_grid_expected`. A listed plant raises no grid-loss alarm. Its battery is still watched, on the backup episode's own clock. The list ships empty.
+- **Every plant has grid**, unless `config/must_telemetry.json` lists it in `no_grid_expected`. A listed plant raises no grid-loss alarm. Its battery is still watched, on the backup episode's own clock. The list holds one plant: SandamalSilva, off-grid since 17 Nov 2026 (the owner confirmed it has no AC input, so its "grid loss" mails were never an outage).
 - **Admin only.**
 - **Silence never confirms an outage.** A logger whose Wi-Fi dropped looks exactly like one whose grid is still off, so the grid alarm needs a fresh reading. Silence counts only straight after a flat-battery reading, because an inverter that cuts off takes its logger with it.
 - **0 W is not a failure.** On three nights, 27–29 Oct, Jeremy's inverter showed 0 W for 7–11 hours, and the first design counted that as a dead backup. Its output held 229.8 V throughout: nothing was drawing on a working inverter. So the rule reads the output voltage, not the load.
