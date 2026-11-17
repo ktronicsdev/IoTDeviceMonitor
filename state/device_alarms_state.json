@@ -1485,5 +1485,14 @@
     "customer": "SandamalSilva",
     "plant": "My Home",
     "message": "Battery connection is open"
+  },
+  "1058467:D70000210184951128:6afb93789332050168259245": {
+    "send_count": 1,
+    "first_seen": "2026-11-17T22:24:27.288454",
+    "ignored": false,
+    "last_sent": "2026-11-17T22:24:27.288454",
+    "customer": "Sohan-Wattala",
+    "plant": "Must PV1800 3024 Pro",
+    "message": "Low battery"
   }
 }
