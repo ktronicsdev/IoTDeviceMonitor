@@ -66,6 +66,9 @@ def _why(resp):
 
 
 class SolaxClient:
+    # A subclass (the workstation MCP) may widen this; the pipeline never does.
+    read_paths = READ_PATHS
+
     def __init__(self, client_id, client_secret, base_url=DEFAULT_BASE, timeout=30,
                  transport=None, min_gap_s=MIN_REQUEST_GAP_S, sleep=time.sleep):
         if not (client_id and client_secret):
@@ -109,7 +112,7 @@ class SolaxClient:
     def get(self, path, params=None):
         """GET a read path; returns the `result` object. One re-login if the token
         is refused, one retry after a rate limit, a server error or a network error."""
-        if path not in READ_PATHS:
+        if path not in self.read_paths:
             raise SolaxError(f"{path} is not a read endpoint; this client is read-only")
         query = "?" + urllib.parse.urlencode(params) if params else ""
         relogin = retried = refreshed = False
