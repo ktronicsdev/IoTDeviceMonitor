@@ -12,10 +12,10 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 1,
-      "days_since_data": 1,
-      "last_nonzero_date": "2026-11-17",
-      "last_data_date": "2026-11-17",
+      "days_stale": 0,
+      "days_since_data": 0,
+      "last_nonzero_date": "2026-11-18",
+      "last_data_date": "2026-11-18",
       "stale_days_threshold": 3
     }
   ],
@@ -33,9 +33,7 @@
     }
   ],
   "excluded": [],
-  "generated_at": "2026-11-18T02:00:13.144298Z",
+  "generated_at": "2026-11-18T04:50:26.770157Z",
   "fleet_wide_outage": false,
-  "alerting_now": [
-    "dessmonitor-mifrazmarsoon-plant"
-  ]
+  "alerting_now": []
 }
