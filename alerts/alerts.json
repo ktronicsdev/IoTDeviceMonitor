@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-18T09:42:52.667363Z",
+  "generated_at": "2026-11-18T12:42:51.754865Z",
   "alerts": [],
   "suppressed": [
     {
@@ -164,17 +164,6 @@
       "stale_days_threshold": 3
     },
     {
-      "plant_key": "sohan-wattala-must-pv1800-3024-pro",
-      "kind": "no_rows",
-      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
-      "link_down": true,
-      "days_stale": 18,
-      "days_since_data": 18,
-      "last_nonzero_date": "2026-10-31",
-      "last_data_date": "2026-10-31",
-      "stale_days_threshold": 3
-    },
-    {
       "plant_key": "dessmonitor-mifrazmarsoon-plant",
       "kind": "no_rows",
       "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
@@ -188,8 +177,8 @@
   ],
   "excluded": [],
   "counts": {
-    "reporting": 16,
-    "link_down": 10,
+    "reporting": 17,
+    "link_down": 9,
     "excluded": 0,
     "monitored": 26
   }
