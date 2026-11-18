@@ -6,7 +6,9 @@
     "last_sent": "2026-11-13T01:22:21.504822",
     "customer": "Unknown",
     "plant": "Hiran wijewardhana 15kv Nawala",
-    "message": "Inefficient Power Plants"
+    "message": "Inefficient Power Plants",
+    "class": "UNKNOWN",
+    "started_at_utc": "2026-11-10T16:00:00+00:00"
   },
   "1298491919450854508:None:1D4C3@1794412800000": {
     "send_count": 3,
@@ -15,7 +17,9 @@
     "last_sent": "2026-11-13T22:46:13.716301",
     "customer": "Unknown",
     "plant": "Hiran wijewardhana 15kv Nawala",
-    "message": "Inefficient Power Plants"
+    "message": "Inefficient Power Plants",
+    "class": "UNKNOWN",
+    "started_at_utc": "2026-11-11T16:00:00+00:00"
   },
   "1298491919449926204:18050B0248230197:1011@1794444067000": {
     "send_count": 3,
@@ -24,6 +28,8 @@
     "last_sent": "2026-11-17T13:44:21.241397",
     "customer": "Unknown",
     "plant": "Pengirihena Resort",
-    "message": "UN-G-V02"
+    "message": "UN-G-V02",
+    "class": "GRID",
+    "started_at_utc": "2026-11-12T00:41:07+00:00"
   }
 }
