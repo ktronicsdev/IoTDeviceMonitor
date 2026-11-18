@@ -458,7 +458,9 @@ def test_main_with_the_flag_off_mails_nothing_and_keeps_its_state(fleet, capsys)
     state = json.loads(state_file.read_text())
     assert state[f"device:{KEY}"]["outage"]["start"] == "2026-11-08 06:10:00"
     # Switched off is not sent: nothing counts against the alarm's three sends.
-    assert f"{KEY}:grid-loss@2026-11-08T061000" not in state
+    # The gate still records the alarm, so the rollout watch sees it.
+    record = state[f"{KEY}:grid-loss@2026-11-08T061000"]
+    assert record["send_count"] == 0 and record["last_sent"] is None
 
 
 def test_an_account_that_cannot_be_read_keeps_its_state(fleet):

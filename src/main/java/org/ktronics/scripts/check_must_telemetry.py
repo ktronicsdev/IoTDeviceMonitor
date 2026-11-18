@@ -730,7 +730,7 @@ def main(argv=None, client_factory=None, utc_now=None):
         print(f"Feature flag '{EMAIL_CHANNEL}' is off - nothing mailed")
         save_state(args.state_file, state)
         return 0
-    admin = creds.get("admin_email", DEFAULT_ADMIN_EMAIL)
+    admin =creds.get("admin_email", DEFAULT_ADMIN_EMAIL)
     subject = f"🔔 MUST: {len(to_send)} grid/battery alarm(s), 6h+ into an outage"
     sent = send_email_smtp(admin, subject, body, channel=EMAIL_CHANNEL)
     if sent:

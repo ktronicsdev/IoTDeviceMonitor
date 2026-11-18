@@ -11,7 +11,7 @@ py -m pytest integration/ -v
 
 ## Test Summary
 
-**Total: 767 tests** (711 passed on Windows, 56 skipped - bash and API tests run in CI). CI reports 744: the Tuya module needs `requests`, which CI does not install, so it skips as a unit.
+**Total: 1056 tests** (1000 passed on Windows, 56 skipped - bash and API tests run in CI).
 
 The count is what `py -m pytest integration/ -q` prints. If a change moves it,
 update this file and the root `Readme.md` in the same commit.
@@ -46,7 +46,7 @@ update this file and the root `Readme.md` in the same commit.
 | API  | DessMonitor API            | 18      | `test_dessmonitor_api.py`        |
 
 Not in the table above, because they pin workflow and push behaviour rather than
-a single use case: `test_alarm_triage.py` (18) and `test_alarm_gate_wiring.py` (8)
+a single use case: `test_alarm_triage.py` (19) and `test_alarm_gate_wiring.py` (10)
 for the six-hour gate, `test_admin_alert_send_cap.py` (4) and
 `test_hourly_poll_scope.py` (11) for alerting cadence,
 `test_data_commit_push.py` (27), `test_merge_alarm_state.py` (8) and
