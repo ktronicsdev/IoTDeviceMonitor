@@ -1,8 +1,8 @@
 {
   "stale_days": 3,
   "counts": {
-    "reporting": 2,
-    "link_down": 0,
+    "reporting": 1,
+    "link_down": 1,
     "excluded": 0,
     "monitored": 2
   },
@@ -12,27 +12,30 @@
       "kind": "reporting",
       "meaning": "reporting normally",
       "link_down": false,
-      "days_stale": 0,
-      "days_since_data": 0,
+      "days_stale": 1,
+      "days_since_data": 1,
       "last_nonzero_date": "2026-11-17",
       "last_data_date": "2026-11-17",
       "stale_days_threshold": 3
-    },
+    }
+  ],
+  "link_down": [
     {
       "plant_key": "dessmonitor-mifrazmarsoon-plant",
-      "kind": "reporting",
-      "meaning": "reporting normally",
-      "link_down": false,
-      "days_stale": 2,
-      "days_since_data": 2,
+      "kind": "no_rows",
+      "meaning": "no data rows at all \u2014 the portal has nothing for this plant",
+      "link_down": true,
+      "days_stale": 3,
+      "days_since_data": 3,
       "last_nonzero_date": "2026-11-15",
       "last_data_date": "2026-11-15",
       "stale_days_threshold": 3
     }
   ],
-  "link_down": [],
   "excluded": [],
-  "generated_at": "2026-11-17T23:17:46.764433Z",
+  "generated_at": "2026-11-18T02:00:13.144298Z",
   "fleet_wide_outage": false,
-  "alerting_now": []
+  "alerting_now": [
+    "dessmonitor-mifrazmarsoon-plant"
+  ]
 }
