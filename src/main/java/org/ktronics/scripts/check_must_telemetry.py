@@ -707,17 +707,8 @@ def main(argv=None, client_factory=None, utc_now=None):
           f"{sum(r['unsupported'] for r in results)} without grid/battery readings")
     print(f"✓ {outages} open grid outage(s), {episodes} backup episode(s); {len(alarms)} alarm(s) open")
 
-    from features import is_enabled
-    email_enabled = is_enabled(EMAIL_CHANNEL)
-    record_alarm_state = args.dry_run or email_enabled
-    if not record_alarm_state:
-        print(f"Feature flag '{EMAIL_CHANNEL}' is off - nothing mailed")
-        save_state(args.state_file, state)
-        return 0
-
     prune_alarm_state(state, read, keep)
-    passed = gda.triage_alarms(
-        alarms, state, PLATFORM, utc_now, record_state=record_alarm_state)
+    passed = gda.triage_alarms(alarms, state, PLATFORM, utc_now)
     to_send = gda.filter_alarms_to_send(passed, state)
     print(f"✓ {len(passed)} passed the six-hour gate; {len(to_send)} to send")
     for item in to_send:
@@ -734,7 +725,12 @@ def main(argv=None, client_factory=None, utc_now=None):
         return 0
 
     from email_utils import send_email_smtp
-    admin = creds.get("admin_email", DEFAULT_ADMIN_EMAIL)
+    from features import is_enabled
+    if not is_enabled(EMAIL_CHANNEL):
+        print(f"Feature flag '{EMAIL_CHANNEL}' is off - nothing mailed")
+        save_state(args.state_file, state)
+        return 0
+    admin =creds.get("admin_email", DEFAULT_ADMIN_EMAIL)
     subject = f"🔔 MUST: {len(to_send)} grid/battery alarm(s), 6h+ into an outage"
     sent = send_email_smtp(admin, subject, body, channel=EMAIL_CHANNEL)
     if sent:

@@ -151,8 +151,8 @@ def parse_alarm_files(alarms_dir, platform=None):
     return all_alarms
 
 
-def triage_alarms(alarms, state, platform=None, utc_now=None, record_state=True):
-    """Apply the six-hour gate, optionally recording its decisions."""
+def triage_alarms(alarms, state, platform=None, utc_now=None):
+    """Apply the six-hour gate and record its decision on every alarm it sees."""
     vendor = {'dessmonitor': 'DessMonitor', 'solis': 'Solis', 'deye': 'Deye',
               'solax': 'SolaX', 'solarman': 'SOLARMAN'}.get(platform, 'ShineMonitor')
     utc_now = utc_now or datetime.now(timezone.utc)
@@ -160,12 +160,13 @@ def triage_alarms(alarms, state, platform=None, utc_now=None, record_state=True)
 
     for alarm in alarms:
         alarm_key = create_alarm_key(alarm)
+        customer, plant, message = alarm_fields(alarm)
         mode = mode_of('alerts.six_hour_gate', default='off')
         would_hold = False
         if mode != 'off':
             try:
                 triage_input = dict(alarm)
-                triage_input.setdefault('message', alarm_fields(alarm)[2])
+                triage_input.setdefault('message', message)
                 record = alarm_triage.normalize(
                     triage_input, vendor, ALARM_TRIAGE_CONFIG)
                 allowed, reason = alarm_triage.is_actionable(
@@ -177,9 +178,9 @@ def triage_alarms(alarms, state, platform=None, utc_now=None, record_state=True)
                 record = {
                     'class': 'UNKNOWN',
                     'started_at_utc': utc_now,
-                    'customer': alarm_fields(alarm)[0],
-                    'plant': alarm_fields(alarm)[1],
-                    'message': alarm_fields(alarm)[2],
+                    'customer': customer,
+                    'plant': plant,
+                    'message': message,
                 }
 
             would_hold = not allowed
@@ -197,11 +198,6 @@ def triage_alarms(alarms, state, platform=None, utc_now=None, record_state=True)
             actionable.append(alarm)
             continue
 
-        if not record_state:
-            if allowed:
-                actionable.append(alarm)
-            continue
-
         alarm_state = state.setdefault(alarm_key, {
             'send_count': 0,
             'last_sent': None,
@@ -211,9 +207,9 @@ def triage_alarms(alarms, state, platform=None, utc_now=None, record_state=True)
         alarm_state.update({
             'class': record['class'],
             'started_at_utc': record['started_at_utc'].isoformat(),
-            'customer': alarm_fields(alarm)[0],
-            'plant': alarm_fields(alarm)[1],
-            'message': alarm_fields(alarm)[2],
+            'customer': customer,
+            'plant': plant,
+            'message': message,
             'send_count': alarm_state.get('send_count', 0),
             'ignored': alarm_state.get('ignored', False),
         })

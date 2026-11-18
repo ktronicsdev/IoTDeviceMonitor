@@ -458,6 +458,7 @@ Monitors device-level warnings from ShineMonitor API and sends targeted notifica
 - Six-hour gate: an alarm is mailed only if it is still open 6 hours after it started; comms/offline alarms are never mailed ([design](six-hour-gate/README.md))
 - 3-send rule: once an alarm passes the gate it is sent 3 times, at least 4 hours apart, then auto-ignored
 - State persistence with human-readable fields (customer, plant, message)
+- Gated records carry the same customer, plant and message as sent ones (one helper, `alarm_fields()`, fills both), and a held alarm's `suppressed_reason` is cleared once it passes the gate or is sent. DessMonitor's "Over temperature happen at PV circult" now classifies as THERMAL instead of UNKNOWN (PR #34, issue #19)
 - Vendor silence: a ShineMonitor login or call that gets no answer is tried once more, 3 s later. The first try gets 15 s and the second 25 s. This shares `shinemonitor_common.sh` with data collection. Since 2026-10-27 about four calls in ten from a GitHub runner hang, and without the retry each run missed alarms for 9-16 of the 23 accounts (see Bug Fixes, 2026-10-30)
 - What UC3 cannot see: ShineMonitor's warning list never reports a MUST inverter losing the grid, and does not always report a flat battery. Those alarms are made from the inverters' readings by **UC20**, and pass through the same gate
 
@@ -1768,6 +1769,22 @@ py check_solarman_alarms.py --tokens <file> --dry-run          # workstation onl
 
 ## Bug Fixes
 
+### Held alarm records that said the wrong thing (2026-11-18)
+
+The six-hour gate's rollout reviews (issue #19, 21-24 Oct) kept flagging
+records that could not be trusted. A held alarm was saved with no plant or
+message, so the review could not say what was being held. An alarm that had
+since passed the gate, or been mailed, still carried "dwell time is less than
+6 hours". And DessMonitor's "Over temperature happen at PV circult" was
+classed UNKNOWN from 2026-10-14, so it showed up as a matcher gap every day.
+It cost rollout evidence, not mail: UNKNOWN and THERMAL share the 6 h clock, so
+nothing was silenced wrongly. The reviews found it; PR #34 fixes it. Held and
+passed alarms now carry customer, plant and message from one helper
+(`alarm_fields()`, used by triage and by the state update, so the two cannot
+disagree), a passed or mailed alarm drops its old reason, and "over
+temperature" is a THERMAL pattern. The MUST telemetry run keeps recording the
+gate's decisions while its email flag is off; only the mail is skipped. 3 tests.
+
 ### A sign-in that could not renew itself (2026-11-11)
 
 UC22 was built on the belief that each renewal of the SOLARMAN sign-in
@@ -2625,7 +2642,7 @@ a file that is gone (#35).
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 1053 tests — 997 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 1056 tests — 1000 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 The MCP servers' tests are not counted here: they left the repo with the
 servers on 2026-11-04 (see *Not part of the pipeline*). The 28 Tuya tests that
@@ -2685,12 +2702,12 @@ used to skip in CI went with them.
 | Fleet benchmark | 28 | `test_fleet_benchmark.py` |
 | UC14 (state retention) | 3 | `test_connectivity_state_retention.py` |
 
-**Six-hour gate (26 tests):**
+**Six-hour gate (29 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| Gate rules (R1-R6, classes) | 18 | `test_alarm_triage.py` |
-| Gate wiring + feature mode | 8 | `test_alarm_gate_wiring.py` |
+| Gate rules (R1-R6, classes) | 19 | `test_alarm_triage.py` |
+| Gate wiring + feature mode | 10 | `test_alarm_gate_wiring.py` |
 
 **Alerting discipline (41 tests):**
 
