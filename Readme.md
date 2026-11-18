@@ -1785,6 +1785,44 @@ disagree), a passed or mailed alarm drops its old reason, and "over
 temperature" is a THERMAL pattern. The MUST telemetry run keeps recording the
 gate's decisions while its email flag is off; only the mail is skipped. 3 tests.
 
+### A credentials secret on one line (2026-11-18)
+
+**What it cost.** About 12 hours with no ShineMonitor production data. The
+17 Nov 19:19 UTC run committed the last good CSVs, and every run of the main
+workflow after it failed until the secret was re-set at 07:48 UTC on 18 Nov:
+five scheduled runs and one push, each with its own failure mail. UC1's
+anomaly checks, UC3's device alarms and UC14's connectivity checks are later
+steps in the same job, so none of them ran either.
+
+**How it was found.** From the 18 Nov 03:47 "Build FAILED" mail. The log
+showed the monthly fetch's banner followed straight by `exit code 1`, with no
+reason. The live tests in the `tests` job printed it:
+`ERROR: No accounts found`. The secret's update time, 19:46 UTC, was six
+minutes before the first failure. A session adding the `solax` block for UC21
+had built the stripped copy with Python's `json.dumps` and no indent, so the
+whole file arrived on one line.
+
+**Root cause.** `check_shinemonitor_monthly.sh` and `_yearly.sh` found the
+accounts with a line-based awk that needed `"accounts": [` on a line of its
+own, and read `company_key` with a greedy `sed`. Every other reader of the
+file is jq or Python, which do not care how it is laid out. That is why the
+SolaX job went green on the same secret and nothing pointed at it. The fetch
+steps' log filter allowed `WARNING` and `AUTH FAIL` but not `ERROR`, which is
+what hid the reason.
+
+**Fix.** Both scripts read the file through `shinemonitor_accounts` and
+`shinemonitor_company_key` in `shinemonitor_common.sh`, which use jq, as the
+DessMonitor scripts always have. A file that is not valid JSON now says so
+instead of "No accounts found". The fetch steps' filter lets `ERROR` lines
+through. The secret was re-set pretty-printed. 8 tests in
+`test_fetch_never_destroys_data.py`, all checked to fail on the old code:
+
+- 2 run the real fetches on a one-line file.
+- 1 checks that `company_key` is the top-level one.
+- 2 check what a broken file reports.
+- 2 keep the line-based parsing from coming back.
+- 1 keeps `ERROR` in the workflow's filter.
+
 ### A sign-in that could not renew itself (2026-11-11)
 
 UC22 was built on the belief that each renewal of the SOLARMAN sign-in
@@ -2498,7 +2536,7 @@ The system runs automatically via GitHub Actions:
 
 Configure these in GitHub Settings > Secrets:
 
-- `SHINEMONITOR_CREDENTIALS_JSON`: ShineMonitor account credentials (also holds the `solis` block for UC13, UC17 and UC18, the `solax` block for UC21 (`client_id`, `client_secret`, `api_base`, `tz_offset_minutes`), and the `deye` block for UC19: `app_id`, `app_secret`, `email`, `password_sha256`, `company_id`, `data_center`)
+- `SHINEMONITOR_CREDENTIALS_JSON`: ShineMonitor account credentials (also holds the `solis` block for UC13, UC17 and UC18, the `solax` block for UC21 (`client_id`, `client_secret`, `api_base`, `tz_offset_minutes`, plus the SolaX portal login `portal`, `username`, `password`, which UC21 does not use), and the `deye` block for UC19: `app_id`, `app_secret`, `email`, `password_sha256`, `company_id`, `data_center`). Set it from the local file with the personal sections stripped: `jq '(._meta.local_only_sections // []) as $l | with_entries(select(.key | IN($l[]) | not))' src/main/java/org/ktronics/config/credentials.json | gh secret set SHINEMONITOR_CREDENTIALS_JSON`. Never upload the file as it is. jq pretty-prints by default, and the fetch scripts now read the file with jq, so a one-line copy works too (see *A credentials secret on one line* in Bug Fixes).
 - `DESSMONITOR_CREDENTIALS_JSON`: DessMonitor account credentials (UC10)
 - `SOLARMAN_TOKENS_JSON`: UC22's SOLARMAN sign-in, `{"access_token", "refresh_token"}`, seeded from a browser login and renewed by the job itself (see UC22)
 - `GH_PAT`: a GitHub token that can start workflows and write this repository's secrets. The PH1000 and PH1800 live loops use it to re-launch themselves (PH1000 also saves its renewed BMS sign-in with it), and UC22 writes its renewed sign-in back to `SOLARMAN_TOKENS_JSON` with it
@@ -2642,7 +2680,7 @@ a file that is gone (#35).
 
 The project includes comprehensive integration tests covering all business logic.
 
-#### Test Coverage: 1056 tests — 1000 passed, 56 skipped on Windows (bash and API tests run in CI)
+#### Test Coverage: 1064 tests — 1008 passed, 56 skipped on Windows (bash and API tests run in CI)
 
 The MCP servers' tests are not counted here: they left the repo with the
 servers on 2026-11-04 (see *Not part of the pipeline*). The 28 Tuya tests that
@@ -2717,11 +2755,11 @@ used to skip in CI went with them.
 | Hourly poll scope | 19 | `test_hourly_poll_scope.py` |
 | UC9 (weekly all-clear cadence) | 18 | `test_all_clear_cadence.py` |
 
-**Fetch safety and data integrity (38 tests):**
+**Fetch safety and data integrity (46 tests):**
 
 | Suite | Tests | File |
 | ----- | ----- | ---- |
-| A fetch never destroys committed data | 26 | `test_fetch_never_destroys_data.py` |
+| A fetch never destroys committed data, and reads a one-line credentials file | 34 | `test_fetch_never_destroys_data.py` |
 | Committed data agrees with itself | 12 | `test_committed_data_integrity.py` |
 
 The fake-vendor tests in the first file run the real fetch scripts, so they take

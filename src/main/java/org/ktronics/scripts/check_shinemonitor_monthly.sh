@@ -13,11 +13,15 @@ CREDS="${1:-$CREDENTIALS_FILE}"
 MONTH="${2:-$(date -u -d "$(date -u +%Y-%m-01) -1 day" +%Y-%m)}"
 
 # ---- Requirements ----
-need() { command -v "$1" >/dev/null 2>&1 || { echo "Missing: $1"; exit 2; }; }
-need curl sha1sum awk sed grep tr date mkdir
+need() { command -v "$1" >/dev/null 2>&1 || { echo "ERROR: missing $1"; exit 2; }; }
+need curl sha1sum awk sed grep tr date mkdir jq
 
-# ---- Read company_key ----
-company_key="$(sed -nE 's/.*"company_key"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' "$CREDS" | head -n 1)"
+# ---- Read company_key (jq: the file may arrive on one line) ----
+if ! jq empty "$CREDS" >/dev/null 2>&1; then
+  echo "ERROR: $CREDS is not valid JSON"
+  exit 2
+fi
+company_key="$(shinemonitor_company_key "$CREDS")"
 [[ -z "$company_key" ]] && { echo "ERROR: company_key missing"; exit 2; }
 
 echo "== ShineMonitor MONTHLY CHECK =="
@@ -29,24 +33,9 @@ echo "----------------------------------------------"
 mkdir -p data
 
 # -------------------------------------------------------------------
-# ACCOUNT EXTRACTION (CORRECT & SAFE)
+# ACCOUNTS: one JSON object per line (see shinemonitor_accounts)
 # -------------------------------------------------------------------
-# Emits EACH account object as one line
-mapfile -t ACCOUNTS < <(
-  awk '
-    BEGIN { in_accounts=0; depth=0; buf="" }
-    /"accounts"[[:space:]]*:[[:space:]]*\[/ { in_accounts=1; next }
-    in_accounts {
-      if ($0 ~ /\]/) { in_accounts=0; next }
-      if ($0 ~ /{/) { depth++; buf="" }
-      if (depth > 0) { buf = buf $0 }
-      if ($0 ~ /}/) {
-        depth--
-        if (depth == 0) { print buf; buf="" }
-      }
-    }
-  ' "$CREDS" | tr -d '\r'
-)
+mapfile -t ACCOUNTS < <(shinemonitor_accounts "$CREDS")
 
 if [[ "${#ACCOUNTS[@]}" -eq 0 ]]; then
   echo "ERROR: No accounts found"

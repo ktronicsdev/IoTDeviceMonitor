@@ -57,6 +57,27 @@ json_obj_get_str() {
 }
 
 ################################################################################
+# READING credentials.json
+################################################################################
+# With jq, which reads one-line and indented JSON alike - as the DessMonitor
+# scripts always have. The CI secret is pasted in by hand, and on 17 Nov 2026 a
+# copy written on ONE line (json.dumps with no indent) went in. The line-based
+# awk that used to find the accounts needed `"accounts": [` on a line of its
+# own, so it found none: every ShineMonitor run failed with "No accounts found"
+# for 12 hours and no production CSV was updated.
+
+# Each ShineMonitor account, one compact JSON object per line.
+shinemonitor_accounts() {
+  jq -c '.accounts[]? | objects' "${1:?Missing credentials file}" | tr -d '\r'
+}
+
+# The top-level company_key. A greedy sed over a one-line file would return
+# the LAST "company_key" in it, which can belong to a later section.
+shinemonitor_company_key() {
+  jq -r '.company_key // empty | strings' "${1:?Missing credentials file}" | tr -d '\r'
+}
+
+################################################################################
 # SHARED AUTHENTICATION FUNCTIONS
 ################################################################################
 

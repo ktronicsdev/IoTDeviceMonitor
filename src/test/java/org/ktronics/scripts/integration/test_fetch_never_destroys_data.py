@@ -32,6 +32,7 @@ Filed as #33. On 2026-11-01 the rule was widened to **a failed call or an
 all-zero answer never replaces a real figure**; see the fake-vendor tests below.
 """
 
+import json
 import os
 import re
 import shutil
@@ -127,6 +128,24 @@ def test_the_workflow_lets_the_warning_through():
         assert "WARNING" in f, (
             f"a fetch step filters its output through `grep -E \"({f})\"`, "
             f"which drops the WARNING line that says data was preserved")
+
+
+def test_the_workflow_lets_an_error_through():
+    """
+    On 17-18 Nov 2026 every fetch died on "ERROR: No accounts found", and the
+    filter dropped that line: the log went from the step's banner straight to
+    "exit code 1", with nothing to say why.
+    """
+    wf = (ROOT / ".github" / "workflows" / "trigger-shinemonitor.yml").read_text(
+        encoding="utf-8")
+    fetch_filters = [f for f in re.findall(r'grep -E "\(([^"]+)\)"', wf)
+                     if "CSV" in f]
+    assert fetch_filters, "no fetch-step grep filter found; has the step changed?"
+
+    for f in fetch_filters:
+        assert "ERROR" in f, (
+            f"a fetch step filters its output through `grep -E \"({f})\"`, "
+            f"which drops the ERROR line that says why the fetch stopped")
 
 
 # --- running the real thing ----------------------------------------------
@@ -328,7 +347,13 @@ class FakeVendor:
         lines = (self.data / name).read_text(encoding="utf-8").splitlines()[1:]
         return dict(line.split(",", 1) for line in lines if line)
 
-    def run(self, script, period):
+    def one_line_credentials(self, **extra_sections):
+        """Rewrite credentials.json on ONE line, as the 17 Nov 2026 CI secret was."""
+        data = json.loads(CREDENTIALS)
+        data.update(extra_sections)
+        self.credentials.write_text(json.dumps(data), encoding="utf-8", newline="\n")
+
+    def run(self, script, period, returncode=0):
         env = dict(os.environ,
                    FAKE_API_DIR=str(self.api),
                    SM_RETRY_PAUSE_SECS="0",
@@ -338,7 +363,7 @@ class FakeVendor:
              self.credentials.as_posix(), period],
             cwd=str(self.root), env=env, capture_output=True, text=True,
             encoding="utf-8", errors="replace", timeout=120)
-        assert result.returncode == 0, result.stdout + result.stderr
+        assert result.returncode == returncode, result.stdout + result.stderr
         return result.stdout
 
 
@@ -544,3 +569,92 @@ def test_new_year_file_keeps_its_twelve_rows(tmp_path):
     assert "WARNING" not in output, (
         "months that have no figure yet are normal. Warning about them drowns "
         "the warning that matters")
+
+
+# ---- the credentials file may arrive on one line --------------------------
+#
+# credentials.json reaches CI as the SHINEMONITOR_CREDENTIALS_JSON secret, which
+# is pasted in by hand. On 2026-11-17 19:46 UTC a session building a stripped
+# copy wrote it with json.dumps and no indent, so the whole file was one line.
+# Both fetch scripts found their accounts with a line-based awk that needed
+# `"accounts": [` on a line of its own, so they found none. jq and every Python
+# script read the file fine, which is why nothing else broke and nothing
+# pointed at the secret. Every ShineMonitor run then failed for 12 hours, and no
+# production CSV was updated, until the secret was re-set pretty-printed on
+# 2026-11-18 07:48 UTC.
+
+SHINEMONITOR_FETCHERS = ["check_shinemonitor_monthly.sh",
+                         "check_shinemonitor_yearly.sh"]
+
+
+@pytest.mark.parametrize("name", SHINEMONITOR_FETCHERS)
+def test_shinemonitor_fetchers_read_credentials_with_jq(name):
+    """No line-based parsing of credentials.json may come back."""
+    text = (SCRIPTS / name).read_text(encoding="utf-8")
+    assert "in_accounts" not in text, (
+        f"{name} finds its accounts with a line-based awk again; a one-line "
+        f"credentials.json then has no accounts (17 Nov 2026)")
+    assert 'shinemonitor_accounts "$CREDS"' in text
+    assert 'shinemonitor_company_key "$CREDS"' in text
+    assert not re.search(r'sed[^\n]*company_key', text), (
+        f"{name} reads company_key with sed; on a one-line file a greedy match "
+        f"returns the last company_key, which can belong to another section")
+
+
+@needs_bash
+def test_a_one_line_credentials_file_still_fetches_the_month(tmp_path):
+    vendor = FakeVendor(tmp_path)
+    vendor.one_line_credentials()
+    vendor.plants(LIVE_PID)
+    vendor.days(LIVE_PID, MONTH, [v for _, v in REAL_DAYS])
+
+    output = vendor.run("check_shinemonitor_monthly.sh", MONTH)
+
+    assert "No accounts found" not in output, (
+        "a one-line credentials.json has no accounts again; this is the "
+        "17-18 Nov 2026 outage")
+    assert "AUTH OK" in output
+    assert vendor.read_csv(MONTH_CSV) == dict(REAL_DAYS)
+
+
+@needs_bash
+def test_a_one_line_credentials_file_still_fetches_the_year(tmp_path):
+    vendor = FakeVendor(tmp_path)
+    vendor.one_line_credentials()
+    vendor.plants(LIVE_PID)
+    vendor.months_default_to_no_data()
+    vendor.month_total(LIVE_PID, "2026-01", "333.2000")
+
+    output = vendor.run("check_shinemonitor_yearly.sh", YEAR)
+
+    assert "No accounts found" not in output
+    assert "AUTH OK" in output
+    assert vendor.read_csv(YEAR_CSV)["2026-01"] == "333.2000"
+
+
+@pytest.mark.skipif(not (BASH and shutil.which("jq")),
+                    reason="needs bash and jq; both are on the CI runners")
+def test_company_key_is_the_top_level_one_on_a_one_line_file(tmp_path):
+    """The old greedy sed returned the LAST company_key on the line."""
+    vendor = FakeVendor(tmp_path)
+    vendor.one_line_credentials(dessmonitor={"company_key": "not-this-one"})
+    result = subprocess.run(
+        [BASH, "--noprofile", "--norc", "-c",
+         'source "$1"; shinemonitor_company_key "$2"', "_",
+         (SCRIPTS / "shinemonitor_common.sh").as_posix(),
+         vendor.credentials.as_posix()],
+        capture_output=True, text=True, encoding="utf-8", timeout=60)
+    assert result.stdout.strip() == "fake-company", result.stdout + result.stderr
+
+
+@needs_bash
+@pytest.mark.parametrize("name, period", [("check_shinemonitor_monthly.sh", MONTH),
+                                          ("check_shinemonitor_yearly.sh", YEAR)])
+def test_a_broken_credentials_file_says_so(tmp_path, name, period):
+    """A truncated paste must say what is wrong, not 'No accounts found'."""
+    vendor = FakeVendor(tmp_path)
+    vendor.credentials.write_text(CREDENTIALS[:40], encoding="utf-8", newline="\n")
+
+    output = vendor.run(name, period, returncode=2)
+
+    assert "ERROR:" in output and "is not valid JSON" in output, output
