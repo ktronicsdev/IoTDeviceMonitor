@@ -709,7 +709,9 @@
     "last_sent": "2026-03-08T11:02:03.777774",
     "customer": "Troy",
     "plant": "TROY HYBRID 3kw",
-    "message": "Low battery"
+    "message": "Low battery",
+    "class": "SOC",
+    "started_at_utc": "2026-03-07T20:56:22+00:00"
   },
   "1058467:D70000210184951128:69acc6629127112972862236": {
     "send_count": 3,
@@ -1508,10 +1510,10 @@
     "message": "Low battery"
   },
   "1058467:D70000210184951128:6afcf56d9332050168a7ae2c": {
-    "send_count": 2,
-    "last_sent": "2026-11-18T14:02:05.059741",
+    "send_count": 3,
+    "last_sent": "2026-11-18T18:03:24.737580",
     "first_seen": "2026-11-18T00:46:30+00:00",
-    "ignored": false,
+    "ignored": true,
     "class": "SOC",
     "started_at_utc": "2026-11-18T00:46:30+00:00",
     "customer": "Sohan-Wattala",
