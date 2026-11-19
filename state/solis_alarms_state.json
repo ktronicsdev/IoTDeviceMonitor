@@ -1,15 +1,4 @@
 {
-  "1298491919450854508:None:1D4C3@1794412800000": {
-    "send_count": 3,
-    "first_seen": "2026-11-13T08:34:30.894236",
-    "ignored": true,
-    "last_sent": "2026-11-13T22:46:13.716301",
-    "customer": "Unknown",
-    "plant": "Hiran wijewardhana 15kv Nawala",
-    "message": "Inefficient Power Plants",
-    "class": "UNKNOWN",
-    "started_at_utc": "2026-11-11T16:00:00+00:00"
-  },
   "1298491919449897728:18050B0248180326:1D4C2@1795059710323": {
     "send_count": 0,
     "last_sent": null,
