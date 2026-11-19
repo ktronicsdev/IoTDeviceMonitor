@@ -1521,8 +1521,8 @@
     "message": "battery voltage is too low"
   },
   "1058467:D70000210184951128:6afe40f5933205016825e0a5": {
-    "send_count": 1,
-    "last_sent": "2026-11-19T12:37:24.464103",
+    "send_count": 2,
+    "last_sent": "2026-11-19T18:20:12.531348",
     "first_seen": "2026-11-19T00:21:02+00:00",
     "ignored": false,
     "class": "HARDWARE",
@@ -1532,15 +1532,14 @@
     "message": "Bus soft start failed"
   },
   "1128741:D70000210187727485:6afecddf9332050168dc926c": {
-    "send_count": 0,
-    "last_sent": null,
+    "send_count": 1,
+    "last_sent": "2026-11-19T18:20:12.531348",
     "first_seen": "2026-11-19T10:22:16+00:00",
     "ignored": false,
     "class": "SOC",
     "started_at_utc": "2026-11-19T10:22:16+00:00",
     "customer": "Matho",
     "plant": "PLANT",
-    "message": "battery voltage is too low",
-    "suppressed_reason": "dwell time is less than 6 hours"
+    "message": "battery voltage is too low"
   }
 }
