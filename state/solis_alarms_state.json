@@ -10,15 +10,16 @@
     "class": "UNKNOWN",
     "started_at_utc": "2026-11-11T16:00:00+00:00"
   },
-  "1298491919449926204:18050B0248230197:1011@1794444067000": {
-    "send_count": 3,
-    "first_seen": "2026-11-16T20:38:17.120545",
-    "ignored": true,
-    "last_sent": "2026-11-17T13:44:21.241397",
+  "1298491919449897728:18050B0248180326:1D4C2@1795059710323": {
+    "send_count": 0,
+    "last_sent": null,
+    "first_seen": "2026-11-19T03:41:50.323000+00:00",
+    "ignored": false,
+    "class": "COMMS",
+    "started_at_utc": "2026-11-19T03:41:50.323000+00:00",
     "customer": "Unknown",
-    "plant": "Pengirihena Resort",
-    "message": "UN-G-V02",
-    "class": "GRID",
-    "started_at_utc": "2026-11-12T00:41:07+00:00"
+    "plant": "Kaushalya 20kv",
+    "message": "Loss of internet connection",
+    "suppressed_reason": "COMMS alarms are not mailed"
   }
 }
