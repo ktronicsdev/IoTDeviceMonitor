@@ -1,35 +1,6 @@
 {
-  "generated_at": "2026-11-20T00:26:09.945602Z",
-  "alerts": [
-    {
-      "severity": "RED",
-      "plant_key": "matho-plant",
-      "today": "2026-11-20",
-      "baseline_avg_kwh_per_day": 7.7786,
-      "threshold_kwh_per_day": 1.5557,
-      "rule": "< 20.0% baseline for 3 consecutive days",
-      "escalation": "no data or no production for 3 days \u2014 check the datalogger is online before dispatching",
-      "window": [
-        "2026-11-18",
-        "2026-11-19",
-        "2026-11-20"
-      ],
-      "details": [
-        {
-          "date": "2026-11-18",
-          "kwh": 0.0
-        },
-        {
-          "date": "2026-11-19",
-          "kwh": 0.4
-        },
-        {
-          "date": "2026-11-20",
-          "kwh": 0.0
-        }
-      ]
-    }
-  ],
+  "generated_at": "2026-11-20T03:00:41.770214Z",
+  "alerts": [],
   "suppressed": [],
   "ignored": [
     {

@@ -1532,8 +1532,8 @@
     "message": "Bus soft start failed"
   },
   "1128741:D70000210187727485:6afecddf9332050168dc926c": {
-    "send_count": 1,
-    "last_sent": "2026-11-19T18:20:12.531348",
+    "send_count": 2,
+    "last_sent": "2026-11-20T03:07:46.140797",
     "first_seen": "2026-11-19T10:22:16+00:00",
     "ignored": false,
     "class": "SOC",
