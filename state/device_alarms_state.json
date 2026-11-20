@@ -1532,10 +1532,10 @@
     "message": "Bus soft start failed"
   },
   "1128741:D70000210187727485:6afecddf9332050168dc926c": {
-    "send_count": 2,
-    "last_sent": "2026-11-20T03:07:46.140797",
+    "send_count": 3,
+    "last_sent": "2026-11-20T12:37:43.794330",
     "first_seen": "2026-11-19T10:22:16+00:00",
-    "ignored": false,
+    "ignored": true,
     "class": "SOC",
     "started_at_utc": "2026-11-19T10:22:16+00:00",
     "customer": "Matho",
@@ -1543,10 +1543,10 @@
     "message": "battery voltage is too low"
   },
   "1110855:D70000210188843601:6aff244b9332050168558c06": {
-    "send_count": 2,
-    "last_sent": "2026-11-20T06:02:25.982253",
+    "send_count": 3,
+    "last_sent": "2026-11-20T12:37:43.794330",
     "first_seen": "2026-11-19T16:31:01+00:00",
-    "ignored": false,
+    "ignored": true,
     "class": "LOAD",
     "started_at_utc": "2026-11-19T16:31:01+00:00",
     "customer": "Kasun",
