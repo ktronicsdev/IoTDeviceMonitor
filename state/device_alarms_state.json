@@ -1521,10 +1521,10 @@
     "message": "battery voltage is too low"
   },
   "1058467:D70000210184951128:6afe40f5933205016825e0a5": {
-    "send_count": 2,
-    "last_sent": "2026-11-19T18:20:12.531348",
+    "send_count": 3,
+    "last_sent": "2026-11-20T03:16:18.294429",
     "first_seen": "2026-11-19T00:21:02+00:00",
-    "ignored": false,
+    "ignored": true,
     "class": "HARDWARE",
     "started_at_utc": "2026-11-19T00:21:02+00:00",
     "customer": "Sohan-Wattala",
