@@ -23,8 +23,8 @@
     "message": "Inefficient Power Plants"
   },
   "1298491919450026241:1031180243080004:1011@1795184173000": {
-    "send_count": 1,
-    "last_sent": "2026-11-20T21:25:51.921876",
+    "send_count": 2,
+    "last_sent": "2026-11-21T02:42:07.764107",
     "first_seen": "2026-11-20T14:16:13+00:00",
     "ignored": false,
     "class": "GRID",
@@ -32,5 +32,17 @@
     "customer": "Unknown",
     "plant": "Vajira 5kv",
     "message": "UV-G-V"
+  },
+  "1298491919449517173:1031180243080021:1015@1795228748000": {
+    "send_count": 0,
+    "last_sent": null,
+    "first_seen": "2026-11-21T02:39:08+00:00",
+    "ignored": false,
+    "class": "GRID",
+    "started_at_utc": "2026-11-21T02:39:08+00:00",
+    "customer": "Unknown",
+    "plant": "Sandamal Solar",
+    "message": "NO-Grid",
+    "suppressed_reason": "dwell time is less than 6 hours"
   }
 }
