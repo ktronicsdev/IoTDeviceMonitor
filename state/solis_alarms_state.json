@@ -1,16 +1,4 @@
 {
-  "1298491919449897728:18050B0248180326:1D4C2@1795059710323": {
-    "send_count": 0,
-    "last_sent": null,
-    "first_seen": "2026-11-19T03:41:50.323000+00:00",
-    "ignored": false,
-    "class": "COMMS",
-    "started_at_utc": "2026-11-19T03:41:50.323000+00:00",
-    "customer": "Unknown",
-    "plant": "Kaushalya 20kv",
-    "message": "Loss of internet connection",
-    "suppressed_reason": "COMMS alarms are not mailed"
-  },
   "1298491919450854508:None:1D4C3@1795017600000": {
     "send_count": 3,
     "last_sent": "2026-11-20T21:25:51.921876",
@@ -23,26 +11,49 @@
     "message": "Inefficient Power Plants"
   },
   "1298491919450026241:1031180243080004:1011@1795184173000": {
-    "send_count": 2,
-    "last_sent": "2026-11-21T02:42:07.764107",
+    "send_count": 3,
+    "last_sent": "2026-11-21T11:37:12.317020",
     "first_seen": "2026-11-20T14:16:13+00:00",
-    "ignored": false,
+    "ignored": true,
     "class": "GRID",
     "started_at_utc": "2026-11-20T14:16:13+00:00",
     "customer": "Unknown",
     "plant": "Vajira 5kv",
     "message": "UV-G-V"
   },
-  "1298491919449517173:1031180243080021:1015@1795228748000": {
+  "1298491919450026241:1031180243080004:1D4C2@1795186872228": {
     "send_count": 0,
     "last_sent": null,
-    "first_seen": "2026-11-21T02:39:08+00:00",
+    "first_seen": "2026-11-20T15:01:12.228000+00:00",
     "ignored": false,
-    "class": "GRID",
-    "started_at_utc": "2026-11-21T02:39:08+00:00",
+    "class": "COMMS",
+    "started_at_utc": "2026-11-20T15:01:12.228000+00:00",
     "customer": "Unknown",
-    "plant": "Sandamal Solar",
-    "message": "NO-Grid",
-    "suppressed_reason": "dwell time is less than 6 hours"
+    "plant": "Vajira 5kv",
+    "message": "Loss of internet connection",
+    "suppressed_reason": "COMMS alarms are not mailed"
+  },
+  "1298491919449734382:1805060245080023:1D4C2@1795178590294": {
+    "send_count": 0,
+    "last_sent": null,
+    "first_seen": "2026-11-20T12:43:10.294000+00:00",
+    "ignored": false,
+    "class": "COMMS",
+    "started_at_utc": "2026-11-20T12:43:10.294000+00:00",
+    "customer": "Unknown",
+    "plant": "sandeep",
+    "message": "Loss of internet connection",
+    "suppressed_reason": "COMMS alarms are not mailed"
+  },
+  "1298491919450854508:None:1D4C3@1795104000000": {
+    "send_count": 1,
+    "last_sent": "2026-11-21T11:37:12.317020",
+    "first_seen": "2026-11-19T16:00:00+00:00",
+    "ignored": false,
+    "class": "UNKNOWN",
+    "started_at_utc": "2026-11-19T16:00:00+00:00",
+    "customer": "Unknown",
+    "plant": "Hiran wijewardhana 15kv Nawala",
+    "message": "Inefficient Power Plants"
   }
 }
