@@ -1554,15 +1554,14 @@
     "message": "Overload"
   },
   "1058467:D70000210184951128:6b00d9cd93320501681f7c84": {
-    "send_count": 0,
-    "last_sent": null,
+    "send_count": 1,
+    "last_sent": "2026-11-21T09:51:17.215069",
     "first_seen": "2026-11-20T23:37:43+00:00",
     "ignored": false,
     "class": "SOC",
     "started_at_utc": "2026-11-20T23:37:43+00:00",
     "customer": "Sohan-Wattala",
     "plant": "Must PV1800 3024 Pro",
-    "message": "Low battery",
-    "suppressed_reason": "dwell time is less than 6 hours"
+    "message": "Low battery"
   }
 }
